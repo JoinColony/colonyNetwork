@@ -20,9 +20,9 @@ pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
 import { IColonyNetwork } from "./../../colonyNetwork/IColonyNetwork.sol";
-import { ColonyRoles } from "./../../colony/ColonyRoles.sol";
 import { IColony, ColonyDataTypes } from "./../../colony/IColony.sol";
 import { BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
+import { ActionSummary, GetActionSummary } from "./../../common/GetActionSummary.sol";
 import { ITokenLocking } from "./../../tokenLocking/ITokenLocking.sol";
 import { ColonyExtension } from "./../ColonyExtension.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
@@ -30,7 +30,8 @@ import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
 contract VotingReputationStorage is
   ColonyExtension,
   BasicMetaTransaction,
-  VotingReputationDataTypes
+  VotingReputationDataTypes,
+  GetActionSummary
 {
   // Constants
 
@@ -44,23 +45,6 @@ contract VotingReputationStorage is
   uint256 constant REVEAL_END = 2;
 
   uint256 constant LOCK_DELAY = 10 * 365 days;
-
-  bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
-    uint8(ColonyDataTypes.ColonyRole.Recovery)) |
-    (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
-
-  bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
-  bytes4 constant NO_ACTION = 0x12345678;
-  bytes4 constant OLD_MOVE_FUNDS =
-    bytes4(
-      keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)")
-    );
-  bytes4 constant SET_EXPENDITURE_STATE =
-    bytes4(
-      keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
-    );
-  bytes4 constant SET_EXPENDITURE_PAYOUT =
-    bytes4(keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"));
 
   // Initialization data
   ExtensionState state;
@@ -209,7 +193,12 @@ contract VotingReputationStorage is
     } else if (_motionId <= motionCountV10 && getSig(motion.action) == MULTICALL) {
       // (Inefficiently) handle the potential case of a v9 motion:
       //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS
-      ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
+      ActionSummary memory actionSummary = getActionSummary(
+        address(colonyNetwork),
+        address(colony),
+        motion.action,
+        motion.altTarget
+      );
       return
         (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
           ? MotionState.Finalized
@@ -225,96 +214,8 @@ contract VotingReputationStorage is
     return wmul(motions[_motionId].skillRep, totalStakeFraction);
   }
 
-  function getTarget(address _target) internal view returns (address) {
-    return (_target == address(0x0)) ? address(colony) : _target;
-  }
-
   function flip(uint256 _vote) internal pure returns (uint256) {
     return 1 - _vote;
-  }
-
-  function isExpenditureSig(bytes4 sig) internal pure returns (bool) {
-    return sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT;
-  }
-
-  function getSig(bytes memory action) internal pure returns (bytes4 sig) {
-    assembly {
-      sig := mload(add(action, 0x20))
-    }
-  }
-
-  function getActionSummary(
-    bytes memory _action,
-    address _altTarget
-  ) public view returns (ActionSummary memory) {
-    address target = getTarget(_altTarget);
-    bytes[] memory actions;
-
-    if (getSig(_action) == MULTICALL) {
-      actions = abi.decode(extractCalldata(_action), (bytes[]));
-    } else {
-      actions = new bytes[](1);
-      actions[0] = _action;
-    }
-
-    ActionSummary memory summary;
-
-    for (uint256 i; i < actions.length; i++) {
-      bytes4 sig = getSig(actions[i]);
-      uint256 expenditureId;
-      uint256 domainSkillId;
-
-      if (sig == NO_ACTION || sig == OLD_MOVE_FUNDS) {
-        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
-        return ActionSummary({ sig: sig, domainSkillId: 0, expenditureId: 0 });
-      } else if (isExpenditureSig(sig)) {
-        // If it is an expenditure action, we record the expenditure and domain ids,
-        //  and ensure they are consistent throughout the multicall.
-        //  If not, we return UINT256_MAX which represents an invalid multicall
-        summary.sig = sig;
-        domainSkillId = getActionDomainSkillId(actions[i]);
-        expenditureId = getExpenditureId(actions[i]);
-
-        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          // Invalid multicall, caller should handle appropriately
-          return
-            ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
-        } else {
-          summary.domainSkillId = domainSkillId;
-        }
-
-        if (summary.expenditureId > 0 && summary.expenditureId != expenditureId) {
-          // Invalid multicall, caller should handle appropriately
-          return
-            ActionSummary({ sig: bytes4(0x0), domainSkillId: 0, expenditureId: type(uint256).max });
-        } else {
-          summary.expenditureId = expenditureId;
-        }
-      } else {
-        // Otherwise we record the domain id and ensure it is consistent throughout the multicall
-        // If no expenditure signatures have been seen, we record the latest signature
-        // TODO: explicitly check `isExtension` for target, currently this simply errors
-        if (ColonyRoles(target).getCapabilityRoles(sig) | ROOT_ROLES == ROOT_ROLES) {
-          domainSkillId = colony.getDomain(1).skillId;
-        } else {
-          domainSkillId = getActionDomainSkillId(actions[i]);
-        }
-
-        if (summary.domainSkillId > 0 && summary.domainSkillId != domainSkillId) {
-          // Invalid multicall, caller should handle appropriately
-          return
-            ActionSummary({ sig: bytes4(0x0), domainSkillId: type(uint256).max, expenditureId: 0 });
-        } else {
-          summary.domainSkillId = domainSkillId;
-        }
-
-        if (!isExpenditureSig(summary.sig)) {
-          summary.sig = sig;
-        }
-      }
-    }
-
-    return summary;
   }
 
   function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
@@ -328,15 +229,6 @@ contract VotingReputationStorage is
 
     uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
     return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
-  }
-
-  function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
-    bytes4 sig = getSig(action);
-    assert(isExpenditureSig(sig));
-
-    assembly {
-      expenditureId := mload(add(action, 0x64))
-    }
   }
 
   function getExpenditureAction(bytes memory action) internal pure returns (bytes memory) {
@@ -354,43 +246,8 @@ contract VotingReputationStorage is
     }
   }
 
-  // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
-  function extractCalldata(
-    bytes memory calldataWithSelector
-  ) internal pure returns (bytes memory calldataWithoutSelector) {
-    // For an empty bytes array i.e. the smallest amount of data we're expecting,
-    // we would expect 68 bytes
-    require(calldataWithSelector.length >= 68, "voting-rep-invalid-calldata");
-    // We expect the 4-byte function selector, and then some multiple of 32 bytes
-    require((calldataWithSelector.length - 4) % 32 == 0, "voting-rep-invalid-calldata");
-
-    assembly {
-      let totalLength := mload(calldataWithSelector)
-      let targetLength := sub(totalLength, 4)
-      calldataWithoutSelector := mload(0x40)
-
-      // Set the length of callDataWithoutSelector (initial length - 4)
-      mstore(calldataWithoutSelector, targetLength)
-      // Mark the memory space taken for callDataWithoutSelector as allocated
-      mstore(0x40, add(calldataWithoutSelector, add(0x20, targetLength)))
-      // Process first 32 bytes (we only take the last 28 bytes)
-      mstore(add(calldataWithoutSelector, 0x20), shl(0x20, mload(add(calldataWithSelector, 0x20))))
-      // Process all other data by chunks of 32 bytes
-      for {
-        let i := 0x1C
-      } lt(i, targetLength) {
-        i := add(i, 0x20)
-      } {
-        mstore(
-          add(add(calldataWithoutSelector, 0x20), i),
-          mload(add(add(calldataWithSelector, 0x20), add(i, 0x04)))
-        )
-      }
-    }
-  }
-
   function executeCall(uint256 motionId, bytes memory action) internal returns (bool success) {
-    address to = getTarget(motions[motionId].altTarget);
+    address to = getTarget(motions[motionId].altTarget, address(colony));
 
     assembly {
       // call contract at address a with input mem[in…(in+insize))

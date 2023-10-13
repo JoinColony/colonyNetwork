@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { VotingReputationStorage } from "./VotingReputationStorage.sol";
 import { IColony, ColonyDataTypes } from "./../../colony/IColony.sol";
+import { ActionSummary } from "./../../common/GetActionSummary.sol";
 
 contract VotingReputation is VotingReputationStorage {
   // Public
@@ -77,7 +78,12 @@ contract VotingReputation is VotingReputationStorage {
     require(state == ExtensionState.Active, "voting-rep-not-active");
     require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
 
-    ActionSummary memory actionSummary = getActionSummary(_action, _altTarget);
+    ActionSummary memory actionSummary = getActionSummary(
+      address(colonyNetwork),
+      address(colony),
+      _action,
+      _altTarget
+    );
 
     require(actionSummary.sig != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
     require(
@@ -302,7 +308,10 @@ contract VotingReputation is VotingReputationStorage {
     // Perform vote power checks
     if (_motionId > motionCountV10) {
       // New functionality for versions 10 and above
-      if (isExpenditureSig(motion.sig) && getTarget(motion.altTarget) == address(colony)) {
+      if (
+        isExpenditureSig(motion.sig) &&
+        getTarget(motion.altTarget, address(colony)) == address(colony)
+      ) {
         uint256 expenditureId = unlockExpenditure(_motionId);
         uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0
           ? motion.votes[YAY]
@@ -316,8 +325,16 @@ contract VotingReputation is VotingReputationStorage {
       }
     } else {
       // Backwards compatibility for versions 9 and below
-      ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
-      if (isExpenditureSig(actionSummary.sig) && getTarget(motion.altTarget) == address(colony)) {
+      ActionSummary memory actionSummary = getActionSummary(
+        address(colonyNetwork),
+        address(colony),
+        motion.action,
+        motion.altTarget
+      );
+      if (
+        isExpenditureSig(actionSummary.sig) &&
+        getTarget(motion.altTarget, address(colony)) == address(colony)
+      ) {
         if (getSig(motion.action) != MULTICALL) {
           unlockV9Expenditure(_motionId);
         }

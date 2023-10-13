@@ -210,7 +210,7 @@ contract("Multisig Permissions", (accounts) => {
       const action = await encodeTxData(colony, "multicall", [[action1, action2]]);
 
       await checkErrorRevert(
-        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action1, action2], { from: USER2 }),
+        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address, colony.address], [action1, action2], { from: USER2 }),
         "colony-multisig-invalid-motion",
       );
       await checkErrorRevert(

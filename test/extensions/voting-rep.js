@@ -1785,28 +1785,28 @@ contract("Voting Reputation", (accounts) => {
       let summary;
 
       // No action
-      summary = await voting.getActionSummary(NO_ACTION, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, NO_ACTION, ADDRESS_ZERO);
       expect(summary.sig).to.equal(NO_ACTION);
       expect(summary.expenditureId).to.be.zero;
       expect(summary.domainSkillId).to.be.zero;
 
       // Expenditure actions (domain 3)
       action = await encodeTxData(colony, "setExpenditureState", [1, 1, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
-      summary = await voting.getActionSummary(action, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, action, ADDRESS_ZERO);
       expect(summary.sig).to.equal(SET_EXPENDITURE_STATE);
       expect(summary.expenditureId).to.eq.BN(expenditureId);
       expect(summary.domainSkillId).to.eq.BN(domain3.skillId);
 
       // Root actions (domain 1)
       action = await encodeTxData(colony, "upgrade", [10]);
-      summary = await voting.getActionSummary(action, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, action, ADDRESS_ZERO);
       expect(summary.sig).to.equal(soliditySha3("upgrade(uint256)").slice(0, 10));
       expect(summary.expenditureId).to.be.zero;
       expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
 
       // Domain actions (domain 2)
       action = await encodeTxData(colony, "addDomain", [1, 0, 2]);
-      summary = await voting.getActionSummary(action, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, action, ADDRESS_ZERO);
       expect(summary.sig).to.equal(soliditySha3("addDomain(uint256,uint256,uint256)").slice(0, 10));
       expect(summary.expenditureId).to.be.zero;
       expect(summary.domainSkillId).to.eq.BN(domain2.skillId);
@@ -1852,78 +1852,78 @@ contract("Voting Reputation", (accounts) => {
 
       // Expenditure actions
       multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(SET_EXPENDITURE_PAYOUT);
       expect(summary.expenditureId).to.eq.BN(expenditure2Id);
       expect(summary.domainSkillId).to.eq.BN(domain3.skillId);
 
       // Blacklisted function
       multicall = await encodeTxData(colony, "multicall", [[OLD_MOVE_FUNDS, action2]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(OLD_MOVE_FUNDS);
 
       // Special NO_ACTION
       multicall = await encodeTxData(colony, "multicall", [[action1, NO_ACTION]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(NO_ACTION);
 
       // Root actions
       multicall = await encodeTxData(colony, "multicall", [[action3, action4]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(soliditySha3("unlockToken()").slice(0, 10));
       expect(summary.expenditureId).to.be.zero;
       expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
 
       // Domain actions
       multicall = await encodeTxData(colony, "multicall", [[action5, action6]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(soliditySha3("deprecateDomain(uint256,uint256,uint256,bool)").slice(0, 10));
       expect(summary.expenditureId).to.be.zero;
       expect(summary.domainSkillId).to.eq.BN(domain2.skillId);
 
       // Expenditure & domain actions
       multicall = await encodeTxData(colony, "multicall", [[action1, action7]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(SET_EXPENDITURE_STATE);
       expect(summary.expenditureId).to.eq.BN(expenditure2Id);
       expect(summary.domainSkillId).to.eq.BN(domain3.skillId);
 
       // Expenditure & root actions, domain 1
       multicall = await encodeTxData(colony, "multicall", [[action3, action9, action10]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(SET_EXPENDITURE_PAYOUT);
       expect(summary.expenditureId).to.eq.BN(expenditure1Id);
       expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
 
       // Domain & root actions, domain 1
       multicall = await encodeTxData(colony, "multicall", [[action3, action8]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(soliditySha3("addDomain(uint256,uint256,uint256)").slice(0, 10));
       expect(summary.expenditureId).to.be.zero;
       expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
 
       // To an alternative target without `getCapabilityRoles` fails
       multicall = await encodeTxData(colony, "multicall", [[action12, action13]]);
-      await checkErrorRevert(voting.getActionSummary(multicall, tokenLocking.address));
+      await checkErrorRevert(voting.getActionSummary(colonyNetwork.address, colony.address, multicall, tokenLocking.address));
 
       // Different domain actions (error, implemented as UINT256_MAX)
       // Root (1) & domain (2) actions
       multicall = await encodeTxData(colony, "multicall", [[action3, action5]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
 
       // Expenditure (3) and domain (2) actions
       multicall = await encodeTxData(colony, "multicall", [[action1, action5]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
       // Same case, but reverse the multicall order
       multicall = await encodeTxData(colony, "multicall", [[action5, action1]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
 
       // Two different expenditures in (3)
       multicall = await encodeTxData(colony, "multicall", [[action1, action11]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
+      summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
       expect(summary.expenditureId).to.eq.BN(UINT256_MAX);
     });
 

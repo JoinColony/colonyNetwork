@@ -19,9 +19,9 @@
 pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import { IBasicMetaTransaction } from "./../../common/IBasicMetaTransaction.sol";
 import { IColonyExtension } from "./../IColonyExtension.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
+import { ActionSummary } from "./../../common/GetActionSummary.sol";
 
 interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Initialise the extension
@@ -281,10 +281,14 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   ) external view returns (uint256 _rewardMin, uint256 _rewardMax);
 
   /// @notice Return a summary of the multicall action
+  /// @param _colonyNetwork The address of the colony network
+  /// @param _colony The address of the colony this extension is installed in
   /// @param _action The id of the motion
   /// @param _altTarget The address of the altTarget, or 0x0 if none exists
   /// @return _summary A summary of the multicall
   function getActionSummary(
+    address _colonyNetwork,
+    address _colony,
     bytes memory _action,
     address _altTarget
   ) external view returns (ActionSummary memory _summary);
