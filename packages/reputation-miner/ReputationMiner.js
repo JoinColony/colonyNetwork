@@ -16,7 +16,7 @@ const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
 
 const DAY_IN_SECONDS = 60 * 60 * 24;
 
-const BLOCK_PAGING_SIZE = 1000000;
+const BLOCK_PAGING_SIZE = 25000;
 
 class ReputationMiner {
   /**
@@ -1365,31 +1365,41 @@ class ReputationMiner {
     const latestBlockNumber = await this.realProvider.getBlockNumber();
 
     const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
-    filter.toBlock = Math.max(blockNumber - 1, 0);
-    while (filter.toBlock !== latestBlockNumber) {
-      filter.fromBlock = filter.toBlock + 1;
-      filter.toBlock = Math.min(filter.fromBlock + BLOCK_PAGING_SIZE, latestBlockNumber);
-      const partialEvents = await this.realProvider.getLogs(filter);
-      events = events.concat(partialEvents);
-    }
+    let syncFromIndex = -1;
+    let foundKnownState = false;
+    filter.fromBlock = latestBlockNumber + 1;
+    filter.toBlock = filter.fromBlock;
     let localHash = await this.reputationTree.getRootHash();
     let applyLogs = false;
 
-    // Run through events backwards find the most recent one that we know...
-    let syncFromIndex = 0;
-    for (let i = events.length - 1 ; i >= 0 ; i -= 1){
-      const event = events[i];
-      const hash = event.data.slice(0, 66);
-      const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
-      // Do we have such a state?
-      const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
-      if (res.n === 1){
-        // We know that state! We can just sync from the next one...
-        syncFromIndex = i + 1;
-        await this.loadState(hash);
-        applyLogs = true;
-        break;
+    while (foundKnownState === false && filter.toBlock > blockNumber) {
+      filter.toBlock = filter.fromBlock - 1;
+      filter.fromBlock = Math.max(filter.toBlock - BLOCK_PAGING_SIZE + 1, blockNumber);
+      // console.log(filter);
+      const partialEvents = await this.realProvider.getLogs(filter);
+      events = events.concat(partialEvents.reverse());
+
+      // Run through events backwards find the most recent one that we know...
+      for (let i = 0 ; i < events.length ; i += 1){
+        const event = events[i];
+        const hash = event.data.slice(0, 66);
+        const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+        // Do we have such a state?
+        const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
+        if (res.n === 1){
+          console.log("KNOWN")
+          // We know that state! We can just sync from the next one...
+          syncFromIndex = i - 1;
+          await this.loadState(hash);
+          applyLogs = true;
+          foundKnownState = true;
+          break;
+        }
       }
+    }
+
+    if (syncFromIndex === -1 && !foundKnownState) {
+      syncFromIndex = events.length - 1;
     }
 
     // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
@@ -1399,10 +1409,10 @@ class ReputationMiner {
       applyLogs = true;
     }
 
-    for (let i = syncFromIndex; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
+    for (let i = syncFromIndex; i >= 0; i -= 1) {
+      console.log(`Syncing mining cycle ${syncFromIndex - i + 1} of ${syncFromIndex + 1}...`)
       const event = events[i];
-      if (i === 0) {
+      if (i === events.length - 1 && !foundKnownState) {
         // If we are syncing from the very start of the reputation history, the block
         // before the very first 'ReputationMiningCycleComplete' does not have an
         // active reputation cycle. So we skip it if 'fromBlock' has not been judiciously
@@ -1435,7 +1445,7 @@ class ReputationMiner {
     }
 
     // Some more cycles might have completed since we started syncing
-    const lastEventBlock = events[events.length - 1].blockNumber
+    const lastEventBlock = events[0].blockNumber
     filter.fromBlock = lastEventBlock;
     filter.toBlock = "latest";
     const sinceEvents = await this.realProvider.getLogs(filter);
