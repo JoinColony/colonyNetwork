@@ -106,7 +106,7 @@ Finalized a motion, executing its action if appropriate
 |_motionId|uint256|The id of the motion to finalize
 
 
-### ▸ `getActionSummary(bytes memory _action, address _altTarget):ActionSummary _summary`
+### ▸ `getActionSummary(address _colonyNetwork, address _colony, bytes memory _action, address _altTarget):ActionSummary _summary`
 
 Return a summary of the multicall action
 
@@ -115,6 +115,8 @@ Return a summary of the multicall action
 
 |Name|Type|Description|
 |---|---|---|
+|_colonyNetwork|address|The address of the colony network
+|_colony|address|The address of the colony this extension is installed in
 |_action|bytes|The id of the motion
 |_altTarget|address|The address of the altTarget, or 0x0 if none exists
 

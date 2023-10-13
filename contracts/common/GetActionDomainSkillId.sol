@@ -1,4 +1,4 @@
-  /*
+/*
   This file is part of The Colony Network.
 
   The Colony Network is free software: you can redistribute it and/or modify
@@ -21,10 +21,14 @@ import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 pragma solidity 0.8.21;
 pragma experimental ABIEncoderV2;
 
-contract GetActionDomainSkillId {  
+contract GetActionDomainSkillId {
   // From https://ethereum.stackexchange.com/questions/131283/how-do-i-decode-call-data-in-solidity
 
-  function getActionDomainSkillId(bytes memory _action, address _colonyNetworkAddress, address _colonyAddress) internal view returns (uint256) {
+  function getActionDomainSkillId(
+    bytes memory _action,
+    address _colonyNetworkAddress,
+    address _colonyAddress
+  ) internal view returns (uint256) {
     uint256 permissionDomainId;
     uint256 childSkillIndex;
 
@@ -34,6 +38,7 @@ contract GetActionDomainSkillId {
     }
 
     uint256 permissionSkillId = IColony(_colonyAddress).getDomain(permissionDomainId).skillId;
-    return IColonyNetwork(_colonyNetworkAddress).getChildSkillId(permissionSkillId, childSkillIndex);
+    return
+      IColonyNetwork(_colonyNetworkAddress).getChildSkillId(permissionSkillId, childSkillIndex);
   }
 }

@@ -49,7 +49,10 @@ contract VotingReputationStaking is VotingReputationStorage {
     // For v9 expenditure motions, only allow counterstaking unless escalated
     if (
       _motionId <= motionCountV10 &&
-      isExpenditureSig(getActionSummary(motion.action, motion.altTarget).sig)
+      isExpenditureSig(
+        getActionSummary(address(colonyNetwork), address(colony), motion.action, motion.altTarget)
+          .sig
+      )
     ) {
       require(
         motion.stakes[YAY] == requiredStake ||
