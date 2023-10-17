@@ -641,6 +641,202 @@ contract("Multisig Permissions", (accounts) => {
     });
   });
 
+  describe("Rejecting motions", async () => {
+    it("if you don't have the right permissions, you cannot reject", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
+      // No permissions
+      await checkErrorRevert(multisigPermissions.changeRejection(1, UINT256_MAX, motionId, true, { from: USER2 }), "colony-multisig-no-permissions");
+
+      // Not right permissions
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([ARBITRATION_ROLE]));
+      await checkErrorRevert(multisigPermissions.changeRejection(1, UINT256_MAX, motionId, true, { from: USER2 }), "colony-multisig-no-permissions");
+    });
+
+    it("if you don't show the right permissions, you cannot reject", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
+      // Not right permissions
+      await checkErrorRevert(multisigPermissions.changeRejection(1, 0, motionId, true), "colony-multisig-not-same-domain");
+    });
+
+    it("can withdraw rejections", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
+
+      const motionId = await multisigPermissions.getMotionCount();
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "colony-multisig-permissions-not-enough-rejections");
+
+      // But even though not at threshold, creator could reject
+      await multisigPermissions.cancel.estimateGas(motionId);
+
+      // Reject
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, true, { from: USER1 });
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, true, { from: USER0 });
+      let rejectionCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(rejectionCount).to.eq.BN(2);
+
+      let userRejection = await multisigPermissions.getUserRejection(motionId, USER1, ROOT_ROLE);
+      expect(userRejection).to.equal(true);
+
+      // Could reject if we wanted
+      await multisigPermissions.cancel.estimateGas(motionId);
+
+      // Unreject
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, false, { from: USER1 });
+      rejectionCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(rejectionCount).to.eq.BN(1);
+      userRejection = await multisigPermissions.getUserRejection(motionId, USER1, ROOT_ROLE);
+      expect(userRejection).to.equal(false);
+
+      // Can't reject unless creator
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "colony-multisig-permissions-not-enough-rejections");
+      await multisigPermissions.cancel.estimateGas(motionId);
+    });
+
+    it("can withdraw rejections even if you don't have permissions to reject any more", async () => {
+      const domain = await colony.getDomain(1);
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 2);
+
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
+
+      const motionId = await multisigPermissions.getMotionCount();
+
+      // Reject
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, true, { from: USER1 });
+      let rejectionCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(rejectionCount).to.eq.BN(1);
+
+      // Remove permissions
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER1, 1, ethers.utils.hexZeroPad(0, 32));
+
+      let userRejection = await multisigPermissions.getUserRejection(motionId, USER1, ROOT_ROLE);
+      expect(userRejection).to.equal(true);
+
+      // Unreject
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, false, { from: USER1 });
+      rejectionCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(rejectionCount).to.eq.BN(0);
+      userRejection = await multisigPermissions.getUserRejection(motionId, USER1, ROOT_ROLE);
+      expect(userRejection).to.equal(false);
+
+      // Can't call
+      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-permissions-not-enough-approvals");
+    });
+
+    it("can't repeatedly reject or unreject and have an effect", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
+
+      const motionId = await multisigPermissions.getMotionCount();
+
+      // Reject again
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, true);
+
+      // But no effect
+      let approvalCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
+
+      // Another user rejects
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, true, { from: USER1 });
+      approvalCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(2);
+
+      // Unreject
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, false);
+      approvalCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
+      let userApproval = await multisigPermissions.getUserRejection(motionId, USER0, ROOT_ROLE);
+      expect(userApproval).to.equal(false);
+
+      // Unreject again
+      await multisigPermissions.changeRejection(1, UINT256_MAX, motionId, false);
+      approvalCount = await multisigPermissions.getMotionRoleRejectionCount(motionId, ROOT_ROLE);
+      expect(approvalCount).to.eq.BN(1);
+      userApproval = await multisigPermissions.getUserRejection(motionId, USER0, ROOT_ROLE);
+      expect(userApproval).to.equal(false);
+    });
+
+    it("can reject if you have permissions in a parent domain, but you don't count for calculating the threshold", async () => {
+      const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [colony.address], [action]), "colony-multisig-no-permissions");
+
+      // Give user0 root and admin in root domain
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER0, 1, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
+
+      // Give users 1,2,3 admin in the subdomain
+      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([ADMINISTRATION_ROLE]));
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([ADMINISTRATION_ROLE]));
+      await multisigPermissions.setUserRoles(1, 0, USER3, 2, rolesToBytes32([ADMINISTRATION_ROLE]));
+
+      const domain = await colony.getDomain(2);
+
+      const counts = await multisigPermissions.getDomainSkillRoleCounts(domain.skillId, ADMINISTRATION_ROLE);
+      expect(counts).to.eq.BN(3);
+
+      // That should make the threshold 2. If the admin holder in root was counted, the threshold would be three
+      const threshold = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ADMINISTRATION_ROLE);
+      expect(threshold).to.eq.BN(2);
+    });
+
+    it("rejections on multiple permissions are tracked separately", async () => {
+      const extension = await OneTxPayment.new();
+      const oneTxPaymentVersion = await extension.version();
+
+      await colony.installExtension(ONE_TX_PAYMENT, oneTxPaymentVersion);
+      const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+      const oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
+
+      // Give extensions funding and administration rights
+      await colony.setUserRoles(1, UINT256_MAX, multisigPermissions.address, 1, rolesToBytes32([ROOT_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]));
+      await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
+
+      // Make a motion that requires two permissions
+      const action = await encodeTxData(
+        oneTxPayment,
+        "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)",
+        [1, 0, 1, 0, [USER0], [token.address], [100], 2, 0],
+      );
+
+      // If we don't have any permissions, can't create
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]), "colony-multisig-no-permissions");
+
+      // Give one permission
+      await multisigPermissions.setUserRoles(1, UINT256_MAX, USER0, 1, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
+
+      // Now can create
+      await multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
+      // And reject
+      await multisigPermissions.changeRejection(1, 0, motionId, true, { from: USER0 });
+
+      // One meets threshold, still can't reject unless creator
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "colony-multisig-permissions-not-enough-rejections");
+      await multisigPermissions.cancel.estimateGas(motionId, { from: USER0 });
+      // Give user funding, specifically in the domain
+      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE]));
+
+      // Have them reject
+      await multisigPermissions.changeRejection(2, UINT256_MAX, motionId, true, { from: USER1 });
+
+      // Now both permissions meet the threshold, can reject.
+      await multisigPermissions.cancel(motionId);
+      const motion = await multisigPermissions.getMotion(motionId);
+      expect(motion.rejected).to.be.true;
+
+      // Can't execute
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-motion-already-rejected");
+      // Can't reject again
+      await checkErrorRevert(multisigPermissions.cancel(motionId), "multisig-motion-already-rejected");
+    });
+  });
+
   describe("Executing motions", async () => {
     it("can't execute an action requiring root permissions without approvals", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
