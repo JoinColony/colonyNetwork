@@ -54,6 +54,7 @@ contract MultisigPermissions is
     uint256 domainSkillId;
     bytes32 requiredPermissions;
     uint256 overallApprovalTimestamp;
+    uint256 creationTimestamp;
     address creator;
     bool executed;
     bool rejected;
@@ -189,6 +190,7 @@ contract MultisigPermissions is
     motion.targets = _targets;
     motion.data = _data;
     motion.creator = msgSender();
+    motion.creationTimestamp = block.timestamp;
 
     for (uint256 i = 0; i < motion.data.length; i += 1) {
       uint256 actionDomainSkillId;
@@ -199,10 +201,12 @@ contract MultisigPermissions is
         _targets[i]
       );
 
+      // slither-disable-next-line incorrect-equality
       if (motion.domainSkillId == 0 && motion.requiredPermissions == 0) {
         motion.domainSkillId = actionDomainSkillId;
         motion.requiredPermissions = actionRequiredPermissions;
       } else {
+        // slither-disable-next-line incorrect-equality
         require(
           motion.domainSkillId == actionDomainSkillId &&
             motion.requiredPermissions == actionRequiredPermissions,
@@ -335,8 +339,10 @@ contract MultisigPermissions is
     Motion storage motion = motions[_motionId];
 
     require(
-      checkThreshold(_motionId, REJECTION) || msgSender() == motion.creator,
-      "colony-multisig-permissions-not-enough-rejections"
+      checkThreshold(_motionId, REJECTION) ||
+        msgSender() == motion.creator ||
+        block.timestamp > motion.creationTimestamp + 7 days,
+      "colony-multisig-not-enough-rejections"
     );
 
     motion.rejected = true;
@@ -349,10 +355,7 @@ contract MultisigPermissions is
   ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
     Motion storage motion = motions[_motionId];
 
-    require(
-      checkThreshold(_motionId, APPROVAL),
-      "colony-multisig-permissions-not-enough-approvals"
-    );
+    require(checkThreshold(_motionId, APPROVAL), "colony-multisig-not-enough-approvals");
 
     // If approvals were made, threshold lowered, and then executed,
     //  motion.overallApprovalTimestamp is 0 (since it was never set)
@@ -520,6 +523,7 @@ contract MultisigPermissions is
         // A special case for setUserRoles, which can be called by root (everywhere) and
         // by architecture (if being used in a child domain of where you have the permission)
         if (sig == SET_USER_ROLES) {
+          // slither-disable-next-line incorrect-equality
           if (domainSkillId == colony.getDomain(1).skillId) {
             permissionMask = ONLY_ROOT_ROLE_MASK;
           } else {
@@ -528,10 +532,12 @@ contract MultisigPermissions is
         }
       }
 
+      // slither-disable-next-line incorrect-equality
       if (overallDomainSkillId == 0) {
         overallDomainSkillId = domainSkillId;
         overallPermissionMask = permissionMask;
       } else {
+        // slither-disable-next-line incorrect-equality
         require(
           overallDomainSkillId == domainSkillId && overallPermissionMask == permissionMask,
           "colony-multisig-invalid-motion"
