@@ -443,7 +443,7 @@ class ReputationMinerClient {
           if (canSubmit) {
             this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
             const feeData = await getFeeData("average", this.chainId, this._adapter, this._miner.realProvider);
-            await this._miner.setFeeData(feeData);
+            this._miner.setFeeData(feeData);
             await this.submitEntry(entryIndex);
             this.submissionIndex += 1;
             this.endDoBlockChecks();
@@ -495,7 +495,7 @@ class ReputationMinerClient {
             }
           }
           const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
-          await this._miner.setFeeData(feeData);
+          this._miner.setFeeData(feeData);
 
           this._adapter.log("Invalidating pseudo-opponent in dispute");
           await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
@@ -510,7 +510,7 @@ class ReputationMinerClient {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
             const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
-            await this._miner.setFeeData(feeData);
+            this._miner.setFeeData(feeData);
             this._adapter.log("Confirming JRH in dispute");
             const tx = await this._miner.confirmJustificationRootHash();
             await tx.wait();
@@ -525,8 +525,8 @@ class ReputationMinerClient {
             const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
             if (responsePossible){
               const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
-              await this._miner.setFeeData(feeData);
-                  this._adapter.log("Responding to binary search in dispute");
+              this._miner.setFeeData(feeData);
+              this._adapter.log("Responding to binary search in dispute");
               const tx = await this._miner.respondToBinarySearchForChallenge();
               await tx.wait();
             }
@@ -543,7 +543,7 @@ class ReputationMinerClient {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
           if (responsePossible){
             const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
-            await this._miner.setFeeData(feeData);
+            this._miner.setFeeData(feeData);
               this._adapter.log("Confirming binary search in dispute");
             const tx = await this._miner.confirmBinarySearchResult();
             await tx.wait();
@@ -561,7 +561,7 @@ class ReputationMinerClient {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
           if (responsePossible){
             const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
-            await this._miner.setFeeData(feeData);
+            this._miner.setFeeData(feeData);
               this._adapter.log("Responding to challenge in dispute");
             const tx = await this._miner.respondToChallenge();
             await tx.wait();
@@ -579,7 +579,7 @@ class ReputationMinerClient {
           if (responsePossible) {
             // If so, invalidate them.
             const feeData = await getFeeData("fast", this.chainId, this._adapter, this._miner.realProvider);
-            await this._miner.setFeeData(feeData);
+            this._miner.setFeeData(feeData);
               this._adapter.log("Invalidating opponent in dispute");
             await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
             this.endDoBlockChecks();
@@ -765,7 +765,7 @@ class ReputationMinerClient {
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
       const feeData = await getFeeData("average", this.chainId, this._adapter, this._miner.realProvider);
-      await this._miner.setFeeData(feeData);
+      this._miner.setFeeData(feeData);
 
       const confirmNewHashTx = await this._miner.confirmNewHash();
 

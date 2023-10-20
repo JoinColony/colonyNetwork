@@ -1367,7 +1367,7 @@ class ReputationMiner {
     const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
     let syncFromIndex = -1;
     let foundKnownState = false;
-    filter.fromBlock = latestBlockNumber + 1;
+    filter.fromBlock = latestBlockNumber + 1; // The +1 is to accommodate the first iteration of the loop
     filter.toBlock = filter.fromBlock;
     let localHash = await this.reputationTree.getRootHash();
     let applyLogs = false;
@@ -1375,7 +1375,7 @@ class ReputationMiner {
     while (foundKnownState === false && filter.toBlock > blockNumber) {
       filter.toBlock = filter.fromBlock - 1;
       filter.fromBlock = Math.max(filter.toBlock - BLOCK_PAGING_SIZE + 1, blockNumber);
-      // console.log(filter);
+
       const partialEvents = await this.realProvider.getLogs(filter);
       events = events.concat(partialEvents.reverse());
 
@@ -1398,6 +1398,7 @@ class ReputationMiner {
       }
     }
 
+    // This means that we have not seen a known state, and so will have to sync from the start
     if (syncFromIndex === -1 && !foundKnownState) {
       syncFromIndex = events.length - 1;
     }
@@ -1483,7 +1484,7 @@ class ReputationMiner {
     }
   }
 
-  async setFeeData(_feeData){
+  setFeeData(_feeData){
     this.feeData = _feeData;
   }
 
