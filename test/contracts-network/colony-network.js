@@ -29,6 +29,7 @@ const { setupENSRegistrar } = require("../../helpers/upgradable-contracts");
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const ColonyAuthority = artifacts.require("ColonyAuthority");
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -209,6 +210,10 @@ contract("Colony Network", (accounts) => {
 
       // v4 specifically is needed for the deprecated five-parameter test
       await metaColony.addNetworkColonyVersion(4, newResolverAddress);
+    });
+
+    it("cannot deploy an authority without a colony", async () => {
+      await checkErrorRevert(ColonyAuthority.new(ADDRESS_ZERO), "colony-authority-colony-cannot-be-zero");
     });
 
     it("should allow users to create a new colony at a specific older version", async () => {

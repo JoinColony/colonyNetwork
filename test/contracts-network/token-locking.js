@@ -43,6 +43,7 @@ contract("Token Locking", (addresses) => {
   const otherUserTokens = 100;
   const userAddress = addresses[1];
   const otherUserAddress = addresses[2];
+
   let token;
   let tokenLocking;
   let otherToken;
@@ -91,6 +92,10 @@ contract("Token Locking", (addresses) => {
   });
 
   describe("when depositing tokens", async () => {
+    it("should not allow any user to update the network", async () => {
+      await checkErrorRevert(tokenLocking.setColonyNetwork(colonyNetwork.address, { from: otherUserAddress }), "ds-auth-unauthorized");
+    });
+
     it("should correctly set colony network address", async () => {
       await checkErrorRevert(tokenLocking.setColonyNetwork(ethers.constants.AddressZero), "colony-token-locking-network-cannot-be-zero");
 
@@ -401,6 +406,14 @@ contract("Token Locking", (addresses) => {
 
       const info = await tokenLocking.getUserLock(token.address, otherUserAddress);
       expect(info.pendingBalance).to.eq.BN(usersTokens);
+    });
+
+    it("should not be able to unlock users tokens with a nonexistent lock", async () => {
+      await colony.installExtension(TEST_VOTING_TOKEN, 1);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+      const votingToken = await TestVotingToken.at(extensionAddress);
+
+      await checkErrorRevert(votingToken.unlockTokenForUser(userAddress, 100), "colony-token-invalid-lockid");
     });
   });
 

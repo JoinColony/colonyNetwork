@@ -156,8 +156,6 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
 
         treeWalkingCounter += 1;
       }
-    } else {
-      require(false, "colony-global-skills-are-deprecated");
     }
 
     emit SkillAdded(skillCount, _parentSkillId);

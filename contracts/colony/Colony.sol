@@ -330,6 +330,12 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
     sig = bytes4(keccak256("finalizePayment(uint256,uint256,uint256)"));
 
+    // Remove Global Skills functions
+    sig = bytes4(keccak256("addGlobalSkill()"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, false);
+    sig = bytes4(keccak256("deprecateGlobalSkill(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, false);
+
     // If OneTxPayment extension is installed, add the new role and upgrade it
     bytes32 ONE_TX_PAYMENT = keccak256("OneTxPayment");
     IColonyNetwork network = IColonyNetwork(colonyNetworkAddress);
