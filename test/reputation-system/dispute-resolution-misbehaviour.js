@@ -531,37 +531,28 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
-
-      // Manager, evaluator, worker
-      await metaColony.emitDomainReputationReward(1, USER0, 1);
-      await metaColony.emitDomainReputationReward(1, MINER1, 1);
-      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
-      await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
 
-      let powerTwoEntries = false;
-      while (!powerTwoEntries) {
-        // Manager, evaluator, worker
+      for (let i = 0; i < 23; i += 1) {
         await metaColony.emitDomainReputationReward(1, USER0, 1);
-        await metaColony.emitDomainReputationReward(1, MINER1, 1);
-        await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
-        await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1);
+      }
 
-        const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
-        const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
-        const currentHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
-        const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNLeaves);
-        // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
-        // of updates that log entry implies by itself, plus the number of decays (the number of leaves in current state)
-        if (parseInt(nUpdates.toString(2).slice(1), 10) === 0) {
-          powerTwoEntries = true;
-        }
+      const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
+      const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
+
+      const currentHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
+      const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNLeaves);
+      // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
+      // of updates that log entry implies by itself, plus the number of decays (the number of leaves in current state)
+      console.log(nUpdates.toString());
+      if (nUpdates.toNumber() !== 64) {
+        throw Error("Should be a power of two");
       }
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
@@ -988,7 +979,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nLogEntries).to.eq.BN(9);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 28, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 30, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 17, 123456);

@@ -44,7 +44,10 @@ contract("Contract Storage", (accounts) => {
     token = await Token.new("name", "symbol", 18);
     await token.unlock();
 
-    ({ colony, localSkillId } = await setupColony(colonyNetwork, token.address));
+    colony = await setupColony(colonyNetwork, token.address);
+
+    await colony.addLocalSkill();
+    localSkillId = await colonyNetwork.getSkillCount();
 
     tokenLockingAddress = await colonyNetwork.getTokenLocking();
     const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);

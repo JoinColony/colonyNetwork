@@ -277,8 +277,6 @@ contract("Colony Expenditure", (accounts) => {
     });
 
     it.skip("should not allow owners to update a slot skill with a deprecated local skill", async () => {
-      await colony.addLocalSkill();
-      const localSkillId = await colonyNetwork.getSkillCount();
       await colony.deprecateLocalSkill(localSkillId, true);
 
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN }), "colony-not-valid-local-skill");

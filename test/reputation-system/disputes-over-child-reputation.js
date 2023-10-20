@@ -144,7 +144,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerClaimNoOriginReputation(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-        42, // Passing in update number for colony wide skillId: 5, user: 0
+        50, // Passing in update number for colony wide skillId: 5, user: 0
         1,
       );
 
@@ -199,7 +199,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerClaimNoUserChildReputation(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-        42, // Passing in update number for colony wide skillId: 5, user: 0
+        46, // Passing in update number for colony wide skillId: 5, user: 0
         1,
       );
 
@@ -223,8 +223,8 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
     });
 
     it("if the dispute involves a child skill that doesn't exist, should resolve correctly", async () => {
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
@@ -376,7 +376,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-        36, // Passing in update number for colony wide skillId: 5, user: 0
+        40, // Passing in update number for colony wide skillId: 5, user: 0
         "0xfffffffffffffffffffffff",
       );
 
@@ -538,7 +538,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
-        32, // Passing in colony wide update number for skillId: 4, user: 0
+        34, // Passing in colony wide update number for skillId: 4, user: 0
         "0xfffffffffffffffffffffff",
       );
       // Moving the state to the bad client
@@ -833,7 +833,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
-        28, // Passing in update number for skillId: 5, user: 0
+        30, // Passing in update number for skillId: 5, user: 0
         "0xfffffffffff",
       );
       // Moving the state to the bad client
@@ -885,7 +885,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
-        31, // Passing in update number for skillId: 5, user: 0
+        37, // Passing in update number for skillId: 5, user: 0
         "0xfffffffffffffffffffffff",
       );
       // Moving the state to the bad client
@@ -1021,7 +1021,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
-        28, // Passing in colony wide update number for skillId: 5, user: 0
+        32, // Passing in colony wide update number for skillId: 5, user: 0
         "0xfffffffff",
       );
       // Moving the state to the bad client
