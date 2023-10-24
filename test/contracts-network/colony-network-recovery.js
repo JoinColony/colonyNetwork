@@ -410,7 +410,7 @@ contract("Colony Network Recovery", (accounts) => {
           await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
           const repCycle = await getActiveRepCycle(colonyNetwork);
-          const invalidEntry = await repCycle.getReputationUpdateLogEntry(4);
+          const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
 
           await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
@@ -424,7 +424,7 @@ contract("Colony Network Recovery", (accounts) => {
 
           await colonyNetwork.setReplacementReputationUpdateLogEntry(
             repCycle.address,
-            4,
+            5,
             invalidEntry.user,
             0,
             invalidEntry.skillId,

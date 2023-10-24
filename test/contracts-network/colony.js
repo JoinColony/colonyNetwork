@@ -469,7 +469,9 @@ contract("Colony", (accounts) => {
 
       await tasksPayments.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: USER0 });
       const taskId = await colony.getTaskCount();
-      const { fundingPotId } = await colony.getTask(taskId);
+      const { fundingPotId, status } = await colony.getTask(taskId);
+
+      expect(status).to.eq.BN(0); // Active
 
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
@@ -482,7 +484,9 @@ contract("Colony", (accounts) => {
 
       await tasksPayments.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, GLOBAL_SKILL_ID);
       const paymentId = await colony.getPaymentCount();
-      const { fundingPotId } = await colony.getPayment(paymentId);
+      const { fundingPotId, finalized } = await colony.getPayment(paymentId);
+
+      expect(finalized).to.be.false;
 
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);

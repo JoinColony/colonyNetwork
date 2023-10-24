@@ -91,7 +91,7 @@ contract("Colony contract upgrade", (accounts) => {
       assert.isTrue(y);
     });
 
-    it("should return correct total number of tasks", async function () {
+    it("should return correct total number of expenditures", async function () {
       const updatedExpenditureCount = await updatedColony.getExpenditureCount();
       assert.equal(2, updatedExpenditureCount.toNumber());
     });

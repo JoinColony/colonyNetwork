@@ -112,10 +112,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function bootstrapColony(address[] memory _users, int[] memory _amounts) public stoppable auth {
     require(
-      DEPRECATED_taskCount == 0 && DEPRECATED_paymentCount == 0,
+      DEPRECATED_taskCount == 0 && DEPRECATED_paymentCount == 0 && expenditureCount == 0,
       "colony-not-in-bootstrap-mode"
     );
-    require(expenditureCount == 0, "colony-not-in-bootstrap-mode");
     require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
     for (uint256 i = 0; i < _users.length; i++) {

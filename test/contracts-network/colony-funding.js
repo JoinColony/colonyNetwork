@@ -382,7 +382,7 @@ contract("Colony Funding", (accounts) => {
       expect(colonyPotBalance).to.eq.BN(99);
     });
 
-    it("should not allow funds to be removed from a expenditure with payouts to go", async () => {
+    it("should not allow funds to be removed from an expenditure with payouts to go", async () => {
       await fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
       const expenditureId = await setupFundedExpenditure({ colonyNetwork, colony, tokenAddress: otherToken.address });
       await colony.finalizeExpenditure(expenditureId);
