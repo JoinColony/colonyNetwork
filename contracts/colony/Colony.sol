@@ -324,6 +324,19 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    // Remove Task & Payment functions
+    sig = bytes4(keccak256("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
+    sig = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
+    sig = bytes4(keccak256("setPaymentRecipient(uint256,uint256,uint256,address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
+    sig = bytes4(keccak256("setPaymentSkill(uint256,uint256,uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
+    sig = bytes4(keccak256("setPaymentPayout(uint256,uint256,uint256,address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
+    sig = bytes4(keccak256("finalizePayment(uint256,uint256,uint256)"));
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
