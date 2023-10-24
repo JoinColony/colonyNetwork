@@ -151,10 +151,9 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
     prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
 
-    uint256 idx;
     uint256 slot;
 
-    for (idx = 0; idx < _workers.length; idx++) {
+    for (uint256 idx; idx < _workers.length; idx++) {
       // If a new worker, start a new slot
       if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
         require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
@@ -231,10 +230,9 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       _amounts
     );
 
-    uint256 idx;
     uint256 slot;
 
-    for (idx = 0; idx < _workers.length; idx++) {
+    for (uint256 idx; idx < _workers.length; idx++) {
       // If a new worker, start a new slot
       if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
         require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");

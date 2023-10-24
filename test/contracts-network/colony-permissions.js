@@ -484,7 +484,7 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should not allow operations on nonexistent domains", async () => {
-      // Can make a expenditure in an existing domain
+      // Can make an expenditure in an existing domain
       await colony.makeExpenditure(1, UINT256_MAX, 1);
 
       // But can't give a bad permission domain
