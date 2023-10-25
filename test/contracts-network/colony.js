@@ -5,7 +5,15 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
 const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, GLOBAL_SKILL_ID, HASHZERO } = require("../../helpers/constants");
-const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
+const {
+  getTokenArgs,
+  web3GetBalance,
+  checkErrorRevert,
+  expectNoEvent,
+  expectAllEvents,
+  expectEvent,
+  encodeTxData,
+} = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters, makeExpenditure, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -18,6 +26,7 @@ const Resolver = artifacts.require("Resolver");
 const TasksPayments = artifacts.require("TasksPayments");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
+const ColonyAuthority = artifacts.require("ColonyAuthority");
 
 contract("Colony", (accounts) => {
   let colony;
@@ -418,7 +427,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe("when deprecating Tasks and Payments", () => {
+  describe("when viewing deprecated Tasks and Payments", () => {
     let tasksPayments;
 
     beforeEach(async () => {
@@ -430,6 +439,25 @@ contract("Colony", (accounts) => {
       await colonyResolver.register("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)", tasksPaymentsContract.address);
       await colonyResolver.register("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)", tasksPaymentsContract.address);
 
+      // Add to the authority
+      const colonyAuthorityAddress = await colony.authority();
+      const authority = await ColonyAuthority.at(colonyAuthorityAddress);
+
+      const ADMINISTRATION_ROLE = 6;
+      const action1 = await encodeTxData(authority, "setRoleCapability", [
+        ADMINISTRATION_ROLE,
+        colony.address,
+        web3.utils.soliditySha3("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)").slice(0, 10),
+        true,
+      ]);
+      const action2 = await encodeTxData(authority, "setRoleCapability", [
+        ADMINISTRATION_ROLE,
+        colony.address,
+        web3.utils.soliditySha3("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)").slice(0, 10),
+        true,
+      ]);
+
+      await colony.makeArbitraryTransactions([colonyAuthorityAddress, colonyAuthorityAddress], [action1, action2], true);
       tasksPayments = await TasksPayments.at(colony.address);
     });
 
