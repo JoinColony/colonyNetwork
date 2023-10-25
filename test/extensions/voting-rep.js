@@ -17,6 +17,7 @@ const {
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
+  UINT128_MAX,
 } = require("../../helpers/constants");
 
 const {
@@ -33,7 +34,7 @@ const {
   getBlockTime,
 } = require("../../helpers/test-helper");
 
-const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { setupRandomColony, getMetaTransactionParameters, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
@@ -53,6 +54,7 @@ const OneTxPayment = artifacts.require("OneTxPayment");
 const Token = artifacts.require("Token");
 const TokenLocking = artifacts.require("TokenLocking");
 const VotingReputation = artifacts.require("VotingReputation");
+const StagedExpenditure = artifacts.require("StagedExpenditure");
 
 const VOTING_REPUTATION = soliditySha3("VotingReputation");
 
@@ -3157,6 +3159,88 @@ contract("Voting Reputation", (accounts) => {
 
       const motion = await voting.getMotion(motionId);
       expect(motion.altTarget).to.equal(oneTxPayment.address);
+    });
+  });
+
+  describe("interaction with other extensions", async () => {
+    it("can release a staked expenditure via a motion, even if owner has no permissions", async () => {
+      const STAGED_EXPENDITURE = soliditySha3("StagedExpenditure");
+      const extension = await StagedExpenditure.new();
+      const stagedExpenditureVersion = await extension.version();
+
+      await colony.installExtension(STAGED_EXPENDITURE, stagedExpenditureVersion);
+
+      const stagedExpenditureAddress = await colonyNetwork.getExtensionInstallation(STAGED_EXPENDITURE, colony.address);
+      const stagedExpenditure = await StagedExpenditure.at(stagedExpenditureAddress);
+
+      await colony.setArbitrationRole(1, UINT256_MAX, stagedExpenditure.address, 1, true);
+      await colony.setAdministrationRole(1, UINT256_MAX, stagedExpenditure.address, 1, true);
+      await colony.setFundingRole(1, UINT256_MAX, USER0, 1, true);
+
+      // Set up a staked expenditure
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+      const expenditure = await colony.getExpenditure(expenditureId);
+
+      await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
+
+      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+
+      await colony.lockExpenditure(expenditureId, { from: USER0 });
+
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD.muln(3),
+        token.address,
+        { from: USER0 },
+      );
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      // Remove all roles from user
+      await colony.setUserRoles(1, UINT256_MAX, USER0, 1, bn2bytes32(new BN(0)));
+      const roles = await colony.getUserRoles(USER0, 1);
+      expect(roles).to.equal(bn2bytes32(new BN(0)));
+
+      // Create a motion to release the staged payment and claim it
+      const action1 = await encodeTxData(colony, "setExpenditureState", [
+        1,
+        UINT256_MAX,
+        expenditureId,
+        26,
+        [false, true],
+        [bn2bytes32(new BN(0)), bn2bytes32(new BN(1))],
+        bn2bytes32(new BN(0)),
+      ]);
+
+      const action2 = await encodeTxData(colony, "claimExpenditurePayout", [expenditureId, 0, token.address]);
+      const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
+
+      // Create a motion for this
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+      await forwardTime(STAKE_PERIOD, this);
+
+      const balanceBefore = await token.balanceOf(USER1);
+
+      const { logs } = await voting.finalizeMotion(motionId);
+      expect(logs[0].args.executed).to.be.true;
+
+      const balanceAfter = await token.balanceOf(USER1);
+
+      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(WAD.sub(WAD.divn(100).addn(1))); // Network fee
     });
   });
 });
