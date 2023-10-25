@@ -10,7 +10,7 @@ contract TasksPayments is ColonyStorage {
     uint256 _domainId,
     uint256 _skillId,
     uint256 _dueDate
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
+  ) public stoppable {
     DEPRECATED_taskCount += 1;
 
     fundingPotCount += 1;
@@ -55,12 +55,7 @@ contract TasksPayments is ColonyStorage {
     uint256 _amount,
     uint256 _domainId,
     uint256 _skillId
-  )
-    public
-    stoppable
-    authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-    returns (uint256)
-  {
+  ) public stoppable returns (uint256) {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     DEPRECATED_paymentCount += 1;
 
