@@ -437,12 +437,16 @@ interface ColonyDataTypes {
     uint256 domainId;
     uint256[] skills;
     mapping (uint8 => Role) roles;
+    // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
     mapping (uint8 => mapping (address => uint256)) payouts;
   }
 
   struct Role {
+    // Address of the user for the given role
     address payable user;
+    // Whether the user failed to submit their rating
     bool rateFail;
+    // Rating the user received
     TaskRatings rating;
   }
 
