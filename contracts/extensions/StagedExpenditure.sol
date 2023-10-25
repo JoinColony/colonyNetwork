@@ -101,11 +101,74 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     uint256 _slot,
     address[] memory _tokens
   ) public {
-    require(stagedExpenditures[_expenditureId], "staged-expenditure-not-staged-expenditure");
-
     Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
     require(e.owner == msgSender(), "staged-expenditure-not-owner");
     require(e.status == ColonyDataTypes.ExpenditureStatus.Finalized, "expenditure-not-finalized");
+
+    releaseStagedPaymentFunctionality(
+      _permissionDomainId,
+      _childSkillIndex,
+      _expenditureId,
+      _slot,
+      _tokens
+    );
+  }
+
+  /// @notice Release a staged payment slot and claim tokens
+  /// @dev Anyone with arbitration permission can call this, must be in finalized state
+  /// @param _permissionDomainId The domainId in which the caller has the arbitration permission
+  /// @param _childSkillIndex The index that the `_expenditureId` is relative to `_permissionDomainId`,
+  /// @param _extensionPermissionDomainId The domainId in which the extension has the arbitration permission
+  /// @param _extensionChildSkillIndex The index that the `_expenditureId` is relative to `_permissionDomainId`,
+  /// @param _expenditureId The id of the expenditure
+  /// @param _slot The slot being released
+  /// @param _tokens An array of payment tokens associated with the slot
+  function releaseStagedPaymentViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _extensionPermissionDomainId,
+    uint256 _extensionChildSkillIndex,
+    uint256 _expenditureId,
+    uint256 _slot,
+    address[] memory _tokens
+  ) public {
+    Expenditure memory e = IColony(colony).getExpenditure(_expenditureId);
+    require(e.status == ColonyDataTypes.ExpenditureStatus.Finalized, "expenditure-not-finalized");
+
+    require(
+      colony.hasInheritedUserRole(
+        msgSender(),
+        _permissionDomainId,
+        ColonyDataTypes.ColonyRole.Arbitration,
+        _childSkillIndex,
+        e.domainId
+      ),
+      "staged-expenditure-caller-not-arbitration"
+    );
+
+    releaseStagedPaymentFunctionality(
+      _extensionPermissionDomainId,
+      _extensionChildSkillIndex,
+      _expenditureId,
+      _slot,
+      _tokens
+    );
+  }
+
+  /// @notice Private function that goes through the mechanics of releasing a staged payment slot and claim tokens
+  /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
+  /// @param _childSkillIndex The index that the `_expenditureId` is relative to `_permissionDomainId`,
+  /// @param _expenditureId The id of the expenditure
+  /// @param _slot The slot being released
+  /// @param _tokens An array of payment tokens associated with the slot
+  function releaseStagedPaymentFunctionality(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _expenditureId,
+    uint256 _slot,
+    address[] memory _tokens
+  ) private {
+    require(stagedExpenditures[_expenditureId], "staged-expenditure-not-staged-expenditure");
 
     bool[] memory mask = new bool[](2);
     mask[0] = false;

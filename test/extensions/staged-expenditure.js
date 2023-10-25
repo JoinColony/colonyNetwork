@@ -151,6 +151,56 @@ contract("Staged Expenditure", (accounts) => {
       await colony.claimExpenditurePayout(expenditureId, 0, token.address);
     });
 
+    it("can release a staged payment with the arbitration permission", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+      const expenditure = await colony.getExpenditure(expenditureId);
+      const domain1 = await colony.getDomain(1);
+
+      await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
+
+      await colony.setExpenditureRecipients(expenditureId, [0, 1], [USER1, USER1], { from: USER0 });
+      await colony.setExpenditureClaimDelays(expenditureId, [0, 1], [UINT128_MAX, UINT128_MAX], { from: USER0 });
+      await colony.setExpenditurePayouts(expenditureId, [0, 1], token.address, [WAD, WAD.muln(2)], { from: USER0 });
+
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD.muln(3),
+        token.address,
+        { from: USER0 },
+      );
+
+      // Cannot release stage if not finalized
+      await checkErrorRevert(
+        stagedExpenditure.releaseStagedPaymentViaArbitration(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
+        "expenditure-not-finalized",
+      );
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      // Cannot claim until the slot is released
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+
+      // Cannot release stage if no arbitration permission
+      await checkErrorRevert(
+        stagedExpenditure.releaseStagedPaymentViaArbitration(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER1 }),
+        "staged-expenditure-caller-not-arbitration",
+      );
+
+      await colony.setArbitrationRole(1, UINT256_MAX, USER1, 1, true);
+
+      await stagedExpenditure.releaseStagedPaymentViaArbitration(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER1 });
+      await colony.claimExpenditurePayout(expenditureId, 0, token.address);
+    });
+
     it("can't mark an expenditure as staged if extension is deprecated", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
@@ -316,6 +366,8 @@ contract("Staged Expenditure", (accounts) => {
     it("cannot release a stage if not a staged payment", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
+
+      await colony.finalizeExpenditure(expenditureId);
 
       await checkErrorRevert(
         stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, 0, [token.address], { from: USER0 }),
