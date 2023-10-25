@@ -48,6 +48,9 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
   try {
     feeData = await provider.getFeeData();
     delete feeData.lastBaseFeePerGas;
+    if (feeData.maxFeePerGas) {
+      delete feeData.gasPrice;
+    }
     // Update gas prices from whichever oracle
     try {
       const request = await axios.request(options);
@@ -63,7 +66,6 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
         // Increase the max fee per gas by the same amount (not the same ratio)
         feeData.maxFeePerGas = feeData.maxFeePerGas.add(newMaxPriorityFeePerGas).sub(feeData.maxPriorityFeePerGas);
         feeData.maxPriorityFeePerGas = newMaxPriorityFeePerGas;
-        delete feeData.gasPrice;
         return feeData;
       }
 
