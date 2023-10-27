@@ -301,18 +301,15 @@ contract ColonyFunding is
       );
     }
 
-    // If this pot is associated with an Expenditure, prevent money
-    // being taken from the pot if the remaining balance is less than
-    // the amount needed for payouts, unless the task was cancelled.
     if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
+      // Prevent money being removed if the remaining balance is insufficient for payouts,
+      //  unless the expenditure was cancelled
       require(
         expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled ||
           fromPot.balance[_token] >= fromPot.payouts[_token],
         "colony-funding-expenditure-bad-state"
       );
-    }
 
-    if (fromPot.associatedType == FundingPotAssociatedType.Expenditure) {
       uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
