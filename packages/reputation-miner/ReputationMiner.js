@@ -1382,15 +1382,11 @@ class ReputationMiner {
       // Run through events backwards find the most recent one that we know...
       for (let i = 0 ; i < events.length ; i += 1){
         const event = events[i];
-        const hash = event.data.slice(0, 66);
-        const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
-        // Do we have such a state?
-        const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
-        if (res.n === 1){
-          console.log("KNOWN")
+        if (await this.cycleCompleteEventIsKnownState(event)){
           // We know that state! We can just sync from the next one...
           syncFromIndex = i - 1;
-          await this.loadState(hash);
+          const knownHash = event.data.slice(0, 66);
+          await this.loadState(knownHash);
           applyLogs = true;
           foundKnownState = true;
           break;
@@ -1466,6 +1462,14 @@ class ReputationMiner {
     } else {
       console.log("Sync successful, even if there were warnings above");
     }
+  }
+
+  async cycleCompleteEventIsKnownState(event) {
+    const hash = event.data.slice(0, 66);
+    const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+    // Do we have such a state?
+    const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
+    return res.n === 1;
   }
 
   async printCurrentState() {
