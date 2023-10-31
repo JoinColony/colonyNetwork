@@ -110,52 +110,46 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
 
   function addSkill(
     uint _parentSkillId
-  )
-    public
-    stoppable
-    skillExists(_parentSkillId)
-    allowedToAddSkill(_parentSkillId == 0)
-    returns (uint256)
-  {
+  ) public stoppable skillExists(_parentSkillId) allowedToAddSkill returns (uint256) {
+    require(_parentSkillId > 0, "colony-network-invalid-parent-skill");
+
     Skill storage parentSkill = skills[_parentSkillId];
 
     skillCount += 1;
     Skill memory s;
 
-    if (_parentSkillId != 0) {
-      s.nParents = parentSkill.nParents + 1;
-      skills[skillCount] = s;
+    s.nParents = parentSkill.nParents + 1;
+    skills[skillCount] = s;
 
-      uint parentSkillId = _parentSkillId;
-      bool notAtRoot = true;
-      uint powerOfTwo = 1;
-      uint treeWalkingCounter = 1;
+    uint parentSkillId = _parentSkillId;
+    bool notAtRoot = true;
+    uint powerOfTwo = 1;
+    uint treeWalkingCounter = 1;
 
-      // Walk through the tree parent skills up to the root
-      while (notAtRoot) {
-        // Add the new skill to each parent children
-        parentSkill.children.push(skillCount);
-        parentSkill.nChildren += 1;
+    // Walk through the tree parent skills up to the root
+    while (notAtRoot) {
+      // Add the new skill to each parent children
+      parentSkill.children.push(skillCount);
+      parentSkill.nChildren += 1;
 
-        // When we are at an integer power of two steps away from the newly added skill (leaf) node,
-        // add the current parent skill to the new skill's parents array
-        if (treeWalkingCounter == powerOfTwo) {
-          // slither-disable-next-line controlled-array-length
-          skills[skillCount].parents.push(parentSkillId);
-          powerOfTwo = powerOfTwo * 2;
-        }
-
-        // Check if we've reached the root of the tree yet (it has no parents)
-        // Otherwise get the next parent
-        if (parentSkill.nParents == 0) {
-          notAtRoot = false;
-        } else {
-          parentSkillId = parentSkill.parents[0];
-          parentSkill = skills[parentSkill.parents[0]];
-        }
-
-        treeWalkingCounter += 1;
+      // When we are at an integer power of two steps away from the newly added skill (leaf) node,
+      // add the current parent skill to the new skill's parents array
+      if (treeWalkingCounter == powerOfTwo) {
+        // slither-disable-next-line controlled-array-length
+        skills[skillCount].parents.push(parentSkillId);
+        powerOfTwo = powerOfTwo * 2;
       }
+
+      // Check if we've reached the root of the tree yet (it has no parents)
+      // Otherwise get the next parent
+      if (parentSkill.nParents == 0) {
+        notAtRoot = false;
+      } else {
+        parentSkillId = parentSkill.parents[0];
+        parentSkill = skills[parentSkill.parents[0]];
+      }
+
+      treeWalkingCounter += 1;
     }
 
     emit SkillAdded(skillCount, _parentSkillId);
@@ -182,7 +176,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   function deprecateSkill(
     uint256 _skillId,
     bool _deprecated
-  ) public stoppable allowedToAddSkill(skills[_skillId].nParents == 0) returns (bool) {
+  ) public stoppable allowedToAddSkill returns (bool) {
     require(
       skills[_skillId].nParents == 0,
       "colony-network-deprecate-local-skills-temporarily-disabled"

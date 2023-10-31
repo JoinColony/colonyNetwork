@@ -329,6 +329,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     sig = bytes4(keccak256("setPaymentPayout(uint256,uint256,uint256,address,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
     sig = bytes4(keccak256("finalizePayment(uint256,uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
 
     // Remove Global Skills functions
     sig = bytes4(keccak256("addGlobalSkill()"));
