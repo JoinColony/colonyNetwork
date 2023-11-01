@@ -42,7 +42,7 @@ const MetatransactionBroadcaster = require("../../packages/metatransaction-broad
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
 
 const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
-const deployOldExtensionVersion = require("../../scripts/deployOldExtensionVersion");
+const { deployOldExtensionVersion } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -2777,14 +2777,20 @@ contract("Voting Reputation", (accounts) => {
 
   describe("upgrading the extension from v9", async () => {
     before(async () => {
-      // V9 is `glwss4`,
-      await deployOldExtensionVersion(
-        "VotingReputation",
-        "IVotingReputation",
-        ["VotingReputation,VotingReputationMisalignedRecovery"],
-        "glwss4",
-        colonyNetwork,
-      );
+      // See if already deployed
+
+      const resolverAddress = await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 9);
+
+      if (resolverAddress === ADDRESS_ZERO) {
+        // V9 is `glwss4`,
+        await deployOldExtensionVersion(
+          "VotingReputation",
+          "IVotingReputation",
+          ["VotingReputation,VotingReputationMisalignedRecovery"],
+          "glwss4",
+          colonyNetwork,
+        );
+      }
       // We also need to deploy all tags from glwss4 to the most recent release
       // though we can skip any tags where the contract did not change
       // I don't think there's an elegant way to automate this, as the deployOldExtensionVersion

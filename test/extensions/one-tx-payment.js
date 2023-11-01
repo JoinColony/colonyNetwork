@@ -29,6 +29,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const OneTxPayment = artifacts.require("OneTxPayment");
 
 const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
+const { deployOldExtensionVersion, deployOldColonyVersion } = require("../../scripts/deployOldUpgradeableVersion");
 
 contract("One transaction payments", (accounts) => {
   let colony;
@@ -526,6 +527,75 @@ contract("One transaction payments", (accounts) => {
       const balanceBefore = await token.balanceOf(USER1);
       expect(balanceBefore).to.be.zero;
       await checkErrorRevert(oneTxPayment.makePayment(2, 0, 1, 0, [USER1], [token.address], [10], 2, GLOBAL_SKILL_ID), "ds-auth-unauthorized");
+    });
+  });
+
+  describe("upgrading the extension from v5 and the colony from v13", async () => {
+    before(async () => {
+      // V5 is `glwss4`,
+      await deployOldExtensionVersion("OneTxPayment", "OneTxPayment", ["OneTxPayment"], "glwss4", colonyNetwork);
+
+      await deployOldColonyVersion(
+        "Colony",
+        "IMetaColony",
+        [
+          // eslint-disable-next-line max-len
+          "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyPayment,ColonyRewards,ColonyRoles,ColonyTask,ContractRecovery,ColonyArbitraryTransaction",
+        ],
+        "glwss4",
+        colonyNetwork,
+      );
+    });
+
+    beforeEach(async () => {
+      await colonyNetwork.createColony(token.address, 13, "", "");
+      const colonyIdx = await colonyNetwork.getColonyCount();
+      const colonyAddress = await colonyNetwork.getColony(colonyIdx);
+      colony = await IMetaColony.at(colonyAddress);
+
+      await colony.installExtension(ONE_TX_PAYMENT, 5);
+
+      const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+      oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
+      expect(await oneTxPayment.version()).to.eq.BN(5);
+
+      // Award permissions mirroring the frontend.
+      await colony.setAdministrationRole(1, UINT256_MAX, oneTxPayment.address, 1, true);
+      await colony.setFundingRole(1, UINT256_MAX, oneTxPayment.address, 1, true);
+    });
+
+    it("should not be allowed to upgrade the extension without first upgrading the colony", async () => {
+      await checkErrorRevert(colony.upgradeExtension(ONE_TX_PAYMENT, 6), "voting-rep-upgrade-colony-first");
+    });
+
+    it("when we upgrade the colony, the extension should be upgraded too and be given the new permission", async () => {
+      expect(await colony.hasUserRole(oneTxPayment.address, 1, ARBITRATION_ROLE)).to.be.false;
+      expect(await oneTxPayment.version()).to.eq.BN(5);
+      await colony.upgrade(14);
+      expect(await oneTxPayment.version()).to.eq.BN(6);
+      expect(await colony.hasUserRole(oneTxPayment.address, 1, ARBITRATION_ROLE)).to.be.true;
+    });
+
+    it("if the extension doesn't have administration permission in the root domain, we do upgrade, but don't award permission", async () => {
+      await colony.setAdministrationRole(1, UINT256_MAX, oneTxPayment.address, 1, false);
+      expect(await colony.hasUserRole(oneTxPayment.address, 1, ARBITRATION_ROLE)).to.be.false;
+      expect(await oneTxPayment.version()).to.eq.BN(5);
+      await colony.upgrade(14);
+      expect(await oneTxPayment.version()).to.eq.BN(6);
+      expect(await colony.hasUserRole(oneTxPayment.address, 1, ARBITRATION_ROLE)).to.be.false;
+    });
+
+    it("a colony can still upgrade even if Voting Reputation not installed", async () => {
+      await colony.uninstallExtension(ONE_TX_PAYMENT);
+      expect(await colony.version()).to.eq.BN(13);
+      await colony.upgrade(14);
+      expect(await colony.version()).to.eq.BN(14);
+    });
+
+    it("a colony can still upgrade even if Voting Reputation is more up-to-date than we might expect", async () => {
+      await colony.uninstallExtension(ONE_TX_PAYMENT);
+      await colony.installExtension(ONE_TX_PAYMENT, 6);
+      await colony.upgrade(14);
     });
   });
 });
