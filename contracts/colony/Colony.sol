@@ -28,6 +28,7 @@ import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
+import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 
 contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
   // This function, exactly as defined, is used in build scripts. Take care when updating.
@@ -337,6 +338,39 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     sig = bytes4(keccak256("setPaymentPayout(uint256,uint256,uint256,address,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
     sig = bytes4(keccak256("finalizePayment(uint256,uint256,uint256)"));
+
+    // If OneTxPayment extension is installed, if it has permissions in root, add the new role
+    // and upgrade it
+    bytes32 ONE_TX_PAYMENT = keccak256("OneTxPayment");
+    address oneTxPaymentAddress = IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
+      ONE_TX_PAYMENT,
+      address(this)
+    );
+    if (oneTxPaymentAddress != address(0x00)) {
+      // Then it's installed. Is it version 5?
+      uint256 installedVersion = ColonyExtension(oneTxPaymentAddress).version();
+      require(installedVersion >= 5, "colony-upgrade-one-tx-payment-to-6");
+      if (installedVersion == 5) {
+        // Does it have administration permission in root?
+        if (
+          ColonyAuthority(address(authority)).hasUserRole(
+            oneTxPaymentAddress,
+            1,
+            uint8(ColonyRole.Administration)
+          )
+        ) {
+          // Add arbitration permission in root
+          ColonyAuthority(address(authority)).setUserRole(
+            oneTxPaymentAddress,
+            1,
+            uint8(ColonyRole.Arbitration),
+            true
+          );
+        }
+        // Upgrade extension
+        IColonyNetwork(colonyNetworkAddress).upgradeExtension(ONE_TX_PAYMENT, 6);
+      }
+    }
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

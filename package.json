@@ -88,6 +88,7 @@
     "@colony/eslint-config-colony": "9.0.2",
     "@openzeppelin/contracts": "^4.9.3",
     "@solidity-parser/parser": "^0.14.2",
+    "@truffle/contract": "^4.6.31",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
     "async-request": "^1.2.0",
     "axios": "^0.27.2",
