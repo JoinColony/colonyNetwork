@@ -1361,34 +1361,40 @@ class ReputationMiner {
     if (!blockNumber) {
       throw new Error("Block number not supplied to sync");
     }
-    let events = [];
-    const latestBlockNumber = await this.realProvider.getBlockNumber();
 
-    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
-    let syncFromIndex = -1;
-    let foundKnownState = false;
-    filter.fromBlock = latestBlockNumber + 1; // The +1 is to accommodate the first iteration of the loop
-    filter.toBlock = filter.fromBlock;
     let localHash = await this.reputationTree.getRootHash();
+    let foundKnownState = false;
     let applyLogs = false;
+    let syncFromIndex = -1;
 
-    while (foundKnownState === false && filter.toBlock > blockNumber) {
+    const latestBlockNumber = await this.realProvider.getBlockNumber();
+    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
+    filter.fromBlock = latestBlockNumber + 1; // +1 to accommodate the first loop iteration
+    filter.toBlock = filter.fromBlock;
+
+    let events = [];
+    while (filter.toBlock > blockNumber && !foundKnownState ) {
+      // Create a span of events up to BLOCK_PAGING_SIZE in length
       filter.toBlock = filter.fromBlock - 1;
       filter.fromBlock = Math.max(filter.toBlock - BLOCK_PAGING_SIZE + 1, blockNumber);
 
+      // Get new span of events, [fromBlock:oldset ... toBlock:newest]
       const partialEvents = await this.realProvider.getLogs(filter);
+      // Build a complete reversed array of events, [newest ... oldest]
       events = events.concat(partialEvents.reverse());
 
-      // Run through events backwards find the most recent one that we know...
-      for (let i = 0 ; i < events.length ; i += 1){
+      // Run through events to find the most recent one that we know...
+      for (let i = 0 ; i < events.length ; i += 1) {
         const event = events[i];
-        if (await this.cycleCompleteEventIsKnownState(event)){
+        if (await this.cycleCompleteEventIsKnownState(event)) {
           // We know that state! We can just sync from the next one...
-          syncFromIndex = i - 1;
           const knownHash = event.data.slice(0, 66);
           await this.loadState(knownHash);
-          applyLogs = true;
+
           foundKnownState = true;
+          applyLogs = true;
+          syncFromIndex = i - 1;
+
           break;
         }
       }
