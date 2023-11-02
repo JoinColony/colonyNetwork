@@ -16,6 +16,8 @@ const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
 
 const DAY_IN_SECONDS = 60 * 60 * 24;
 
+const BLOCK_PAGING_SIZE = 25000;
+
 class ReputationMiner {
   /**
    * Constructor for ReputationMiner
@@ -96,7 +98,7 @@ class ReputationMiner {
 
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
-    this.gasPrice = ethers.utils.hexlify(20000000000);
+    this.feeData = {};
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
     this.db = new Database(this.dbPath, { });
@@ -763,7 +765,7 @@ class ReputationMiner {
     }
 
     // Submit that entry
-    return repCycle.submitRootHash(hash, nLeaves, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.submitRootHash(hash, nLeaves, jrh, entryIndex, { gasLimit: gasEstimate, ...this.feeData });
   }
 
   async getEntryIndex(startIndex = 1) {
@@ -1017,7 +1019,7 @@ class ReputationMiner {
       index,
       siblings1,
       siblings2,
-      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+      { gasLimit: gasEstimate, ...this.feeData }
     );
   }
 
@@ -1107,7 +1109,7 @@ class ReputationMiner {
       siblings,
       {
         gasLimit: gasEstimate,
-        gasPrice: this.gasPrice
+        ...this.feeData
       }
     );
   }
@@ -1139,7 +1141,7 @@ class ReputationMiner {
 
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
       gasLimit: gasEstimate,
-      gasPrice: this.gasPrice
+      ...this.feeData
     });
   }
 
@@ -1243,7 +1245,7 @@ class ReputationMiner {
     }
 
     return repCycle.respondToChallenge(...functionArgs,
-      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+      { gasLimit: gasEstimate, ...this.feeData }
     );
   }
 
@@ -1263,7 +1265,7 @@ class ReputationMiner {
     } catch (err){
       gasEstimate = ethers.BigNumber.from(4000000);
     }
-    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, ...this.feeData });
   }
 
 
@@ -1359,28 +1361,48 @@ class ReputationMiner {
     if (!blockNumber) {
       throw new Error("Block number not supplied to sync");
     }
-    // Get the events
-    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
-    filter.fromBlock = blockNumber;
-    const events = await this.realProvider.getLogs(filter);
-    let localHash = await this.reputationTree.getRootHash();
-    let applyLogs = false;
 
-    // Run through events backwards find the most recent one that we know...
-    let syncFromIndex = 0;
-    for (let i = events.length - 1 ; i >= 0 ; i -= 1){
-      const event = events[i];
-      const hash = event.data.slice(0, 66);
-      const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
-      // Do we have such a state?
-      const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
-      if (res.n === 1){
-        // We know that state! We can just sync from the next one...
-        syncFromIndex = i + 1;
-        await this.loadState(hash);
-        applyLogs = true;
-        break;
+    let localHash = await this.reputationTree.getRootHash();
+    let foundKnownState = false;
+    let applyLogs = false;
+    let syncFromIndex = -1;
+
+    const latestBlockNumber = await this.realProvider.getBlockNumber();
+    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
+    filter.fromBlock = latestBlockNumber + 1; // +1 to accommodate the first loop iteration
+    filter.toBlock = filter.fromBlock;
+
+    let events = [];
+    while (filter.toBlock > blockNumber && !foundKnownState ) {
+      // Create a span of events up to BLOCK_PAGING_SIZE in length
+      filter.toBlock = filter.fromBlock - 1;
+      filter.fromBlock = Math.max(filter.toBlock - BLOCK_PAGING_SIZE + 1, blockNumber);
+
+      // Get new span of events, [fromBlock:oldset ... toBlock:newest]
+      const partialEvents = await this.realProvider.getLogs(filter);
+      // Build a complete reversed array of events, [newest ... oldest]
+      events = events.concat(partialEvents.reverse());
+
+      // Run through events to find the most recent one that we know...
+      for (let i = 0 ; i < events.length ; i += 1) {
+        const event = events[i];
+        if (await this.cycleCompleteEventIsKnownState(event)) {
+          // We know that state! We can just sync from the next one...
+          const knownHash = event.data.slice(0, 66);
+          await this.loadState(knownHash);
+
+          foundKnownState = true;
+          applyLogs = true;
+          syncFromIndex = i - 1;
+
+          break;
+        }
       }
+    }
+
+    // This means that we have not seen a known state, and so will have to sync from the start
+    if (syncFromIndex === -1 && !foundKnownState) {
+      syncFromIndex = events.length - 1;
     }
 
     // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
@@ -1390,10 +1412,10 @@ class ReputationMiner {
       applyLogs = true;
     }
 
-    for (let i = syncFromIndex; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
+    for (let i = syncFromIndex; i >= 0; i -= 1) {
+      console.log(`Syncing mining cycle ${syncFromIndex - i + 1} of ${syncFromIndex + 1}...`)
       const event = events[i];
-      if (i === 0) {
+      if (i === events.length - 1 && !foundKnownState) {
         // If we are syncing from the very start of the reputation history, the block
         // before the very first 'ReputationMiningCycleComplete' does not have an
         // active reputation cycle. So we skip it if 'fromBlock' has not been judiciously
@@ -1426,8 +1448,9 @@ class ReputationMiner {
     }
 
     // Some more cycles might have completed since we started syncing
-    const lastEventBlock = events[events.length - 1].blockNumber
+    const lastEventBlock = events[0].blockNumber
     filter.fromBlock = lastEventBlock;
+    filter.toBlock = "latest";
     const sinceEvents = await this.realProvider.getLogs(filter);
     if (sinceEvents.length > 1){
       console.log("Some more cycles have completed during the sync process. Continuing to sync...")
@@ -1447,6 +1470,14 @@ class ReputationMiner {
     }
   }
 
+  async cycleCompleteEventIsKnownState(event) {
+    const hash = event.data.slice(0, 66);
+    const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+    // Do we have such a state?
+    const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
+    return res.n === 1;
+  }
+
   async printCurrentState() {
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
@@ -1463,18 +1494,8 @@ class ReputationMiner {
     }
   }
 
-  // Gas price should be a hex string
-  async setGasPrice(_gasPrice){
-    if (!ethers.utils.isHexString(_gasPrice)){
-      throw new Error("Passed gas price was not a hex string")
-    }
-    const passedPrice = ethers.BigNumber.from(_gasPrice);
-    const minimumPrice = ethers.BigNumber.from("1100000000");
-    if (passedPrice.lt(minimumPrice)){
-      this.gasPrice = minimumPrice.toHexString();
-    } else {
-      this.gasPrice = _gasPrice;
-    }
+  setFeeData(_feeData){
+    this.feeData = _feeData;
   }
 
   async saveCurrentState() {

@@ -262,8 +262,10 @@ process.env.SOLIDITY_COVERAGE
             useJsTree: true,
             dbPath: fileName,
           });
+
           await reputationMiner3.initialise(colonyNetwork.address);
-          await reputationMiner3.sync("latest");
+          const latestBlock = await currentBlock();
+          await reputationMiner3.sync(parseInt(latestBlock.number, 10));
 
           const loadedState = await reputationMiner3.getRootHash();
           expect(loadedState).to.equal(currentState);

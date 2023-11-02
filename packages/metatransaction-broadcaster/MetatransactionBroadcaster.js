@@ -4,7 +4,7 @@ const sqlite = require("sqlite");
 const sqlite3 = require("sqlite3");
 const queue = require("express-queue");
 const NonceManager = require("./ExtendedNonceManager");
-const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
+const { colonyIOCors, ConsoleAdapter, getFeeData } = require("../package-utils");
 
 const ETHEREUM_BRIDGE_ADDRESS = "0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59";
 const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";
@@ -81,7 +81,7 @@ class MetatransactionBroadcaster {
     const colonyNetworkDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, colonyNetworkDef.abi, this.wallet);
 
-    this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+    this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
     this.tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
 
     this.metaTxDef = await this.loader.load({ contractName: "IBasicMetaTransaction" }, { abi: true, address: false });
@@ -336,6 +336,10 @@ class MetatransactionBroadcaster {
 
       try {
         gasEstimate = await estimateGas(...args);
+        if (ethers.BigNumber.from(args[args.length - 1].gasLimit).gt(gasEstimate.mul(11).div(10))) {
+          // eslint-disable-next-line
+          args[args.length - 1].gasLimit = gasEstimate.mul(11).div(10);
+        }
       } catch (err) {
         let reason;
         try {
@@ -441,14 +445,14 @@ class MetatransactionBroadcaster {
     try {
       const { target, userAddress, payload, r, s, v } = req.body;
       const contract = new ethers.Contract(target, this.metaTxDef.abi, this.nonceManager);
-      this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+      this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
       return this.processTransactionLogic(req, res, contract.estimateGas.executeMetaTransaction, contract.executeMetaTransaction, [
         userAddress,
         payload,
         r,
         s,
         v,
-        { gasPrice: this.gasPrice, gasLimit: this.gasLimit },
+        { ...this.feeData, gasLimit: this.gasLimit },
       ]);
     } catch (err) {
       return res.status(500).send({
@@ -462,7 +466,7 @@ class MetatransactionBroadcaster {
     try {
       const { target, owner, spender, value, deadline, r, s, v } = req.body;
       const contract = new ethers.Contract(target, this.metaTxTokenDef.abi, this.nonceManager);
-      this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+      this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
       return this.processTransactionLogic(req, res, contract.estimateGas.permit, contract.permit, [
         owner,
         spender,
@@ -471,7 +475,7 @@ class MetatransactionBroadcaster {
         v,
         r,
         s,
-        { gasPrice: this.gasPrice, gasLimit: this.gasLimit },
+        { ...this.feeData, gasLimit: this.gasLimit },
       ]);
     } catch (err) {
       return res.status(500).send({
