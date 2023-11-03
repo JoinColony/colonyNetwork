@@ -136,30 +136,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _tokenAddress Address of the CLNY token
   function createMetaColony(address _tokenAddress) external;
 
-  /// @notice Creates a new colony in the network, at version 3
-  /// @dev This is now deprecated and will be removed in a future version
-  /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
-  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token.
-  /// @return _colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress) external returns (address _colonyAddress);
-
-  /// @notice Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
-  /// @dev This is now deprecated and will be removed in a future version
-  /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
-  /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
-  /// @param _version The version of colony to deploy (pass 0 for the current version)
-  /// @param _colonyName The label to register (if null, no label is registered)
-  /// @param _orbitdb DEPRECATED Currently a no-op
-  /// @param _useExtensionManager DEPRECATED Currently a no-op
-  /// @return _colonyAddress Address of the newly created colony
-  function createColony(
-    address _tokenAddress,
-    uint256 _version,
-    string memory _colonyName,
-    string memory _orbitdb,
-    bool _useExtensionManager
-  ) external returns (address _colonyAddress);
-
   /// @notice Creates a new colony in the network, with an optional ENS name
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token

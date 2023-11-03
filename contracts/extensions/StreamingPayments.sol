@@ -20,11 +20,11 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
-import { ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 
 // ignore-file-swc-108
 
-contract StreamingPayments is ColonyExtensionMeta {
+contract StreamingPayments is ColonyExtensionMeta, SetExpenditureSingleValues {
   // Events
 
   event StreamingPaymentCreated(address agent, uint256 streamingPaymentId);
@@ -550,6 +550,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     colony.setExpenditurePayout(expenditureId, SLOT, _token, _amountToClaim);
     colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayments[_id].recipient);
     colony.finalizeExpenditure(expenditureId);
+
     return expenditureId;
   }
 }

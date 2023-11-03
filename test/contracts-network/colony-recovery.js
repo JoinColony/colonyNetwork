@@ -172,7 +172,6 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.setDefaultGlobalClaimDelay(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.makeExpenditure(0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.transferExpenditure(0, ADDRESS_ZERO), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.transferExpenditureViaArbitration(0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.cancelExpenditure(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.cancelExpenditureViaArbitration(0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.lockExpenditure(0), "colony-in-recovery-mode");
@@ -184,8 +183,6 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.setExpenditureSkills(0, [], []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditureClaimDelays(0, [], []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditurePayoutModifiers(0, [], []), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.setExpenditureRecipient(0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.setExpenditureClaimDelay(0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditureState(0, 0, 0, 0, [], [], HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setArbitrationRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setArchitectureRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");
@@ -196,19 +193,16 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.unlockTokenForUser(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimExpenditurePayout(0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.moveFundsBetweenPots(0, 0, 0, 0, 0, 0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.moveFundsBetweenPots(0, 0, 0, 0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimColonyFunds(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.startNextRewardPayout(ADDRESS_ZERO, HASHZERO, HASHZERO, 0, []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimRewardPayout(0, [0, 0, 0, 0, 0, 0, 0], HASHZERO, HASHZERO, 0, []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setRewardInverse(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditurePayouts(0, [], ADDRESS_ZERO, []), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.setExpenditurePayout(0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditurePayout(1, UINT256_MAX, 0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.enterRecoveryMode(), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.burnTokens(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.registerColonyLabel("", ""), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.updateColonyOrbitDB(""), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.makeArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.makeArbitraryTransactions([], [], true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.makeSingleArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.updateApprovalAmount(ADDRESS_ZERO, ADDRESS_ZERO), "colony-in-recovery-mode");

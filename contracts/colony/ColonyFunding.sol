@@ -58,25 +58,6 @@ contract ColonyFunding is
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
   }
 
-  function moveFundsBetweenPots(
-    uint256 _permissionDomainId,
-    uint256 _fromChildSkillIndex,
-    uint256 _toChildSkillIndex,
-    uint256 _fromPot,
-    uint256 _toPot,
-    uint256 _amount,
-    address _token
-  )
-    public
-    stoppable
-    domainNotDeprecated(getDomainFromFundingPot(_toPot))
-    authDomain(_permissionDomainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
-    authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
-    validFundingTransfer(_fromPot, _toPot)
-  {
-    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
-  }
-
   function claimColonyFunds(address _token) public stoppable {
     uint256 toClaim;
     uint256 feeToPay;
@@ -134,20 +115,6 @@ contract ColonyFunding is
     validExpenditure(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
-    uint256[] memory slots = new uint256[](1);
-    slots[0] = _slot;
-    uint256[] memory amounts = new uint256[](1);
-    amounts[0] = _amount;
-    setExpenditurePayoutsInternal(_id, slots, _token, amounts);
-  }
-
-  /// @notice For owners to update payouts with one token and one slot
-  function setExpenditurePayout(
-    uint256 _id,
-    uint256 _slot,
-    address _token,
-    uint256 _amount
-  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;
     uint256[] memory amounts = new uint256[](1);
