@@ -615,8 +615,14 @@ contract("Multisig Permissions", (accounts) => {
       const oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
       // Give extensions funding and administration rights
-      await colony.setUserRoles(1, UINT256_MAX, multisigPermissions.address, 1, rolesToBytes32([ROOT_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]));
-      await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
+      await colony.setUserRoles(
+        1,
+        UINT256_MAX,
+        multisigPermissions.address,
+        1,
+        rolesToBytes32([ROOT_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE, ARBITRATION_ROLE]),
+      );
+      await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE, ARBITRATION_ROLE]));
 
       // Make a motion that requires two permissions
       const action = await encodeTxData(
@@ -638,15 +644,15 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
       await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-not-enough-approvals");
 
-      // Give user funding, specifically in the domain
-      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE]));
+      // Give user funding, arbitration, specifically in the domain
+      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE, ARBITRATION_ROLE]));
 
       // Have them approve
       await multisigPermissions.changeVote(2, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
 
       const balanceBefore = await token.balanceOf(USER0);
 
-      // Now both permissions meet the threshold, can execute.
+      // Now all permissions meet the threshold, can execute.
       await multisigPermissions.execute(motionId);
       const balanceAfter = await token.balanceOf(USER0);
 
