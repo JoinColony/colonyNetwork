@@ -9,6 +9,7 @@ const namehash = require("eth-ens-namehash");
 const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
+  setupColony,
   setupRandomColony,
   getMetaTransactionParameters,
 } = require("../../helpers/test-data-generator");
@@ -317,6 +318,9 @@ contract("Colony Network", (accounts) => {
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
 
+      const localSkill = await colonyNetwork.getSkill(1);
+      expect(localSkill.DEPRECATED_globalSkill).to.be.false;
+
       const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
       expect(miningSkillId).to.eq.BN(3);
     });
@@ -331,14 +335,16 @@ contract("Colony Network", (accounts) => {
     });
 
     it("when any colony is created, should have the root domain and local skills initialised", async () => {
-      const { colony } = await setupRandomColony(colonyNetwork);
+      const token = await Token.new(...getTokenArgs());
+      const colony = await setupColony(colonyNetwork, token.address);
+
       const skillCount = await colonyNetwork.getSkillCount();
       const rootLocalSkillId = skillCount.subn(1);
       const rootDomainSkillId = skillCount.subn(2);
 
       const rootLocalSkill = await colonyNetwork.getSkill(rootLocalSkillId);
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
-      expect(parseInt(rootLocalSkill.nChildren, 10)).to.eq.BN(1); // Created by data generator
+      expect(parseInt(rootLocalSkill.nChildren, 10)).to.be.zero;
 
       const rootDomainSkill = await colonyNetwork.getSkill(rootDomainSkillId);
       expect(parseInt(rootDomainSkill.nParents, 10)).to.be.zero;

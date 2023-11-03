@@ -302,8 +302,8 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   function isValidLocalSkill(uint256 skillId) internal view returns (bool) {
-    bool deprecated = IColonyNetwork(colonyNetworkAddress).getSkill(skillId).deprecated;
-    return localSkills[skillId] && !deprecated;
+    Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
+    return localSkills[skillId] && !skill.deprecated && !skill.DEPRECATED_globalSkill;
   }
 
   function domainExists(uint256 domainId) internal view returns (bool) {
