@@ -51,11 +51,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, CallWithGuards 
     return changed;
   }
 
-  /// @notice @deprecated
-  function deprecateSkill(uint256 _skillId) public stoppable {
-    deprecateSkill(_skillId, true);
-  }
-
   function initialiseRootLocalSkill() public stoppable calledByColony returns (uint256) {
     skillCount += 1;
     // If we're not mining chain, then bridge the skill

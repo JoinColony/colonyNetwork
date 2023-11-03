@@ -34,13 +34,6 @@ contract ColonyArbitraryTransaction is ColonyStorage {
   bytes4 constant BURN_SIG = bytes4(keccak256("burn(uint256)"));
   bytes4 constant BURN_GUY_SIG = bytes4(keccak256("burn(address,uint256)"));
 
-  function makeArbitraryTransaction(
-    address _to,
-    bytes memory _action
-  ) public stoppable auth returns (bool) {
-    return this.makeSingleArbitraryTransaction(_to, _action);
-  }
-
   function makeArbitraryTransactions(
     address[] memory _targets,
     bytes[] memory _actions,
@@ -54,10 +47,10 @@ contract ColonyArbitraryTransaction is ColonyStorage {
         if (_strict) {
           success = ret;
         }
-      } catch {
+      } catch Error(string memory _err) {
         // We failed in a require, which is only okay if we're not in strict mode
         if (_strict) {
-          success = false;
+          revert(_err);
         }
       }
       require(success, "colony-arbitrary-transaction-failed");
