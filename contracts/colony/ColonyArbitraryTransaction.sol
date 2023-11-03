@@ -59,7 +59,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
         }
 
         emit ArbitraryTransaction(msgSender(), _targets[i], _actions[i], ret);
-      } catch {
+      } catch Error(string memory _err) {
         // We failed in a require, which is only okay if we're not in strict mode
         if (_strict) {
           success = false;

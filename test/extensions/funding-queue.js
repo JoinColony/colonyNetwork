@@ -876,7 +876,7 @@ contract("Funding Queues", (accounts) => {
       await colony.setFundingRole(1, 0, fundingQueue.address, 2, true);
       await colony.addDomain(1, 0, 2);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, 1, 2, WAD, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, WAD, token.address);
 
       await fundingQueue.createProposal(2, UINT256_MAX, 0, 2, 4, WAD, token.address, { from: USER0 });
       proposalId = await fundingQueue.getProposalCount();
