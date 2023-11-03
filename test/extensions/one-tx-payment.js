@@ -189,7 +189,8 @@ contract("One transaction payments", (accounts) => {
       const d2 = await colony.getDomain(2);
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
+
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
       await oneTxPayment.makePaymentFundedFromDomain(1, 0, 1, 0, [USER1], [token.address], [10], 2, localSkillId);
     });
 
@@ -237,7 +238,7 @@ contract("One transaction payments", (accounts) => {
       const d2 = await colony.getDomain(2);
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
 
       await colony.setAdministrationRole(1, 0, USER1, 2, true);
       await colony.setFundingRole(1, 0, USER1, 2, true);
@@ -551,7 +552,7 @@ contract("One transaction payments", (accounts) => {
       const d1 = await colony.getDomain(1);
       const d2 = await colony.getDomain(2);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
 
       await oneTxPayment.makePaymentFundedFromDomain(2, UINT256_MAX, 1, 0, [USER1], [token.address], [10], 2, localSkillId);
 

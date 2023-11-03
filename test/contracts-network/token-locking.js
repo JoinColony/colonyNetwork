@@ -118,16 +118,6 @@ contract("Token Locking", (addresses) => {
       expect(tokenLockingContractBalance).to.eq.BN(usersTokens);
     });
 
-    it("should correctly deposit tokens using the deprecated interface", async () => {
-      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
-      await tokenLocking.methods["deposit(address,uint256)"](token.address, usersTokens, { from: userAddress });
-      const info = await tokenLocking.getUserLock(token.address, userAddress);
-      expect(info.balance).to.eq.BN(usersTokens);
-
-      const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
-      expect(tokenLockingContractBalance).to.eq.BN(usersTokens);
-    });
-
     it("should correctly deposit large amounts of tokens", async () => {
       await otherToken.mint(userAddress, UINT256_MAX);
       await otherToken.approve(tokenLocking.address, UINT256_MAX, { from: userAddress });
@@ -233,17 +223,6 @@ contract("Token Locking", (addresses) => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
       await tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress });
-
-      const info = await tokenLocking.getUserLock(token.address, userAddress);
-      expect(info.balance).to.be.zero;
-      const userBalance = await token.balanceOf(userAddress);
-      expect(userBalance).to.eq.BN(usersTokens);
-    });
-
-    it("should correctly withdraw tokens via the deprecated interface", async () => {
-      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
-      await tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress });
-      await tokenLocking.methods["withdraw(address,uint256)"](token.address, usersTokens, { from: userAddress });
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       expect(info.balance).to.be.zero;
