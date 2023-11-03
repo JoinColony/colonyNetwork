@@ -60,6 +60,12 @@ contract MultisigPermissions is
     bool rejected;
   }
 
+  enum Vote {
+    None,
+    Approval,
+    Rejection
+  }
+
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
   bytes4 constant SET_USER_ROLES =
     bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
@@ -88,13 +94,10 @@ contract MultisigPermissions is
   uint256 motionCount;
   mapping(uint256 => Motion) motions;
 
-  uint256 constant APPROVAL = 1;
-  uint256 constant REJECTION = 2;
-
-  // Motion Id => User => ApprovalOrRejection => ApprovalsOrRejections
-  mapping(uint256 => mapping(address => mapping(uint256 => bytes32))) motionApprovalsAndRejections;
-  // Motion Id => ApprovalOrRejection => Permission => Approval Count
-  mapping(uint256 => mapping(uint256 => mapping(ColonyRole => uint256))) motionRoleApprovalAndRejectionCount;
+  // Motion Id => User => Vote => Permissions
+  mapping(uint256 => mapping(address => mapping(Vote => bytes32))) motionVotes;
+  // Motion Id => Vote => Permission => Vote Count
+  mapping(uint256 => mapping(Vote => mapping(ColonyRole => uint256))) motionVoteCount;
 
   // Overrides
 
@@ -220,44 +223,43 @@ contract MultisigPermissions is
 
     emit MotionCreated(msgSender(), motionCount);
 
-    changeApproval(_permissionDomainId, _childSkillIndex, motionCount, true);
-  }
-
-  function changeApproval(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _motionId,
-    bool _approved
-  ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
-    changeApprovalOrRejectionFunctionality(
+    changeVoteFunctionality(
       _permissionDomainId,
       _childSkillIndex,
-      _motionId,
-      APPROVAL,
-      _approved
+      motionCount,
+      Vote.Approval,
+      true
     );
   }
 
-  function changeRejection(
+  function changeVote(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _motionId,
-    bool _rejected
+    Vote _vote
   ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
-    changeApprovalOrRejectionFunctionality(
+    changeVoteFunctionality(
       _permissionDomainId,
       _childSkillIndex,
       _motionId,
-      REJECTION,
-      _rejected
+      Vote.Approval,
+      _vote == Vote.Approval
+    );
+
+    changeVoteFunctionality(
+      _permissionDomainId,
+      _childSkillIndex,
+      _motionId,
+      Vote.Rejection,
+      _vote == Vote.Rejection
     );
   }
 
-  function changeApprovalOrRejectionFunctionality(
+  function changeVoteFunctionality(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _motionId,
-    uint256 _type,
+    Vote _vote,
     bool _setTo
   ) private {
     validateMotionDomain(_permissionDomainId, _childSkillIndex, _motionId);
@@ -284,37 +286,31 @@ contract MultisigPermissions is
         }
 
         // Update appropriately
-        if (
-          getUserApprovalOrRejection(_motionId, msgSender(), _type, ColonyRole(roleIndex)) != _setTo
-        ) {
-          setUserApprovalOrRejection(_motionId, msgSender(), _type, ColonyRole(roleIndex), _setTo);
+        if (getUserVote(_motionId, msgSender(), ColonyRole(roleIndex), _vote) != _setTo) {
+          setUserVote(_motionId, msgSender(), _vote, ColonyRole(roleIndex), _setTo);
 
           if (_setTo) {
-            motionRoleApprovalAndRejectionCount[_motionId][_type][ColonyRole(roleIndex)] += 1;
+            motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] += 1;
           } else {
-            motionRoleApprovalAndRejectionCount[_motionId][_type][ColonyRole(roleIndex)] -= 1;
+            motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] -= 1;
           }
 
-          if (_type == APPROVAL) {
+          if (_vote == Vote.Approval) {
             emit ApprovalChanged(msgSender(), _motionId, ColonyRole(roleIndex), _setTo);
           } else {
             emit RejectionChanged(msgSender(), _motionId, ColonyRole(roleIndex), _setTo);
           }
         }
 
-        if (_type == APPROVAL) {
+        if (_vote == Vote.Approval) {
           uint256 threshold = getDomainSkillRoleThreshold(
             motion.domainSkillId,
             ColonyRole(roleIndex)
           );
-          if (
-            motionRoleApprovalAndRejectionCount[_motionId][_type][ColonyRole(roleIndex)] < threshold
-          ) {
+          if (motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] < threshold) {
             anyBelowThreshold = true;
           } else if (
-            motionRoleApprovalAndRejectionCount[_motionId][_type][ColonyRole(roleIndex)] ==
-            threshold &&
-            _setTo
+            motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] == threshold && _setTo
           ) {
             newlyAtThreshold = true;
           }
@@ -324,7 +320,7 @@ contract MultisigPermissions is
       roleIndex += 1;
     }
 
-    if (_type == APPROVAL) {
+    if (_vote == Vote.Approval) {
       if (anyBelowThreshold) {
         delete motion.overallApprovalTimestamp;
       } else if (newlyAtThreshold) {
@@ -339,7 +335,7 @@ contract MultisigPermissions is
     Motion storage motion = motions[_motionId];
 
     require(
-      checkThreshold(_motionId, REJECTION) ||
+      checkThreshold(_motionId, Vote.Rejection) ||
         msgSender() == motion.creator ||
         block.timestamp > motion.creationTimestamp + 7 days,
       "colony-multisig-not-enough-rejections"
@@ -355,7 +351,7 @@ contract MultisigPermissions is
   ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
     Motion storage motion = motions[_motionId];
 
-    require(checkThreshold(_motionId, APPROVAL), "colony-multisig-not-enough-approvals");
+    require(checkThreshold(_motionId, Vote.Approval), "colony-multisig-not-enough-approvals");
 
     // If approvals were made, threshold lowered, and then executed,
     //  motion.overallApprovalTimestamp is 0 (since it was never set)
@@ -385,10 +381,7 @@ contract MultisigPermissions is
     emit MotionExecuted(msgSender(), _motionId, overallSuccess);
   }
 
-  function checkThreshold(
-    uint256 _motionId,
-    uint256 _type
-  ) private view returns (bool thresholdMet) {
+  function checkThreshold(uint256 _motionId, Vote _vote) private view returns (bool thresholdMet) {
     Motion storage motion = motions[_motionId];
     uint8 roleIndex;
     // While there are still relevant roles we've not checked yet
@@ -399,9 +392,7 @@ contract MultisigPermissions is
           motion.domainSkillId,
           ColonyRole(roleIndex)
         );
-        if (
-          motionRoleApprovalAndRejectionCount[_motionId][_type][ColonyRole(roleIndex)] < threshold
-        ) {
+        if (motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] < threshold) {
           return false;
         }
       }
@@ -422,44 +413,22 @@ contract MultisigPermissions is
     return motions[motionId];
   }
 
-  function getMotionRoleApprovalCount(
+  function getMotionRoleVoteCount(
     uint256 _motionId,
-    ColonyRole _role
+    ColonyRole _role,
+    Vote _vote
   ) public view returns (uint256) {
-    return motionRoleApprovalAndRejectionCount[_motionId][APPROVAL][_role];
+    return motionVoteCount[_motionId][_vote][_role];
   }
 
-  function getMotionRoleRejectionCount(
-    uint256 _motionId,
-    ColonyRole _role
-  ) public view returns (uint256) {
-    return motionRoleApprovalAndRejectionCount[_motionId][REJECTION][_role];
-  }
-
-  function getUserApproval(
+  function getUserVote(
     uint256 _motionId,
     address _user,
-    ColonyRole _permission
+    ColonyRole _permission,
+    Vote _vote
   ) public view returns (bool) {
-    return getUserApprovalOrRejection(_motionId, _user, APPROVAL, _permission);
-  }
-
-  function getUserRejection(
-    uint256 _motionId,
-    address _user,
-    ColonyRole _permission
-  ) public view returns (bool) {
-    return getUserApprovalOrRejection(_motionId, _user, REJECTION, _permission);
-  }
-
-  function getUserApprovalOrRejection(
-    uint256 _motionId,
-    address _user,
-    uint256 _type,
-    ColonyRole _permission
-  ) public view returns (bool) {
-    bytes32 approvalOrRejection = motionApprovalsAndRejections[_motionId][_user][_type];
-    return (approvalOrRejection >> uint8(_permission)) & bytes32(uint256(1)) == bytes32(uint256(1));
+    bytes32 userVotes = motionVotes[_motionId][_user][_vote];
+    return (userVotes >> uint8(_permission)) & bytes32(uint256(1)) == bytes32(uint256(1));
   }
 
   function getDomainSkillRoleCounts(
@@ -667,22 +636,20 @@ contract MultisigPermissions is
     );
   }
 
-  function setUserApprovalOrRejection(
+  function setUserVote(
     uint256 _motionId,
     address _user,
-    uint256 _type,
+    Vote _type,
     ColonyRole _permission,
     bool _setTo
   ) internal {
-    bytes32 approvalOrRejections = motionApprovalsAndRejections[_motionId][_user][_type];
+    bytes32 userVotes = motionVotes[_motionId][_user][_type];
     if (_setTo) {
-      approvalOrRejections = approvalOrRejections | bytes32(uint256(2) ** uint256(_permission));
+      userVotes = userVotes | bytes32(uint256(2) ** uint256(_permission));
     } else {
-      approvalOrRejections =
-        approvalOrRejections &
-        BITNOT(bytes32(uint256(uint256(2) ** uint256(_permission))));
+      userVotes = userVotes & BITNOT(bytes32(uint256(uint256(2) ** uint256(_permission))));
     }
-    motionApprovalsAndRejections[_motionId][_user][_type] = approvalOrRejections;
+    motionVotes[_motionId][_user][_type] = userVotes;
   }
 
   // We've cribbed these two from DomainRoles, but we don't want to inherit DomainRoles as it would require calling
