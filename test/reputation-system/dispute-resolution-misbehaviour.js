@@ -720,14 +720,14 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       [goodEntry] = disputeRound;
 
       // Check can't respond at start of window for binary search
-      timestamp = parseInt(goodEntry.lastResponseTimestamp, 10) + 1;
+      timestamp = parseInt(goodEntry.lastResponseTimestamp, 10);
 
       await checkErrorRevertEthers(
         makeTxAtTimestamp(goodClient.respondToBinarySearchForChallenge.bind(goodClient), [], timestamp, this),
         "colony-reputation-mining-user-ineligible-to-respond",
       );
 
-      timestamp += CHALLENGE_RESPONSE_WINDOW_DURATION - 1;
+      timestamp += CHALLENGE_RESPONSE_WINDOW_DURATION;
       await binarySearchAtTimestamp([goodClient, badClient], timestamp, this);
       timestamp += CHALLENGE_RESPONSE_WINDOW_DURATION;
       await binarySearchAtTimestamp([goodClient, badClient], timestamp, this);
