@@ -82,11 +82,6 @@ contract("Meta Colony", (accounts) => {
       expect(rootSkillChild2).to.eq.BN(5);
     });
 
-    it("should not allow a non-root role in the metacolony to add or deprecate a global skill", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
-      await checkErrorRevert(metaColony.deprecateGlobalSkill(0, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
-    });
-
     it("should not allow a non-root role in the metacolony to add colony or extension versions to the network", async () => {
       await checkErrorRevert(metaColony.addNetworkColonyVersion(1, ADDRESS_ZERO, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
       await checkErrorRevert(metaColony.addExtensionToNetwork(HASHZERO, ADDRESS_ZERO, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
@@ -423,19 +418,6 @@ contract("Meta Colony", (accounts) => {
 
     it("cannot create global skills if not a root user in meta colony", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
-    });
-
-    it("can deprecate global skills", async () => {
-      await metaColony.addGlobalSkill();
-      const skillId = await colonyNetwork.getSkillCount();
-
-      let skill = await colonyNetwork.getSkill(skillId);
-      expect(skill.deprecated).to.be.false;
-
-      await metaColony.deprecateGlobalSkill(skillId);
-
-      skill = await colonyNetwork.getSkill(skillId);
-      expect(skill.deprecated).to.be.true;
     });
   });
 

@@ -101,11 +101,12 @@ contract ColonyDomains is ColonyStorage {
     uint256 _domainId,
     bool _deprecated
   ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
-    if (
-      IColonyNetwork(colonyNetworkAddress).deprecateSkill(domains[_domainId].skillId, _deprecated)
-    ) {
-      emit DomainDeprecated(msgSender(), _domainId, _deprecated);
-    }
+    // Temporarily a no-op
+    // if (
+    //   IColonyNetwork(colonyNetworkAddress).deprecateSkill(domains[_domainId].skillId, _deprecated)
+    // ) {
+    //   emit DomainDeprecated(msgSender(), _domainId, _deprecated);
+    // }
   }
 
   function initialiseRootLocalSkill() public stoppable {

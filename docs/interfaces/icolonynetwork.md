@@ -301,37 +301,6 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 |_deprecated|bool|Whether to deprecate the extension or not
 
 
-### ▸ `deprecateSkill(uint256 _skillId)`
-
-Mark a skill as deprecated which stops new tasks and payments from using it.
-
-*Note: This function is deprecated and will be removed in a future release*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|Id of the skill
-
-
-### ▸ `deprecateSkill(uint256 _skillId, bool _deprecated):bool _changed`
-
-Set deprecation status for a skill
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|Id of the skill
-|_deprecated|bool|Deprecation status
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_changed|bool|Whether the deprecated state was changed
-
 ### ▸ `getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 _childSkillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.

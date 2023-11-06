@@ -140,7 +140,6 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.addGlobalSkill(), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.deprecateGlobalSkill(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitDomainReputationReward(0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitDomainReputationPenalty(0, 0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitSkillReputationReward(0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
