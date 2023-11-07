@@ -318,6 +318,7 @@ Mark a skill as deprecated which stops new tasks and payments from using it.
 
 Set deprecation status for a skill
 
+*Note: Currently disabled, and will error if called even by a colony*
 
 **Parameters**
 

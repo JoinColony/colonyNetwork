@@ -192,6 +192,10 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     uint256 _skillId,
     bool _deprecated
   ) public stoppable allowedToAddSkill(skills[_skillId].nParents == 0) returns (bool) {
+    require(
+      skills[_skillId].nParents == 0,
+      "colony-network-deprecate-local-skills-temporarily-disabled"
+    );
     bool changed = skills[_skillId].deprecated != _deprecated;
     skills[_skillId].deprecated = _deprecated;
     return changed;

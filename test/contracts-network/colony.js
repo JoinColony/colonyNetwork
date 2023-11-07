@@ -164,7 +164,7 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "LocalSkillAdded", [accounts[0], skillCount]);
     });
 
-    it("should allow root users to deprecate local skills", async () => {
+    it.skip("should allow root users to deprecate local skills", async () => {
       await colony.addLocalSkill();
       const skillCount = await colonyNetwork.getSkillCount();
 
@@ -172,12 +172,12 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
     });
 
-    it("should not emit an event if deprecation is a no-op", async () => {
+    it("should revert when trying to deprecate a local skill", async () => {
       await colony.addLocalSkill();
       const skillCount = await colonyNetwork.getSkillCount();
 
-      const tx = await colony.deprecateLocalSkill(skillCount, false);
-      await expectNoEvent(tx, "LocalSkillDeprecated");
+      const tx = colony.deprecateLocalSkill(skillCount, false);
+      await checkErrorRevert(tx, "colony-network-deprecate-local-skills-temporarily-disabled");
     });
   });
 
@@ -212,7 +212,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe("when deprecating domains", () => {
+  describe.skip("when deprecating domains", () => {
     it("should log the DomainDeprecated event", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await expectEvent(colony.deprecateDomain(1, 0, 2, true), "DomainDeprecated", [USER0, 2, true]);
