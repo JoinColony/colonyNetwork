@@ -339,36 +339,21 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
     sig = bytes4(keccak256("finalizePayment(uint256,uint256,uint256)"));
 
-    // If OneTxPayment extension is installed, if it has permissions in root, add the new role
-    // and upgrade it
+    // If OneTxPayment extension is installed, add the new role and upgrade it
     bytes32 ONE_TX_PAYMENT = keccak256("OneTxPayment");
-    address oneTxPaymentAddress = IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
-      ONE_TX_PAYMENT,
-      address(this)
-    );
-    if (oneTxPaymentAddress != address(0x00)) {
-      // Then it's installed. Is it version 5?
+    IColonyNetwork network = IColonyNetwork(colonyNetworkAddress);
+    address oneTxPaymentAddress = network.getExtensionInstallation(ONE_TX_PAYMENT, address(this));
+
+    if (oneTxPaymentAddress != address(0x0)) {
       uint256 installedVersion = ColonyExtension(oneTxPaymentAddress).version();
       require(installedVersion >= 5, "colony-upgrade-one-tx-payment-to-6");
       if (installedVersion == 5) {
-        // Does it have administration permission in root?
-        if (
-          ColonyAuthority(address(authority)).hasUserRole(
-            oneTxPaymentAddress,
-            1,
-            uint8(ColonyRole.Administration)
-          )
-        ) {
-          // Add arbitration permission in root
-          ColonyAuthority(address(authority)).setUserRole(
-            oneTxPaymentAddress,
-            1,
-            uint8(ColonyRole.Arbitration),
-            true
-          );
+        // If installed in root, add arbitration permission
+        if (colonyAuthority.hasUserRole(oneTxPaymentAddress, 1, uint8(ColonyRole.Administration))) {
+          colonyAuthority.setUserRole(oneTxPaymentAddress, 1, uint8(ColonyRole.Arbitration), true);
         }
         // Upgrade extension
-        IColonyNetwork(colonyNetworkAddress).upgradeExtension(ONE_TX_PAYMENT, 6);
+        network.upgradeExtension(ONE_TX_PAYMENT, 6);
       }
     }
   }
