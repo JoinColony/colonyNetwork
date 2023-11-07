@@ -186,6 +186,8 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.setMiningResolver(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.initialise(ADDRESS_ZERO, 1), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.addSkill(1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.deprecateSkill(1, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.deprecateSkill(1), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setFeeInverse(1), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setPayoutWhitelist(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.claimMiningReward(ADDRESS_ZERO), "colony-in-recovery-mode");

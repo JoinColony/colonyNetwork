@@ -197,6 +197,11 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
   }
 
+  // slither-disable-next-line unused-return
+  function deprecateGlobalSkill(uint256 _skillId) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId, true);
+  }
+
   function setNetworkFeeInverse(uint256 _feeInverse) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).setFeeInverse(_feeInverse); // ignore-swc-107
   }
@@ -243,10 +248,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   }
 
   function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
-    // Temporarily a no-op
-    // if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated)) {
-    //   emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
-    // }
+    if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated)) {
+      emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
+    }
   }
 
   function getRootLocalSkill() public view returns (uint256) {

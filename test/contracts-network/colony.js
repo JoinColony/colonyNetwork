@@ -172,12 +172,12 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
     });
 
-    it("should not emit an event if deprecation is a no-op", async () => {
+    it("should revert when trying to deprecate a local skill", async () => {
       await colony.addLocalSkill();
       const skillCount = await colonyNetwork.getSkillCount();
 
-      const tx = await colony.deprecateLocalSkill(skillCount, false);
-      await expectNoEvent(tx, "LocalSkillDeprecated");
+      const tx = colony.deprecateLocalSkill(skillCount, false);
+      await checkErrorRevert(tx, "colony-network-deprecate-local-skills-temporarily-disabled");
     });
   });
 

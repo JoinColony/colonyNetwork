@@ -48,6 +48,19 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
+### ▸ `deprecateGlobalSkill(uint256 _skillId)`
+
+Mark a global skill as deprecated which stops new tasks and payments from using it.
+
+*Note: Calls `IColonyNetwork.deprecateSkill`.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|Id of the added skill
+
+
 ### ▸ `mintTokensForColonyNetwork(uint256 _wad)`
 
 Mints CLNY in the Meta Colony and transfers them to the colony network. Only allowed to be called on the Meta Colony by the colony network.
