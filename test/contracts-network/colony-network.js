@@ -338,9 +338,8 @@ contract("Colony Network", (accounts) => {
       const token = await Token.new(...getTokenArgs());
       const colony = await setupColony(colonyNetwork, token.address);
 
-      const skillCount = await colonyNetwork.getSkillCount();
-      const rootLocalSkillId = skillCount.subn(1);
-      const rootDomainSkillId = skillCount.subn(2);
+      const rootLocalSkillId = await colonyNetwork.getSkillCount();
+      const rootDomainSkillId = rootLocalSkillId.subn(1);
 
       const rootLocalSkill = await colonyNetwork.getSkill(rootLocalSkillId);
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;

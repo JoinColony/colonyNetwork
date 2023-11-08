@@ -1,17 +1,7 @@
 /* globals artifacts */
 const BN = require("bn.js");
 
-const {
-  UINT256_MAX,
-  MANAGER_PAYOUT,
-  EVALUATOR_PAYOUT,
-  WORKER_PAYOUT,
-  INITIAL_FUNDING,
-  SLOT0,
-  SLOT1,
-  SLOT2,
-  ADDRESS_ZERO,
-} = require("./constants");
+const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
 const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
 

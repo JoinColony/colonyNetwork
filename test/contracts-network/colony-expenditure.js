@@ -286,14 +286,6 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-not-valid-local-skill");
     });
 
-    it("should not allow owners to set a deprecated global skill", async () => {
-      await metaColony.addGlobalSkill();
-      const skillId = await colonyNetwork.getSkillCount();
-      await metaColony.deprecateGlobalSkill(skillId);
-
-      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, skillId, { from: ADMIN }), "colony-not-valid-local-skill");
-    });
-
     it("should allow only owners to update a slot claim delay", async () => {
       await checkErrorRevert(colony.setExpenditureClaimDelay(expenditureId, SLOT0, SECONDS_PER_DAY, { from: USER }), "colony-expenditure-not-owner");
 
