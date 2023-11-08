@@ -18,7 +18,7 @@ const {
 } = require("../../helpers/constants");
 
 const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } = require("../../helpers/test-helper");
-const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -548,10 +548,7 @@ contract("One transaction payments", (accounts) => {
     });
 
     beforeEach(async () => {
-      await colonyNetwork.createColony(token.address, 13, "", "");
-      const colonyIdx = await colonyNetwork.getColonyCount();
-      const colonyAddress = await colonyNetwork.getColony(colonyIdx);
-      colony = await IMetaColony.at(colonyAddress);
+      colony = await setupColony(colonyNetwork, token.address, 13);
 
       await colony.installExtension(ONE_TX_PAYMENT, 5);
 

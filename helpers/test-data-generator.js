@@ -11,6 +11,7 @@ const {
   SLOT0,
   SLOT1,
   SLOT2,
+  ADDRESS_ZERO,
 } = require("./constants");
 const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
 
@@ -290,6 +291,12 @@ exports.setupRandomColony = async function setupRandomColony(colonyNetwork, lock
 };
 
 exports.setupColony = async function setupColony(colonyNetwork, tokenAddress, version = 0) {
+  if (version > 0) {
+    const resolverAddress = await colonyNetwork.getColonyVersionResolver(version);
+    if (resolverAddress === ADDRESS_ZERO) {
+      throw new Error(`No resolver found for version ${version}. Do you need to use deployOldColonyVersion in your test?`);
+    }
+  }
   const { logs } = await colonyNetwork.createColony(tokenAddress, version, "", "");
   const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
   const colony = await IColony.at(colonyAddress);
