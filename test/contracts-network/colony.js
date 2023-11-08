@@ -6,7 +6,13 @@ const { ethers } = require("ethers");
 
 const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, GLOBAL_SKILL_ID, HASHZERO } = require("../../helpers/constants");
 const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
-const { setupRandomColony, getMetaTransactionParameters, makeExpenditure, fundColonyWithTokens } = require("../../helpers/test-data-generator");
+const {
+  setupRandomColony,
+  getMetaTransactionParameters,
+  makeExpenditure,
+  fundColonyWithTokens,
+  setupColony,
+} = require("../../helpers/test-data-generator");
 const { deployOldColonyVersion } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
@@ -14,7 +20,6 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const IColony = artifacts.require("IColony");
 const TokenAuthority = artifacts.require("TokenAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TransferTest = artifacts.require("TransferTest");
@@ -436,11 +441,7 @@ contract("Colony", (accounts) => {
     });
 
     beforeEach(async () => {
-      await colonyNetwork.createColony(token.address, 13, "", "");
-
-      const colonyIdx = await colonyNetwork.getColonyCount();
-      const colonyAddress = await colonyNetwork.getColony(colonyIdx);
-      colony = await IColony.at(colonyAddress);
+      colony = await setupColony(colonyNetwork, token.address, 13);
 
       const tokenLockingAddress = await colonyNetwork.getTokenLocking();
       const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);

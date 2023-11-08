@@ -289,8 +289,8 @@ exports.setupRandomColony = async function setupRandomColony(colonyNetwork, lock
   return { colony, token };
 };
 
-exports.setupColony = async function setupColony(colonyNetwork, tokenAddress) {
-  const { logs } = await colonyNetwork.createColony(tokenAddress, 0, "", "");
+exports.setupColony = async function setupColony(colonyNetwork, tokenAddress, version = 0) {
+  const { logs } = await colonyNetwork.createColony(tokenAddress, version, "", "");
   const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
   const colony = await IColony.at(colonyAddress);
   return colony;
