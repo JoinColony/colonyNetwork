@@ -39,8 +39,13 @@ contract ColonyAuthority is CommonAuthority {
     colony = _colony;
 
     // Add permissions for the Administration role
-    // Task and Payments have been deprecated (see #1150)
-
+    addRoleCapability(ADMINISTRATION_ROLE, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentRecipient(uint256,uint256,uint256,address)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256,uint256,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,uint256,uint256,address,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)"); // Only for versions < 14
+    
     // Add permissions for the Funding role
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
 

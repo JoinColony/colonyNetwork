@@ -6,6 +6,7 @@ const path = require("path");
 
 const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
+const contract = require("@truffle/contract");
 
 module.exports.deployOldExtensionVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {
   if (versionTag.indexOf(" ") !== -1) {
@@ -53,9 +54,15 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
     await metaColony.addNetworkColonyVersion(version, colonyVersionResolverAddress);
+
+    const interfaceArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/${interfaceName}.json`);
+    const OldInterface = contract(JSON.parse(interfaceArtifact));
+    OldInterface.setProvider(web3.currentProvider);
+
+    return OldInterface;
   } catch (e) {
     console.log(e);
-    process.exit(1);
+    return process.exit(1);
   }
 };
 

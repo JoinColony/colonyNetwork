@@ -3,18 +3,9 @@
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
-const truffleContract = require("@truffle/contract");
 
 const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, GLOBAL_SKILL_ID, HASHZERO } = require("../../helpers/constants");
-const {
-  getTokenArgs,
-  web3GetBalance,
-  checkErrorRevert,
-  expectNoEvent,
-  expectAllEvents,
-  expectEvent,
-  encodeTxData,
-} = require("../../helpers/test-helper");
+const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters, makeExpenditure, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const { deployOldColonyVersion } = require("../../scripts/deployOldUpgradeableVersion");
 
@@ -24,7 +15,6 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
-const ColonyAuthority = artifacts.require("ColonyAuthority");
 const TokenAuthority = artifacts.require("TokenAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TransferTest = artifacts.require("TransferTest");
@@ -433,7 +423,7 @@ contract("Colony", (accounts) => {
     let OldInterface;
     let oldColony;
     before(async () => {
-      await deployOldColonyVersion(
+      OldInterface = await deployOldColonyVersion(
         "Colony",
         "IMetaColony",
         [
@@ -443,26 +433,6 @@ contract("Colony", (accounts) => {
         "glwss4",
         colonyNetwork,
       );
-
-      const oldFunctions = new ethers.utils.Interface([
-        "function makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)",
-        "function addPayment(uint256, uint256, address, address, uint256, uint256, uint256)",
-      ]);
-      const formattedOldABI = JSON.parse(oldFunctions.format(ethers.utils.FormatTypes.json));
-      console.log(JSON.stringify(formattedOldABI));
-
-      for (let i = 0; i < formattedOldABI.length; i += 1) {
-        for (let j = 0; j < formattedOldABI[i].inputs.length; j += 1) {
-          formattedOldABI[i].inputs[j].internalType = formattedOldABI[i].inputs[j].type;
-          formattedOldABI[i].inputs[j].name = "";
-        }
-      }
-
-      OldInterface = truffleContract({
-        abi: formattedOldABI,
-      });
-
-      OldInterface.setProvider(web3.currentProvider);
     });
 
     beforeEach(async () => {
@@ -476,39 +446,10 @@ contract("Colony", (accounts) => {
       const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
       await token.setAuthority(tokenAuthority.address);
 
-      // Add old functions to the authority
-      const colonyAuthorityAddress = await colony.authority();
-      const authority = await ColonyAuthority.at(colonyAuthorityAddress);
-
-      const ADMINISTRATION_ROLE = 6;
-      const action1 = await encodeTxData(authority, "setRoleCapability", [
-        ADMINISTRATION_ROLE,
-        colony.address,
-        web3.utils.soliditySha3("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)").slice(0, 10),
-        true,
-      ]);
-      const action2 = await encodeTxData(authority, "setRoleCapability", [
-        ADMINISTRATION_ROLE,
-        colony.address,
-        web3.utils.soliditySha3("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)").slice(0, 10),
-        true,
-      ]);
-
-      await colony.makeArbitraryTransactions([colonyAuthorityAddress, colonyAuthorityAddress], [action1, action2], true);
-
       oldColony = await OldInterface.at(colony.address);
-
-      // const colonyVersion = await colony.version();
-      // const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(colonyVersion);
-      // const colonyResolver = await Resolver.at(colonyResolverAddress);
-      // const tasksPaymentsContract = await TasksPayments.new();
-      // await colonyResolver.register("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)", tasksPaymentsContract.address);
-      // await colonyResolver.register("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)", tasksPaymentsContract.address);
-      // tasksPayments = await TasksPayments.at(colony.address);
     });
 
     it("should be able to query for a task", async () => {
-      console.log(oldColony.makeTask);
       await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: USER0 });
       await colony.upgrade(14);
       const taskId = await colony.getTaskCount();
