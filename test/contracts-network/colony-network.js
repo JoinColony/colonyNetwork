@@ -21,7 +21,7 @@ const {
   expectNoEvent,
   getColonyEditable,
 } = require("../../helpers/test-helper");
-const { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO } = require("../../helpers/constants");
+const { CURR_VERSION, GLOBAL_SKILL_ID, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
 const { setupENSRegistrar } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -34,6 +34,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("TokenAuthority");
+const TokenLocking = artifacts.require("TokenLocking");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
 
@@ -255,8 +256,17 @@ contract("Colony Network", (accounts) => {
       await colonyNetwork.createColonyForFrontend(token.address, "", "", 0, version, "", "");
     });
 
-    it("should allow users to create a colony for the frontend in one transaction, deploying a new token", async () => {
-      await colonyNetwork.createColonyForFrontend(ADDRESS_ZERO, ...getTokenArgs(), version, "", "");
+    it("should allow users to create a colony for the frontend in one transaction, with a new token that can be activated if locked", async () => {
+      const tx = await colonyNetwork.createColonyForFrontend(ADDRESS_ZERO, ...getTokenArgs(), version, "", "");
+      const { tokenAddress } = tx.logs.filter((x) => x.event === "TokenDeployed")[0].args;
+
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const tokenLocking = await TokenLocking.at(tokenLockingAddress);
+      const token = await Token.at(tokenAddress);
+      await token.mint(accounts[0], WAD);
+
+      await token.approve(tokenLocking.address, WAD);
+      await tokenLocking.deposit(tokenAddress, WAD, true);
     });
   });
 

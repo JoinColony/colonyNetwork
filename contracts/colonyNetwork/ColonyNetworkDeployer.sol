@@ -111,7 +111,8 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // Extra token bookkeeping if we deployed it
     if (_tokenAddress == address(0x0)) {
       // Deploy Authority
-      address[] memory allowedToTransfer;
+      address[] memory allowedToTransfer = new address[](1);
+      allowedToTransfer[0] = tokenLocking;
       address tokenAuthorityAddress = IColonyNetwork(address(this)).deployTokenAuthority(
         address(token),
         colonyAddress,
