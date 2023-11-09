@@ -18,6 +18,7 @@ const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
 const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 const ColonyDomains = artifacts.require("ColonyDomains");
+const EtherRouter = artifacts.require("EtherRouter");
 
 const { expect } = chai;
 
@@ -1063,6 +1064,16 @@ exports.getColonyEditable = async function getColonyEditable(colony, colonyNetwo
   await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
   const colonyUnderRecovery = await ContractEditing.at(colony.address);
   return colonyUnderRecovery;
+};
+
+exports.getColonyNetworkEditable = async function getColonyNetworkEditable(colonyNetwork) {
+  const networkAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
+  const resolverAddress = await networkAsEtherRouter.resolver();
+  const colonyNetworkResolver = await Resolver.at(resolverAddress);
+  const contractEditing = await ContractEditing.new();
+  await colonyNetworkResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+  const colonyNetworkEditable = await ContractEditing.at(colonyNetwork.address);
+  return colonyNetworkEditable;
 };
 
 exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {

@@ -7,20 +7,30 @@ const path = require("path");
 const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
 const contract = require("@truffle/contract");
+const { getColonyEditable, getColonyNetworkEditable } = require("../helpers/test-helper");
+const { ROOT_ROLE } = require("../helpers/constants");
+
+const colonyDeployed = {};
+const colonyNetworkDeployed = {};
+const deployedResolverAddresses = {};
 
 module.exports.deployOldExtensionVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {
   if (versionTag.indexOf(" ") !== -1) {
     throw new Error("Version tag cannot contain spaces");
   }
+  if (deployedResolverAddresses[interfaceName] && deployedResolverAddresses[interfaceName][versionTag]) {
+    // Already deployed
+    return;
+  }
 
   try {
     // eslint-disable-next-line prettier/prettier
-    const extensionResolverAddress = await deployOldUpgradeableVersion(
+    const extensionResolverAddress = await module.exports.deployOldUpgradeableVersion(
       contractName,
       interfaceName,
       implementationNames,
       versionTag,
-      colonyNetwork
+      colonyNetwork,
     );
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -36,9 +46,16 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
   if (versionTag.indexOf(" ") !== -1) {
     throw new Error("Version tag cannot contain spaces");
   }
+  if (!colonyDeployed[interfaceName]) {
+    colonyDeployed[interfaceName] = {};
+  }
+  if (colonyDeployed[interfaceName][versionTag]) {
+    // Already deployed
+    return colonyDeployed[interfaceName][versionTag];
+  }
 
   try {
-    const colonyVersionResolverAddress = await deployOldUpgradeableVersion(
+    const colonyVersionResolverAddress = await module.exports.deployOldUpgradeableVersion(
       contractName,
       interfaceName,
       implementationNames,
@@ -48,7 +65,7 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
 
     const colonyVersionResolver = await artifacts.require("Resolver").at(colonyVersionResolverAddress);
     const versionImplementationAddress = await colonyVersionResolver.lookup(web3.utils.soliditySha3("version()").slice(0, 10));
-    const versionImplementation = await artifacts.require("IColony").at(versionImplementationAddress);
+    const versionImplementation = await artifacts.require("IMetaColony").at(versionImplementationAddress);
     const version = await versionImplementation.version();
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -59,14 +76,85 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     const OldInterface = contract(JSON.parse(interfaceArtifact));
     OldInterface.setProvider(web3.currentProvider);
 
-    return OldInterface;
+    const oldAuthorityArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/ColonyAuthority.json`);
+    const OldAuthority = contract(JSON.parse(oldAuthorityArtifact));
+    OldAuthority.setProvider(web3.currentProvider);
+
+    colonyDeployed[interfaceName] = colonyDeployed[interfaceName] || {};
+    colonyDeployed[interfaceName][versionTag] = { OldInterface, OldAuthority, resolverAddress: colonyVersionResolverAddress };
+
+    return colonyDeployed[interfaceName][versionTag];
   } catch (e) {
     console.log(e);
     return process.exit(1);
   }
 };
 
-async function deployOldUpgradeableVersion(contractName, interfaceName, implementationNames, versionTag) {
+module.exports.downgradeColony = async (colonyNetwork, colony, version) => {
+  if (!colonyDeployed.IMetaColony[version]) {
+    throw new Error("Version not deployed");
+  }
+  const accounts = await web3.eth.getAccounts();
+  const editableColony = await getColonyEditable(colony, colonyNetwork);
+
+  const oldAuthority = await colonyDeployed.IMetaColony[version].OldAuthority.new(colony.address, { from: accounts[0] });
+  const owner = await oldAuthority.owner();
+  await oldAuthority.setUserRole(accounts[0], ROOT_ROLE, true, { from: owner });
+  await oldAuthority.setOwner(colony.address, { from: accounts[0] });
+  await editableColony.setStorageSlot(0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
+  const oldVersionResolver = colonyDeployed.IMetaColony[version].resolverAddress;
+  await editableColony.setStorageSlot(2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
+};
+
+module.exports.downgradeColonyNetwork = async (colonyNetwork, version) => {
+  if (!colonyNetworkDeployed[version]) {
+    throw new Error("Version not deployed");
+  }
+
+  const editableNetwork = await getColonyNetworkEditable(colonyNetwork);
+  const accounts = await web3.eth.getAccounts();
+  const oldAuthority = await colonyNetworkDeployed[version].OldAuthority.new(colonyNetwork.address, { from: accounts[0] });
+  await editableNetwork.setStorageSlot(0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
+  const oldVersionResolver = colonyNetworkDeployed[version].resolverAddress;
+  await editableNetwork.setStorageSlot(2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
+};
+
+module.exports.deployOldColonyNetworkVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {
+  if (versionTag.indexOf(" ") !== -1) {
+    throw new Error("Version tag cannot contain spaces");
+  }
+  if (colonyNetworkDeployed[versionTag]) {
+    return colonyNetworkDeployed[versionTag];
+  }
+  colonyNetworkDeployed[versionTag] = {};
+
+  try {
+    const colonyNetworkResolverAddress = await module.exports.deployOldUpgradeableVersion(
+      contractName,
+      interfaceName,
+      implementationNames,
+      versionTag,
+      colonyNetwork,
+    );
+
+    const interfaceArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/IColonyNetwork.json`);
+    const OldInterface = contract(JSON.parse(interfaceArtifact));
+    OldInterface.setProvider(web3.currentProvider);
+
+    const oldAuthorityArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/ColonyNetworkAuthority.json`);
+    const OldAuthority = contract(JSON.parse(oldAuthorityArtifact));
+    OldAuthority.setProvider(web3.currentProvider);
+
+    colonyNetworkDeployed[versionTag] = { resolverAddress: colonyNetworkResolverAddress, OldInterface, OldAuthority };
+
+    return colonyNetworkDeployed[versionTag];
+  } catch (e) {
+    console.log(e);
+    return process.exit(1);
+  }
+};
+
+module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName, implementationNames, versionTag) => {
   // Check out old version of repo in to a new directory
   //  If directory exists, assume we've already done this and skip
   let exists;
@@ -111,12 +199,13 @@ async function deployOldUpgradeableVersion(contractName, interfaceName, implemen
         "&& npx truffle exec ./scripts/deployOldUpgradeableVersionTruffle.js " +
         `--network ${network} --interfaceName ${interfaceName} --implementationNames ${implementationNames.join(",")}`,
     );
-
-    console.log("res", res);
   } catch (err) {
     console.log("err", err);
   }
 
   const resolverAddress = res.split("\n").slice(-2)[0].trim();
+  deployedResolverAddresses[interfaceName] = deployedResolverAddresses[interfaceName] || {};
+  deployedResolverAddresses[interfaceName][versionTag] = resolverAddress;
+
   return resolverAddress;
-}
+};

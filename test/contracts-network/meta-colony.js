@@ -7,8 +7,15 @@ const { soliditySha3 } = require("web3-utils");
 const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
 const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } = require("../../helpers/test-helper");
 const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } = require("../../helpers/test-data-generator");
+const {
+  deployOldColonyVersion,
+  downgradeColony,
+  deployOldColonyNetworkVersion,
+  downgradeColonyNetwork,
+} = require("../../scripts/deployOldUpgradeableVersion");
 
 const IMetaColony = artifacts.require("IMetaColony");
+const EtherRouter = artifacts.require("EtherRouter");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -407,6 +414,60 @@ contract("Meta Colony", (accounts) => {
 
     it("should not allow the fee to be set to zero", async () => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(0), "colony-network-fee-inverse-cannot-be-zero");
+    });
+  });
+
+  describe("when managing global skills", () => {
+    let globalSkillId;
+    beforeEach(async () => {
+      const { OldInterface } = await deployOldColonyVersion(
+        "Colony",
+        "IMetaColony",
+        [
+          // eslint-disable-next-line max-len
+          "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyPayment,ColonyRewards,ColonyRoles,ColonyTask,ContractRecovery,ColonyArbitraryTransaction",
+        ],
+        "glwss4",
+        colonyNetwork,
+      );
+
+      await downgradeColony(colonyNetwork, metaColony, "glwss4");
+
+      // Make the colonyNetwork the old version
+      await deployOldColonyNetworkVersion(
+        "",
+        "IColonyNetwork",
+        ["ColonyNetwork,ColonyNetworkAuction,ColonyNetworkDeployer,ColonyNetworkENS,ColonyNetworkExtensions,ColonyNetworkMining,ContractRecovery"],
+        "glwss4",
+      );
+
+      const colonyNetworkAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
+      const latestResolver = await colonyNetworkAsEtherRouter.resolver();
+
+      await downgradeColonyNetwork(colonyNetwork, "glwss4");
+
+      // Add global skill
+      const oldMetaColony = await OldInterface.at(metaColony.address);
+      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      globalSkillId = await colonyNetwork.getSkillCount();
+
+      // Upgrade to current version
+      await colonyNetworkAsEtherRouter.setResolver(latestResolver);
+      await metaColony.upgrade(14, { from: accounts[0] });
+    });
+
+    describe("when getting a skill", () => {
+      it("should return a true flag if the skill is global", async () => {
+        const globalSkill = await colonyNetwork.getSkill(globalSkillId);
+
+        expect(globalSkill.DEPRECATED_globalSkill).to.be.true;
+      });
+
+      it("should return a false flag if the skill is a domain or local skill", async () => {
+        const domainSkill = await colonyNetwork.getSkill(3);
+
+        expect(domainSkill.DEPRECATED_globalSkill).to.be.false;
+      });
     });
   });
 
