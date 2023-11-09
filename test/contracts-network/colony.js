@@ -447,7 +447,7 @@ contract("Colony", (accounts) => {
     let OldInterface;
     let oldColony;
     before(async () => {
-      OldInterface = await deployOldColonyVersion(
+      ({ OldInterface } = await deployOldColonyVersion(
         "Colony",
         "IMetaColony",
         [
@@ -456,7 +456,7 @@ contract("Colony", (accounts) => {
         ],
         "glwss4",
         colonyNetwork,
-      );
+      ));
     });
 
     beforeEach(async () => {
@@ -467,6 +467,8 @@ contract("Colony", (accounts) => {
       await token.setAuthority(tokenAuthority.address);
 
       oldColony = await OldInterface.at(colony.address);
+      await colony.addLocalSkill();
+      localSkillId = await colonyNetwork.getSkillCount();
     });
 
     it("should be able to query for a task", async () => {
