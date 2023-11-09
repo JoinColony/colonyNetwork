@@ -8,7 +8,7 @@ const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
 const contract = require("@truffle/contract");
 const { getColonyEditable, getColonyNetworkEditable } = require("../helpers/test-helper");
-const { ROOT_ROLE } = require("../helpers/constants");
+const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE } = require("../helpers/constants");
 
 const colonyDeployed = {};
 const colonyNetworkDeployed = {};
@@ -100,6 +100,9 @@ module.exports.downgradeColony = async (colonyNetwork, colony, version) => {
   const oldAuthority = await colonyDeployed.IMetaColony[version].OldAuthority.new(colony.address, { from: accounts[0] });
   const owner = await oldAuthority.owner();
   await oldAuthority.setUserRole(accounts[0], ROOT_ROLE, true, { from: owner });
+  await oldAuthority.setUserRole(accounts[0], RECOVERY_ROLE, true, { from: owner });
+  await oldAuthority.setUserRole(accounts[0], ADMINISTRATION_ROLE, true, { from: owner });
+  await oldAuthority.setUserRole(accounts[0], ARCHITECTURE_ROLE, true, { from: owner });
   await oldAuthority.setOwner(colony.address, { from: accounts[0] });
   await editableColony.setStorageSlot(0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
   const oldVersionResolver = colonyDeployed.IMetaColony[version].resolverAddress;

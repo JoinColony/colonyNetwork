@@ -5,7 +5,7 @@ const bnChai = require("bn-chai");
 
 const { soliditySha3 } = require("web3-utils");
 const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
-const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit } = require("../../helpers/test-helper");
+const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit, bn2bytes32 } = require("../../helpers/test-helper");
 const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } = require("../../helpers/test-data-generator");
 const {
   deployOldColonyVersion,
@@ -417,7 +417,7 @@ contract("Meta Colony", (accounts) => {
     });
   });
 
-  describe("when managing global skills", () => {
+  describe("when interacting with (now removed) global skills", () => {
     let globalSkillId;
     beforeEach(async () => {
       const { OldInterface } = await deployOldColonyVersion(
@@ -468,6 +468,26 @@ contract("Meta Colony", (accounts) => {
 
         expect(domainSkill.DEPRECATED_globalSkill).to.be.false;
       });
+    });
+
+    it("should NOT be able to add a child skill to a global skill parent", async () => {
+      const skillCountBefore = await colonyNetwork.getSkillCount();
+      // Put colony in to recovery mode
+      await metaColony.enterRecoveryMode();
+      // Work out the storage slot
+      // Domain mapping is storage slot 20
+      // So domain 1 struct starts at slot given by
+      const domain1Slot = soliditySha3(1, 20);
+      // Which means the skill is in that slot (it's the first entry in the struct)
+      // Edit that slot to the first global skill (from id 1 to id 4)
+      await metaColony.setStorageSlotRecovery(domain1Slot, bn2bytes32(globalSkillId));
+      // Leave recovery mode
+      await metaColony.approveExitRecovery();
+      await metaColony.exitRecoveryMode();
+      // Try to add a child to what the network thinks is a global skill
+      await checkErrorRevert(metaColony.addDomain(1, UINT256_MAX, 1), "colony-deprecated-global-and-local-skill-trees-are-separate");
+      const skillCountAfter = await colonyNetwork.getSkillCount();
+      expect(skillCountBefore).to.eq.BN(skillCountAfter);
     });
   });
 

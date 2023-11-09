@@ -267,6 +267,13 @@ contract("Colony Expenditure", (accounts) => {
       );
     });
 
+    it("should allow owners to update a slot skill with a local skill", async () => {
+      await colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN });
+
+      expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
+      expect(expenditureSlot.skills[0]).to.eq.BN(localSkillId);
+    });
+
     it("should not allow owners to update a slot skill with a local skill from a different colony", async () => {
       const { localSkillId: otherLocalSkillId } = await setupRandomColony(colonyNetwork);
 
