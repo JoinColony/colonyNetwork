@@ -24,8 +24,14 @@ exports.makeExpenditure = async function makeExpenditure({ colonyNetwork, colony
   }
 
   if (skillId === undefined) {
-    await colony.addLocalSkill();
-    skillId = await colonyNetwork.getSkillCount(); // eslint-disable-line no-param-reassign
+    const rootLocalSkillId = await colony.getRootLocalSkill();
+    const rootLocalSkill = await colonyNetwork.getSkill(rootLocalSkillId);
+    if (rootLocalSkill.children.length > 0) {
+      [skillId] = rootLocalSkill.children; // eslint-disable-line no-param-reassign
+    } else {
+      await colony.addLocalSkill();
+      skillId = await colonyNetwork.getSkillCount(); // eslint-disable-line no-param-reassign
+    }
   }
 
   const accounts = await web3GetAccounts();

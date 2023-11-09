@@ -255,7 +255,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-        36, // Passing in update number for colony wide skillId: 5, user: 0
+        35, // Passing in update number for colony wide skillId: 5, user: 0
         "0xfffffffffffffffffffffff",
       );
 
