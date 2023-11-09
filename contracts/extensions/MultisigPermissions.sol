@@ -67,14 +67,16 @@ contract MultisigPermissions is
   }
 
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
+
   bytes4 constant SET_USER_ROLES =
     bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
+
   bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
     uint8(ColonyDataTypes.ColonyRole.Recovery)) |
     (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
-
   bytes32 constant ONLY_ROOT_ROLE_MASK =
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root);
+
   bytes32 constant ONLY_ARCHITECTURE_ROLE_MASK =
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Architecture);
 
