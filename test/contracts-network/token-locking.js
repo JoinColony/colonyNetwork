@@ -413,7 +413,7 @@ contract("Token Locking", (addresses) => {
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
       const votingToken = await TestVotingToken.at(extensionAddress);
 
-      await checkErrorRevert(votingToken.unlockTokenForUser(userAddress, 100), "colony-token-invalid-lockid");
+      await checkErrorRevert(votingToken.unlockTokenForUser(userAddress, 100), "colony-bad-lock-id");
     });
   });
 
