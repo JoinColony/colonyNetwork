@@ -278,9 +278,8 @@ contract MultisigPermissions is
     while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
       if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
         // Then the motion requires this permission. Let's check it
-        // The user either needs to have the permission, or are removing an approval
-        // If not, move on to next permissions
-        if (!(uint256(userPermissions) & (1 << roleIndex) != 0 || !_setTo)) {
+        // If the user is adding a vote but lacks the permission, skip
+        if (uint256(userPermissions) & (1 << roleIndex) == 0 && _setTo) {
           roleIndex += 1;
           continue;
         }
