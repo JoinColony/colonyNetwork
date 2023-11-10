@@ -13,7 +13,7 @@ const {
   fundColonyWithTokens,
   setupColony,
 } = require("../../helpers/test-data-generator");
-const { deployOldColonyVersion } = require("../../scripts/deployOldUpgradeableVersion");
+const { deployColonyVersionGLWSS4 } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -447,16 +447,7 @@ contract("Colony", (accounts) => {
     let OldInterface;
     let oldColony;
     before(async () => {
-      ({ OldInterface } = await deployOldColonyVersion(
-        "Colony",
-        "IMetaColony",
-        [
-          // eslint-disable-next-line max-len
-          "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyPayment,ColonyRewards,ColonyRoles,ColonyTask,ContractRecovery,ColonyArbitraryTransaction",
-        ],
-        "glwss4",
-        colonyNetwork,
-      ));
+      ({ OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork));
     });
 
     beforeEach(async () => {

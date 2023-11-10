@@ -46,6 +46,28 @@ module.exports.deployOldExtensionVersion = async (contractName, interfaceName, i
   }
 };
 
+module.exports.deployColonyVersionGLWSS4 = (colonyNetwork) => {
+  return module.exports.deployOldColonyVersion(
+    "Colony",
+    "IMetaColony",
+    [
+      // eslint-disable-next-line max-len
+      "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyPayment,ColonyRewards,ColonyRoles,ColonyTask,ContractRecovery,ColonyArbitraryTransaction",
+    ],
+    "glwss4",
+    colonyNetwork,
+  );
+};
+
+module.exports.deployColonyNetworkVersionGLWSS4 = () => {
+  return module.exports.deployOldColonyNetworkVersion(
+    "",
+    "IColonyNetwork",
+    ["ColonyNetwork,ColonyNetworkAuction,ColonyNetworkDeployer,ColonyNetworkENS,ColonyNetworkExtensions,ColonyNetworkMining,ContractRecovery"],
+    "glwss4",
+  );
+};
+
 module.exports.deployOldColonyVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {
   if (versionTag.indexOf(" ") !== -1) {
     throw new Error("Version tag cannot contain spaces");

@@ -23,17 +23,25 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const EtherRouter = artifacts.require("EtherRouter");
 const OneTxPayment = artifacts.require("OneTxPayment");
 
 const ONE_TX_PAYMENT = soliditySha3("OneTxPayment");
-const { deployOldExtensionVersion, deployOldColonyVersion } = require("../../scripts/deployOldUpgradeableVersion");
+const {
+  deployOldExtensionVersion,
+  downgradeColony,
+  downgradeColonyNetwork,
+  deployColonyVersionGLWSS4,
+  deployColonyNetworkVersionGLWSS4,
+} = require("../../scripts/deployOldUpgradeableVersion");
 
 contract("One transaction payments", (accounts) => {
   let colony;
   let token;
   let localSkillId;
   let colonyNetwork;
+  let metaColony;
   let oneTxPayment;
   let version;
 
@@ -45,6 +53,9 @@ contract("One transaction payments", (accounts) => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
     const extension = await OneTxPayment.new();
     version = await extension.version();
@@ -243,6 +254,41 @@ contract("One transaction payments", (accounts) => {
     it("should not allow an admin to specify a non-global skill", async () => {
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 2),
+        "colony-not-valid-local-skill",
+      );
+    });
+
+    it("should not allow an admin to specify a global skill (which is now removed functionality), either deprecated or undeprecated", async () => {
+      const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await downgradeColony(colonyNetwork, metaColony, "glwss4");
+
+      // Make the colonyNetwork the old version
+      await deployColonyNetworkVersionGLWSS4();
+
+      const colonyNetworkAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
+      const latestResolver = await colonyNetworkAsEtherRouter.resolver();
+
+      await downgradeColonyNetwork(colonyNetwork, "glwss4");
+
+      // Add global skill
+      const oldMetaColony = await OldInterface.at(metaColony.address);
+      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      const globalSkillId = await colonyNetwork.getSkillCount();
+      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      const globalSkillId2 = await colonyNetwork.getSkillCount();
+      await oldMetaColony.deprecateGlobalSkill(globalSkillId, { from: accounts[0] });
+
+      // Upgrade to current version
+      await colonyNetworkAsEtherRouter.setResolver(latestResolver);
+      await metaColony.upgrade(14, { from: accounts[0] });
+
+      await checkErrorRevert(
+        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, globalSkillId),
+        "colony-not-valid-local-skill",
+      );
+
+      await checkErrorRevert(
+        oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, globalSkillId2),
         "colony-not-valid-local-skill",
       );
     });
@@ -510,17 +556,7 @@ contract("One transaction payments", (accounts) => {
     before(async () => {
       // V5 is `glwss4`,
       await deployOldExtensionVersion("OneTxPayment", "OneTxPayment", ["OneTxPayment"], "glwss4", colonyNetwork);
-
-      await deployOldColonyVersion(
-        "Colony",
-        "IMetaColony",
-        [
-          // eslint-disable-next-line max-len
-          "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyPayment,ColonyRewards,ColonyRoles,ColonyTask,ContractRecovery,ColonyArbitraryTransaction",
-        ],
-        "glwss4",
-        colonyNetwork,
-      );
+      await deployColonyNetworkVersionGLWSS4();
     });
 
     beforeEach(async () => {

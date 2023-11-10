@@ -8,10 +8,10 @@ const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO } = require("../../helpers/cons
 const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit, bn2bytes32 } = require("../../helpers/test-helper");
 const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } = require("../../helpers/test-data-generator");
 const {
-  deployOldColonyVersion,
   downgradeColony,
-  deployOldColonyNetworkVersion,
   downgradeColonyNetwork,
+  deployColonyVersionGLWSS4,
+  deployColonyNetworkVersionGLWSS4,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 const IMetaColony = artifacts.require("IMetaColony");
@@ -420,26 +420,11 @@ contract("Meta Colony", (accounts) => {
   describe("when interacting with (now removed) global skills", () => {
     let globalSkillId;
     beforeEach(async () => {
-      const { OldInterface } = await deployOldColonyVersion(
-        "Colony",
-        "IMetaColony",
-        [
-          // eslint-disable-next-line max-len
-          "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyPayment,ColonyRewards,ColonyRoles,ColonyTask,ContractRecovery,ColonyArbitraryTransaction",
-        ],
-        "glwss4",
-        colonyNetwork,
-      );
-
+      const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
       await downgradeColony(colonyNetwork, metaColony, "glwss4");
 
       // Make the colonyNetwork the old version
-      await deployOldColonyNetworkVersion(
-        "",
-        "IColonyNetwork",
-        ["ColonyNetwork,ColonyNetworkAuction,ColonyNetworkDeployer,ColonyNetworkENS,ColonyNetworkExtensions,ColonyNetworkMining,ContractRecovery"],
-        "glwss4",
-      );
+      await deployColonyNetworkVersionGLWSS4();
 
       const colonyNetworkAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
       const latestResolver = await colonyNetworkAsEtherRouter.resolver();
