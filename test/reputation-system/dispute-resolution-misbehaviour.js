@@ -550,7 +550,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNLeaves);
       // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
       // of updates that log entry implies by itself, plus the number of decays (the number of leaves in current state)
-      console.log(nUpdates.toString());
       if (nUpdates.toNumber() !== 64) {
         throw Error("Should be a power of two");
       }

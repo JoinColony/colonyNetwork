@@ -491,6 +491,10 @@ contract("Colony Network", (accounts) => {
   });
 
   describe("when working with skills", () => {
+    it("should not be able to add a global skill, even when called from metacolony ", async () => {
+      await checkErrorRevert(colonyNetwork.addSkill(0, { from: metaColony.address }), "colony-network-invalid-parent-skill");
+    });
+
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1), "colony-caller-must-be-colony");
     });
