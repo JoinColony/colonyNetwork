@@ -7,7 +7,7 @@ const path = require("path");
 const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
 const contract = require("@truffle/contract");
-const { getColonyEditable, getColonyNetworkEditable } = require("../helpers/test-helper");
+const { getColonyEditable, getColonyNetworkEditable, web3GetCode } = require("../helpers/test-helper");
 const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE } = require("../helpers/constants");
 
 const colonyDeployed = {};
@@ -19,8 +19,12 @@ module.exports.deployOldExtensionVersion = async (contractName, interfaceName, i
     throw new Error("Version tag cannot contain spaces");
   }
   if (deployedResolverAddresses[interfaceName] && deployedResolverAddresses[interfaceName][versionTag]) {
-    // Already deployed
-    return;
+    // Already deployed... if truffle's not snapshotted it away. See if there's any code there.
+    const resolverAddress = deployedResolverAddresses[interfaceName][versionTag];
+    const code = await web3GetCode(resolverAddress);
+    if (code !== "0x") {
+      return;
+    }
   }
 
   try {
@@ -50,8 +54,12 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     colonyDeployed[interfaceName] = {};
   }
   if (colonyDeployed[interfaceName][versionTag]) {
-    // Already deployed
-    return colonyDeployed[interfaceName][versionTag];
+    // Already deployed... if truffle's not snapshotted it away. See if there's any code there.
+    const { resolverAddress } = colonyDeployed[interfaceName][versionTag];
+    const code = await web3GetCode(resolverAddress);
+    if (code !== "0x") {
+      return colonyDeployed[interfaceName][versionTag];
+    }
   }
 
   try {
@@ -127,7 +135,12 @@ module.exports.deployOldColonyNetworkVersion = async (contractName, interfaceNam
     throw new Error("Version tag cannot contain spaces");
   }
   if (colonyNetworkDeployed[versionTag]) {
-    return colonyNetworkDeployed[versionTag];
+    // Already deployed... if truffle's not snapshotted it away. See if there's any code there.
+    const { resolverAddress } = colonyNetworkDeployed[versionTag];
+    const code = await web3GetCode(resolverAddress);
+    if (code !== "0x") {
+      return colonyNetworkDeployed[versionTag];
+    }
   }
   colonyNetworkDeployed[versionTag] = {};
 
