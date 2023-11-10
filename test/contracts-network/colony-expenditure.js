@@ -9,6 +9,12 @@ const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, IPFS_HASH, AD
 const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
+const {
+  deployColonyVersionGLWSS4,
+  downgradeColony,
+  deployColonyNetworkVersionGLWSS4,
+  downgradeColonyNetwork,
+} = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -363,6 +369,45 @@ contract("Colony Expenditure", (accounts) => {
       );
     });
 
+    it("should not allow owners to set a local skill, but not local to this colony", async () => {
+      const { colony: otherColony } = await setupRandomColony(colonyNetwork);
+      await otherColony.addLocalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, skillId, { from: ADMIN }), "colony-not-valid-local-skill");
+    });
+
+    it("should not allow owners to set a nonexistend skill", async () => {
+      const skillId = await colonyNetwork.getSkillCount();
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, skillId.addn(1), { from: ADMIN }), "colony-not-valid-local-skill");
+    });
+
+    it("should not allow owners to set a (now defunct) global skill, either deprecated or undeprecated", async () => {
+      const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await downgradeColony(colonyNetwork, metaColony, "glwss4");
+
+      // Make the colonyNetwork the old version
+      await deployColonyNetworkVersionGLWSS4();
+
+      const colonyNetworkAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
+      const latestResolver = await colonyNetworkAsEtherRouter.resolver();
+
+      await downgradeColonyNetwork(colonyNetwork, "glwss4");
+
+      // Add global skill
+      const oldMetaColony = await OldInterface.at(metaColony.address);
+      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      const globalSkillId = await colonyNetwork.getSkillCount();
+      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      const globalSkillId2 = await colonyNetwork.getSkillCount();
+      await oldMetaColony.deprecateGlobalSkill(globalSkillId, { from: accounts[0] });
+
+      // Upgrade to current version
+      await colonyNetworkAsEtherRouter.setResolver(latestResolver);
+      await metaColony.upgrade(14, { from: accounts[0] });
+
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId, { from: ADMIN }), "colony-not-valid-local-skill");
+      await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId2, { from: ADMIN }), "colony-not-valid-local-skill");
+    });
     it("should not allow non-owners to update skills or payouts", async () => {
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId]), "colony-expenditure-not-owner");
       await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner");
