@@ -383,6 +383,21 @@ contract("Colony", (accounts) => {
         "colony-metatx-invalid-signature",
       );
     });
+
+    it("should not allow a user to replay another's metatransaction even if nonce the same", async () => {
+      const txData = await colony.contract.methods.mintTokens(100).encodeABI();
+
+      const user0Nonce = await colony.getMetatransactionNonce(USER0);
+      const user1Nonce = await colony.getMetatransactionNonce(USER1);
+
+      expect(user0Nonce).to.be.eq.BN(user1Nonce);
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+
+      await colony.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
+      await checkErrorRevert(colony.executeMetaTransaction(USER1, txData, r, s, v, { from: USER1 }), "metatransaction-signer-signature-mismatch");
+    });
   });
 
   describe("when executing a multicall transaction", () => {

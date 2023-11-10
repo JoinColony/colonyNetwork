@@ -57,7 +57,7 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender, Mult
   }
 
   function verify(
-    address _owner,
+    address _user,
     uint256 _nonce,
     uint256 _chainId,
     bytes memory _payload,
@@ -68,6 +68,6 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender, Mult
     bytes32 hash = prefixed(keccak256(abi.encodePacked(_nonce, this, _chainId, _payload)));
     address signer = ecrecover(hash, _sigV, _sigR, _sigS);
     require(signer != address(0), "colony-metatx-invalid-signature");
-    return (_owner == signer);
+    return (_user == signer);
   }
 }
