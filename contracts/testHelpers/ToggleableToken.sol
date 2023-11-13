@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Judiciously tweaked from ../../lib/dappsys/base.sol
 
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 
 import { ERC20, ERC20Events } from "./../../lib/dappsys/erc20.sol";
 import { DSMath } from "./../../lib/dappsys/math.sol";

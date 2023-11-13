@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 pragma experimental ABIEncoderV2;
 
 import { ERC20 } from "./../../lib/dappsys/erc20.sol";
