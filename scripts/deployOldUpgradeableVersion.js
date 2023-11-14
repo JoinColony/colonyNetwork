@@ -105,10 +105,15 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     const interfaceArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/${interfaceName}.json`);
     const OldInterface = contract(JSON.parse(interfaceArtifact));
     OldInterface.setProvider(web3.currentProvider);
+    const accounts = await web3.eth.getAccounts();
+    let existingDefaults = OldInterface.defaults();
+    OldInterface.defaults({ ...existingDefaults, from: accounts[0] });
 
     const oldAuthorityArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/ColonyAuthority.json`);
     const OldAuthority = contract(JSON.parse(oldAuthorityArtifact));
     OldAuthority.setProvider(web3.currentProvider);
+    existingDefaults = OldAuthority.defaults();
+    OldAuthority.defaults({ ...existingDefaults, from: accounts[0] });
 
     colonyDeployed[interfaceName] = colonyDeployed[interfaceName] || {};
     colonyDeployed[interfaceName][versionTag] = { OldInterface, OldAuthority, resolverAddress: colonyVersionResolverAddress };
@@ -127,13 +132,16 @@ module.exports.downgradeColony = async (colonyNetwork, colony, version) => {
   const accounts = await web3.eth.getAccounts();
   const editableColony = await getColonyEditable(colony, colonyNetwork);
 
-  const oldAuthority = await colonyDeployed.IMetaColony[version].OldAuthority.new(colony.address, { from: accounts[0] });
-  const owner = await oldAuthority.owner();
-  await oldAuthority.setUserRole(accounts[0], ROOT_ROLE, true, { from: owner });
-  await oldAuthority.setUserRole(accounts[0], RECOVERY_ROLE, true, { from: owner });
-  await oldAuthority.setUserRole(accounts[0], ADMINISTRATION_ROLE, true, { from: owner });
-  await oldAuthority.setUserRole(accounts[0], ARCHITECTURE_ROLE, true, { from: owner });
-  await oldAuthority.setOwner(colony.address, { from: accounts[0] });
+  // To downgrade a colony, we need to set the authority to the old authority contract,
+  // and set the resolver to the old version resolver. We don't allow this during ordinary
+  // operation, so directly editing the relevant storage slots is required.
+
+  const oldAuthority = await colonyDeployed.IMetaColony[version].OldAuthority.new(colony.address);
+  await oldAuthority.setUserRole(accounts[0], ROOT_ROLE, true);
+  await oldAuthority.setUserRole(accounts[0], RECOVERY_ROLE, true);
+  await oldAuthority.setUserRole(accounts[0], ADMINISTRATION_ROLE, true);
+  await oldAuthority.setUserRole(accounts[0], ARCHITECTURE_ROLE, true);
+  await oldAuthority.setOwner(colony.address);
   await editableColony.setStorageSlot(0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
   const oldVersionResolver = colonyDeployed.IMetaColony[version].resolverAddress;
   await editableColony.setStorageSlot(2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
@@ -145,8 +153,7 @@ module.exports.downgradeColonyNetwork = async (colonyNetwork, version) => {
   }
 
   const editableNetwork = await getColonyNetworkEditable(colonyNetwork);
-  const accounts = await web3.eth.getAccounts();
-  const oldAuthority = await colonyNetworkDeployed[version].OldAuthority.new(colonyNetwork.address, { from: accounts[0] });
+  const oldAuthority = await colonyNetworkDeployed[version].OldAuthority.new(colonyNetwork.address);
   await editableNetwork.setStorageSlot(0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
   const oldVersionResolver = colonyNetworkDeployed[version].resolverAddress;
   await editableNetwork.setStorageSlot(2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
@@ -179,9 +186,16 @@ module.exports.deployOldColonyNetworkVersion = async (contractName, interfaceNam
     const OldInterface = contract(JSON.parse(interfaceArtifact));
     OldInterface.setProvider(web3.currentProvider);
 
+    const accounts = await web3.eth.getAccounts();
+    let existingDefaults = OldInterface.defaults();
+    OldInterface.defaults({ ...existingDefaults, from: accounts[0] });
+
     const oldAuthorityArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/ColonyNetworkAuthority.json`);
     const OldAuthority = contract(JSON.parse(oldAuthorityArtifact));
     OldAuthority.setProvider(web3.currentProvider);
+
+    existingDefaults = OldAuthority.defaults();
+    OldAuthority.defaults({ ...existingDefaults, from: accounts[0] });
 
     colonyNetworkDeployed[versionTag] = { resolverAddress: colonyNetworkResolverAddress, OldInterface, OldAuthority };
 

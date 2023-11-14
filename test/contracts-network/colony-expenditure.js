@@ -395,15 +395,15 @@ contract("Colony Expenditure", (accounts) => {
 
       // Add global skill
       const oldMetaColony = await OldInterface.at(metaColony.address);
-      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      await oldMetaColony.addGlobalSkill();
       const globalSkillId = await colonyNetwork.getSkillCount();
-      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      await oldMetaColony.addGlobalSkill();
       const globalSkillId2 = await colonyNetwork.getSkillCount();
-      await oldMetaColony.deprecateGlobalSkill(globalSkillId, { from: accounts[0] });
+      await oldMetaColony.deprecateGlobalSkill(globalSkillId);
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14, { from: accounts[0] });
+      await metaColony.upgrade(14);
 
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId, { from: ADMIN }), "colony-not-valid-local-skill");
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId2, { from: ADMIN }), "colony-not-valid-local-skill");

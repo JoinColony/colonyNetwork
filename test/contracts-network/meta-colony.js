@@ -433,12 +433,12 @@ contract("Meta Colony", (accounts) => {
 
       // Add global skill
       const oldMetaColony = await OldInterface.at(metaColony.address);
-      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      await oldMetaColony.addGlobalSkill();
       globalSkillId = await colonyNetwork.getSkillCount();
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14, { from: accounts[0] });
+      await metaColony.upgrade(14);
     });
 
     describe("when getting a skill", () => {

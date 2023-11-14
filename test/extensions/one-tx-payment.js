@@ -272,15 +272,15 @@ contract("One transaction payments", (accounts) => {
 
       // Add global skill
       const oldMetaColony = await OldInterface.at(metaColony.address);
-      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      await oldMetaColony.addGlobalSkill();
       const globalSkillId = await colonyNetwork.getSkillCount();
-      await oldMetaColony.addGlobalSkill({ from: accounts[0] });
+      await oldMetaColony.addGlobalSkill();
       const globalSkillId2 = await colonyNetwork.getSkillCount();
-      await oldMetaColony.deprecateGlobalSkill(globalSkillId, { from: accounts[0] });
+      await oldMetaColony.deprecateGlobalSkill(globalSkillId);
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14, { from: accounts[0] });
+      await metaColony.upgrade(14);
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, globalSkillId),
