@@ -469,8 +469,9 @@ contract("Meta Colony", (accounts) => {
       // Leave recovery mode
       await metaColony.approveExitRecovery();
       await metaColony.exitRecoveryMode();
+
       // Try to add a child to what the network thinks is a global skill
-      await checkErrorRevert(metaColony.addDomain(1, UINT256_MAX, 1), "colony-deprecated-global-and-local-skill-trees-are-separate");
+      await checkErrorRevert(metaColony.addDomain(1, UINT256_MAX, 1), "colony-network-no-global-skills");
       const skillCountAfter = await colonyNetwork.getSkillCount();
       expect(skillCountBefore).to.eq.BN(skillCountAfter);
     });

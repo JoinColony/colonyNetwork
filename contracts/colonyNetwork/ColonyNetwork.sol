@@ -114,10 +114,8 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     require(_parentSkillId > 0, "colony-network-invalid-parent-skill");
 
     Skill storage parentSkill = skills[_parentSkillId];
-    require(
-      !parentSkill.DEPRECATED_globalSkill,
-      "colony-deprecated-global-and-local-skill-trees-are-separate"
-    );
+    require(!parentSkill.DEPRECATED_globalSkill, "colony-network-no-global-skills");
+
     skillCount += 1;
     Skill memory s;
 
