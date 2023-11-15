@@ -18,7 +18,7 @@
 import { IColony } from "./../colony/IColony.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
-pragma solidity 0.8.21;
+pragma solidity 0.8.23;
 pragma experimental ABIEncoderV2;
 
 contract GetActionDomainSkillId {
