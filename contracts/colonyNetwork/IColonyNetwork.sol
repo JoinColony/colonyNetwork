@@ -85,8 +85,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _addressIsColony true if specified address is a colony, otherwise false
   function isColony(address _colony) external view returns (bool _addressIsColony);
 
-  /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`.
-  /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`.
+  /// @notice Adds a new skill to the domain or local skills tree, under skill `_parentSkillId`.
   /// Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`.
   /// @dev Errors if the parent skill does not exist or if this is called by an unauthorised sender.
   /// @param _parentSkillId Id of the skill under which the new skill will be added. If 0, a global skill is added with no parent.

@@ -155,7 +155,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
 
       // Add 500 more skills which won't be used in reputation
       const s = Array.from(Array(500).keys());
-      const skillsSetupPromise = s.map(() => metaColony.addGlobalSkill());
+      const skillsSetupPromise = s.map(() => metaColony.addLocalSkill());
       await Promise.all(skillsSetupPromise);
 
       skillCount = await colonyNetwork.getSkillCount();

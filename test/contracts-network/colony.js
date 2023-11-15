@@ -4,7 +4,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, GLOBAL_SKILL_ID, HASHZERO } = require("../../helpers/constants");
+const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, HASHZERO } = require("../../helpers/constants");
 const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
 const {
   setupRandomColony,
@@ -13,7 +13,7 @@ const {
   fundColonyWithTokens,
   setupColony,
 } = require("../../helpers/test-data-generator");
-const { deployOldColonyVersion } = require("../../scripts/deployOldUpgradeableVersion");
+const { deployColonyVersionGLWSS4 } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -28,6 +28,7 @@ const Token = artifacts.require("Token");
 contract("Colony", (accounts) => {
   let colony;
   let token;
+  let localSkillId;
   let colonyNetwork;
 
   const USER0 = accounts[0];
@@ -39,7 +40,7 @@ contract("Colony", (accounts) => {
   });
 
   beforeEach(async () => {
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
+    ({ colony, token, localSkillId } = await setupRandomColony(colonyNetwork));
   });
 
   describe("when initialised", () => {
@@ -115,8 +116,9 @@ contract("Colony", (accounts) => {
       expect(domain.fundingPotId).to.eq.BN(1);
 
       // A domain skill should have been created for the Colony
-      const rootLocalSkillId = await colonyNetwork.getSkillCount();
-      expect(domain.skillId).to.eq.BN(rootLocalSkillId.subn(1));
+      const skillCount = await colonyNetwork.getSkillCount();
+      expect(domain.skillId).to.be.gte.BN(1);
+      expect(domain.skillId).to.be.lte.BN(skillCount);
     });
 
     it("should let funding pot information be read", async () => {
@@ -239,20 +241,22 @@ contract("Colony", (accounts) => {
     const INITIAL_ADDRESSES = accounts.slice(0, 4);
 
     it("should assign reputation correctly", async () => {
-      const skillCount = await colonyNetwork.getSkillCount();
-      const rootDomainSkillId = skillCount.subn(1);
+      const domain = await colony.getDomain(1);
 
       await colony.mintTokens(WAD.muln(14));
       await colony.claimColonyFunds(token.address);
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
+
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       expect(numberOfReputationLogs).to.eq.BN(INITIAL_ADDRESSES.length);
+
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       expect(updateLog.user).to.eq.BN(INITIAL_ADDRESSES[0]);
       expect(updateLog.amount).to.eq.BN(INITIAL_REPUTATIONS[0]);
-      expect(updateLog.skillId).to.eq.BN(rootDomainSkillId);
+      expect(updateLog.skillId).to.eq.BN(domain.skillId);
     });
 
     it("should assign tokens correctly", async () => {
@@ -443,16 +447,7 @@ contract("Colony", (accounts) => {
     let OldInterface;
     let oldColony;
     before(async () => {
-      OldInterface = await deployOldColonyVersion(
-        "Colony",
-        "IMetaColony",
-        [
-          // eslint-disable-next-line max-len
-          "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyPayment,ColonyRewards,ColonyRoles,ColonyTask,ContractRecovery,ColonyArbitraryTransaction",
-        ],
-        "glwss4",
-        colonyNetwork,
-      );
+      ({ OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork));
     });
 
     beforeEach(async () => {
@@ -463,10 +458,12 @@ contract("Colony", (accounts) => {
       await token.setAuthority(tokenAuthority.address);
 
       oldColony = await OldInterface.at(colony.address);
+      await colony.addLocalSkill();
+      localSkillId = await colonyNetwork.getSkillCount();
     });
 
     it("should be able to query for a task", async () => {
-      await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: USER0 });
+      await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, localSkillId, 0, { from: USER0 });
       await colony.upgrade(14);
       const taskId = await colony.getTaskCount();
       const task = await colony.getTask(taskId);
@@ -487,7 +484,7 @@ contract("Colony", (accounts) => {
     });
 
     it("should be able to query for a payment", async () => {
-      await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, GLOBAL_SKILL_ID, { from: USER0 });
+      await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, localSkillId, { from: USER0 });
       await colony.upgrade(14);
 
       const paymentId = await colony.getPaymentCount();
@@ -500,7 +497,7 @@ contract("Colony", (accounts) => {
     it("should be able to transfer funds allocated to a task back to the domain", async () => {
       await fundColonyWithTokens(colony, token, WAD);
 
-      await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, GLOBAL_SKILL_ID, 0, { from: USER0 });
+      await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, localSkillId, 0, { from: USER0 });
       const taskId = await colony.getTaskCount();
       const { fundingPotId, status } = await colony.getTask(taskId);
 
@@ -516,7 +513,7 @@ contract("Colony", (accounts) => {
     it("should be able to transfer funds allocated to a payment back to the domain", async () => {
       await fundColonyWithTokens(colony, token, WAD);
 
-      await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, GLOBAL_SKILL_ID, { from: USER0 });
+      await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, localSkillId, { from: USER0 });
       const paymentId = await colony.getPaymentCount();
       const { fundingPotId, finalized } = await colony.getPayment(paymentId);
 

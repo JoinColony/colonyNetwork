@@ -45,7 +45,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256,uint256,uint256)"); // Only for versions < 14
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,uint256,uint256,address,uint256)"); // Only for versions < 14
     addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)"); // Only for versions < 14
-    
+
     // Add permissions for the Funding role
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
 
@@ -76,8 +76,6 @@ contract ColonyAuthority is CommonAuthority {
     //  Meta Colony functions
     addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
     addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
-    addRoleCapability(ROOT_ROLE, "addGlobalSkill()");
-    addRoleCapability(ROOT_ROLE, "deprecateGlobalSkill(uint256)");
 
     // Added in colony v3 (auburn-glider)
     addRoleCapability(ROOT_ROLE, "updateColonyOrbitDB(string)");

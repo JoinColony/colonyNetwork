@@ -126,6 +126,25 @@ contract("Colony Staking", (accounts) => {
       expect(deposit.balance).to.eq.BN(WAD.muln(49));
     });
 
+    it("should not let users call stake management functions on tokenLocking directly", async () => {
+      await checkErrorRevert(
+        tokenLocking.approveStake(USER1, WAD, token.address, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+      await checkErrorRevert(
+        tokenLocking.obligateStake(USER1, WAD, token.address, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+      await checkErrorRevert(
+        tokenLocking.deobligateStake(USER1, WAD, token.address, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+      await checkErrorRevert(
+        tokenLocking.transferStake(USER1, WAD, token.address, USER0, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+    });
+
     it("should not let users obligate more than is approved for obligator", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
 

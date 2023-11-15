@@ -27,16 +27,6 @@ interface IMetaColony is IColony {
   /// @param _wad Amount to mint and transfer to the colony network
   function mintTokensForColonyNetwork(uint256 _wad) external;
 
-  /// @notice Add a new global skill.
-  /// @dev Calls `IColonyNetwork.addSkill`.
-  /// @return skillId Id of the added skill
-  function addGlobalSkill() external returns (uint256 skillId);
-
-  /// @notice Mark a global skill as deprecated which stops new tasks and payments from using it.
-  /// @dev Calls `IColonyNetwork.deprecateSkill`.
-  /// @param _skillId Id of the added skill
-  function deprecateGlobalSkill(uint256 _skillId) external;
-
   /// @notice Set the Colony Network fee inverse amount.
   /// @dev Calls `IColonyNetwork.setFeeInverse`.
   /// @param _feeInverse Nonzero amount for the fee inverse

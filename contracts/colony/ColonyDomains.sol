@@ -108,6 +108,7 @@ contract ColonyDomains is ColonyStorage {
     }
   }
 
+  // NOTE: We intentionally avoid adding rootLocalSkill to the local skills mapping
   function initialiseRootLocalSkill() public stoppable {
     require(rootLocalSkill == 0, "colony-root-local-skill-initialised");
     rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();

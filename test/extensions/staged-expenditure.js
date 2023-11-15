@@ -196,7 +196,7 @@ contract("Staged Expenditure", (accounts) => {
       await colony.finalizeExpenditure(expenditureId);
 
       // Cannot claim until the slot is released
-      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, 0, token.address), "colony-expenditure-cannot-claim");
+      await checkErrorRevert(colony.claimExpenditurePayout(expenditureId, SLOT0, token.address), "colony-expenditure-cannot-claim");
 
       // Cannot release stage if no arbitration permission
       await checkErrorRevert(

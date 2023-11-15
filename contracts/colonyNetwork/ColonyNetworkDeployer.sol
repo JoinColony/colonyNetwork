@@ -33,7 +33,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
-    // Add the special mining skill
+    // Add the special mining skill, parent is the root domain
     reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);

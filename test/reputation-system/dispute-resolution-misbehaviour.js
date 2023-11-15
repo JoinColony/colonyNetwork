@@ -39,7 +39,6 @@ const {
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
   HASHZERO,
-  GLOBAL_SKILL_ID,
 } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -58,15 +57,20 @@ const loader = new TruffleLoader({
 
 const useJsTree = true;
 
-let metaColony;
 let colonyNetwork;
+let metaColony;
 let clnyToken;
+let localSkillId;
 let goodClient;
+
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  await metaColony.addLocalSkill();
+  localSkillId = await colonyNetwork.getSkillCount();
 
   await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
@@ -527,37 +531,27 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
-      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
-
-      // Manager, evaluator, worker
-      await metaColony.emitDomainReputationReward(1, USER0, 1);
-      await metaColony.emitDomainReputationReward(1, MINER1, 1);
-      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
-      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
 
-      let powerTwoEntries = false;
-      while (!powerTwoEntries) {
-        // Manager, evaluator, worker
+      for (let i = 0; i < 23; i += 1) {
         await metaColony.emitDomainReputationReward(1, USER0, 1);
-        await metaColony.emitDomainReputationReward(1, MINER1, 1);
-        await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MINER2, -1);
-        await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
+      }
 
-        const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
-        const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
-        const currentHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
-        const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNLeaves);
-        // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
-        // of updates that log entry implies by itself, plus the number of decays (the number of leaves in current state)
-        if (parseInt(nUpdates.toString(2).slice(1), 10) === 0) {
-          powerTwoEntries = true;
-        }
+      const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
+      const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
+
+      const currentHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
+      const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNLeaves);
+      // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
+      // of updates that log entry implies by itself, plus the number of decays (the number of leaves in current state)
+      if (nUpdates.toNumber() !== 64) {
+        throw Error("Should be a power of two");
       }
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
@@ -916,7 +910,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
       await metaColony.emitDomainReputationReward(2, USER0, 1000000000000);
       await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1000000000000);
-      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1000000000000);
+      await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -967,13 +961,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await metaColony.emitDomainReputationReward(2, USER0, 1500000000000);
       await metaColony.emitDomainReputationReward(2, USER0, 1000000000);
       await metaColony.emitDomainReputationReward(2, MINER2, 7500000000000);
-      await metaColony.emitSkillReputationReward(GLOBAL_SKILL_ID, MINER2, 7500000000000);
+      await metaColony.emitSkillReputationReward(localSkillId, MINER2, 7500000000000);
 
       // Manager, evaluator, worker
       await metaColony.emitDomainReputationPenalty(1, 1, 2, USER0, -1000000000000);
       await metaColony.emitDomainReputationReward(2, USER0, 1000000000000);
       await metaColony.emitDomainReputationPenalty(1, 1, 2, MINER2, -1);
-      await metaColony.emitSkillReputationPenalty(GLOBAL_SKILL_ID, MINER2, -1);
+      await metaColony.emitSkillReputationPenalty(localSkillId, MINER2, -1);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -984,7 +978,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nLogEntries).to.eq.BN(9);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 28, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 30, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 17, 123456);

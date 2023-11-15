@@ -123,17 +123,8 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
     _;
   }
 
-  // Meta Colony allowed to manage Global skills
-  // All colonies are able to manage their Local (domain associated) skills
-  modifier allowedToAddSkill(bool globalSkill) {
-    if (globalSkill) {
-      require(msgSender() == metaColony, "colony-must-be-meta-colony");
-    } else {
-      require(
-        _isColony[msgSender()] || msgSender() == address(this),
-        "colony-caller-must-be-colony"
-      );
-    }
+  modifier allowedToAddSkill() {
+    require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
     _;
   }
 

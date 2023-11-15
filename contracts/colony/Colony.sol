@@ -68,7 +68,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 _skillId,
     address _user,
     int256 _amount
-  ) public stoppable auth validGlobalOrLocalSkill(_skillId) {
+  ) public stoppable auth validLocalSkill(_skillId) {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
@@ -96,7 +96,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 _skillId,
     address _user,
     int256 _amount
-  ) public stoppable auth validGlobalOrLocalSkill(_skillId) {
+  ) public stoppable auth validLocalSkill(_skillId) {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
@@ -192,15 +192,6 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function updateColonyOrbitDB(string memory orbitdb) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).updateColonyOrbitDB(orbitdb);
-  }
-
-  function addGlobalSkill() public stoppable auth returns (uint256) {
-    return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
-  }
-
-  // slither-disable-next-line unused-return
-  function deprecateGlobalSkill(uint256 _skillId) public stoppable auth {
-    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId, true);
   }
 
   function setNetworkFeeInverse(uint256 _feeInverse) public stoppable auth {
@@ -338,6 +329,13 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     sig = bytes4(keccak256("setPaymentPayout(uint256,uint256,uint256,address,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
     sig = bytes4(keccak256("finalizePayment(uint256,uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
+
+    // Remove Global Skills functions
+    sig = bytes4(keccak256("addGlobalSkill()"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, false);
+    sig = bytes4(keccak256("deprecateGlobalSkill(uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, false);
 
     // If OneTxPayment extension is installed, add the new role and upgrade it
     bytes32 ONE_TX_PAYMENT = keccak256("OneTxPayment");
