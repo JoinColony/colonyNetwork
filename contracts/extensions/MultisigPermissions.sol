@@ -439,10 +439,6 @@ contract MultisigPermissions is
     return domainSkillRoleCounts[_domainSkillId][role];
   }
 
-  function getDomainSkillThreshold(uint256 _domainSkillId) public view returns (uint256) {
-    return domainSkillThreshold[_domainSkillId];
-  }
-
   function getDomainSkillRoleThreshold(
     uint256 _domainSkillId,
     ColonyRole _role

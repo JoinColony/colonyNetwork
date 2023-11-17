@@ -99,6 +99,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.install(colony.address);
 
       await checkErrorRevert(multisigPermissions.install(colony.address), "extension-already-installed");
+      await checkErrorRevert(multisigPermissions.install(colony.address, { from: USER1 }), "ds-auth-unauthorized");
 
       const identifier = await multisigPermissions.identifier();
       expect(identifier).to.equal(MULTISIG_PERMISSIONS);
@@ -156,6 +157,10 @@ contract("Multisig Permissions", (accounts) => {
       await setRootRoles(colony, USER0, ethers.utils.hexZeroPad("0x00", 32));
 
       await checkErrorRevert(multisigPermissions.setGlobalThreshold(2), "multisig-permissions-not-core-root");
+    });
+
+    it("only core root can set domain skill threshold", async () => {
+      await checkErrorRevert(multisigPermissions.setDomainSkillThreshold(1, 1, { from: USER1 }), "multisig-permissions-not-core-root");
     });
 
     it("can query for initialisation values", async () => {
@@ -416,6 +421,11 @@ contract("Multisig Permissions", (accounts) => {
   });
 
   describe("Approving motions", async () => {
+    it("if the motion doesn't exist, you cannot approve or cancel", async () => {
+      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, 1, APPROVAL), "multisig-motion-nonexistent");
+      await checkErrorRevert(multisigPermissions.cancel(1), "multisig-motion-nonexistent");
+    });
+
     it("if you don't have the right permissions, you cannot approve", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
@@ -869,6 +879,10 @@ contract("Multisig Permissions", (accounts) => {
   });
 
   describe("Executing motions", async () => {
+    it("can't execute a nonexistent motion", async () => {
+      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, 1, APPROVAL), "multisig-motion-nonexistent");
+    });
+
     it("can't execute an action requiring root permissions without approvals", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
@@ -925,7 +939,23 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
 
       await multisigPermissions.execute(motionId, { from: USER2 });
+
       await checkErrorRevert(multisigPermissions.execute(motionId, { from: USER2 }), "multisig-motion-already-executed");
+    });
+
+    it("can't change vote or cancel once executed", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
+
+      const motionId = await multisigPermissions.getMotionCount();
+
+      await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
+
+      await multisigPermissions.execute(motionId, { from: USER2 });
+
+      await checkErrorRevert(multisigPermissions.changeVote(2, UINT256_MAX, motionId, APPROVAL, { from: USER1 }), "multisig-motion-already-executed");
+
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "multisig-motion-already-executed");
     });
   });
 });
