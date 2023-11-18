@@ -119,7 +119,7 @@ contract("Voting Reputation", (accounts) => {
   const NAY = 0;
   const YAY = 1;
 
-  // const NULL = 0;
+  const NULL = 0;
   const STAKING = 1;
   const SUBMIT = 2;
   // const REVEAL = 3;
@@ -593,7 +593,10 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can update the motion states correctly", async () => {
-      let motionState = await voting.getMotionState(motionId);
+      let motionState = await voting.getMotionState(100);
+      expect(motionState).to.eq.BN(NULL);
+
+      motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });

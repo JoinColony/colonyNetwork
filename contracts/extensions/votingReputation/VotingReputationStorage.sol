@@ -218,19 +218,6 @@ contract VotingReputationStorage is
     return 1 - _vote;
   }
 
-  function getActionDomainSkillId(bytes memory _action) internal view returns (uint256) {
-    uint256 permissionDomainId;
-    uint256 childSkillIndex;
-
-    assembly {
-      permissionDomainId := mload(add(_action, 0x24))
-      childSkillIndex := mload(add(_action, 0x44))
-    }
-
-    uint256 permissionSkillId = colony.getDomain(permissionDomainId).skillId;
-    return colonyNetwork.getChildSkillId(permissionSkillId, childSkillIndex);
-  }
-
   function getExpenditureAction(bytes memory action) internal pure returns (bytes memory) {
     if (getSig(action) == MULTICALL) {
       bytes[] memory actions = abi.decode(extractCalldata(action), (bytes[]));
