@@ -39,8 +39,8 @@ contract MultisigPermissions is
   event MotionExecuted(address agent, uint256 motionId, bool success);
   event MotionCancelled(address agent, uint256 motionId);
   event MotionCreated(address agent, uint256 motionId);
-  event ApprovalChanged(address agent, uint256 motionId, ColonyRole role, bool approval);
-  event RejectionChanged(address agent, uint256 motionId, ColonyRole role, bool approval);
+  event ApprovalChanged(address agent, uint256 motionId, uint8 role, bool approval);
+  event RejectionChanged(address agent, uint256 motionId, uint8 role, bool approval);
   event GlobalThresholdSet(uint256 globalThreshold);
   event DomainSkillThresholdSet(uint256 domainSkillId, uint256 threshold);
 
@@ -62,8 +62,8 @@ contract MultisigPermissions is
 
   enum Vote {
     None,
-    Approval,
-    Rejection
+    Approve,
+    Reject
   }
 
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
@@ -74,6 +74,7 @@ contract MultisigPermissions is
   bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
     uint8(ColonyDataTypes.ColonyRole.Recovery)) |
     (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
+
   bytes32 constant ONLY_ROOT_ROLE_MASK =
     bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root);
 
@@ -98,8 +99,8 @@ contract MultisigPermissions is
 
   // Motion Id => User => Vote => Permissions
   mapping(uint256 => mapping(address => mapping(Vote => bytes32))) motionVotes;
-  // Motion Id => Vote => Permission => Vote Count
-  mapping(uint256 => mapping(Vote => mapping(ColonyRole => uint256))) motionVoteCount;
+  // Motion Id => Vote => Role => Vote Count
+  mapping(uint256 => mapping(Vote => mapping(uint8 => uint256))) motionVoteCount;
 
   // Overrides
 
@@ -146,13 +147,13 @@ contract MultisigPermissions is
 
   // Public
 
-  modifier notExecuted(uint256 _motionId) {
-    require(!motions[_motionId].executed, "multisig-motion-already-executed");
+  modifier motionExists(uint256 _motionId) {
+    require(_motionId > 0 && _motionId <= motionCount, "multisig-motion-nonexistent");
     _;
   }
 
-  modifier motionExists(uint256 _motionId) {
-    require(_motionId > 0 && _motionId <= motionCount, "multisig-motion-nonexistent");
+  modifier notExecuted(uint256 _motionId) {
+    require(!motions[_motionId].executed, "multisig-motion-already-executed");
     _;
   }
 
@@ -220,18 +221,12 @@ contract MultisigPermissions is
       }
     }
 
-    validateMotionDomain((_permissionDomainId), _childSkillIndex, motionCount);
+    validateMotionDomain(_permissionDomainId, _childSkillIndex, motionCount);
     validateUserPermissions(_permissionDomainId, motionCount);
 
     emit MotionCreated(msgSender(), motionCount);
 
-    changeVoteFunctionality(
-      _permissionDomainId,
-      _childSkillIndex,
-      motionCount,
-      Vote.Approval,
-      true
-    );
+    changeVoteFunctionality(_permissionDomainId, motionCount, Vote.Approve, true);
   }
 
   function changeVote(
@@ -240,32 +235,17 @@ contract MultisigPermissions is
     uint256 _motionId,
     Vote _vote
   ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
-    changeVoteFunctionality(
-      _permissionDomainId,
-      _childSkillIndex,
-      _motionId,
-      Vote.Approval,
-      _vote == Vote.Approval
-    );
-
-    changeVoteFunctionality(
-      _permissionDomainId,
-      _childSkillIndex,
-      _motionId,
-      Vote.Rejection,
-      _vote == Vote.Rejection
-    );
+    validateMotionDomain(_permissionDomainId, _childSkillIndex, _motionId);
+    changeVoteFunctionality(_permissionDomainId, _motionId, Vote.Approve, _vote == Vote.Approve);
+    changeVoteFunctionality(_permissionDomainId, _motionId, Vote.Reject, _vote == Vote.Reject);
   }
 
   function changeVoteFunctionality(
     uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
     uint256 _motionId,
     Vote _vote,
     bool _setTo
   ) private {
-    validateMotionDomain(_permissionDomainId, _childSkillIndex, _motionId);
-
     if (_setTo) {
       validateUserPermissions(_permissionDomainId, _motionId);
     }
@@ -273,9 +253,9 @@ contract MultisigPermissions is
     Motion storage motion = motions[_motionId];
     bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
 
-    uint8 roleIndex = 0;
-    bool newlyAtThreshold = false;
-    bool anyBelowThreshold = false;
+    uint8 roleIndex;
+    bool newlyAtThreshold;
+    bool anyBelowThreshold;
 
     while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
       if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
@@ -286,33 +266,28 @@ contract MultisigPermissions is
           continue;
         }
 
-        // Update appropriately
-        if (getUserVote(_motionId, msgSender(), ColonyRole(roleIndex), _vote) != _setTo) {
-          setUserVote(_motionId, msgSender(), _vote, ColonyRole(roleIndex), _setTo);
+        // Update appropriately if vote changes
+        if (getUserVote(_motionId, msgSender(), roleIndex, _vote) != _setTo) {
+          setUserVote(_motionId, msgSender(), _vote, roleIndex, _setTo);
 
           if (_setTo) {
-            motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] += 1;
+            motionVoteCount[_motionId][_vote][roleIndex] += 1;
           } else {
-            motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] -= 1;
+            motionVoteCount[_motionId][_vote][roleIndex] -= 1;
           }
 
-          if (_vote == Vote.Approval) {
-            emit ApprovalChanged(msgSender(), _motionId, ColonyRole(roleIndex), _setTo);
+          if (_vote == Vote.Approve) {
+            emit ApprovalChanged(msgSender(), _motionId, roleIndex, _setTo);
           } else {
-            emit RejectionChanged(msgSender(), _motionId, ColonyRole(roleIndex), _setTo);
+            emit RejectionChanged(msgSender(), _motionId, roleIndex, _setTo);
           }
         }
 
-        if (_vote == Vote.Approval) {
-          uint256 threshold = getDomainSkillRoleThreshold(
-            motion.domainSkillId,
-            ColonyRole(roleIndex)
-          );
-          if (motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] < threshold) {
+        if (_vote == Vote.Approve) {
+          uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
+          if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
             anyBelowThreshold = true;
-          } else if (
-            motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] == threshold && _setTo
-          ) {
+          } else if (motionVoteCount[_motionId][_vote][roleIndex] == threshold && _setTo) {
             newlyAtThreshold = true;
           }
         }
@@ -321,7 +296,7 @@ contract MultisigPermissions is
       roleIndex += 1;
     }
 
-    if (_vote == Vote.Approval) {
+    if (_vote == Vote.Approve) {
       if (anyBelowThreshold) {
         delete motion.overallApprovalTimestamp;
       } else if (newlyAtThreshold) {
@@ -336,8 +311,8 @@ contract MultisigPermissions is
     Motion storage motion = motions[_motionId];
 
     require(
-      checkThreshold(_motionId, Vote.Rejection) ||
-        msgSender() == motion.creator ||
+      msgSender() == motion.creator ||
+        checkThreshold(_motionId, Vote.Reject) ||
         block.timestamp > motion.creationTimestamp + 7 days,
       "colony-multisig-not-enough-rejections"
     );
@@ -352,7 +327,7 @@ contract MultisigPermissions is
   ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
     Motion storage motion = motions[_motionId];
 
-    require(checkThreshold(_motionId, Vote.Approval), "colony-multisig-not-enough-approvals");
+    require(checkThreshold(_motionId, Vote.Approve), "colony-multisig-not-enough-approvals");
 
     // If approvals were made, threshold lowered, and then executed,
     //  motion.overallApprovalTimestamp is 0 (since it was never set)
@@ -385,20 +360,19 @@ contract MultisigPermissions is
   function checkThreshold(uint256 _motionId, Vote _vote) private view returns (bool thresholdMet) {
     Motion storage motion = motions[_motionId];
     uint8 roleIndex;
+
     // While there are still relevant roles we've not checked yet
     while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
       // For the current role, is it required for the motion?
       if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
-        uint256 threshold = getDomainSkillRoleThreshold(
-          motion.domainSkillId,
-          ColonyRole(roleIndex)
-        );
-        if (motionVoteCount[_motionId][_vote][ColonyRole(roleIndex)] < threshold) {
+        uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
+        if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
           return false;
         }
       }
       roleIndex += 1;
     }
+
     return true;
   }
 
@@ -416,7 +390,7 @@ contract MultisigPermissions is
 
   function getMotionRoleVoteCount(
     uint256 _motionId,
-    ColonyRole _role,
+    uint8 _role,
     Vote _vote
   ) public view returns (uint256) {
     return motionVoteCount[_motionId][_vote][_role];
@@ -425,23 +399,23 @@ contract MultisigPermissions is
   function getUserVote(
     uint256 _motionId,
     address _user,
-    ColonyRole _permission,
+    uint8 _role,
     Vote _vote
   ) public view returns (bool) {
     bytes32 userVotes = motionVotes[_motionId][_user][_vote];
-    return (userVotes >> uint8(_permission)) & bytes32(uint256(1)) == bytes32(uint256(1));
+    return (userVotes >> uint8(_role)) & bytes32(uint256(1)) == bytes32(uint256(1));
   }
 
   function getDomainSkillRoleCounts(
     uint256 _domainSkillId,
-    uint8 role
+    uint8 _role
   ) public view returns (uint256) {
-    return domainSkillRoleCounts[_domainSkillId][role];
+    return domainSkillRoleCounts[_domainSkillId][_role];
   }
 
   function getDomainSkillRoleThreshold(
     uint256 _domainSkillId,
-    ColonyRole _role
+    uint8 _role
   ) public view returns (uint256) {
     if (domainSkillThreshold[_domainSkillId] > 0) {
       return domainSkillThreshold[_domainSkillId];
@@ -451,7 +425,7 @@ contract MultisigPermissions is
       return globalThreshold;
     }
 
-    return (domainSkillRoleCounts[_domainSkillId][uint8(_role)] / 2) + 1;
+    return (domainSkillRoleCounts[_domainSkillId][_role] / 2) + 1;
   }
 
   function getActionSummary(
@@ -539,15 +513,12 @@ contract MultisigPermissions is
     require(
       // Has core root permissions OR
       colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) ||
-        // Has core architecture, if we're using that permission in a child domain of where we have it
-        (// Core architecture check
-        colony.hasUserRole(
+        // Has core architecture, if we're using that permission in a child domain
+        (colony.hasUserRole(
           msgSender(),
           _permissionDomainId,
           ColonyDataTypes.ColonyRole.Architecture
-        ) &&
-          // In a child domain check
-          (_permissionDomainId != _domainId)),
+        ) && (_permissionDomainId != _domainId)),
       "multisig-caller-not-correct-permissions"
     );
 
@@ -637,14 +608,14 @@ contract MultisigPermissions is
     uint256 _motionId,
     address _user,
     Vote _type,
-    ColonyRole _permission,
+    uint8 _role,
     bool _setTo
   ) internal {
     bytes32 userVotes = motionVotes[_motionId][_user][_type];
     if (_setTo) {
-      userVotes = userVotes | bytes32(uint256(2) ** uint256(_permission));
+      userVotes = userVotes | bytes32(uint256(2) ** uint256(_role));
     } else {
-      userVotes = userVotes & BITNOT(bytes32(uint256(uint256(2) ** uint256(_permission))));
+      userVotes = userVotes & BITNOT(bytes32(uint256(uint256(2) ** uint256(_role))));
     }
     motionVotes[_motionId][_user][_type] = userVotes;
   }

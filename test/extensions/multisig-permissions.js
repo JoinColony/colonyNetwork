@@ -73,7 +73,7 @@ contract("Multisig Permissions", (accounts) => {
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
 
-    // 1 => { 2, 3 }
+    // 1 => { 2, 3, 4 }
     await colony.addDomain(1, UINT256_MAX, 1);
     await colony.addDomain(1, UINT256_MAX, 1);
     await colony.addDomain(1, UINT256_MAX, 1);
@@ -82,8 +82,6 @@ contract("Multisig Permissions", (accounts) => {
     await colony.installExtension(MULTISIG_PERMISSIONS, version);
     const multisigPermissionsAddress = await colonyNetwork.getExtensionInstallation(MULTISIG_PERMISSIONS, colony.address);
     multisigPermissions = await MultisigPermissions.at(multisigPermissionsAddress);
-
-    await multisigPermissions.setGlobalThreshold(0);
 
     await colony.setRootRole(multisigPermissions.address, true);
     await colony.setArbitrationRole(1, UINT256_MAX, multisigPermissions.address, 1, true);
@@ -140,7 +138,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(deprecated).to.equal(true);
     });
 
-    it("can initialised with valid values and emit expected event", async () => {
+    it("can  with valid values and emit expected events", async () => {
       multisigPermissions = await MultisigPermissions.new();
       await multisigPermissions.install(colony.address);
 
@@ -173,7 +171,7 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
-      // await checkErrorRevert(voting.install(ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(multisigPermissions.install(colony.address, { from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(multisigPermissions.finishUpgrade({ from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(multisigPermissions.deprecate(true, { from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(multisigPermissions.uninstall({ from: USER1 }), "ds-auth-unauthorized");
