@@ -24,6 +24,7 @@ import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { ExtractCallData } from "./../common/ExtractCallData.sol";
 import { GetActionDomainSkillId } from "./../common/GetActionDomainSkillId.sol";
+import { GetSingleActionSummary, ActionSummary } from "./../common/GetSingleActionSummary.sol";
 
 // ignore-file-swc-108
 
@@ -31,7 +32,8 @@ contract MultisigPermissions is
   ColonyExtensionMeta,
   ColonyDataTypes,
   ExtractCallData,
-  GetActionDomainSkillId
+  GetActionDomainSkillId,
+  GetSingleActionSummary
 {
   // Events
 
@@ -65,21 +67,6 @@ contract MultisigPermissions is
     Approve,
     Reject
   }
-
-  bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
-
-  bytes4 constant SET_USER_ROLES =
-    bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
-
-  bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
-    uint8(ColonyDataTypes.ColonyRole.Recovery)) |
-    (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
-
-  bytes32 constant ONLY_ROOT_ROLE_MASK =
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root);
-
-  bytes32 constant ONLY_ARCHITECTURE_ROLE_MASK =
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Architecture);
 
   // Storage
 
@@ -199,23 +186,17 @@ contract MultisigPermissions is
     motion.creationTimestamp = block.timestamp;
 
     for (uint256 i = 0; i < motion.data.length; i += 1) {
-      uint256 actionDomainSkillId;
-      bytes32 actionRequiredPermissions;
-
-      (actionDomainSkillId, actionRequiredPermissions) = getActionSummary(
-        motion.data[i],
-        _targets[i]
-      );
+      ActionSummary memory actionSummary = getActionSummary(motion.data[i], _targets[i]);
 
       // slither-disable-next-line incorrect-equality
       if (motion.domainSkillId == 0 && motion.requiredPermissions == 0) {
-        motion.domainSkillId = actionDomainSkillId;
-        motion.requiredPermissions = actionRequiredPermissions;
+        motion.domainSkillId = actionSummary.domainSkillId;
+        motion.requiredPermissions = actionSummary.requiredPermissions;
       } else {
         // slither-disable-next-line incorrect-equality
         require(
-          motion.domainSkillId == actionDomainSkillId &&
-            motion.requiredPermissions == actionRequiredPermissions,
+          motion.domainSkillId == actionSummary.domainSkillId &&
+            motion.requiredPermissions == actionSummary.requiredPermissions,
           "colony-multisig-invalid-motion"
         );
       }
@@ -431,8 +412,7 @@ contract MultisigPermissions is
   function getActionSummary(
     bytes memory action,
     address target
-  ) public view returns (uint256 domainSkillId, bytes32 requiredPermissions) {
-    bytes4 sig;
+  ) public view returns (ActionSummary memory overallActionSummary) {
     bytes[] memory actions;
 
     if (getSig(action) == MULTICALL) {
@@ -442,50 +422,29 @@ contract MultisigPermissions is
       actions[0] = action;
     }
 
-    uint256 overallDomainSkillId;
-    bytes32 overallPermissionMask;
-
     for (uint256 i; i < actions.length; i++) {
-      sig = getSig(actions[i]);
-      require(sig != MULTICALL, "colony-multisig-no-nested-multicall");
-      bytes32 permissionMask = ColonyRoles(target).getCapabilityRoles(sig);
-
-      if (permissionMask | ROOT_ROLES == ROOT_ROLES) {
-        domainSkillId = colony.getDomain(1).skillId;
-        // We might be here if the function is unknown (and therefore, presumably, public), and returns 0x00 for
-        // permissions. We require the root permission on the multisig in those circumstances (if it's
-        // truly public, the caller can just call it. Otherwise, the multisig as a whole is calling it so we
-        // tie it to root).
-        permissionMask = ONLY_ROOT_ROLE_MASK;
-      } else {
-        domainSkillId = getActionDomainSkillId(actions[i], address(colonyNetwork), address(colony));
-
-        // A special case for setUserRoles, which can be called by root (everywhere) and
-        // by architecture (if being used in a child domain of where you have the permission)
-        if (sig == SET_USER_ROLES) {
-          // slither-disable-next-line incorrect-equality
-          if (domainSkillId == colony.getDomain(1).skillId) {
-            permissionMask = ONLY_ROOT_ROLE_MASK;
-          } else {
-            permissionMask = ONLY_ARCHITECTURE_ROLE_MASK;
-          }
-        }
-      }
+      ActionSummary memory singleActionSummary = getSingleActionSummary(
+        address(colonyNetwork),
+        address(colony),
+        actions[i],
+        target
+      );
 
       // slither-disable-next-line incorrect-equality
-      if (overallDomainSkillId == 0) {
-        overallDomainSkillId = domainSkillId;
-        overallPermissionMask = permissionMask;
+      if (overallActionSummary.domainSkillId == 0) {
+        overallActionSummary.domainSkillId = singleActionSummary.domainSkillId;
+        overallActionSummary.requiredPermissions = singleActionSummary.requiredPermissions;
       } else {
         // slither-disable-next-line incorrect-equality
         require(
-          overallDomainSkillId == domainSkillId && overallPermissionMask == permissionMask,
+          overallActionSummary.domainSkillId == singleActionSummary.domainSkillId &&
+            overallActionSummary.requiredPermissions == singleActionSummary.requiredPermissions,
           "colony-multisig-invalid-motion"
         );
       }
     }
 
-    return (overallDomainSkillId, overallPermissionMask);
+    return overallActionSummary;
   }
 
   // Copied from ColonyRoles.sol
@@ -505,7 +464,7 @@ contract MultisigPermissions is
     require(_roles & ROOT_ROLES == 0 || _domainId == 1, "multisig-bad-domain-for-role");
 
     require(
-      validateDomainInheritance(_permissionDomainId, _childSkillIndex, _domainId),
+      colony.validateDomainInheritance(_permissionDomainId, _childSkillIndex, _domainId),
       "multisig-invalid-domain-inheritance"
     );
 
@@ -550,34 +509,6 @@ contract MultisigPermissions is
   }
 
   // Internal functions
-
-  function getSig(bytes memory motion) internal pure returns (bytes4 sig) {
-    assembly {
-      sig := mload(add(motion, 0x20))
-    }
-  }
-
-  function validateDomainInheritance(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId
-  ) internal view returns (bool) {
-    uint256 colonyDomainCount = colony.getDomainCount();
-    require(
-      _permissionDomainId > 0 && _permissionDomainId <= colonyDomainCount,
-      "multisig-domain-does-not-exist"
-    );
-    require(_domainId > 0 && _domainId <= colonyDomainCount, "multisig-domain-does-not-exist");
-
-    if (_permissionDomainId == _domainId) {
-      return _childSkillIndex == UINT256_MAX;
-    } else {
-      Domain memory domain = colony.getDomain(_permissionDomainId);
-      Domain memory childDomain = colony.getDomain(_domainId);
-      uint256 childSkillId = colonyNetwork.getChildSkillId(domain.skillId, _childSkillIndex);
-      return childSkillId == childDomain.skillId;
-    }
-  }
 
   function validateMotionDomain(
     uint256 _permissionDomainId,

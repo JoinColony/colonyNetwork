@@ -254,7 +254,7 @@ contract("Multisig Permissions", (accounts) => {
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [nestedAction]),
-        "colony-multisig-no-nested-multicall",
+        "colony-get-action-summary-no-nested-multicalls",
       );
     });
 

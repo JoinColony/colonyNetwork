@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { IColonyNetwork } from "./../../colonyNetwork/IColonyNetwork.sol";
 import { IColony, ColonyDataTypes } from "./../../colony/IColony.sol";
 import { BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
-import { ActionSummary, GetActionSummary } from "./../../common/GetActionSummary.sol";
+import { ActionSummary, GetSingleActionSummary } from "./../../common/GetSingleActionSummary.sol";
 import { ITokenLocking } from "./../../tokenLocking/ITokenLocking.sol";
 import { ColonyExtension } from "./../ColonyExtension.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
@@ -31,7 +31,7 @@ contract VotingReputationStorage is
   ColonyExtension,
   BasicMetaTransaction,
   VotingReputationDataTypes,
-  GetActionSummary
+  GetSingleActionSummary
 {
   // Constants
 
@@ -139,6 +139,105 @@ contract VotingReputationStorage is
   }
 
   // View functions
+
+  function getActionSummary(
+    address colonyNetworkAddress,
+    address colonyAddress,
+    bytes memory _action,
+    address _altTarget
+  ) public view returns (ActionSummary memory) {
+    address target = getTarget(_altTarget, colonyAddress);
+    bytes[] memory actions;
+
+    if (getSig(_action) == MULTICALL) {
+      actions = abi.decode(extractCalldata(_action), (bytes[]));
+    } else {
+      actions = new bytes[](1);
+      actions[0] = _action;
+    }
+
+    ActionSummary memory summary;
+
+    for (uint256 i; i < actions.length; i++) {
+      ActionSummary memory singleActionSummary = getSingleActionSummary(
+        colonyNetworkAddress,
+        colonyAddress,
+        actions[i],
+        target
+      );
+
+      if (singleActionSummary.sig == NO_ACTION || singleActionSummary.sig == OLD_MOVE_FUNDS) {
+        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS, the entire multicall is such and we break
+        return
+          ActionSummary({
+            sig: singleActionSummary.sig,
+            domainSkillId: 0,
+            expenditureId: 0,
+            requiredPermissions: 0
+          });
+      } else if (isExpenditureSig(singleActionSummary.sig)) {
+        // If it is an expenditure action, we record the expenditure and domain ids,
+        //  and ensure they are consistent throughout the multicall.
+        //  If not, we return UINT256_MAX which represents an invalid multicall
+        summary.sig = singleActionSummary.sig;
+
+        if (
+          summary.domainSkillId > 0 && summary.domainSkillId != singleActionSummary.domainSkillId
+        ) {
+          // Invalid multicall, caller should handle appropriately
+          return
+            ActionSummary({
+              sig: bytes4(0x0),
+              domainSkillId: type(uint256).max,
+              expenditureId: 0,
+              requiredPermissions: 0
+            });
+        } else {
+          summary.domainSkillId = singleActionSummary.domainSkillId;
+        }
+
+        if (
+          summary.expenditureId > 0 && summary.expenditureId != singleActionSummary.expenditureId
+        ) {
+          // Invalid multicall, caller should handle appropriately
+          return
+            ActionSummary({
+              sig: bytes4(0x0),
+              domainSkillId: 0,
+              expenditureId: type(uint256).max,
+              requiredPermissions: 0
+            });
+        } else {
+          summary.expenditureId = singleActionSummary.expenditureId;
+        }
+      } else {
+        // Otherwise we record the domain id and ensure it is consistent throughout the multicall
+        // If no expenditure signatures have been seen, we record the latest signature
+        // TODO: explicitly check `isExtension` for target, currently this simply errors
+
+        if (
+          summary.domainSkillId > 0 && summary.domainSkillId != singleActionSummary.domainSkillId
+        ) {
+          // Invalid multicall, caller should handle appropriately
+          return
+            ActionSummary({
+              sig: bytes4(0x0),
+              domainSkillId: type(uint256).max,
+              expenditureId: 0,
+              requiredPermissions: 0
+            });
+        } else {
+          summary.domainSkillId = singleActionSummary.domainSkillId;
+        }
+
+        if (!isExpenditureSig(summary.sig)) {
+          summary.sig = singleActionSummary.sig;
+        }
+      }
+    }
+
+    return summary;
+  }
 
   function getMotionState(uint256 _motionId) public view returns (MotionState _motionState) {
     Motion storage motion = motions[_motionId];

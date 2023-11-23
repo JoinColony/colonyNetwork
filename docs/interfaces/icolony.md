@@ -1646,6 +1646,25 @@ Check whether a given user can modify roles in the target domain `_childDomainId
 |---|---|---|
 |canSet|bool|Boolean indicating whether the given user is allowed to edit roles in the target domain.
 
+### ▸ `validateDomainInheritance(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _childDomainId):bool valid`
+
+Evaluates a "domain proof" which checks that childDomainId is part of the subtree starting at permissionDomainId
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_permissionDomainId`
+|_childDomainId|uint256|The domainId which some action is taking place in that requires the permission that is held in _permissionDomainId
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|valid|bool|True if the proof is valid, false otherwise.
+
 ### ▸ `verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings):bool isValid`
 
 Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.

@@ -245,6 +245,59 @@ contract VotingReputationStaking is VotingReputationStorage {
     return (stakerReward, repPenalty);
   }
 
+  function escalateMotion(
+    uint256 _motionId,
+    uint256 _newDomainId,
+    uint256 _childSkillIndex,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  ) public {
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Closed, "voting-rep-motion-not-closed");
+
+    uint256 newDomainSkillId = colony.getDomain(_newDomainId).skillId;
+    uint256 childSkillId = colonyNetwork.getChildSkillId(newDomainSkillId, _childSkillIndex);
+    require(childSkillId == motion.skillId, "voting-rep-invalid-domain-proof");
+
+    uint256 domainId = motion.domainId;
+    motion.domainId = _newDomainId;
+    motion.skillId = newDomainSkillId;
+    motion.skillRep = checkReputation(
+      motion.rootHash,
+      motion.skillId,
+      address(0x0),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
+
+    uint256 loser = (motion.votes[NAY] < motion.votes[YAY]) ? NAY : YAY;
+    motion.stakes[loser] -= motion.paidVoterComp;
+    motion.pastVoterComp[loser] += motion.paidVoterComp;
+    delete motion.paidVoterComp;
+
+    uint256 requiredStake = getRequiredStake(_motionId);
+
+    if (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) {
+      motion.events[STAKE_END] = uint64(block.timestamp + stakePeriod);
+    } else {
+      motion.events[STAKE_END] = uint64(block.timestamp);
+      motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
+      motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
+    }
+
+    motion.escalated = true;
+
+    emit MotionEscalated(_motionId, msgSender(), domainId, _newDomainId);
+
+    if (motion.events[STAKE_END] <= uint64(block.timestamp)) {
+      emit MotionEventSet(_motionId, STAKE_END);
+    }
+  }
+
   // Internal
 
   function lockExpenditure(uint256 _motionId) internal returns (bool finalized) {

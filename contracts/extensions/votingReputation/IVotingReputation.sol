@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IColonyExtension } from "./../IColonyExtension.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
-import { ActionSummary } from "./../../common/GetActionSummary.sol";
+import { ActionSummary } from "./../../common/GetSingleActionSummary.sol";
 
 interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Initialise the extension

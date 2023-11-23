@@ -29,6 +29,7 @@ contract GetActionDomainSkillId {
     address _colonyNetworkAddress,
     address _colonyAddress
   ) internal view returns (uint256) {
+    require(_action.length >= 0x44, "colony-action-too-short");
     uint256 permissionDomainId;
     uint256 childSkillIndex;
 

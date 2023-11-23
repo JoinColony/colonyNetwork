@@ -1817,7 +1817,9 @@ contract("Voting Reputation", (accounts) => {
 
     it("can correctly summarize a multicall action", async () => {
       const NO_ACTION = "0x12345678";
-      const OLD_MOVE_FUNDS = soliditySha3("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)").slice(0, 10);
+      const OLD_MOVE_FUNDS_SIG = soliditySha3("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)").slice(0, 10);
+      // NB This is still not a full call, but it's long enough that it has a permissions signature
+      const OLD_MOVE_FUNDS_CALL = `${OLD_MOVE_FUNDS_SIG}${"0".repeat(63)}1${bn2bytes32(UINT256_MAX).slice(2)}`;
       const SET_EXPENDITURE_STATE = soliditySha3("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)").slice(0, 10);
       const SET_EXPENDITURE_PAYOUT = soliditySha3("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)").slice(0, 10);
 
@@ -1861,9 +1863,9 @@ contract("Voting Reputation", (accounts) => {
       expect(summary.domainSkillId).to.eq.BN(domain3.skillId);
 
       // Blacklisted function
-      multicall = await encodeTxData(colony, "multicall", [[OLD_MOVE_FUNDS, action2]]);
+      multicall = await encodeTxData(colony, "multicall", [[OLD_MOVE_FUNDS_CALL, action2]]);
       summary = await voting.getActionSummary(colonyNetwork.address, colony.address, multicall, ADDRESS_ZERO);
-      expect(summary.sig).to.equal(OLD_MOVE_FUNDS);
+      expect(summary.sig).to.equal(OLD_MOVE_FUNDS_SIG);
 
       // Special NO_ACTION
       multicall = await encodeTxData(colony, "multicall", [[action1, NO_ACTION]]);
