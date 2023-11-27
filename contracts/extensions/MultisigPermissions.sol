@@ -516,15 +516,10 @@ contract MultisigPermissions is
     uint256 _motionId
   ) internal view {
     uint256 permissionSkillId = colony.getDomain(_permissionDomainId).skillId;
-    uint256 userActingInDomainWithSkillId = colonyNetwork.getChildSkillId(
-      permissionSkillId,
-      _childSkillIndex
-    );
+    uint256 domainSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _childSkillIndex);
+
     // slither-disable-next-line incorrect-equality
-    require(
-      userActingInDomainWithSkillId == motions[_motionId].domainSkillId,
-      "colony-multisig-not-same-domain"
-    );
+    require(domainSkillId == motions[_motionId].domainSkillId, "colony-multisig-not-same-domain");
   }
 
   function validateUserPermissions(uint256 _permissionDomainId, uint256 _motionId) internal view {
