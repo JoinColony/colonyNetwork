@@ -11,7 +11,12 @@ module.exports = async (callback) => {
   const implementationNames = process.argv[implementationNameArgPost + 1].split(",");
   const implementations = implementationNames.map((x) => artifacts.require(x));
 
-  const deployments = await Promise.all(implementations.map((x) => x.new()));
+  const deployments = [];
+  for (let idx = 0; idx < implementations.length; idx += 1) {
+    const res = await implementations[idx].new();
+    deployments.push(res);
+  }
+
   const resolver = await Resolver.new();
 
   const deployedImplementations = {};
