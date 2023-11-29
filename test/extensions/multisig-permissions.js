@@ -207,7 +207,7 @@ contract("Multisig Permissions", (accounts) => {
 
     it("can't propose an action requiring multiple different permissions", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
-      const action2 = "0x12345678";
+      const action2 = "0x1234";
       await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action, action2]), "colony-multisig-invalid-motion");
     });
 
@@ -872,7 +872,8 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("anyone can cancel a motion that was created more than a week ago", async () => {
-      const action = "0x12345678";
+      const action = "0x1234";
+
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
       const motionId = await multisigPermissions.getMotionCount();
       const motion = await multisigPermissions.getMotion(motionId);
@@ -914,7 +915,7 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("can't execute a motion that fails until a week after it meets the approval threshold", async () => {
-      const action = "0x12345678";
+      const action = "0x1234";
       await multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]);
       const motionId = await multisigPermissions.getMotionCount();
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });

@@ -135,6 +135,8 @@ contract("Voting Reputation", (accounts) => {
   const HALF = WAD.divn(2);
   const YEAR = SECONDS_PER_DAY * 365;
 
+  const NO_ACTION = "0x12345678";
+
   before(async () => {
     const cnAddress = (await EtherRouter.deployed()).address;
 
@@ -1741,9 +1743,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("motions with the special NO_ACTION signature do not require (and cannot be) executed, and go straight to that state", async function () {
-      const action = "0x12345678";
-
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, NO_ACTION, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1757,13 +1757,11 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("motions with the special NO_ACTION signature can be created in subdomains", async function () {
-      const action = "0x12345678";
-
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
       const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
-      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, NO_ACTION, domain2Key, domain2Value, domain2Mask, domain2Siblings);
       motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 2, WAD, { from: USER0 });
@@ -1778,7 +1776,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can correctly summarize a single action", async () => {
-      const NO_ACTION = "0x12345678";
       const SET_EXPENDITURE_STATE = soliditySha3("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)").slice(0, 10);
 
       await colony.makeExpenditure(1, 1, 3);
@@ -1816,7 +1813,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can correctly summarize a multicall action", async () => {
-      const NO_ACTION = "0x12345678";
       const OLD_MOVE_FUNDS_SIG = soliditySha3("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)").slice(0, 10);
       // NB This is still not a full call, but it's long enough that it has a permissions signature
       const OLD_MOVE_FUNDS_CALL = `${OLD_MOVE_FUNDS_SIG}${"0".repeat(63)}1${bn2bytes32(UINT256_MAX).slice(2)}`;
@@ -2067,7 +2063,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("multicall actions involving NO_ACTION cannot be finalizable", async () => {
-      const multicall = await encodeTxData(colony, "multicall", [["0x12345678"]]); // NO_ACTION inside the multicall
+      const multicall = await encodeTxData(colony, "multicall", [[NO_ACTION]]); // NO_ACTION inside the multicall
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
@@ -3104,8 +3100,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can create a v9 NO_ACTION motion, upgrade, and then finalize the motion", async () => {
-      const action = "0x12345678";
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, NO_ACTION, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
@@ -3140,7 +3135,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot let an invalid motion involving multicalling NO_ACTION be finalized", async () => {
-      const multicall = await encodeTxData(colony, "multicall", [["0x12345678"]]);
+      const multicall = await encodeTxData(colony, "multicall", [[NO_ACTION]]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();

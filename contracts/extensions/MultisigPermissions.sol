@@ -24,7 +24,7 @@ import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { ExtractCallData } from "./../common/ExtractCallData.sol";
 import { GetActionDomainSkillId } from "./../common/GetActionDomainSkillId.sol";
-import { GetSingleActionSummary, ActionSummary } from "./../common/GetSingleActionSummary.sol";
+import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
 
 // ignore-file-swc-108
 
@@ -33,7 +33,7 @@ contract MultisigPermissions is
   ColonyDataTypes,
   ExtractCallData,
   GetActionDomainSkillId,
-  GetSingleActionSummary
+  GetActionSummary
 {
   // Events
 
@@ -175,8 +175,8 @@ contract MultisigPermissions is
     address[] memory _targets,
     bytes[] memory _data
   ) public notDeprecated {
+    require(_data.length >= 1, "colony-multisig-invalid-motion");
     require(_targets.length == _data.length, "colony-multisig-invalid-motion");
-    require(_targets.length >= 1, "colony-multisig-invalid-motion");
 
     motionCount += 1;
     Motion storage motion = motions[motionCount];
@@ -185,8 +185,15 @@ contract MultisigPermissions is
     motion.creator = msgSender();
     motion.creationTimestamp = block.timestamp;
 
-    for (uint256 i = 0; i < motion.data.length; i += 1) {
-      ActionSummary memory actionSummary = getActionSummary(motion.data[i], _targets[i]);
+    for (uint256 i = 0; i < _data.length; i += 1) {
+      ActionSummary memory actionSummary = getActionSummary(
+        address(colonyNetwork),
+        address(colony),
+        _data[i],
+        _targets[i]
+      );
+
+      require(actionSummary.domainSkillId < type(uint256).max, "colony-multisig-invalid-motion");
 
       // slither-disable-next-line incorrect-equality
       if (motion.domainSkillId == 0 && motion.requiredPermissions == 0) {
@@ -411,44 +418,6 @@ contract MultisigPermissions is
     }
 
     return (domainSkillRoleCounts[_domainSkillId][_role] / 2) + 1;
-  }
-
-  function getActionSummary(
-    bytes memory action,
-    address target
-  ) public view returns (ActionSummary memory overallActionSummary) {
-    bytes[] memory actions;
-
-    if (getSig(action) == MULTICALL) {
-      actions = abi.decode(extractCalldata(action), (bytes[]));
-    } else {
-      actions = new bytes[](1);
-      actions[0] = action;
-    }
-
-    for (uint256 i; i < actions.length; i++) {
-      ActionSummary memory singleActionSummary = getSingleActionSummary(
-        address(colonyNetwork),
-        address(colony),
-        actions[i],
-        target
-      );
-
-      // slither-disable-next-line incorrect-equality
-      if (overallActionSummary.domainSkillId == 0) {
-        overallActionSummary.domainSkillId = singleActionSummary.domainSkillId;
-        overallActionSummary.requiredPermissions = singleActionSummary.requiredPermissions;
-      } else {
-        // slither-disable-next-line incorrect-equality
-        require(
-          overallActionSummary.domainSkillId == singleActionSummary.domainSkillId &&
-            overallActionSummary.requiredPermissions == singleActionSummary.requiredPermissions,
-          "colony-multisig-invalid-motion"
-        );
-      }
-    }
-
-    return overallActionSummary;
   }
 
   // Copied from ColonyRoles.sol

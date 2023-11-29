@@ -31,7 +31,7 @@ struct ActionSummary {
   bytes32 requiredPermissions;
 }
 
-contract GetSingleActionSummary is ExtractCallData, GetActionDomainSkillId {
+contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
   bytes4 constant NO_ACTION = 0x12345678;
   bytes4 constant OLD_MOVE_FUNDS =
@@ -74,14 +74,14 @@ contract GetSingleActionSummary is ExtractCallData, GetActionDomainSkillId {
     address _altTarget
   ) public view returns (ActionSummary memory) {
     bytes4 sig = getSig(_action);
-
     require(sig != MULTICALL, "colony-get-action-summary-no-nested-multicalls");
 
+    // TODO: explicitly check `isExtension` for target, currently this simply errors
     address target = getTarget(_altTarget, colonyAddress);
-    ActionSummary memory summary;
-
-    summary.sig = sig;
     bytes32 permissionMask = ColonyRoles(target).getCapabilityRoles(sig);
+
+    ActionSummary memory summary;
+    summary.sig = sig;
 
     if (isExpenditureSig(sig)) {
       summary.domainSkillId = getActionDomainSkillId(_action, colonyNetworkAddress, colonyAddress);
@@ -108,6 +108,85 @@ contract GetSingleActionSummary is ExtractCallData, GetActionDomainSkillId {
       summary.requiredPermissions = permissionMask;
     }
     return summary;
+  }
+
+  function getActionSummary(
+    address colonyNetworkAddress,
+    address colonyAddress,
+    bytes memory _action,
+    address _altTarget
+  ) public view returns (ActionSummary memory) {
+    address target = getTarget(_altTarget, colonyAddress);
+    bytes[] memory actions;
+
+    if (getSig(_action) == MULTICALL) {
+      actions = abi.decode(extractCalldata(_action), (bytes[]));
+    } else {
+      actions = new bytes[](1);
+      actions[0] = _action;
+    }
+
+    ActionSummary memory totalSummary;
+
+    for (uint256 i; i < actions.length; i++) {
+      ActionSummary memory actionSummary = getSingleActionSummary(
+        colonyNetworkAddress,
+        colonyAddress,
+        actions[i],
+        target
+      );
+
+      // In every case, we record the domain id
+      //  and ensure it is consistent throughout the multicall.
+      if (
+        totalSummary.domainSkillId > 0 && totalSummary.domainSkillId != actionSummary.domainSkillId
+      ) {
+        // Invalid multicall, caller should handle appropriately
+        totalSummary.domainSkillId = type(uint256).max;
+      } else {
+        totalSummary.domainSkillId = actionSummary.domainSkillId;
+      }
+
+      if (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS) {
+        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS,
+        //   the entire multicall is such and we break
+        return
+          ActionSummary({
+            sig: actionSummary.sig,
+            domainSkillId: 0,
+            expenditureId: 0,
+            requiredPermissions: 0
+          });
+      } else if (isExpenditureSig(actionSummary.sig)) {
+        // If it is an expenditure action, we record the expenditure ids
+        //  and ensure it is consistent throughout the multicall.
+        //  If not, we return UINT256_MAX which represents an invalid multicall
+        totalSummary.sig = actionSummary.sig;
+
+        if (
+          totalSummary.expenditureId > 0 &&
+          totalSummary.expenditureId != actionSummary.expenditureId
+        ) {
+          // Invalid multicall, caller should handle appropriately
+          totalSummary.expenditureId = type(uint256).max;
+        } else {
+          totalSummary.expenditureId = actionSummary.expenditureId;
+        }
+      } else {
+        // If no expenditure signatures have been seen, we record the latest signature
+        // Also, we aggregate the permissions as we go
+
+        if (!isExpenditureSig(totalSummary.sig)) {
+          totalSummary.sig = actionSummary.sig;
+        }
+
+        totalSummary.requiredPermissions =
+          totalSummary.requiredPermissions |
+          actionSummary.requiredPermissions;
+      }
+    }
+
+    return totalSummary;
   }
 
   function isExpenditureSig(bytes4 sig) internal pure returns (bool) {
