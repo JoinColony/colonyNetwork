@@ -372,20 +372,28 @@ contract("Multisig Permissions", (accounts) => {
 
       let res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
+      res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
+      expect(res).to.eq.BN(0);
 
       // Update global threshold
       await multisigPermissions.setGlobalThreshold(3);
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(3);
+      res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
+      expect(res).to.eq.BN(0);
 
       // If we set it to something specific for the domain
       await multisigPermissions.setDomainSkillThreshold(domain.skillId, 2);
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
+      res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
+      expect(res).to.eq.BN(2);
 
       // Changing the global threshold has no effect
       await multisigPermissions.setGlobalThreshold(1);
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      expect(res).to.eq.BN(2);
+      res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(2);
 
       // Add users with the relevant permission
@@ -402,6 +410,8 @@ contract("Multisig Permissions", (accounts) => {
       // No effect
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
+      res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
+      expect(res).to.eq.BN(2);
 
       // Set default to be relative
       await multisigPermissions.setGlobalThreshold(0);
@@ -409,12 +419,16 @@ contract("Multisig Permissions", (accounts) => {
       // Still no change
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
+      res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
+      expect(res).to.eq.BN(2);
 
       // Remove the domain-specific threshold, drops to nUsersWithSpecificPermissions / 2 + 1
       await multisigPermissions.setDomainSkillThreshold(domain.skillId, 0);
 
       res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
       expect(res).to.eq.BN(4);
+      res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
+      expect(res).to.eq.BN(0);
     });
   });
 
