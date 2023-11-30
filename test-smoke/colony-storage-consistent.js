@@ -13,7 +13,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const ContractEditing = artifacts.require("ContractEditing");
 const Resolver = artifacts.require("Resolver");
 

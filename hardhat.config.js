@@ -1,3 +1,26 @@
+/* global config, task, runSuper */
+
+const fs = require("fs");
+const path = require("path");
+
+require("@nomiclabs/hardhat-truffle5");
+
+task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
+  await runSuper();
+
+  const pinnedArtifacts = ["Token", "TokenAuthority", "MultiSigWallet"];
+  const artifactSrc = path.resolve(__dirname, "lib/colonyToken/build/contracts");
+  for (let i = 0; i < pinnedArtifacts.length; i += 1) {
+    const artifact = pinnedArtifacts[i];
+    const artifactDst = `${config.paths.artifacts}/colonyToken/${artifact}.sol`;
+
+    if (!fs.existsSync(artifactDst)) {
+      fs.mkdirSync(artifactDst, { recursive: true });
+    }
+    fs.copyFileSync(`${artifactSrc}/Pinned${artifact}.json`, `${artifactDst}/${artifact}.json`);
+  }
+});
+
 module.exports = {
   defaultNetwork: "hardhat",
   solidity: {
