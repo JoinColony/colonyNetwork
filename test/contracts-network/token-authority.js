@@ -10,7 +10,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const TokenAuthority = artifacts.require("TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 contract("Token Authority", (addresses) => {
   let token;

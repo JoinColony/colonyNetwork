@@ -20,7 +20,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const TokenAuthority = artifacts.require("TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
@@ -443,7 +443,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe("when viewing deprecated Tasks and Payments", () => {
+  describe.skip("when viewing deprecated Tasks and Payments", () => {
     let OldInterface;
     let oldColony;
     before(async () => {

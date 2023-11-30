@@ -27,3 +27,6 @@ truffle-security-output.json
 etherrouter-address.json
 ganache-chain-db
 colonyNetwork-*
+artifacts/
+cache/
+.DS_Store
