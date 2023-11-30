@@ -41,7 +41,9 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
     delete feeData.lastBaseFeePerGas;
     if (feeData.maxFeePerGas) {
       delete feeData.gasPrice;
+      feeData.maxFeePerGas = feeData.maxFeePerGas.mul(5).add(feeData.maxPriorityFeePerGas);
     }
+
     return feeData;
   }
 
