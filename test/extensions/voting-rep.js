@@ -1788,7 +1788,7 @@ contract("Voting Reputation", (accounts) => {
       summary = await voting.getActionSummary(colonyNetwork.address, colony.address, NO_ACTION, ADDRESS_ZERO);
       expect(summary.sig).to.equal(NO_ACTION);
       expect(summary.expenditureId).to.be.zero;
-      expect(summary.domainSkillId).to.be.zero;
+      // expect(summary.domainSkillId).to.be.zero; // We leave this undefined
 
       // Expenditure actions (domain 3)
       action = await encodeTxData(colony, "setExpenditureState", [1, 1, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);

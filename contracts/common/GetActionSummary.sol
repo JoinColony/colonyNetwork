@@ -150,13 +150,7 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
       if (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS) {
         // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS,
         //   the entire multicall is such and we break
-        return
-          ActionSummary({
-            sig: actionSummary.sig,
-            domainSkillId: 0,
-            expenditureId: 0,
-            requiredPermissions: 0
-          });
+        return actionSummary;
       } else if (isExpenditureSig(actionSummary.sig)) {
         // If it is an expenditure action, we record the expenditure ids
         //  and ensure it is consistent throughout the multicall.
