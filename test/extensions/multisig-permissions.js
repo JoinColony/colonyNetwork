@@ -206,9 +206,27 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("can't propose an action requiring multiple different permissions", async () => {
-      const action = await encodeTxData(colony, "mintTokens", [WAD]);
-      const action2 = "0x12345678";
-      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action, action2]), "colony-multisig-invalid-motion");
+      const action = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]); // Requires architecture
+      const action2 = "0x12345678"; // Will be flagged as requiring root, but is also the special 'NO_ACTION' sig used by voting reputation.
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address, colony.address], [action, action2]),
+        "colony-multisig-invalid-motion",
+      );
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address, colony.address], [action2, action]),
+        "colony-multisig-invalid-motion",
+      );
+
+      const multicallAction1 = await encodeTxData(colony, "multicall", [[action, action2]]);
+      const multicallAction2 = await encodeTxData(colony, "multicall", [[action2, action]]);
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [multicallAction1]),
+        "colony-multisig-invalid-motion",
+      );
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [multicallAction2]),
+        "colony-multisig-invalid-motion",
+      );
     });
 
     it("can't propose an action requiring the same permissions for multiple actions, but in different domains, even via multicall", async () => {
