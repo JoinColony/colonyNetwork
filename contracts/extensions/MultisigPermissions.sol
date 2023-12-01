@@ -194,6 +194,10 @@ contract MultisigPermissions is
       );
 
       require(actionSummary.domainSkillId < type(uint256).max, "colony-multisig-invalid-motion");
+      require(
+        actionSummary.requiredPermissions != bytes32(type(uint256).max),
+        "colony-multisig-invalid-motion"
+      );
 
       // slither-disable-next-line incorrect-equality
       if (motion.domainSkillId == 0 && motion.requiredPermissions == 0) {

@@ -147,15 +147,17 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         totalSummary.domainSkillId = actionSummary.domainSkillId;
       }
 
-      if (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS) {
+      if (isSpecialFunction(actionSummary.sig)) {
         // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS,
-        //   the entire multicall is such and we break
-        return actionSummary;
+        //   the entire multicall is such
+        totalSummary.sig = actionSummary.sig;
       } else if (isExpenditureSig(actionSummary.sig)) {
         // If it is an expenditure action, we record the expenditure ids
         //  and ensure it is consistent throughout the multicall.
         //  If not, we return UINT256_MAX which represents an invalid multicall
-        totalSummary.sig = actionSummary.sig;
+        if (totalSummary.sig != NO_ACTION && totalSummary.sig != OLD_MOVE_FUNDS) {
+          totalSummary.sig = actionSummary.sig;
+        }
 
         if (
           totalSummary.expenditureId > 0 &&
@@ -168,23 +170,37 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         }
       } else {
         // If no expenditure signatures have been seen, we record the latest signature
+        // unless we're already flagged as a NO_ACTION or OLD_MOVE_FUNDS
         // Also, we aggregate the permissions as we go
 
-        if (!isExpenditureSig(totalSummary.sig)) {
+        if (!isExpenditureSig(totalSummary.sig) && !isSpecialFunction(totalSummary.sig)) {
           totalSummary.sig = actionSummary.sig;
         }
 
-        totalSummary.requiredPermissions =
-          totalSummary.requiredPermissions |
-          actionSummary.requiredPermissions;
+        // totalSummary.requiredPermissions =
+        //   totalSummary.requiredPermissions |
+        //   actionSummary.requiredPermissions;
+      }
+
+      if (
+        totalSummary.requiredPermissions > 0 &&
+        totalSummary.requiredPermissions != actionSummary.requiredPermissions
+      ) {
+        // Invalid multicall, caller should handle appropriately
+        totalSummary.requiredPermissions = bytes32(type(uint256).max);
+      } else {
+        totalSummary.requiredPermissions = actionSummary.requiredPermissions;
       }
     }
-
     return totalSummary;
   }
 
   function isExpenditureSig(bytes4 sig) internal pure returns (bool) {
     return sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT;
+  }
+
+  function isSpecialFunction(bytes4 sig) internal pure returns (bool) {
+    return sig == NO_ACTION || sig == OLD_MOVE_FUNDS;
   }
 
   function getTarget(address _target, address colonyAddress) internal pure returns (address) {
