@@ -155,7 +155,7 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         // If it is an expenditure action, we record the expenditure ids
         //  and ensure it is consistent throughout the multicall.
         //  If not, we return UINT256_MAX which represents an invalid multicall
-        if (totalSummary.sig != NO_ACTION && totalSummary.sig != OLD_MOVE_FUNDS) {
+        if (!isSpecialFunction(totalSummary.sig)) {
           totalSummary.sig = actionSummary.sig;
         }
 
@@ -176,10 +176,6 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         if (!isExpenditureSig(totalSummary.sig) && !isSpecialFunction(totalSummary.sig)) {
           totalSummary.sig = actionSummary.sig;
         }
-
-        // totalSummary.requiredPermissions =
-        //   totalSummary.requiredPermissions |
-        //   actionSummary.requiredPermissions;
       }
 
       if (
