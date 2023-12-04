@@ -369,31 +369,6 @@ contract("ColonyPermissions", (accounts) => {
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       // Test we can move funds between domain 1 and 2, and also 2 and 3
-      // Deprecated version
-      await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
-        1,
-        UINT256_MAX,
-        0,
-        domain1.fundingPotId,
-        domain2.fundingPotId,
-        WAD,
-        token.address,
-        {
-          from: USER2,
-        },
-      );
-      await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
-        1,
-        0,
-        1,
-        domain2.fundingPotId,
-        domain3.fundingPotId,
-        WAD,
-        token.address,
-        { from: USER2 },
-      );
-
-      // Newest version
       await colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
         1,
         UINT256_MAX,
@@ -418,34 +393,6 @@ contract("ColonyPermissions", (accounts) => {
         WAD,
         token.address,
         { from: USER2 },
-      );
-
-      // But only with valid proofs. Deprecated version of this function
-      await checkErrorRevert(
-        colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
-          1,
-          1,
-          1,
-          domain2.fundingPotId,
-          domain3.fundingPotId,
-          WAD,
-          token.address,
-          { from: USER2 },
-        ),
-        "ds-auth-invalid-domain-inheritance",
-      );
-      await checkErrorRevert(
-        colony.methods["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"](
-          1,
-          0,
-          0,
-          domain2.fundingPotId,
-          domain3.fundingPotId,
-          WAD,
-          token.address,
-          { from: USER2 },
-        ),
-        "ds-auth-invalid-domain-inheritance",
       );
 
       // The newest version

@@ -39,22 +39,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
 
-  /// @notice @deprecated only deploys version 3 colonies.
-  function createColony(address _tokenAddress) public stoppable returns (address) {
-    return createColony(_tokenAddress, 3, "", "");
-  }
-
-  /// @notice @deprecated only deploys version 4 colonies.
-  function createColony(
-    address _tokenAddress,
-    uint256 _version, // solhint-disable-line no-unused-vars
-    string memory _colonyName,
-    string memory _orbitdb, // solhint-disable-line no-unused-vars
-    bool _useExtensionManager // solhint-disable-line no-unused-vars
-  ) public stoppable returns (address) {
-    return createColony(_tokenAddress, 4, _colonyName, "");
-  }
-
   function createColony(
     address _tokenAddress,
     uint256 _version,

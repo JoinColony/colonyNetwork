@@ -38,13 +38,11 @@ contract("Colony Staking", (accounts) => {
     await colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true);
 
     await colony.makeExpenditure(1, UINT256_MAX, 1);
-    await colony.setExpenditureRecipient(1, SLOT0, USER0);
-    await colony.setExpenditureRecipient(1, SLOT1, USER1);
+    await colony.setExpenditureRecipients(1, [SLOT0, SLOT1], [USER0, USER1]);
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
     await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 3, WAD.muln(200), token.address);
-    await colony.setExpenditurePayout(1, SLOT0, token.address, WAD.muln(100));
-    await colony.setExpenditurePayout(1, SLOT1, token.address, WAD.muln(100));
+    await colony.setExpenditurePayouts(1, [SLOT0, SLOT1], token.address, [WAD.muln(100), WAD.muln(100)]);
 
     await colony.finalizeExpenditure(1);
     await colony.claimExpenditurePayout(1, SLOT0, token.address);

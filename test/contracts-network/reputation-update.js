@@ -180,8 +180,8 @@ contract("Reputation Updates", (accounts) => {
 
       const SLOT0 = 0;
 
-      await metaColony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT);
-      await metaColony.setExpenditurePayout(expenditureId, SLOT0, clnyToken.address, WAD);
+      await metaColony.setExpenditureRecipients(expenditureId, [SLOT0], [RECIPIENT]);
+      await metaColony.setExpenditurePayouts(expenditureId, [SLOT0], clnyToken.address, [WAD]);
 
       const domain1 = await metaColony.getDomain(1);
 

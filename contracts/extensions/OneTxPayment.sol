@@ -22,10 +22,11 @@ pragma experimental ABIEncoderV2;
 import { IColony, ColonyDataTypes } from "../colony/IColony.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { SetExpenditureSingleValues } from "./../common/SetExpenditureSingleValues.sol";
 
 // ignore-file-swc-108
 
-contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
+contract OneTxPayment is ColonyExtension, BasicMetaTransaction, SetExpenditureSingleValues {
   event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
@@ -162,16 +163,19 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
         slot++;
-        colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
-
-        if (_skillId != 0) {
-          colony.setExpenditureSkill(expenditureId, slot, _skillId);
-        }
       } else {
         require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
 
-      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      setExpenditureSingleValues(
+        address(colony),
+        expenditureId,
+        slot,
+        _workers[idx],
+        _skillId,
+        _tokens[idx],
+        _amounts[idx]
+      );
     }
 
     finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
@@ -227,6 +231,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     prepareFundingWithinDomain(
       _permissionDomainId,
       _childSkillIndex,
+      _domainId,
       domainPotId,
       fundingPotId,
       _tokens,
@@ -241,16 +246,18 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
         slot++;
-        colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
-
-        if (_skillId != 0) {
-          colony.setExpenditureSkill(expenditureId, slot, _skillId);
-        }
       } else {
         require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
-
-      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      setExpenditureSingleValues(
+        address(colony),
+        expenditureId,
+        slot,
+        _workers[idx],
+        _skillId,
+        _tokens[idx],
+        _amounts[idx]
+      );
     }
 
     finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
@@ -304,6 +311,8 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       colony.moveFundsBetweenPots(
         1,
         UINT256_MAX,
+        1,
+        UINT256_MAX,
         _childSkillIndex,
         1,
         _fundingPotId,
@@ -316,6 +325,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   function prepareFundingWithinDomain(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
+    uint256 _domainId,
     uint256 _domainPotId,
     uint256 _fundingPotId,
     address[] memory _tokens,
@@ -331,32 +341,15 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       colony.moveFundsBetweenPots(
         _permissionDomainId,
         _childSkillIndex,
-        _childSkillIndex,
+        _domainId,
+        UINT256_MAX,
+        UINT256_MAX,
         _domainPotId,
         _fundingPotId,
         uniqueAmounts[i],
         uniqueTokens[i]
       );
     }
-  }
-
-  function moveFundsWithinDomain(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainPotId,
-    uint256 _fundingPotId,
-    uint256 _amount,
-    address _token
-  ) internal {
-    colony.moveFundsBetweenPots(
-      _permissionDomainId,
-      _childSkillIndex,
-      _childSkillIndex,
-      _domainPotId,
-      _fundingPotId,
-      _amount,
-      _token
-    );
   }
 
   bool constant ARRAY = true;

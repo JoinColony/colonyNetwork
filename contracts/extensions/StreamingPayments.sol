@@ -21,10 +21,11 @@ pragma experimental ABIEncoderV2;
 
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { SetExpenditureSingleValues } from "./../common/SetExpenditureSingleValues.sol";
 
 // ignore-file-swc-108
 
-contract StreamingPayments is ColonyExtensionMeta {
+contract StreamingPayments is ColonyExtensionMeta, SetExpenditureSingleValues {
   // Events
 
   event StreamingPaymentCreated(address agent, uint256 streamingPaymentId);
@@ -522,11 +523,20 @@ contract StreamingPayments is ColonyExtensionMeta {
           _amountsToClaim[i],
           _tokens[i]
         );
-        colony.setExpenditurePayout(expenditureId, SLOT, _tokens[i], _amountsToClaim[i]);
+        setExpenditureSingleValues(
+          address(colony),
+          expenditureId,
+          SLOT,
+          streamingPayments[_id].recipient,
+          0,
+          _tokens[i],
+          _amountsToClaim[i]
+        );
+        // colony.setExpenditurePayout(expenditureId, SLOT, _tokens[i], _amountsToClaim[i]);
       }
     }
 
-    colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayments[_id].recipient);
+    // colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayments[_id].recipient);
     colony.finalizeExpenditure(expenditureId);
     return expenditureId;
   }

@@ -130,24 +130,6 @@ Used by a user to claim any mining rewards due to them. This will place them in 
 |_recipient|address|The user whose rewards to claim
 
 
-### ▸ `createColony(address _tokenAddress):address _colonyAddress`
-
-Creates a new colony in the network, at version 3
-
-*Note: This is now deprecated and will be removed in a future version*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token.
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colonyAddress|address|Address of the newly created colony
-
 ### ▸ `createColony(address _tokenAddress, uint256 _version, string memory _colonyName):address _colonyAddress`
 
 Creates a new colony in the network, with an optional ENS name
@@ -182,28 +164,6 @@ Creates a new colony in the network, with an optional ENS name
 |_version|uint256|The version of colony to deploy (pass 0 for the current version)
 |_colonyName|string|The label to register (if null, no label is registered)
 |_metadata|string|The metadata associated with the new colony
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colonyAddress|address|Address of the newly created colony
-
-### ▸ `createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager):address _colonyAddress`
-
-Overload of the simpler `createColony` -- creates a new colony in the network with a variety of options, at version 4
-
-*Note: This is now deprecated and will be removed in a future version*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
-|_version|uint256|The version of colony to deploy (pass 0 for the current version)
-|_colonyName|string|The label to register (if null, no label is registered)
-|_orbitdb|string|DEPRECATED Currently a no-op
-|_useExtensionManager|bool|DEPRECATED Currently a no-op
 
 **Return Parameters**
 
@@ -299,19 +259,6 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 |---|---|---|
 |_extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |_deprecated|bool|Whether to deprecate the extension or not
-
-
-### ▸ `deprecateSkill(uint256 _skillId)`
-
-Mark a skill as deprecated which stops new tasks and payments from using it.
-
-*Note: This function is deprecated and will be removed in a future release*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|Id of the skill
 
 
 ### ▸ `deprecateSkill(uint256 _skillId, bool _deprecated):bool _changed`

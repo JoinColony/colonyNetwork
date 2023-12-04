@@ -167,8 +167,8 @@ contract("Colony Funding", (accounts) => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await colony.addDomain(1, UINT256_MAX, 1);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, 1, 2, 40, otherToken.address);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, otherToken.address), "Panic: Arithmetic overflow");
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, 40, otherToken.address);
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 1, 2, 3, 50, otherToken.address), "Panic: Arithmetic overflow");
 
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       const pot1Balance = await colony.getFundingPotBalance(1, otherToken.address);
@@ -370,14 +370,20 @@ contract("Colony Funding", (accounts) => {
 
     it("should not allow contributions to nonexistent funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, UINT256_MAX, 3, 1, 5, 40, otherToken.address), "colony-funding-nonexistent-pot");
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 3, 1, 5, 40, otherToken.address),
+        "colony-funding-nonexistent-pot",
+      );
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
       expect(colonyPotBalance).to.eq.BN(99);
     });
 
     it("should not allow attempts to move funds from nonexistent funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 3, UINT256_MAX, 5, 1, 40, otherToken.address), "colony-funding-nonexistent-pot");
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 3, UINT256_MAX, 5, 1, 40, otherToken.address),
+        "colony-funding-nonexistent-pot",
+      );
       const colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
       expect(colonyPotBalance).to.eq.BN(99);
     });
@@ -475,8 +481,11 @@ contract("Colony Funding", (accounts) => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await colony.addDomain(1, UINT256_MAX, 1);
 
-      await colony.moveFundsBetweenPots(1, UINT256_MAX, 0, 1, 2, 40, ethers.constants.AddressZero);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, ethers.constants.AddressZero), "Panic: Arithmetic overflow");
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, 40, ethers.constants.AddressZero);
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, UINT256_MAX, 1, 0, 1, 2, 3, 50, ethers.constants.AddressZero),
+        "Panic: Arithmetic overflow",
+      );
 
       const colonyEtherBalance = await web3GetBalance(colony.address);
       const pot1Balance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);

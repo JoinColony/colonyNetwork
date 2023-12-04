@@ -960,24 +960,6 @@ Lock the colony's token. Can only be called by a network-managed extension.
 |---|---|---|
 |timesLocked|uint256|The amount of times the token was locked
 
-### ▸ `makeArbitraryTransaction(address _to, bytes memory _action):bool success`
-
-Execute arbitrary transaction on behalf of the Colony
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_to|address|Contract to receive the function call (cannot be this contract, network or token locking)
-|_action|bytes|Bytes array encoding the function call and arguments
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|success|bool|Boolean indicating whether the transaction succeeded
-
 ### ▸ `makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions, bool _strict):bool success`
 
 Execute arbitrary transactions on behalf of the Colony in series
@@ -1074,24 +1056,6 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_domainId|uint256|The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
 |_fromChildSkillIndex|uint256|In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,         the index of the skill associated with the domain that contains _fromPot
 |_toChildSkillIndex|uint256|The same, but for the _toPot which the funds are being moved to
-|_fromPot|uint256|Funding pot id providing the funds
-|_toPot|uint256|Funding pot id receiving the funds
-|_amount|uint256|Amount of funds
-|_token|address|Address of the token, `0x0` value indicates Ether
-
-
-### ▸ `moveFundsBetweenPots(uint256 _permissionDomainId, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token)`
-
-Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_fromChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
-|_toChildSkillIndex|uint256|The child index in `_permissionDomainId` where we can find the domain for `_toPotId`
 |_fromPot|uint256|Funding pot id providing the funds
 |_toPot|uint256|Funding pot id receiving the funds
 |_amount|uint256|Amount of funds
@@ -1198,20 +1162,6 @@ Update the default global claim delay for expenditures
 |_globalClaimDelay|uint256|The new default global claim delay
 
 
-### ▸ `setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`
-
-Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Number of the slot
-|_claimDelay|uint256|Duration of time (in seconds) to delay
-
-
 ### ▸ `setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)`
 
 Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
@@ -1253,22 +1203,6 @@ Sets the metadata for an expenditure. Can only be called by Arbitration role.
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`,
 |_id|uint256|Id of the expenditure
 |_metadata|string|IPFS hash of the metadata
-
-
-### ▸ `setExpenditurePayout(uint256 _id, uint256 _slot, address _token, uint256 _amount)`
-
-Set the token payout on an expenditure slot. Can only be called by expenditure owner.
-
-*Note: Can only be called while expenditure is in draft state.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the expenditure
-|_slot|uint256|Number of the slot
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_amount|uint256|Payout amount
 
 
 ### ▸ `setExpenditurePayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _slot, address _token, uint256 _amount)`
@@ -1318,21 +1252,6 @@ Set the token payouts in given expenditure slots. Can only be called by expendit
 |_amounts|uint256[]|Payout amounts
 
 
-### ▸ `setExpenditureRecipient(uint256 _id, uint256 _slot, address _recipient)`
-
-Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
-
-*Note: Can only be called while expenditure is in draft state.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Id of the expenditure
-|_slot|uint256|Slot for the recipient address
-|_recipient|address|Address of the recipient
-
-
 ### ▸ `setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address[] memory _recipients)`
 
 Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
@@ -1346,20 +1265,6 @@ Sets the recipients in given expenditure slots. Can only be called by expenditur
 |_id|uint256|Id of the expenditure
 |_slots|uint256[]|Array of slots to set recipients
 |_recipients|address[]|Addresses of the recipients
-
-
-### ▸ `setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)`
-
-Sets the skill on an expenditure slot. Can only be called by expenditure owner.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_slot|uint256|Number of the slot
-|_skillId|uint256|Id of the new skill to set
 
 
 ### ▸ `setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)`
@@ -1499,22 +1404,6 @@ Updates the expenditure owner. Can only be called by expenditure owner.
 
 |Name|Type|Description|
 |---|---|---|
-|_id|uint256|Expenditure identifier
-|_newOwner|address|New owner of expenditure
-
-
-### ▸ `transferExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _newOwner)`
-
-Updates the expenditure owner. Can only be called by Arbitration role.
-
-*Note: This is now deprecated and will be removed in a future version*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
-|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
 |_newOwner|address|New owner of expenditure
 

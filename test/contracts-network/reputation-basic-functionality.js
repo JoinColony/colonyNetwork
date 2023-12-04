@@ -256,6 +256,11 @@ contract("Reputation mining - basic functionality", (accounts) => {
 
       await checkErrorRevert(inactiveRepCycle.initialise(MINER1, MINER2), "colony-reputation-mining-cycle-already-initialised");
     });
+
+    it("should not allow mining-only functions to network to be called by someone not reputationMiningCycle", async () => {
+      await checkErrorRevert(colonyNetwork.burnUnneededRewards(0), "colony-reputation-mining-sender-not-active-reputation-cycle");
+      await checkErrorRevert(colonyNetwork.reward(colonyNetwork.address, 1), "colony-reputation-mining-sender-not-active-reputation-cycle");
+    });
   });
 
   describe("when reading reputation mining constant properties", async () => {

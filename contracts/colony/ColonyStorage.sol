@@ -330,13 +330,28 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     uint256 value,
     bytes memory data
   ) internal returns (bool success) {
-    assembly {
-      // call contract at address a with input mem[in…(in+insize))
-      //   providing g gas and v wei and output area mem[out…(out+outsize))
-      //   returning 0 on error (eg. out of gas) and 1 on success
-
-      //         call(g,     a,  v,     in,              insize,      out, outsize)
-      success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
+    bytes memory res;
+    (success, res) = to.call{ value: value }(data);
+    if (!success) {
+      // Stolen shamelessly from
+      // https://ethereum.stackexchange.com/questions/83528/how-can-i-get-the-revert-reason-of-a-call-in-solidity-so-that-i-can-use-it-in-th
+      // If the _res length is less than 68, then the transaction failed silently (without a revert message)
+      if (res.length >= 68) {
+        assembly {
+          // Slice the sighash.
+          res := add(res, 0x04)
+        }
+        require(false, abi.decode(res, (string))); // All that remains is the revert string
+      }
+      require(false, "require-execute-call-reverted-with-no-error");
     }
+    // assembly {
+    //   // call contract at address a with input mem[in…(in+insize))
+    //   //   providing g gas and v wei and output area mem[out…(out+outsize))
+    //   //   returning 0 on error (eg. out of gas) and 1 on success
+
+    //   //         call(g,     a,  v,     in,              insize,      out, outsize)
+    //   success := call(gas(), to, value, add(data, 0x20), mload(data), 0, 0)
+    // }
   }
 }

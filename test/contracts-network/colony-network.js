@@ -240,25 +240,6 @@ contract("Colony Network", (accounts) => {
       await checkErrorRevert(colonyNetwork.createColony(token.address, nonexistentVersion, "", ""), "colony-network-invalid-version");
     });
 
-    it("should allow use of the deprecated one-parameter createColony", async () => {
-      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      const oldVersion = currentColonyVersion.subn(1);
-      await metaColony.addNetworkColonyVersion(oldVersion, newResolverAddress);
-      // Add version 3 if necessary, required to test the deprecated createColony
-      if (!oldVersion.eq(3)) {
-        await metaColony.addNetworkColonyVersion(3, newResolverAddress);
-      }
-      const token = await Token.new(...getTokenArgs());
-
-      await colonyNetwork.createColony(token.address);
-    });
-
-    it("should allow use of the deprecated five-parameter createColony", async () => {
-      const token = await Token.new(...getTokenArgs());
-
-      await colonyNetwork.createColony(token.address, 5, "", "", "");
-    });
-
     it("should allow users to create a colony for the frontend in one transaction with an existing token", async () => {
       const token = await Token.new(...getTokenArgs());
       await colonyNetwork.createColonyForFrontend(token.address, "", "", 0, version, "", "");

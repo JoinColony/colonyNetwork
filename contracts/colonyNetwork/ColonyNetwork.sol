@@ -187,11 +187,6 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     return changed;
   }
 
-  /// @notice @deprecated
-  function deprecateSkill(uint256 _skillId) public stoppable {
-    deprecateSkill(_skillId, true);
-  }
-
   function initialiseRootLocalSkill() public stoppable calledByColony returns (uint256) {
     skillCount++;
     return skillCount;

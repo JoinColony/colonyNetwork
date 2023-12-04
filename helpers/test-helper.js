@@ -1140,6 +1140,13 @@ exports.encodeTxData = async function encodeTxData(colony, functionName, args) {
     }
   });
 
+  if (functionName.indexOf("(") !== -1) {
+    // Create an Interface with ethers from the function signature
+    const iFace = new ethers.utils.Interface([`function ${functionName}`]);
+    return iFace.encodeFunctionData(functionName, convertedArgs);
+  }
+
+  // Otherwise, it's a function on the truffle contract that was passed to us
   const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
   return txData;
 };

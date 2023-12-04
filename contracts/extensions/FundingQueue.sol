@@ -370,6 +370,8 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     colony.moveFundsBetweenPots(
       proposal.domainId,
+      UINT256_MAX,
+      proposal.domainId,
       proposal.fromChildSkillIndex,
       proposal.toChildSkillIndex,
       proposal.fromPot,
