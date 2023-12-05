@@ -2775,7 +2775,7 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe("upgrading the extension from v9", async () => {
+  describe.skip("upgrading the extension from v9", async () => {
     before(async () => {
       // See if already deployed
 

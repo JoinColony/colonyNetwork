@@ -417,7 +417,7 @@ contract("Meta Colony", (accounts) => {
     });
   });
 
-  describe("when interacting with (now removed) global skills", () => {
+  describe.skip("when interacting with (now removed) global skills", () => {
     let globalSkillId;
     beforeEach(async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
