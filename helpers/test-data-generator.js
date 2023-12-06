@@ -224,20 +224,20 @@ exports.unlockCLNYToken = async function unlockCLNYToken(metaColony) {
 };
 
 exports.setupColonyNetwork = async function setupColonyNetwork() {
-  const resolverColonyNetworkDeployed = await Resolver.deployed();
-  const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
-
-  // Get the version resolver and version number from the metacolony deployed during migration
-  const deployedMetaColonyAddress = await deployedColonyNetwork.getMetaColony();
-  const deployedMetaColony = await IMetaColony.at(deployedMetaColonyAddress);
-  const deployedMetaColonyAsEtherRouter = await EtherRouter.at(deployedMetaColonyAddress);
-  const colonyVersionResolverAddress = await deployedMetaColonyAsEtherRouter.resolver();
-  const version = await deployedMetaColony.version();
-
   // Make a new ColonyNetwork
   const etherRouter = await EtherRouter.new();
-  await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+  const colonyNetworkResolver = await Resolver.deployed();
+  await etherRouter.setResolver(colonyNetworkResolver.address);
   const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+  // Get the version resolver and version number from the metacolony deployed during migration
+  const colonyNetworkRouter = await EtherRouter.deployed();
+  const deployedColonyNetwork = await IColonyNetwork.at(colonyNetworkRouter.address);
+  const metaColonyAddress = await deployedColonyNetwork.getMetaColony();
+  const metaColony = await IMetaColony.at(metaColonyAddress);
+  const metaColonyRouter = await EtherRouter.at(metaColonyAddress);
+  const colonyVersionResolverAddress = await metaColonyRouter.resolver();
+  const version = await metaColony.version();
 
   // Initialise with originally deployed version
   await colonyNetwork.initialise(colonyVersionResolverAddress, version);

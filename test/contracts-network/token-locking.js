@@ -342,7 +342,7 @@ contract("Token Locking", (addresses) => {
       // Make an extension available on the network that is able to lock tokens.
       const testVotingTokenResolver = await Resolver.new();
       const testVotingToken = await TestVotingToken.new();
-      await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
+      await setupEtherRouter("testHelpers/testExtensions", "TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
       TEST_VOTING_TOKEN = soliditySha3("VotingToken");
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IMetaColony.at(metaColonyAddress);

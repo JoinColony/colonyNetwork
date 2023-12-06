@@ -1,6 +1,7 @@
 const ethers = require("ethers");
 
-const bridgeAbi = require("../build/contracts/BridgeMock.json").abi; // eslint-disable-line import/no-unresolved
+// eslint-disable-next-line import/no-unresolved
+const bridgeAbi = require("../artifacts/contracts/testHelpers/BridgeMock.sol/BridgeMock.json").abi;
 
 class MockBridgeMonitor {
   /**
