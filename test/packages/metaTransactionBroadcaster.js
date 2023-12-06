@@ -91,7 +91,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const coinMachineImplementation = await CoinMachine.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
+      await setupEtherRouter("extensions", "CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
 
       const versionSig = await resolver.stringToSig("version()");
       const target = await resolver.lookup(versionSig);
@@ -784,7 +784,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("a transaction that would be valid but is too expensive is rejected and not mined", async function () {
       const extensionImplementation = await GasGuzzler.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
+      await setupEtherRouter("testHelpers", "GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
       const TEST_EXTENSION = soliditySha3("GasGuzzler");
 
       const mcAddress = await colonyNetwork.getMetaColony();

@@ -496,10 +496,10 @@ contract("Colony Network Recovery", (accounts) => {
 
           // We use the existing deployments for the majority of the functions
           const deployedImplementations = {};
-          deployedImplementations.ReputationMiningCycle = ReputationMiningCycle.address;
-          deployedImplementations.ReputationMiningCycleRespond = ReputationMiningCycleRespond.address;
-          deployedImplementations.ReputationMiningCycleBinarySearch = ReputationMiningCycleBinarySearch.address;
-          await setupEtherRouter("IReputationMiningCycle", deployedImplementations, newResolver);
+          deployedImplementations.ReputationMiningCycle = (await ReputationMiningCycle.deployed()).address;
+          deployedImplementations.ReputationMiningCycleRespond = (await ReputationMiningCycleRespond.deployed()).address;
+          deployedImplementations.ReputationMiningCycleBinarySearch = (await ReputationMiningCycleBinarySearch.deployed()).address;
+          await setupEtherRouter("reputationMiningCycle", "IReputationMiningCycle", deployedImplementations, newResolver);
 
           // Now add our extra functions.
           // Add ReputationMiningCycleEditing to the resolver

@@ -1147,7 +1147,7 @@ contract("Colony Expenditure", (accounts) => {
     before(async () => {
       const extensionImplementation = await TestExtension0.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
+      await setupEtherRouter("testHelpers/testExtensions", "TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
 
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, resolver.address);
     });

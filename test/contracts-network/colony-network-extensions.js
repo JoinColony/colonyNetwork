@@ -55,23 +55,23 @@ contract("Colony Network Extensions", (accounts) => {
 
     testExtension0Resolver = await Resolver.new();
     const testExtension0 = await TestExtension0.new();
-    await setupEtherRouter("TestExtension0", { TestExtension0: testExtension0.address }, testExtension0Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension0", { TestExtension0: testExtension0.address }, testExtension0Resolver);
 
     testExtension1Resolver = await Resolver.new();
     const testExtension1 = await TestExtension1.new();
-    await setupEtherRouter("TestExtension1", { TestExtension1: testExtension1.address }, testExtension1Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension1", { TestExtension1: testExtension1.address }, testExtension1Resolver);
 
     testExtension2Resolver = await Resolver.new();
     const testExtension2 = await TestExtension2.new();
-    await setupEtherRouter("TestExtension2", { TestExtension2: testExtension2.address }, testExtension2Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension2", { TestExtension2: testExtension2.address }, testExtension2Resolver);
 
     testExtension3Resolver = await Resolver.new();
     const testExtension3 = await TestExtension3.new();
-    await setupEtherRouter("TestExtension3", { TestExtension3: testExtension3.address }, testExtension3Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension3", { TestExtension3: testExtension3.address }, testExtension3Resolver);
 
     testVotingTokenResolver = await Resolver.new();
     const testVotingToken = await TestVotingToken.new();
-    await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
 
     await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
     await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);

@@ -325,7 +325,7 @@ async function setupExtensions() {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
 
-  async function addExtension(interfaceName, extensionName, implementations) {
+  async function addExtension(contractDir, interfaceName, extensionName, implementations) {
     const NAME_HASH = soliditySha3(extensionName);
     const deployments = await Promise.all(implementations.map((x) => x.new()));
     const resolver = await Resolver.new();
@@ -334,19 +334,23 @@ async function setupExtensions() {
     for (let idx = 0; idx < implementations.length; idx += 1) {
       deployedImplementations[implementations[idx].contractName] = deployments[idx].address;
     }
-    await setupEtherRouter(interfaceName, deployedImplementations, resolver);
+    await setupEtherRouter(contractDir, interfaceName, deployedImplementations, resolver);
     await metaColony.addExtensionToNetwork(NAME_HASH, resolver.address);
   }
 
-  await addExtension("CoinMachine", "CoinMachine", [CoinMachine]);
-  await addExtension("EvaluatedExpenditure", "EvaluatedExpenditure", [EvaluatedExpenditure]);
-  await addExtension("FundingQueue", "FundingQueue", [FundingQueue]);
-  await addExtension("OneTxPayment", "OneTxPayment", [OneTxPayment]);
-  await addExtension("ReputationBootstrapper", "ReputationBootstrapper", [ReputationBootstrapper]);
-  await addExtension("StakedExpenditure", "StakedExpenditure", [StakedExpenditure]);
-  await addExtension("StreamingPayments", "StreamingPayments", [StreamingPayments]);
-  await addExtension("TokenSupplier", "TokenSupplier", [TokenSupplier]);
-  await addExtension("IVotingReputation", "VotingReputation", [VotingReputation, VotingReputationStaking, VotingReputationMisalignedRecovery]);
-  await addExtension("Whitelist", "Whitelist", [Whitelist]);
-  await addExtension("StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
+  await addExtension("extensions", "CoinMachine", "CoinMachine", [CoinMachine]);
+  await addExtension("extensions", "EvaluatedExpenditure", "EvaluatedExpenditure", [EvaluatedExpenditure]);
+  await addExtension("extensions", "FundingQueue", "FundingQueue", [FundingQueue]);
+  await addExtension("extensions", "OneTxPayment", "OneTxPayment", [OneTxPayment]);
+  await addExtension("extensions", "ReputationBootstrapper", "ReputationBootstrapper", [ReputationBootstrapper]);
+  await addExtension("extensions", "StakedExpenditure", "StakedExpenditure", [StakedExpenditure]);
+  await addExtension("extensions", "StreamingPayments", "StreamingPayments", [StreamingPayments]);
+  await addExtension("extensions", "TokenSupplier", "TokenSupplier", [TokenSupplier]);
+  await addExtension("extensions/votingReputation", "IVotingReputation", "VotingReputation", [
+    VotingReputation,
+    VotingReputationStaking,
+    VotingReputationMisalignedRecovery,
+  ]);
+  await addExtension("extensions", "Whitelist", "Whitelist", [Whitelist]);
+  await addExtension("extensions", "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
 }
