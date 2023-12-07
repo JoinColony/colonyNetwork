@@ -14,7 +14,7 @@ const { TruffleLoader } = require("../packages/package-utils");
 const { WAD } = require("../helpers/constants");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "artifacts", "contracts"),
 });
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;

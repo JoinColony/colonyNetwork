@@ -33,7 +33,7 @@ const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 contract("Metatransaction broadcaster", (accounts) => {
