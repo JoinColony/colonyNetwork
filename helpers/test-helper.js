@@ -119,22 +119,6 @@ exports.web3GetChainId = async function web3GetChainId() {
   });
 };
 
-exports.web3SignTypedData = function web3SignTypedData(address, typedData) {
-  const packet = {
-    jsonrpc: "2.0",
-    method: "eth_signTypedData",
-    params: [address, typedData],
-    id: new Date().getTime(),
-  };
-
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send(packet, (err, res) => {
-      if (err !== null) return reject(err);
-      return resolve(res.result);
-    });
-  });
-};
-
 exports.web3GetRawCall = function web3GetRawCall(params, blockTag) {
   const packet = {
     jsonrpc: "2.0",
