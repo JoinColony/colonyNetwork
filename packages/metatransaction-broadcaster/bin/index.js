@@ -8,7 +8,7 @@ const { colonyNetworkAddress, gasPrice, privateKey, rpcEndpoint, port, dbPath, g
 const { TruffleLoader } = require("../../package-utils");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "..", "artifacts", "contracts"),
 });
 
 const MetatransactionBroadcaster = require("../MetatransactionBroadcaster");

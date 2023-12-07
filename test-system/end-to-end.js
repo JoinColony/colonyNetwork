@@ -36,7 +36,7 @@ chai.use(bnChai(web3.utils.BN));
 const ITokenLocking = artifacts.require("ITokenLocking");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;

@@ -46,17 +46,18 @@ class TruffleContractLoader {
     return true;
   }
 
-  constructor({ contractDir } = {}) {
-    assert(typeof contractDir === "string" && contractDir, "A `contractDir` option must be provided");
-    this._contractDir = contractDir;
+  constructor({ contractRoot } = {}) {
+    assert(typeof contractRoot === "string" && contractRoot, "A `contractRoot` option must be provided");
+    this._contractRoot = contractRoot;
   }
 
   async _load(query = {}) {
-    const { contractName = "" } = query;
+    const { contractDir = "", contractName = "" } = query;
 
+    assert(!!contractDir, "A `contractDir` option must be provided");
     assert(!!contractName, "A `contractName` option must be provided");
 
-    const file = path.resolve(this._contractDir, `${contractName}.json`);
+    const file = path.resolve(this._contractRoot, contractDir, `${contractName}.sol`, `${contractName}.json`);
     return new Promise((resolve, reject) => {
       jsonfile.readFile(file, (error, contents) => {
         let transformed;
@@ -72,13 +73,13 @@ class TruffleContractLoader {
   }
 
   async load(query, requiredProps = DEFAULT_REQUIRED_CONTRACT_PROPS) {
-    const { contractName, contractAddress, routerName, routerAddress, ...otherQuery } = query;
+    const { contractDir, contractName, contractAddress, routerName, routerAddress, ...otherQuery } = query;
 
     if (!(contractName || contractAddress)) throw new TypeError("The field `contractName` or `contractAddress` must be supplied");
 
     // Load the contract definition by either the contract name or address
     const firstQuery = {
-      ...(contractName ? { contractName } : { contractAddress }),
+      ...(contractName ? { contractDir, contractName } : { contractAddress }),
       ...otherQuery,
     };
     const result = await this._load(firstQuery);
