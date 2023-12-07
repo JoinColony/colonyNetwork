@@ -2077,7 +2077,7 @@ contract("Voting Reputation", (accounts) => {
       const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
       const loader = new TruffleLoader({
-        contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+        contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
       });
 
       // Old and new versions of ganache (which currently represents with or without coverage...)

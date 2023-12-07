@@ -78,14 +78,15 @@ class MetatransactionBroadcaster {
     const network = await this.provider.getNetwork();
     this.chainId = network.chainId;
 
-    const colonyNetworkDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
+    const flags = { abi: true, address: false };
+    const colonyNetworkDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" }, flags);
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, colonyNetworkDef.abi, this.wallet);
 
     this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
     this.tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
 
-    this.metaTxDef = await this.loader.load({ contractName: "IBasicMetaTransaction" }, { abi: true, address: false });
-    this.metaTxTokenDef = await this.loader.load({ contractName: "MetaTxToken" }, { abi: true, address: false });
+    this.metaTxDef = await this.loader.load({ contractDir: "common", contractName: "IBasicMetaTransaction" }, flags);
+    this.metaTxTokenDef = await this.loader.load({ contractDir: "metaTxToken", contractName: "MetaTxToken" }, flags);
   }
 
   async close() {
@@ -139,7 +140,8 @@ class MetatransactionBroadcaster {
     // Is it an extension?
     // We do this is two parts. Is it an old-style extension?
     // First, instantiate it as if it's an extension.
-    const colonyExtensionDef = await this.loader.load({ contractName: "ColonyExtension" }, { abi: true, address: false });
+    const flags = { abi: true, address: false };
+    const colonyExtensionDef = await this.loader.load({ contractDir: "extensions", contractName: "ColonyExtension" }, flags);
     const possibleExtension = new ethers.Contract(checksummedAddress, colonyExtensionDef.abi, this.wallet);
     try {
       const extensionId = await possibleExtension.identifier();
@@ -169,7 +171,8 @@ class MetatransactionBroadcaster {
   }
 
   async isTokenTransactionValid(target, txData, userAddress) {
-    const metaTxTokenDef = await this.loader.load({ contractName: "MetaTxToken" }, { abi: true, address: false });
+    const flags = { abi: true, address: false };
+    const metaTxTokenDef = await this.loader.load({ contractDir: "metaTxToken", contractName: "MetaTxToken" }, flags);
     const possibleToken = new ethers.Contract(target, metaTxTokenDef.abi, this.wallet);
     let valid = false;
     try {
@@ -194,7 +197,8 @@ class MetatransactionBroadcaster {
   }
 
   async isColonyFamilyTransactionAllowed(target, txData, userAddress) {
-    const colonyDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
+    const flags = { abi: true, address: false };
+    const colonyDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" }, flags);
     const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
     try {
       const tx = possibleColony.interface.parseTransaction({ data: txData });
@@ -232,7 +236,7 @@ class MetatransactionBroadcaster {
       // Not a colony related transaction (we recognise)
     }
 
-    const votingRepDef = await this.loader.load({ contractName: "VotingReputation" }, { abi: true, address: false });
+    const votingRepDef = await this.loader.load({ contractDir: "extensions/votingReputation", contractName: "VotingReputation" }, flags);
     const possibleVotingRep = new ethers.Contract(target, votingRepDef.abi, this.wallet);
     try {
       const tx = possibleVotingRep.interface.parseTransaction({ data: txData });
@@ -259,7 +263,7 @@ class MetatransactionBroadcaster {
       // Not a voting rep related transaction (we recognise)
     }
 
-    const multicallDef = await this.loader.load({ contractName: "Multicall" }, { abi: true, address: false });
+    const multicallDef = await this.loader.load({ contractDir: "common", contractName: "Multicall" }, flags);
     const possibleMulticall = new ethers.Contract(target, multicallDef.abi, this.wallet);
 
     try {
