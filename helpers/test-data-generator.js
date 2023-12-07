@@ -1,9 +1,11 @@
 /* globals artifacts */
+
 const BN = require("bn.js");
+const { signTypedData_v4: signTypedData } = require("eth-sig-util");
 
 const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -323,7 +325,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
   return { r, s, v };
 };
 
-exports.getPermitParameters = async function getPermitParameters(owner, spender, amount, deadline, targetAddress) {
+exports.getPermitParameters = async function getPermitParameters(owner, privateKey, spender, amount, deadline, targetAddress) {
   const contract = await MetaTxToken.at(targetAddress);
   const nonce = await contract.nonces(owner);
   const multichain = await MultiChain.new();
@@ -389,7 +391,8 @@ exports.getPermitParameters = async function getPermitParameters(owner, spender,
     },
   };
 
-  const sig = await web3SignTypedData(owner, sigObject);
+  const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), "hex"));
+  const sig = signTypedData(privateKeyArray, { data: sigObject });
 
   const r = `0x${sig.substring(2, 66)}`;
   const s = `0x${sig.substring(66, 130)}`;

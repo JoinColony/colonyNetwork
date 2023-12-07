@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-/* global artifacts */
+/* global artifacts, hre */
 
 const path = require("path");
 const chai = require("chai");
@@ -253,6 +253,8 @@ contract("Metatransaction broadcaster", (accounts) => {
   });
 
   describe("should correctly respond to POSTs to the /broadcast endpoint", function () {
+    const PRIVATE_KEY0 = hre.config.networks.hardhat.accounts[0].privateKey;
+
     it("a valid transaction is broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
@@ -491,7 +493,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const deadline = Math.floor(Date.now() / 1000) + 3600;
 
-      const { r, s, v } = await getPermitParameters(USER0, colony.address, 1, deadline, metaTxToken.address);
+      const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, colony.address, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 
@@ -533,7 +535,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const deadline = Math.floor(Date.now() / 1000) + 3600;
 
-      const { r, s, v } = await getPermitParameters(USER0, USER1, 1, deadline, metaTxToken.address);
+      const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, USER1, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 
@@ -764,7 +766,7 @@ contract("Metatransaction broadcaster", (accounts) => {
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
-            reason: "VM Exception while processing transaction: revert colony-metatx-function-call-unsuccessful",
+            reason: "Error: VM Exception while processing transaction: reverted with reason string 'colony-metatx-function-call-unsuccessful'",
           },
         });
       }
@@ -825,7 +827,7 @@ contract("Metatransaction broadcaster", (accounts) => {
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
-            reason: "VM Exception while processing transaction: revert colony-metatx-function-call-unsuccessful",
+            reason: "Error: VM Exception while processing transaction: reverted with reason string 'colony-metatx-function-call-unsuccessful'",
           },
         });
       }
