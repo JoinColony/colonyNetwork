@@ -25,7 +25,7 @@ contract("Cross-chain", () => {
   let zodiacBridge;
   let bridgeMonitor;
 
-  const ADDRESS_ZERO = ethers.constants.AddressZero;
+  const ADDRESS_ZERO = ethers.ZeroAddress;
 
   const TRUFFLE_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
   const OTHER_RPC_PORT = 8546;

@@ -79,7 +79,7 @@ contract("EtherRouter / Resolver", (accounts) => {
 
     it("when checking destination for a function that doesn't exist, should return 0", async () => {
       const destination = await resolver.lookup("0xdeadbeef");
-      expect(destination).to.equal(ethers.constants.AddressZero);
+      expect(destination).to.equal(ethers.ZeroAddress);
     });
 
     it("should return correctly encoded function signature", async () => {
@@ -88,7 +88,7 @@ contract("EtherRouter / Resolver", (accounts) => {
     });
 
     it("should not allow a non-owner to set a function", async () => {
-      await checkErrorRevert(resolver.register("", ethers.constants.AddressZero, { from: accounts[2] }), "ds-auth-unauthorized");
+      await checkErrorRevert(resolver.register("", ethers.ZeroAddress, { from: accounts[2] }), "ds-auth-unauthorized");
     });
   });
 });

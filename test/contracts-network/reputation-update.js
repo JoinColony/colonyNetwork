@@ -19,7 +19,7 @@ const {
 const { fundColonyWithTokens, setupClaimedExpenditure, giveUserCLNYTokensAndStake } = require("../../helpers/test-data-generator");
 const { checkErrorRevert, advanceMiningCycleNoContest, getTokenArgs, removeSubdomainLimit } = require("../../helpers/test-helper");
 
-const ADDRESS_ZERO = ethers.constants.AddressZero;
+const ADDRESS_ZERO = ethers.ZeroAddress;
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

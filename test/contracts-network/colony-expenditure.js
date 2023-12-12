@@ -237,7 +237,7 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditureRecipients(expenditureId, [SLOT1, SLOT2], [RECIPIENT, USER], { from: ADMIN });
 
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT0);
-      expect(expenditureSlot.recipient).to.equal(ethers.constants.AddressZero);
+      expect(expenditureSlot.recipient).to.equal(ethers.ZeroAddress);
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT1);
       expect(expenditureSlot.recipient).to.equal(RECIPIENT);
       expenditureSlot = await colony.getExpenditureSlot(expenditureId, SLOT2);

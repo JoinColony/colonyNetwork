@@ -17,7 +17,7 @@ const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "artifacts", "contracts"),
 });
 
-const ADDRESS_ZERO = ethers.constants.AddressZero;
+const ADDRESS_ZERO = ethers.ZeroAddress;
 const MockBridgeMonitor = require("./mockBridgeMonitor");
 
 async function setupBridging(homeRpcUrl, foreignRpcUrl) {
@@ -138,7 +138,7 @@ async function getSig(provider, account, dataHash) {
   // Add 4 to v for... reasons... see https://docs.gnosis-safe.io/contracts/signatures
   vOffset += 4;
   const v = parseInt(sig.substring(130), 16) + vOffset;
-  const vString = ethers.utils.hexlify(v).slice(2);
+  const vString = ethers.hexlify(v).slice(2);
   // put back together
   const modifiedSig = `0x${r}${s}${vString}`;
   console.log(modifiedSig);

@@ -110,12 +110,12 @@ contract("Colony Staking", (accounts) => {
       expect(approval).to.be.zero;
       expect(obligation).to.eq.BN(WAD);
 
-      const tx = await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      const tx = await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.ZeroAddress, { from: USER2 });
       await expectEvent(tx, "StakeTransferred(address,address,address,address,uint256)", [
         tokenAddress,
         colony.address,
         USER1,
-        ethers.constants.AddressZero,
+        ethers.ZeroAddress,
         WAD,
       ]);
 
@@ -180,7 +180,7 @@ contract("Colony Staking", (accounts) => {
       await colony.obligateStake(USER1, 1, WAD, { from: USER0 });
 
       await checkErrorRevert(
-        colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
+        colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD.addn(1), ethers.ZeroAddress, { from: USER2 }),
         "Panic: Arithmetic overflow",
       );
     });
@@ -200,7 +200,7 @@ contract("Colony Staking", (accounts) => {
       await colony.obligateStake(USER1, 1, DEPOSIT, { from: USER0 });
 
       await checkErrorRevert(
-        tokenLocking.transfer(token.address, 1, ethers.constants.AddressZero, false, { from: USER1 }),
+        tokenLocking.transfer(token.address, 1, ethers.ZeroAddress, false, { from: USER1 }),
         "colony-token-locking-excess-obligation",
       );
     });
@@ -228,8 +228,8 @@ contract("Colony Staking", (accounts) => {
     it("should correctly accumulate multiple slashes", async () => {
       await colony.approveStake(USER0, 1, WAD.muln(2), { from: USER1 });
       await colony.obligateStake(USER1, 1, WAD.muln(2), { from: USER0 });
-      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
-      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.constants.AddressZero, { from: USER2 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.ZeroAddress, { from: USER2 });
+      await colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD, ethers.ZeroAddress, { from: USER2 });
 
       const deposit = await tokenLocking.getUserLock(token.address, USER1);
       expect(deposit.balance).to.eq.BN(WAD.muln(48));

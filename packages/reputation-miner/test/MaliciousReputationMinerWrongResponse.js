@@ -1,3 +1,5 @@
+/* global BigInt */
+
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
@@ -19,7 +21,7 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
     const disputedEntry = disputeRound[index];
 
     // console.log(disputedEntry);
-    let firstDisagreeIdx = ethers.BigNumber.from(disputedEntry.lowerBound);
+    let firstDisagreeIdx = BigInt(disputedEntry.lowerBound);
     let lastAgreeIdx = firstDisagreeIdx.sub(1);
     // If this is called before the binary search has finished, these would be -1 and 0, respectively, which will throw errors
     // when we try and pass -ve hex values. Instead, set them to values that will allow us to send a tx that will fail.
@@ -86,13 +88,13 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
       [
         this.responseToFalsify === 26 ?
           this.responseValue :
-          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[0], 32),
+          ethers.zeroPadValue(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[0], 32),
         this.responseToFalsify === 27 ?
           this.responseValue :
-          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[1], 32),
+          ethers.zeroPadValue(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[1], 32),
         this.responseToFalsify === 28 ?
           this.responseValue :
-          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[2], 32),
+          ethers.zeroPadValue(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[2], 32),
         this.responseToFalsify === 29 ?
           this.responseValue :
             soliditySha3(reputationKey),

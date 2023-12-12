@@ -1,3 +1,5 @@
+/* global BigInt */
+
 const ethers = require("ethers");
 const express = require("express");
 const path = require("path");
@@ -6,7 +8,7 @@ const apicache = require("apicache")
 const ReputationMiner = require("./ReputationMiner");
 const { ConsoleAdapter, getFeeData } = require("../package-utils");
 
-const minStake = ethers.BigNumber.from(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
+const minStake = BigInt(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
 const MINUTE_IN_SECONDS = 60;
 const disputeStages = {
  CONFIRM_JRH: 0,
@@ -29,7 +31,7 @@ const racingFunctionSignatures = [
   "confirmBinarySearchResult(uint256,uint256,bytes,bytes32[])",
   "respondToChallenge(uint256[26],bytes32[7],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[],bytes32[])",
   "confirmJustificationRootHash(uint256,uint256,bytes32[],bytes32[])"
-].map(x => ethers.utils.id(x).slice(0,10))
+].map(x => ethers.id(x).slice(0,10))
 
 class ReputationMinerClient {
   /**
@@ -103,7 +105,7 @@ class ReputationMinerClient {
       this._app.get("/reputations", async (req, res) => {
         const rootHash = await this._miner.getRootHash();
         const reputations = Object.keys(this._miner.reputations).map(key => {
-          const decimalValue = ethers.BigNumber.from(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
+          const decimalValue = BigInt(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
           return { key, decimalValue }
         })
         return res.status(200).send({ rootHash, reputations });
@@ -126,9 +128,9 @@ class ReputationMinerClient {
       // Query users who have given reputation in colony
       this._app.get("/:rootHash/:colonyAddress/:skillId/", cache('1 hour'), async (req, res) => {
         if (
-          !ethers.utils.isHexString(req.params.rootHash) ||
-          !ethers.utils.isHexString(req.params.colonyAddress) ||
-          !ethers.BigNumber.from(req.params.skillId)
+          !ethers.isHexString(req.params.rootHash) ||
+          !ethers.isHexString(req.params.colonyAddress) ||
+          !BigInt(req.params.skillId)
         ) {
           return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
@@ -147,9 +149,9 @@ class ReputationMinerClient {
       // Query all reputation for a single user in a colony
       this._app.get("/:rootHash/:colonyAddress/:userAddress/all", cache('1 hour'), async (req, res) => {
         if (
-          !ethers.utils.isHexString(req.params.rootHash) ||
-          !ethers.utils.isHexString(req.params.colonyAddress) ||
-          !ethers.utils.isHexString(req.params.userAddress)
+          !ethers.isHexString(req.params.rootHash) ||
+          !ethers.isHexString(req.params.colonyAddress) ||
+          !ethers.isHexString(req.params.userAddress)
         ) {
           return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
@@ -164,10 +166,10 @@ class ReputationMinerClient {
       // Query specific reputation values, but without proofs
       this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress/noProof", cache('1 hour'), async (req, res) => {
         if (
-          !ethers.utils.isHexString(req.params.rootHash) ||
-          !ethers.utils.isHexString(req.params.colonyAddress) ||
-          !ethers.utils.isHexString(req.params.userAddress) ||
-          !ethers.BigNumber.from(req.params.skillId)
+          !ethers.isHexString(req.params.rootHash) ||
+          !ethers.isHexString(req.params.colonyAddress) ||
+          !ethers.isHexString(req.params.userAddress) ||
+          !BigInt(req.params.skillId)
         ) {
           return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
@@ -179,7 +181,7 @@ class ReputationMinerClient {
             return res.status(400).send({ message: value.message.replace("Error: ") });
           }
           const proof = { key, value };
-          proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
+          proof.reputationAmount = BigInt(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
         } catch (err) {
           return res.status(500).send({ message: "An error occurred querying the reputation" });
@@ -189,10 +191,10 @@ class ReputationMinerClient {
       // Query specific reputation values
       this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", cache('1 hour'), async (req, res) => {
         if (
-          !ethers.utils.isHexString(req.params.rootHash) ||
-          !ethers.utils.isHexString(req.params.colonyAddress) ||
-          !ethers.utils.isHexString(req.params.userAddress) ||
-          !ethers.BigNumber.from(req.params.skillId)
+          !ethers.isHexString(req.params.rootHash) ||
+          !ethers.isHexString(req.params.colonyAddress) ||
+          !ethers.isHexString(req.params.userAddress) ||
+          !BigInt(req.params.skillId)
         ) {
           return res.status(400).send({ message: "One of the parameters was incorrect" });
         }
@@ -206,7 +208,7 @@ class ReputationMinerClient {
           }
           const [branchMask, siblings, value] = historicalProof;
           const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
-          proof.reputationAmount = ethers.BigNumber.from(`0x${proof.value.slice(2, 66)}`).toString();
+          proof.reputationAmount = BigInt(`0x${proof.value.slice(2, 66)}`).toString();
           return res.status(200).send(proof);
         } catch (err) {
           console.log(err)
@@ -264,7 +266,7 @@ class ReputationMinerClient {
           if (currentStateHash === lastStateHash){
           // Loading the state was successful...
             const submittedState = await repCycle.getReputationHashSubmission(this._miner.minerAddress);
-            if (submittedState.proposedNewRootHash === ethers.utils.hexZeroPad(0, 32)) {
+            if (submittedState.proposedNewRootHash === ethers.zeroPadValue(0, 32)) {
               resumedSuccessfully = true;
               this._adapter.log("Successfully resumed pre-submission");
             } else {
@@ -472,7 +474,7 @@ class ReputationMinerClient {
         // this._adapter.log(`oppEntry ${oppEntry}`);
         const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
 
-        if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
+        if (oppSubmission.proposedNewRootHash === ethers.ZeroAddress){
           const responsePossible = await repCycle.getResponsePossible(disputeStages.INVALIDATE_HASH, entry.lastResponseTimestamp);
           if (!responsePossible) {
             this.endDoBlockChecks();
@@ -481,7 +483,7 @@ class ReputationMinerClient {
           // Then we don't have an opponent
           if (round.eq(0)) {
             // We can only advance if the window is closed
-            if (ethers.BigNumber.from(block.timestamp).sub(windowOpened).lt(this._miner.getMiningCycleDuration())) {
+            if (BigInt(block.timestamp).sub(windowOpened).lt(this._miner.getMiningCycleDuration())) {
               this.endDoBlockChecks();
               return;
             };
@@ -533,7 +535,7 @@ class ReputationMinerClient {
           oppEntry.upperBound.eq(oppEntry.lowerBound) &&
           entry.upperBound.eq(entry.lowerBound) &&
           entry.challengeStepCompleted.gte(2) &&
-          ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
+          BigInt(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
         )
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
@@ -547,10 +549,10 @@ class ReputationMinerClient {
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
         } else if (
             oppEntry.challengeStepCompleted.gte(2) &&
-            ethers.BigNumber.from(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNLeaves) &&
+            BigInt(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNLeaves) &&
             entry.challengeStepCompleted.gte(3) &&
-            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNLeaves) &&
-            ethers.BigNumber.from(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
+            BigInt(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNLeaves) &&
+            BigInt(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
           )
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
@@ -564,11 +566,11 @@ class ReputationMinerClient {
 
         // Has our opponent timed out?
 
-        const opponentTimeout = ethers.BigNumber.from(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(CHALLENGE_RESPONSE_WINDOW_DURATION);
+        const opponentTimeout = BigInt(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(CHALLENGE_RESPONSE_WINDOW_DURATION);
         if (opponentTimeout){
           const responsePossible = await repCycle.getResponsePossible(
             disputeStages.INVALIDATE_HASH,
-            ethers.BigNumber.from(oppEntry.lastResponseTimestamp).add(CHALLENGE_RESPONSE_WINDOW_DURATION)
+            BigInt(oppEntry.lastResponseTimestamp).add(CHALLENGE_RESPONSE_WINDOW_DURATION)
           );
           if (responsePossible) {
             // If so, invalidate them.
@@ -582,7 +584,7 @@ class ReputationMinerClient {
 
       }
 
-      if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
+      if (lastHashStanding && BigInt(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
         // If the submission window is closed and we are the last hash, confirm it
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
         const disputeRound = await repCycle.getDisputeRound(round);
@@ -709,9 +711,9 @@ class ReputationMinerClient {
     const rootHash = await this._miner.getRootHash();
 
     const timeAbleToSubmitEntries = [];
-    for (let i = ethers.BigNumber.from(1); i.lte(balance.div(minStake)); i = i.add(1)) {
+    for (let i = BigInt(1); i.lte(balance.div(minStake)); i = i.add(1)) {
       const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);
-      const timeAbleToSubmitEntry = ethers.BigNumber.from(entryHash).div(this._miner.constant).add(reputationMiningWindowOpenTimestamp);
+      const timeAbleToSubmitEntry = BigInt(entryHash).div(this._miner.constant).add(reputationMiningWindowOpenTimestamp);
 
       const validEntry = {
         timestamp: timeAbleToSubmitEntry,

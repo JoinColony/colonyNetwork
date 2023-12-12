@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-/* global artifacts */
+/* global artifacts, BigInt */
 
 const path = require("path");
 const chai = require("chai");
@@ -125,7 +125,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";
 
       const AMBABI = ["function requireToPassMessage(address,bytes,uint256)"];
-      const AMBInterface = new ethers.utils.Interface(AMBABI);
+      const AMBInterface = new ethers.Interface(AMBABI);
 
       const ambCall = AMBInterface.encodeFunctionData("requireToPassMessage", ["0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59", "0x00000000", 1000000]);
 
@@ -561,11 +561,11 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       // Check the transaction happened
       const roles = await colony.getUserRoles(USER1, 1);
-      const roleArchitecture = ethers.BigNumber.from(2 ** 3).toHexString();
-      const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
+      const roleArchitecture = BigInt(2 ** 3).toHexString();
+      const roleFunding = BigInt(2 ** 5).toHexString();
 
       const expectedRoles = roleArchitecture | roleFunding; // eslint-disable-line no-bitwise
-      expect(roles).to.equal(ethers.utils.hexZeroPad(ethers.BigNumber.from(expectedRoles).toHexString(), 32));
+      expect(roles).to.equal(ethers.zeroPadValue(BigInt(expectedRoles).toHexString(), 32));
     });
 
     it("a multicall transaction that calls something invalid is rejected", async function () {

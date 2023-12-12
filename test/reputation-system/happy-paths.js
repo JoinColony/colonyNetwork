@@ -365,7 +365,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
       const skillId = localSkillId;
-      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.ZeroAddress);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
@@ -404,7 +404,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       const skillId = localSkillId;
-      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.ZeroAddress);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
@@ -870,7 +870,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       const skillId = new BN(1);
-      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.ZeroAddress);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
 
       await goodClient.insert(globalKey, new BN("1"), 0);

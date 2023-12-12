@@ -1,3 +1,5 @@
+/* global BigInt */
+
 const ethers = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
@@ -16,7 +18,7 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const disputeRound = await repCycle.getDisputeRound(round);
     const disputedEntry = disputeRound[index];
-    const firstDisagreeIdx = ethers.BigNumber.from(disputedEntry.lowerBound);
+    const firstDisagreeIdx = BigInt(disputedEntry.lowerBound);
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
     const lastAgreeKey = MaliciousReputationMinerWrongProofLogEntry.getHexString(lastAgreeIdx, 64);
@@ -24,7 +26,7 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
 
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
-    let logEntryNumber = ethers.BigNumber.from(0);
+    let logEntryNumber = BigInt(0);
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
@@ -60,7 +62,7 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
         this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.reputation
       ],
       [
-        ...ReputationMinerTestWrapper.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
+        ...ReputationMinerTestWrapper.breakKeyInToElements(reputationKey).map(x => ethers.zeroPadValue(x, 32)),
         soliditySha3(reputationKey),
         soliditySha3(this.justificationHashes[lastAgreeKey].adjacentReputationProof.key),
         soliditySha3(this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key),

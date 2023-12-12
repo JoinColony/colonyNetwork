@@ -13,7 +13,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const MetaTxToken = artifacts.require("MetaTxToken");
 
-const ADDRESS_ZERO = ethers.constants.AddressZero;
+const ADDRESS_ZERO = ethers.ZeroAddress;
 
 contract("MetaTxToken", (accounts) => {
   const USER0 = accounts[0];

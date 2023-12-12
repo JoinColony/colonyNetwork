@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, BigInt */
 
 const path = require("path");
 const BN = require("bn.js");
@@ -655,9 +655,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const [, siblings1] = await goodClient.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1));
-      const totalnUpdates = ethers.BigNumber.from(lastLogEntry.nUpdates)
-        .add(lastLogEntry.nPreviousUpdates)
-        .add(goodClient.nReputationsBeforeLatestLog);
+      const totalnUpdates = BigInt(lastLogEntry.nUpdates).add(lastLogEntry.nPreviousUpdates).add(goodClient.nReputationsBeforeLatestLog);
       const [, siblings2] = await goodClient.justificationTree.getProof(ReputationMinerTestWrapper.getHexString(totalnUpdates, 64));
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
 
@@ -1072,9 +1070,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await badClient.confirmBinarySearchResult();
 
       const logEntry = await repCycle.getReputationUpdateLogEntry(0);
-      const colonyAddress = ethers.utils.hexZeroPad(logEntry.colony, 32);
-      const userAddress = ethers.utils.hexZeroPad(logEntry.user, 32);
-      const skillId = ethers.utils.hexZeroPad(ethers.BigNumber.from(logEntry.skillId).toHexString(), 32);
+      const colonyAddress = ethers.zeroPadValue(logEntry.colony, 32);
+      const userAddress = ethers.zeroPadValue(logEntry.user, 32);
+      const skillId = ethers.zeroPadValue(BigInt(logEntry.skillId).toHexString(), 32);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 

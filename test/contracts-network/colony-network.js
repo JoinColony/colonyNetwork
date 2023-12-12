@@ -94,7 +94,7 @@ contract("Colony Network", (accounts) => {
 
     it("should have the Resolver for current Colony version set", async () => {
       const currentResolver = await colonyNetwork.getColonyVersionResolver(version);
-      expect(currentResolver).to.not.equal(ethers.constants.AddressZero);
+      expect(currentResolver).to.not.equal(ethers.ZeroAddress);
     });
 
     it("should be able to register a higher Colony contract version", async () => {
@@ -117,7 +117,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not be able to set the token locking to null or set twice", async () => {
-      await checkErrorRevert(colonyNetwork.setTokenLocking(ethers.constants.AddressZero), "colony-token-locking-cannot-be-zero");
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ethers.ZeroAddress), "colony-token-locking-cannot-be-zero");
       await checkErrorRevert(colonyNetwork.setTokenLocking(metaColony.address), "colony-token-locking-address-already-set");
     });
 
@@ -153,16 +153,16 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not allow setting the mining resolver to null", async () => {
-      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero), "colony-mining-resolver-cannot-be-zero");
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.ZeroAddress), "colony-mining-resolver-cannot-be-zero");
     });
 
     it("should not allow a non-permissioned user to set the mining resolver", async () => {
-      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero, { from: accounts[1] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.ZeroAddress, { from: accounts[1] }), "ds-auth-unauthorized");
     });
 
     it("should not allow initialisation if the clny token is 0", async () => {
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.ZeroAddress);
       await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-clny-token-invalid-address");
     });
 
@@ -173,7 +173,7 @@ contract("Colony Network", (accounts) => {
     it("should not allow another mining cycle to start if the clny token is 0", async () => {
       await colonyNetwork.initialiseReputationMining();
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.ZeroAddress);
 
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
     });
@@ -282,7 +282,7 @@ contract("Colony Network", (accounts) => {
     it("should allow users to create new colonies", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const colonyCount = await colonyNetwork.getColonyCount();
-      expect(colony.address).to.not.equal(ethers.constants.AddressZero);
+      expect(colony.address).to.not.equal(ethers.ZeroAddress);
       expect(colonyCount).to.eq.BN(2);
     });
 
@@ -331,7 +331,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not allow users to create a colony with empty token", async () => {
-      await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero, 0, "", ""), "colony-token-invalid-address");
+      await checkErrorRevert(colonyNetwork.createColony(ethers.ZeroAddress, 0, "", ""), "colony-token-invalid-address");
     });
 
     it("when any colony is created, should have the root domain and local skills initialised", async () => {
@@ -414,12 +414,12 @@ contract("Colony Network", (accounts) => {
       await colonyNetwork.createColony(token.address, 0, "", "");
       await colonyNetwork.createColony(token.address, 0, "", "");
       const colonyAddress = await colonyNetwork.getColony(3);
-      expect(colonyAddress).to.not.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.not.equal(ethers.ZeroAddress);
     });
 
     it("should return an empty address if there is no colony for the index provided", async () => {
       const colonyAddress = await colonyNetwork.getColony(15);
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ethers.ZeroAddress);
     });
 
     it("should be able to get the Colony version", async () => {
@@ -510,7 +510,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not be able to set the ENS reigstrar to null", async () => {
-      await checkErrorRevert(colonyNetwork.setupRegistrar(ethers.constants.AddressZero, "0x0"), "colony-ens-cannot-be-zero");
+      await checkErrorRevert(colonyNetwork.setupRegistrar(ethers.ZeroAddress, "0x0"), "colony-ens-cannot-be-zero");
     });
 
     it("should be able to get the ENSRegistrar", async () => {

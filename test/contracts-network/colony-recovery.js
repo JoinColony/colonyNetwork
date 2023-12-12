@@ -137,7 +137,7 @@ contract("Colony Recovery", (accounts) => {
       const metaColony = await IMetaColony.at(metaColonyAddress);
       await metaColony.enterRecoveryMode();
 
-      await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.initialiseColony(ethers.ZeroAddress, ethers.ZeroAddress), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitDomainReputationReward(0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.emitDomainReputationPenalty(0, 0, 0, ADDRESS_ZERO, 0), "colony-in-recovery-mode");
@@ -302,7 +302,7 @@ contract("Colony Recovery", (accounts) => {
       // Metatransaction nonce mapping is storage slot 35
       // So this user has their nonce stored at
       const user0MetatransactionNonceSlot = await web3.utils.soliditySha3(
-        { type: "bytes32", value: ethers.utils.hexZeroPad(accounts[0], 32) },
+        { type: "bytes32", value: ethers.zeroPadValue(accounts[0], 32) },
         { type: "uint256", value: "35" },
       );
 

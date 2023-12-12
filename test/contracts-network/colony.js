@@ -67,7 +67,7 @@ contract("Colony", (accounts) => {
 
     it("should not have owner", async () => {
       const owner = await colony.owner();
-      expect(owner).to.be.equal(ethers.constants.AddressZero);
+      expect(owner).to.be.equal(ethers.ZeroAddress);
     });
 
     it("should return zero expenditure count", async () => {
@@ -97,8 +97,8 @@ contract("Colony", (accounts) => {
     });
 
     it("should not allow initialisation with null token or network addresses", async () => {
-      await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-network-cannot-be-zero");
-      await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, ethers.constants.AddressZero), "colony-token-cannot-be-zero");
+      await checkErrorRevert(colony.initialiseColony(ethers.ZeroAddress, ethers.ZeroAddress), "colony-network-cannot-be-zero");
+      await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, ethers.ZeroAddress), "colony-token-cannot-be-zero");
     });
 
     it("should not allow reinitialisation", async () => {

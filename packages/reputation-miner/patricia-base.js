@@ -1,5 +1,6 @@
+/* global BigInt */
+
 const BN = require("bn.js");
-const ethers = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 // //////
@@ -78,7 +79,7 @@ class PatriciaTreeBase {
       edge = node.children[head];
       label = tail;
     }
-    branchMask = ethers.BigNumber.from(branchMask.toString());
+    branchMask = BigInt(branchMask.toString());
     return [branchMask, siblings.map(s => PatriciaTreeBase.bn2hex64(s))];
   }
 

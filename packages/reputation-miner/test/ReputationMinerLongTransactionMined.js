@@ -1,4 +1,5 @@
-const ethers = require("ethers");
+/* global BigInt */
+
 const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class ReputationMinerLongTransactionMined extends ReputationMinerTestWrapper {
@@ -14,7 +15,7 @@ class ReputationMinerLongTransactionMined extends ReputationMinerTestWrapper {
     if (!entryIndex) {
       entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
-    let gasEstimate = ethers.BigNumber.from(1000000);
+    let gasEstimate = BigInt(1000000);
     try {
       gasEstimate = await repCycle.estimate.submitRootHash(hash, nLeaves, jrh, entryIndex);
     } catch (err) { // eslint-disable-line no-empty
