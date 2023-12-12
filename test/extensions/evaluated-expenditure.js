@@ -57,7 +57,7 @@ contract("EvaluatedExpenditure", (accounts) => {
       expect(identifier).to.equal(EVALUATED_EXPENDITURE);
 
       const capabilityRoles = await evaluatedExpenditure.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await evaluatedExpenditure.finishUpgrade();
       await evaluatedExpenditure.deprecate(true);

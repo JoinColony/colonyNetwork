@@ -1,8 +1,7 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
 
 const chai = require("chai");
 const bnChai = require("bn-chai");
-const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD } = require("../../helpers/constants");
@@ -11,7 +10,7 @@ const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
-const ADDRESS_ZERO = ethers.constants.AddressZero;
+const ADDRESS_ZERO = ethers.ZeroAddress;
 
 const CoinMachine = artifacts.require("CoinMachine");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -212,9 +211,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
   it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
     const COIN_MACHINE = soliditySha3("CoinMachine");
 
-    const ethersProvider = new ethers.providers.JsonRpcProvider(web3.currentProvider.host);
-    const ethersColonyNetwork = new ethers.Contract(colonyNetwork.address, colonyNetwork.abi, ethersProvider);
-
+    const ethersColonyNetwork = new ethers.Contract(colonyNetwork.address, colonyNetwork.abi, ethers.provider);
     const eventFilter = ethersColonyNetwork.filters.ExtensionAddedToNetwork(COIN_MACHINE);
     const events = await ethersColonyNetwork.queryFilter(eventFilter, 0);
     const log = await ethersColonyNetwork.interface.parseLog(events[0]);
@@ -223,7 +220,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     const coinMachine = await CoinMachine.at(coinMachineAddress);
-    await coinMachine.initialise(token.address, ethers.constants.AddressZero, 60 * 60, 10, WAD, WAD, WAD, WAD, ADDRESS_ZERO);
+    await coinMachine.initialise(token.address, ethers.ZeroAddress, 60 * 60, 10, WAD, WAD, WAD, WAD, ADDRESS_ZERO);
     await token.mint(coinMachine.address, WAD);
 
     const action = await encodeTxData(coinMachine, "buyTokens", [WAD]);

@@ -45,7 +45,7 @@ contract("Coin Machine", (accounts) => {
   const USER1 = accounts[1];
   const USER2 = accounts[2];
 
-  const ADDRESS_ZERO = ethers.constants.AddressZero;
+  const ADDRESS_ZERO = ethers.ZeroAddress;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -81,7 +81,7 @@ contract("Coin Machine", (accounts) => {
       expect(identifier).to.equal(COIN_MACHINE);
 
       const capabilityRoles = await coinMachine.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await coinMachine.finishUpgrade();
       await coinMachine.deprecate(true);

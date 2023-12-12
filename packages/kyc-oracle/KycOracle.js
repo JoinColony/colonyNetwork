@@ -182,7 +182,7 @@ class KycOracle {
    */
   async updateGasEstimate(type) {
     if (this.chainId === 100) {
-      this.gasPrice = ethers.utils.hexlify(1000000000);
+      this.gasPrice = ethers.hexlify(1000000000);
       return;
     }
 
@@ -191,13 +191,13 @@ class KycOracle {
       const { data } = await axios.get("https://ethgasstation.info/json/ethgasAPI.json");
 
       if (data[type]) {
-        this.gasPrice = ethers.utils.hexlify((data[type] / 10) * 1e9);
+        this.gasPrice = ethers.hexlify((data[type] / 10) * 1e9);
       } else {
-        this.gasPrice = ethers.utils.hexlify(20000000000);
+        this.gasPrice = ethers.hexlify(20000000000);
       }
     } catch (err) {
       console.log(`Error during gas estimation: ${err}`);
-      this.gasPrice = ethers.utils.hexlify(20000000000);
+      this.gasPrice = ethers.hexlify(20000000000);
     }
   }
 

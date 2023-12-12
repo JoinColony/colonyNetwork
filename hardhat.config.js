@@ -3,6 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
+require("@nomicfoundation/hardhat-ethers");
 require("@nomiclabs/hardhat-truffle5");
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {

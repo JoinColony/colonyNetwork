@@ -83,7 +83,7 @@ contract("Staged Expenditure", (accounts) => {
       expect(identifier).to.equal(STAGED_EXPENDITURE);
 
       const capabilityRoles = await stagedExpenditure.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await stagedExpenditure.finishUpgrade();
       await stagedExpenditure.deprecate(true);

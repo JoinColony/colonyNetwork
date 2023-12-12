@@ -57,7 +57,7 @@ contract("Whitelist", (accounts) => {
       expect(identifier).to.equal(WHITELIST);
 
       const capabilityRoles = await whitelist.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await whitelist.finishUpgrade();
       await whitelist.deprecate(true);

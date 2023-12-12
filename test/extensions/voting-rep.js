@@ -128,7 +128,7 @@ contract("Voting Reputation", (accounts) => {
   const FINALIZED = 6;
   const FAILED = 7;
 
-  const ADDRESS_ZERO = ethers.constants.AddressZero;
+  const ADDRESS_ZERO = ethers.ZeroAddress;
   const REQUIRED_STAKE = WAD.muln(3).divn(1000);
   const REQUIRED_STAKE_DOMAIN_2 = WAD.divn(1000);
   const WAD32 = bn2bytes32(WAD);
@@ -288,7 +288,7 @@ contract("Voting Reputation", (accounts) => {
       expect(identifier).to.equal(VOTING_REPUTATION);
 
       const capabilityRoles = await voting.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await voting.finishUpgrade();
       await voting.deprecate(true);
@@ -904,7 +904,7 @@ contract("Voting Reputation", (accounts) => {
 
     it("cannot update the expenditure slot claimDelay if given an invalid action", async () => {
       // Create a poorly-formed action (no keys)
-      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.constants.HashZero]);
+      const action = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, 1, 0, [], [], ethers.ZeroHash]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();

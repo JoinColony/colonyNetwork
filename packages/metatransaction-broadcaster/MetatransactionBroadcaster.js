@@ -1,3 +1,5 @@
+/* global BigInt */
+
 const ethers = require("ethers");
 const express = require("express");
 const sqlite = require("sqlite");
@@ -8,7 +10,7 @@ const { colonyIOCors, ConsoleAdapter, getFeeData } = require("../package-utils")
 
 const ETHEREUM_BRIDGE_ADDRESS = "0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59";
 const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";
-const REQUIRE_TO_PASS_MESSAGE_SIG = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("requireToPassMessage(address,bytes,uint256)")).slice(0, 10);
+const REQUIRE_TO_PASS_MESSAGE_SIG = ethers.keccak256(ethers.toUtf8Bytes("requireToPassMessage(address,bytes,uint256)")).slice(0, 10);
 
 class MetatransactionBroadcaster {
   /**
@@ -104,7 +106,7 @@ class MetatransactionBroadcaster {
   }
 
   async isAddressValid(address) {
-    const checksummedAddress = ethers.utils.getAddress(address);
+    const checksummedAddress = ethers.getAddress(address);
     const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
     const res = await db.all(
       `SELECT DISTINCT addresses.validForMtx as validForMtx
@@ -183,7 +185,7 @@ class MetatransactionBroadcaster {
       } else if (tx.signature === "setAuthority(address)") {
         valid = await this.isValidSetAuthorityTransaction(tx, userAddress);
       } else if (tx.signature === "setOwner(address)") {
-        const checksummedAddress = ethers.utils.getAddress(tx.args[0]);
+        const checksummedAddress = ethers.getAddress(tx.args[0]);
         const isColony = await this.colonyNetwork.isColony(checksummedAddress);
         valid = isColony;
       }
@@ -304,7 +306,7 @@ class MetatransactionBroadcaster {
     while (data.length === 0) {
       logs = await this.provider.getLogs({
         address: this.colonyNetwork.address,
-        topics: [ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
+        topics: [ethers.id("MetaTransactionExecuted(address,address,bytes)")],
         fromBlock,
         toBlock,
       });
@@ -316,7 +318,7 @@ class MetatransactionBroadcaster {
             event: this.colonyNetwork.interface.parseLog(l),
           };
         })
-        .filter((x) => ethers.utils.getAddress(x.event.args.userAddress) === ethers.utils.getAddress(userAddress));
+        .filter((x) => ethers.getAddress(x.event.args.userAddress) === ethers.getAddress(userAddress));
 
       fromBlock -= stepSize;
       toBlock -= stepSize;
@@ -336,7 +338,7 @@ class MetatransactionBroadcaster {
 
       try {
         gasEstimate = await estimateGas(...args);
-        if (ethers.BigNumber.from(args[args.length - 1].gasLimit).gt(gasEstimate.mul(11).div(10))) {
+        if (BigInt(args[args.length - 1].gasLimit).gt(gasEstimate.mul(11).div(10))) {
           // eslint-disable-next-line
           args[args.length - 1].gasLimit = gasEstimate.mul(11).div(10);
         }

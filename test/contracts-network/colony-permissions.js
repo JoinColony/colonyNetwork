@@ -1,4 +1,5 @@
-/* global artifacts */
+/* global artifacts, BigInt */
+
 const BN = require("bn.js");
 const chai = require("chai");
 const bnChai = require("bn-chai");
@@ -498,33 +499,33 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should be able to get all user roles", async () => {
-      const roleRecovery = ethers.BigNumber.from(2 ** 0).toHexString();
-      const roleRoot = ethers.BigNumber.from(2 ** 1).toHexString();
-      const roleArbitration = ethers.BigNumber.from(2 ** 2).toHexString();
-      const roleArchitecture = ethers.BigNumber.from(2 ** 3).toHexString();
-      const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
-      const roleAdministration = ethers.BigNumber.from(2 ** 6).toHexString();
+      const roleRecovery = bn2bytes32(BigInt(2 ** 0));
+      const roleRoot = bn2bytes32(BigInt(2 ** 1));
+      const roleArbitration = bn2bytes32(BigInt(2 ** 2));
+      const roleArchitecture = bn2bytes32(BigInt(2 ** 3));
+      const roleFunding = bn2bytes32(BigInt(2 ** 5));
+      const roleAdministration = bn2bytes32(BigInt(2 ** 6));
 
       const roles1 = await colony.getUserRoles(FOUNDER, 1);
       const allRoles = roleRecovery | roleRoot | roleArbitration | roleArchitecture | roleFunding | roleAdministration; // eslint-disable-line no-bitwise
-      expect(roles1).to.equal(ethers.utils.hexZeroPad(ethers.BigNumber.from(allRoles).toHexString(), 32));
+      expect(roles1).to.equal(ethers.zeroPadValue(bn2bytes32(BigInt(allRoles)), 32));
 
       await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: FOUNDER });
       const roles2 = await colony.getUserRoles(USER2, 2);
-      expect(roles2).to.equal(ethers.utils.hexZeroPad(roleAdministration, 32));
+      expect(roles2).to.equal(ethers.zeroPadValue(roleAdministration, 32));
     });
 
     it("should be able to set many roles at once", async () => {
       let recoveryRolesCount = await colony.numRecoveryRoles();
       expect(recoveryRolesCount).to.eq.BN(1);
 
-      const roleRecovery = ethers.BigNumber.from(2 ** 0).toHexString();
-      const roleRoot = ethers.BigNumber.from(2 ** 1).toHexString();
-      const roleArbitration = ethers.BigNumber.from(2 ** 2).toHexString();
-      const roleFunding = ethers.BigNumber.from(2 ** 5).toHexString();
+      const roleRecovery = bn2bytes32(BigInt(2 ** 0));
+      const roleRoot = bn2bytes32(BigInt(2 ** 1));
+      const roleArbitration = bn2bytes32(BigInt(2 ** 2));
+      const roleFunding = bn2bytes32(BigInt(2 ** 5));
 
-      const rolesRoot = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleRecovery | roleRoot | roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
-      const rolesArch = ethers.utils.hexZeroPad(ethers.BigNumber.from(roleArbitration | roleFunding).toHexString(), 32); // eslint-disable-line no-bitwise
+      const rolesRoot = ethers.zeroPadValue(bn2bytes32(BigInt(roleRecovery | roleRoot | roleArbitration | roleFunding)), 32); // eslint-disable-line no-bitwise
+      const rolesArch = ethers.zeroPadValue(bn2bytes32(BigInt(roleArbitration | roleFunding)), 32); // eslint-disable-line no-bitwise
 
       let userRoles;
       await colony.setArchitectureRole(1, UINT256_MAX, USER1, 1, true);
@@ -578,7 +579,7 @@ contract("ColonyPermissions", (accounts) => {
       expect(tx.logs[1].args.user).to.equal(USER2);
 
       userRoles = await colony.getUserRoles(USER2, 3);
-      expect(userRoles).to.equal(ethers.constants.HashZero);
+      expect(userRoles).to.equal(ethers.ZeroHash);
 
       // And the recovery roles count is updated when recovery is removed
       await colony.setUserRoles(1, UINT256_MAX, USER2, 1, "0x0", { from: FOUNDER });
@@ -594,10 +595,10 @@ contract("ColonyPermissions", (accounts) => {
     });
 
     it("should not allow a role to be set that doesn't exist", async () => {
-      const nonexistentRole = ethers.BigNumber.from(2).pow(7).toHexString();
+      const nonexistentRole = bn2bytes32(BigInt(2) ** BigInt(7));
       await colony.setUserRoles(1, 0, USER2, 2, nonexistentRole, { from: FOUNDER });
       const userRoles = await colony.getUserRoles(USER2, 2);
-      expect(userRoles).to.equal(ethers.constants.HashZero);
+      expect(userRoles).to.equal(ethers.ZeroHash);
     });
 
     it("authority should not allow users who aren't permissioned to set roles", async () => {

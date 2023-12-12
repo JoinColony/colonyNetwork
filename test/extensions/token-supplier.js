@@ -61,7 +61,7 @@ contract("Token Supplier", (accounts) => {
       await checkErrorRevert(tokenSupplier.install(colony.address), "extension-already-installed");
 
       const capabilityRoles = await tokenSupplier.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await tokenSupplier.finishUpgrade();
       await tokenSupplier.deprecate(true);

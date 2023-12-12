@@ -97,7 +97,7 @@ contract("Token Locking", (addresses) => {
     });
 
     it("should correctly set colony network address", async () => {
-      await checkErrorRevert(tokenLocking.setColonyNetwork(ethers.constants.AddressZero), "colony-token-locking-network-cannot-be-zero");
+      await checkErrorRevert(tokenLocking.setColonyNetwork(ethers.ZeroAddress), "colony-token-locking-network-cannot-be-zero");
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
       const colonyNetworkAddress = await tokenLocking.getColonyNetwork();

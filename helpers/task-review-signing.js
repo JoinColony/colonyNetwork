@@ -1,7 +1,8 @@
+/* globals BigInt */
+
 const { soliditySha3, padLeft } = require("web3-utils");
 const { hashPersonalMessage, ecsign } = require("ethereumjs-util");
 const fs = require("fs");
-const { ethers } = require("ethers");
 const { encodeTxData } = require("./test-helper");
 
 exports.executeSignedTaskChange = async function executeSignedTaskChange({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
@@ -26,7 +27,7 @@ exports.getSigsAndTransactionData = async function getSigsAndTransactionData({ c
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
   // and https://github.com/ethereum/web3.js/issues/2077
   const txData = await encodeTxData(colony, functionName, args);
-  const ethersBNTaskId = ethers.BigNumber.from(taskId.toString());
+  const ethersBNTaskId = BigInt(taskId.toString());
   const sigsPromises = sigTypes.map((type, i) => {
     let privKey = [];
     if (privKeys) {

@@ -1,3 +1,5 @@
+/* global BigInt */
+
 const fs = require("fs").promises;
 const path = require("path");
 const BN = require("bn.js");
@@ -12,7 +14,7 @@ const PatriciaTreeNoHash = require("./patriciaNoHashKey");
 // do in the future.
 // const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
-const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
+const minStake = BigInt(10) ** BigInt(18) * BigInt(2000);
 
 const DAY_IN_SECONDS = 60 * 60 * 24;
 
@@ -115,7 +117,7 @@ class ReputationMiner {
     // on behalf of another address via delegate mining. So check which address we're actually mining for.
     const signingAddress = await this.realWallet.getAddress();
     const delegator = await this.colonyNetwork.getMiningDelegator(signingAddress);
-    if (delegator === ethers.constants.AddressZero){
+    if (delegator === ethers.ZeroAddress){
       this.minerAddress = signingAddress;
     } else {
       this.minerAddress = delegator;
@@ -126,8 +128,8 @@ class ReputationMiner {
     const signingBalance = await this.realProvider.getBalance(signingAddress);
 
     console.log(
-      `With a CLNY stake of ${ethers.utils.formatUnits(miningStake.amount)} ` +
-      `and an XDAI balance of ${ethers.utils.formatUnits(signingBalance)}. I hope that's enough!`
+      `With a CLNY stake of ${ethers.formatUnits(miningStake.amount)} ` +
+      `and an XDAI balance of ${ethers.formatUnits(signingBalance)}. I hope that's enough!`
     );
 
     process.on('exit', () => this.db.close());
@@ -258,7 +260,7 @@ class ReputationMiner {
     this.decayDenominator = decayFraction.denominator;
 
     // Do updates
-    this.nReputationsBeforeLatestLog = ethers.BigNumber.from(this.nReputations.toString());
+    this.nReputationsBeforeLatestLog = BigInt(this.nReputations.toString());
     // This is also the number of decays we have.
 
     // How many updates from the logs do we have?
@@ -271,10 +273,9 @@ class ReputationMiner {
     const nLogEntriesString = nLogEntries.sub(1).toString();
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntriesString, { blockTag: blockNumber });
 
-    const totalnUpdates = ethers.BigNumber
-      .from(lastLogEntry.nUpdates)
-      .add(lastLogEntry.nPreviousUpdates)
-      .add(this.nReputationsBeforeLatestLog);
+    const totalnUpdates = BigInt(lastLogEntry.nUpdates)
+      + lastLogEntry.nPreviousUpdates
+      + this.nReputationsBeforeLatestLog;
     const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);
     const replacementLogEntriesExist = nReplacementLogEntries > 0;
     for (let i = ethers.constants.Zero; i.lt(totalnUpdates); i = i.add(1)) {
@@ -366,10 +367,10 @@ class ReputationMiner {
 
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       const key = await Object.keys(this.reputations)[updateNumber];
-      const reputation = ethers.BigNumber.from(`0x${this.reputations[key].slice(2, 66)}`);
+      const reputation = BigInt(`0x${this.reputations[key].slice(2, 66)}`);
 
-      const numerator = ethers.BigNumber.from(this.decayNumerator);
-      const denominator = ethers.BigNumber.from(this.decayDenominator);
+      const numerator = BigInt(this.decayNumerator);
+      const denominator = BigInt(this.decayDenominator);
 
       const newReputation = reputation.mul(numerator).div(denominator);
       const reputationChange = newReputation.sub(reputation);
@@ -380,18 +381,18 @@ class ReputationMiner {
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
       if (checkForReplacement) {
         const potentialReplacementLogEntry = await this.colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, logEntryNumber);
-        if (potentialReplacementLogEntry.colonyAddress !== ethers.constants.AddressZero) {
+        if (potentialReplacementLogEntry.colonyAddress !== ethers.ZeroAddress) {
           logEntry = potentialReplacementLogEntry;
         }
       }
-      const reputationChange = ethers.BigNumber.from(logEntry.amount);
+      const reputationChange = BigInt(logEntry.amount);
       amount = this.getAmount(updateNumber, reputationChange);
 
       // When reputation amount update is negative, adjust its value for child reputation updates and parent updates
       // We update colonywide sums first (children, parents, skill)
       // Then the user-specifc sums in the order children, parents, skill.
       if (amount.lt(0)) {
-        const nUpdates = ethers.BigNumber.from(logEntry.nUpdates);
+        const nUpdates = BigInt(logEntry.nUpdates);
         const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId, {blockTag: blockNumber});
         const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
         const relativeUpdateNumber = updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog);
@@ -408,7 +409,7 @@ class ReputationMiner {
         if (originSkillKeyExists) {
           // Look up value from our JSON.
           const originReputationValueBytes = this.reputations[originSkillKey];
-          originReputation = ethers.BigNumber.from(`0x${originReputationValueBytes.slice(2, 66)}`);
+          originReputation = BigInt(`0x${originReputationValueBytes.slice(2, 66)}`);
         } else {
           originReputation = ethers.constants.Zero;
           // Get the proof for the reputation that exists in the tree that would be the adjacent reputation.
@@ -437,7 +438,7 @@ class ReputationMiner {
             let reputation = ethers.constants.Zero;
             const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
             if (keyExists) {
-              reputation = ethers.BigNumber.from(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
+              reputation = BigInt(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
             } else {
               const childAdjacentKey = await this.getAdjacentKey(keyUsedInCalculations);
               childAdjacentReputationProof = await this.getReputationProofObject(childAdjacentKey);
@@ -602,7 +603,7 @@ class ReputationMiner {
       const testIdx = lower.add(upper.sub(lower).div(2));
       const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockTag: blockNumber });
 
-      const nPreviousUpdates = ethers.BigNumber.from(testLogEntry.nPreviousUpdates);
+      const nPreviousUpdates = BigInt(testLogEntry.nPreviousUpdates);
       if (nPreviousUpdates.gt(updateNumber)) {
         upper = testIdx.sub(1);
       } else if (nPreviousUpdates.lte(updateNumber) && nPreviousUpdates.add(testLogEntry.nUpdates).gt(updateNumber)) {
@@ -617,7 +618,7 @@ class ReputationMiner {
   }
 
   async getKeyForUpdateNumber(_i, blockNumber = "latest") {
-    const updateNumber = ethers.BigNumber.from(_i);
+    const updateNumber = BigInt(_i);
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       // Then it's a decay
       return Object.keys(this.reputations)[updateNumber.toNumber()];
@@ -649,14 +650,14 @@ class ReputationMiner {
     // We need to work out the skillId and user address to use.
     // If we are in the first half of 'updateNumber's, then we are dealing with global update, so
     // the skilladdress will be 0x0, rather than the user address
-    if (updateNumber.lt(ethers.BigNumber.from(logEntry.nUpdates).div(2))) {
-      skillAddress = ethers.constants.AddressZero;
+    if (updateNumber.lt(BigInt(logEntry.nUpdates).div(2))) {
+      skillAddress = ethers.ZeroAddress;
     } else {
       skillAddress = logEntry.user; // eslint-disable-line prefer-destructuring
       // Following the destructuring rule, this line would be [skillAddress] = logEntry, which I think is very misleading
     }
-    const nUpdates = ethers.BigNumber.from(logEntry.nUpdates);
-    const amount = this.getAmount(updateNumber.add(this.nReputationsBeforeLatestLog), ethers.BigNumber.from(logEntry.amount));
+    const nUpdates = BigInt(logEntry.nUpdates);
+    const amount = this.getAmount(updateNumber.add(this.nReputationsBeforeLatestLog), BigInt(logEntry.amount));
 
     const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId);
     let skillId;
@@ -738,7 +739,7 @@ class ReputationMiner {
    */
   async getActiveRepCycle(blockNumber = "latest") {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
-    if (addr === ethers.constants.AddressZero) {
+    if (addr === ethers.ZeroAddress) {
       throw new Error(`No active mining cycle found for block number ${blockNumber}`);
     }
 
@@ -765,7 +766,7 @@ class ReputationMiner {
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err) {
-      gasEstimate = ethers.BigNumber.from(1000000);
+      gasEstimate = BigInt(1000000);
     }
 
     // Submit that entry
@@ -776,7 +777,7 @@ class ReputationMiner {
     // Get how much we've staked, and thefore how many entries we have
     const [stakeAmount] = await this.colonyNetwork.getMiningStake(this.minerAddress);
 
-    for (let i = ethers.BigNumber.from(startIndex); i.lte(stakeAmount.div(minStake)); i = i.add(1)) {
+    for (let i = BigInt(startIndex); i.lte(stakeAmount.div(minStake)); i = i.add(1)) {
       const submissionPossible = await this.submissionPossible(i);
       if (submissionPossible) {
         return i;
@@ -802,7 +803,7 @@ class ReputationMiner {
 
     // Check the window has not closed or it has closed but no-one has submitted and so the current cycle is open to submissions
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
-    const elapsedTime = ethers.BigNumber.from(block.timestamp).sub(reputationMiningWindowOpenTimestamp);
+    const elapsedTime = BigInt(block.timestamp).sub(reputationMiningWindowOpenTimestamp);
 
     if (elapsedTime.gte(this.getMiningCycleDuration()) && !nUniqueSubmittedHashes.eq(0)) {
       return false;
@@ -811,7 +812,7 @@ class ReputationMiner {
     // Check the proposed entry is eligible (emulates entryQualifies modifier behaviour)
     const [stakeAmount, stakeTimestamp] = await this.colonyNetwork.getMiningStake(this.minerAddress);
 
-    if (ethers.BigNumber.from(entryIndex).gt(stakeAmount.div(minStake))) {
+    if (BigInt(entryIndex).gt(stakeAmount.div(minStake))) {
       return false;
     }
 
@@ -827,10 +828,10 @@ class ReputationMiner {
 
     // Check the proposed entry is within the current allowable submission window (emulates withinTarget modifier behaviour)
     if (elapsedTime.lt(this.getMiningCycleDuration())) {
-      const target = ethers.BigNumber.from(block.timestamp).sub(reputationMiningWindowOpenTimestamp).mul(this.constant);
+      const target = BigInt(block.timestamp).sub(reputationMiningWindowOpenTimestamp).mul(this.constant);
       const entryHash = await repCycle.getEntryHash(this.minerAddress, entryIndex, hash);
 
-      if (ethers.BigNumber.from(entryHash).lt(target)) {
+      if (BigInt(entryHash).lt(target)) {
         return true;
       }
       return false
@@ -1015,7 +1016,7 @@ class ReputationMiner {
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10)
     } catch (err) {
-      gasEstimate = ethers.BigNumber.from(6000000);
+      gasEstimate = BigInt(6000000);
     }
 
     return repCycle.confirmJustificationRootHash(
@@ -1104,7 +1105,7 @@ class ReputationMiner {
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err) {
-      gasEstimate = ethers.BigNumber.from(1000000);
+      gasEstimate = BigInt(1000000);
     }
     return repCycle.respondToBinarySearchForChallenge(
       round,
@@ -1128,7 +1129,7 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle();
     const disputeRound = await repCycle.getDisputeRound(round);
     const disputedEntry = disputeRound[index];
-    const targetLeafKey = ethers.BigNumber.from(disputedEntry.lowerBound);
+    const targetLeafKey = BigInt(disputedEntry.lowerBound);
     const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
@@ -1140,7 +1141,7 @@ class ReputationMiner {
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err){
-      gasEstimate = ethers.BigNumber.from(1000000);
+      gasEstimate = BigInt(1000000);
     }
 
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
@@ -1161,7 +1162,7 @@ class ReputationMiner {
     const disputedEntry = disputeRound[index];
 
     // console.log(disputedEntry);
-    let firstDisagreeIdx = ethers.BigNumber.from(disputedEntry.lowerBound);
+    let firstDisagreeIdx = BigInt(disputedEntry.lowerBound);
     let lastAgreeIdx = firstDisagreeIdx.sub(1);
     // If this is called before the binary search has finished, these would be -1 and 0, respectively, which will throw errors
     // when we try and pass -ve hex values. Instead, set them to values that will allow us to send a tx that will fail.
@@ -1226,7 +1227,7 @@ class ReputationMiner {
         lastAgreeJustifications.childAdjacentReputationProof.reputation
       ],
       [
-        ...ReputationMiner.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
+        ...ReputationMiner.breakKeyInToElements(reputationKey).map(x => ethers.zeroPadValue(x, 32)),
         soliditySha3(reputationKey),
         soliditySha3(lastAgreeJustifications.adjacentReputationProof.key),
         soliditySha3(lastAgreeJustifications.originAdjacentReputationProof.key),
@@ -1245,7 +1246,7 @@ class ReputationMiner {
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err){
-      gasEstimate = ethers.BigNumber.from(4000000);
+      gasEstimate = BigInt(4000000);
     }
 
     return repCycle.respondToChallenge(...functionArgs,
@@ -1267,7 +1268,7 @@ class ReputationMiner {
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err){
-      gasEstimate = ethers.BigNumber.from(4000000);
+      gasEstimate = BigInt(4000000);
     }
     return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, ...this.feeData });
   }
@@ -1277,12 +1278,12 @@ class ReputationMiner {
     const { numerator, denominator } = await repCycle.getDecayConstant();
 
     // Hard to do logs with bignumbers, so let's just see what happens!
-    let value = ethers.BigNumber.from("1000000000000000000");
+    let value = BigInt("1000000000000000000");
     // Due to rounding, and how we conventionally define the decay constant, after the
     // intended halfing period, we will still be very slightly above half and only drop
     // below half on the next period. This starting value takes that in to account.
     let count = -1;
-    while (value.gt(ethers.BigNumber.from("500000000000000000"))){
+    while (value.gt(BigInt("500000000000000000"))){
       value = value.mul(numerator).div(denominator);
       count += 1;
     }
@@ -1318,17 +1319,14 @@ class ReputationMiner {
       // Look up value from our JSON.
       value = this.reputations[key];
       // Extract uid
-      const uid = ethers.BigNumber.from(`0x${value.slice(-64)}`);
-      const existingValue = ethers.BigNumber.from(`0x${value.slice(2, 66)}`);
+      const uid = BigInt(`0x${value.slice(-64)}`);
+      const existingValue = BigInt(`0x${value.slice(2, 66)}`);
       newValue = existingValue.add(_reputationScore);
       if (newValue.lt(0)) {
         newValue = ethers.constants.Zero;
       }
-      const upperLimit = ethers.BigNumber
-        .from(2)
-        .pow(127)
-        .sub(1);
 
+      const upperLimit = BigInt(2) ** 127 - BigInt(1);
       if (newValue.gt(upperLimit)) {
         newValue = upperLimit;
       }
@@ -1434,7 +1432,7 @@ class ReputationMiner {
       }
       const hash = event.data.slice(0, 66);
       if (applyLogs) {
-        const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+        const nLeaves = BigInt(`0x${event.data.slice(66, 130)}`);
         const previousBlock = event.blockNumber - 1;
         await this.addLogContentsToReputationTree(previousBlock, false);
         localHash = await this.reputationTree.getRootHash();
@@ -1476,7 +1474,7 @@ class ReputationMiner {
 
   async cycleCompleteEventIsKnownState(event) {
     const hash = event.data.slice(0, 66);
-    const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+    const nLeaves = BigInt(`0x${event.data.slice(66, 130)}`);
     // Do we have such a state?
     const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
     return res.n === 1;
@@ -1531,7 +1529,7 @@ class ReputationMiner {
     this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
     const res = await this.getAllReputationsInHash(reputationRootHash);
-    this.nReputations = ethers.BigNumber.from(res.length);
+    this.nReputations = BigInt(res.length);
 
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
@@ -1671,7 +1669,7 @@ class ReputationMiner {
     const res = await this.queries.getReputationsForAddress.all(reputationRootHash, colonyAddress.toLowerCase(), userAddress.toLowerCase());
     return res.map(function(x){ return {
       skill_id: x.skill_id,
-      reputationAmount: ethers.BigNumber.from(`0x${x.value.slice(2, 66)}`).toString()
+      reputationAmount: BigInt(`0x${x.value.slice(2, 66)}`).toString()
     }});
   }
 
