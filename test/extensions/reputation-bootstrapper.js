@@ -66,7 +66,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       expect(identifier).to.equal(REPUTATION_BOOTSTRAPPER);
 
       const capabilityRoles = await reputationBootstrapper.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await reputationBootstrapper.finishUpgrade();
       await reputationBootstrapper.deprecate(true);

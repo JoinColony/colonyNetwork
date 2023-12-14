@@ -184,7 +184,7 @@ contract("Funding Queues", (accounts) => {
       expect(identifier).to.equal(FUNDING_QUEUE);
 
       const capabilityRoles = await fundingQueue.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await fundingQueue.finishUpgrade();
       await fundingQueue.deprecate(true);

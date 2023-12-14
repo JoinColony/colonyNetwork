@@ -36,7 +36,7 @@ const Token = artifacts.require("Token");
 const DSRoles = artifacts.require("DSRoles");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -149,7 +149,7 @@ contract("Colony Reward Payouts", (accounts) => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.constants.AddressZero);
+      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.ZeroAddress);
       await client.insert(globalKey, new BN(10), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -390,7 +390,7 @@ contract("Colony Reward Payouts", (accounts) => {
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
 
-      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.constants.AddressZero);
+      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.ZeroAddress);
       await client.insert(globalKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });

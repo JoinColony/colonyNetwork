@@ -1,4 +1,5 @@
-/* globals artifacts */
+/* globals artifacts, BigInt */
+
 const shortid = require("shortid");
 const chai = require("chai");
 const { asciiToHex, isBN } = require("web3-utils");
@@ -115,22 +116,6 @@ exports.web3GetChainId = async function web3GetChainId() {
     web3.currentProvider.send(packet, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(parseInt(res.result, 16));
-    });
-  });
-};
-
-exports.web3SignTypedData = function web3SignTypedData(address, typedData) {
-  const packet = {
-    jsonrpc: "2.0",
-    method: "eth_signTypedData",
-    params: [address, typedData],
-    id: new Date().getTime(),
-  };
-
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send(packet, (err, res) => {
-      if (err !== null) return reject(err);
-      return resolve(res.result);
     });
   });
 };
@@ -322,12 +307,7 @@ exports.getBlockTime = async function getBlockTime(blockNumber = "latest") {
 };
 
 function hexlifyAndPad(input) {
-  let i = input;
-  if (i.toString) {
-    i = i.toString();
-  }
-  i = ethers.BigNumber.from(i);
-  return ethers.utils.hexZeroPad(ethers.utils.hexlify(i), 32);
+  return exports.bn2bytes32(BigInt(input.toString ? input.toString() : input));
 }
 
 exports.expectEvent = async function expectEvent(tx, nameOrSig, args) {
@@ -358,7 +338,7 @@ async function eventMatches(tx, nameOrSig, args) {
         // Set up an abi so we decode correctly, including indexed topics
         const event = e;
         const abi = [`event ${nameOrSig}`];
-        const iface = new ethers.utils.Interface(abi);
+        const iface = new ethers.Interface(abi);
 
         event.args = iface.parseLog(event).args;
         return eventMatchArgs(event, args);
@@ -379,8 +359,8 @@ async function eventMatchArgs(event, args) {
       continue; // eslint-disable-line no-continue
     }
     if (arg.constructor.name === "BN" || event.args[i].constructor.name === "BN") {
-      if (ethers.utils.isHexString(arg)) {
-        arg = ethers.BigNumber.from(arg).toString();
+      if (ethers.isHexString(arg)) {
+        arg = BigInt(arg).toString();
       }
       if (arg.toString() !== event.args[i].toString()) {
         return false;
@@ -389,7 +369,7 @@ async function eventMatchArgs(event, args) {
       if (JSON.stringify(arg) !== JSON.stringify(event.args[i])) {
         return false;
       }
-    } else if (typeof arg === "string" && !ethers.utils.isHexString(event.args[i])) {
+    } else if (typeof arg === "string" && !ethers.isHexString(event.args[i])) {
       if (arg !== event.args[i]) {
         return false;
       }
@@ -398,7 +378,7 @@ async function eventMatchArgs(event, args) {
         return false;
       }
     } else if (typeof arg === "number") {
-      if (hexlifyAndPad(arg) !== hexlifyAndPad(event.args[i])) {
+      if (exports.bn2bytes32(arg) !== exports.bn2bytes32(event.args[i])) {
         return false;
       }
     } else if (typeof arg === "string" && arg.length <= 66) {
@@ -1129,11 +1109,11 @@ exports.encodeTxData = async function encodeTxData(colony, functionName, args) {
   const convertedArgs = [];
   args.forEach((arg) => {
     if (Number.isInteger(arg)) {
-      const convertedArg = ethers.BigNumber.from(arg);
+      const convertedArg = BigInt(arg);
       convertedArgs.push(convertedArg);
     } else if (isBN(arg) || BigNumber.isBigNumber(arg)) {
       // Can use isBigNumber from utils once https://github.com/ethereum/web3.js/issues/2835 sorted
-      const convertedArg = ethers.BigNumber.from(arg.toString());
+      const convertedArg = BigInt(arg.toString());
       convertedArgs.push(convertedArg);
     } else {
       convertedArgs.push(arg);

@@ -68,7 +68,7 @@ contract("Streaming Payments", (accounts) => {
       expect(identifier).to.equal(STREAMING_PAYMENTS);
 
       const capabilityRoles = await streamingPayments.getCapabilityRoles("0x0");
-      expect(capabilityRoles).to.equal(ethers.constants.HashZero);
+      expect(capabilityRoles).to.equal(ethers.ZeroHash);
 
       await streamingPayments.finishUpgrade();
       await streamingPayments.deprecate(true);

@@ -27,13 +27,13 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const ToggleableToken = artifacts.require("ToggleableToken");
 const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -97,7 +97,7 @@ contract("Token Locking", (addresses) => {
     });
 
     it("should correctly set colony network address", async () => {
-      await checkErrorRevert(tokenLocking.setColonyNetwork(ethers.constants.AddressZero), "colony-token-locking-network-cannot-be-zero");
+      await checkErrorRevert(tokenLocking.setColonyNetwork(ethers.ZeroAddress), "colony-token-locking-network-cannot-be-zero");
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
       const colonyNetworkAddress = await tokenLocking.getColonyNetwork();

@@ -46,7 +46,7 @@ const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -289,7 +289,7 @@ contract("Colony Network Recovery", (accounts) => {
       // Metatransaction nonce mapping is storage slot 41
       // So this user has their nonce stored at
       const user0MetatransactionNonceSlot = await web3.utils.soliditySha3(
-        { type: "bytes32", value: ethers.utils.hexZeroPad(accounts[1], 32) },
+        { type: "bytes32", value: ethers.zeroPadValue(accounts[1], 32) },
         { type: "uint256", value: "41" },
       );
 
@@ -319,7 +319,7 @@ contract("Colony Network Recovery", (accounts) => {
 
       let rootHash = await colonyNetwork.getReputationRootHash();
       let nLeaves = await colonyNetwork.getReputationRootHashNLeaves();
-      expect(rootHash).to.equal(ethers.constants.HashZero);
+      expect(rootHash).to.equal(ethers.ZeroHash);
       expect(nLeaves).to.be.zero;
 
       await colonyNetwork.enterRecoveryMode();

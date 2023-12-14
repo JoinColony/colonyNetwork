@@ -75,12 +75,12 @@ contract("Colony Network Auction", (accounts) => {
     });
 
     it("should fail with a zero address token", async () => {
-      await checkErrorRevert(colonyNetwork.startTokenAuction(ethers.constants.AddressZero), "colony-auction-invalid-token");
+      await checkErrorRevert(colonyNetwork.startTokenAuction(ethers.ZeroAddress), "colony-auction-invalid-token");
     });
 
     it("should fail with a zero clny token", async () => {
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.ZeroAddress);
 
       const args = getTokenArgs();
       token = await Token.new(...args);

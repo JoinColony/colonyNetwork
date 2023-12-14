@@ -1,4 +1,5 @@
-const ethers = require("ethers");
+/* global BigInt */
+
 const axios = require("axios");
 
 /**
@@ -24,7 +25,7 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
 
   if (chainId === 100) {
     options.url = "https://blockscout.com/xdai/mainnet/api/v1/gas-price-oracle";
-    defaultGasPrice = ethers.BigNumber.from(10000000000);
+    defaultGasPrice = BigInt(10000000000);
     factor = 1;
     // This oracle presents the information slightly differently from ethgasstation.
     if (_type === "safeLow") {
@@ -32,7 +33,7 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
     }
   } else if (chainId === 1) {
     options.url = "https://ethgasstation.info/json/ethgasAPI.json";
-    defaultGasPrice = ethers.BigNumber.from(10000000000);
+    defaultGasPrice = BigInt(10000000000);
     factor = 10;
   } else {
     // We don't have an oracle, so just use the provided fee data
@@ -62,7 +63,7 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
         // Update the EIP1559 fee data based on the type
         const ratio = gasEstimates[type] / gasEstimates.average;
         // Increase the priority fee by this ratio
-        const newMaxPriorityFeePerGas = ethers.BigNumber.from(Math.floor(feeData.maxPriorityFeePerGas * 1000))
+        const newMaxPriorityFeePerGas = BigInt(Math.floor(feeData.maxPriorityFeePerGas * 1000))
           .mul(Math.floor(ratio * 1000))
           .div(1000 * 1000);
         // Increase the max fee per gas by the same amount (not the same ratio)
@@ -73,7 +74,7 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
 
       // If we get here, chain is not EIP1559, so just update gasPrice
       if (gasEstimates[type]) {
-        feeData.gasPrice = ethers.BigNumber.from(gasEstimates[type] * 1e9).div(factor);
+        feeData.gasPrice = BigInt(gasEstimates[type] * 1e9).div(factor);
       } else {
         feeData.gasPrice = defaultGasPrice;
       }

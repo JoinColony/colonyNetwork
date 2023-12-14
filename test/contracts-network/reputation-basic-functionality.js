@@ -161,7 +161,6 @@ contract("Reputation mining - basic functionality", (accounts) => {
       tx = await colonyNetwork.stakeForMining(quarter * 3, { from: MINER2 });
       const time1 = await getBlockTime(tx.receipt.blockNumber);
       const [stakedAmount, stakedTimestamp] = await colonyNetwork.getMiningStake(MINER2);
-      console.log(stakedAmount, stakedTimestamp);
       expect(stakedAmount).to.eq.BN(quarter * 3);
       expect(stakedTimestamp).to.eq.BN(time1);
 
@@ -231,7 +230,7 @@ contract("Reputation mining - basic functionality", (accounts) => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
       await checkErrorRevert(
-        repCycle.rewardStakersWithReputation([MINER1], [1], ethers.constants.AddressZero, 10000, 3),
+        repCycle.rewardStakersWithReputation([MINER1], [1], ethers.ZeroAddress, 10000, 3),
         "colony-reputation-mining-sender-not-network",
       );
     });
@@ -239,11 +238,8 @@ contract("Reputation mining - basic functionality", (accounts) => {
     it("should not allow the ReputationMiningCycle to be initialised with null values", async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
-      await checkErrorRevert(
-        repCycle.initialise(ethers.constants.AddressZero, ethers.constants.AddressZero),
-        "colony-reputation-token-locking-cannot-be-zero",
-      );
-      await checkErrorRevert(repCycle.initialise(tokenLocking.address, ethers.constants.AddressZero), "colony-reputation-clny-token-cannot-be-zero");
+      await checkErrorRevert(repCycle.initialise(ethers.ZeroAddress, ethers.ZeroAddress), "colony-reputation-token-locking-cannot-be-zero");
+      await checkErrorRevert(repCycle.initialise(tokenLocking.address, ethers.ZeroAddress), "colony-reputation-clny-token-cannot-be-zero");
       await checkErrorRevert(repCycle.initialise(tokenLocking.address, clnyToken.address), "colony-reputation-mining-cycle-already-initialised");
     });
 

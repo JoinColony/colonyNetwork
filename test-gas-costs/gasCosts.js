@@ -50,7 +50,7 @@ const IVotingReputation = artifacts.require("IVotingReputation");
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
 
 contract("All", function (accounts) {
@@ -434,7 +434,7 @@ contract("All", function (accounts) {
 
     it("making a motion with no dispute", async function () {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
-      await voting.createMotion(1, UINT256_MAX, ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(1, UINT256_MAX, ethers.ZeroAddress, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
 
       const stake = WAD.muln(3).divn(1000);
@@ -448,7 +448,7 @@ contract("All", function (accounts) {
 
     it("making a motion with votes", async function () {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
-      await voting.createMotion(1, UINT256_MAX, ethers.constants.AddressZero, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(1, UINT256_MAX, ethers.ZeroAddress, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
 
       const stake = WAD.muln(3).divn(1000);

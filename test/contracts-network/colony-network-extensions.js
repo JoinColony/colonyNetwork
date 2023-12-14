@@ -130,7 +130,7 @@ contract("Colony Network Extensions", (accounts) => {
     });
 
     it("does not allow the meta colony to add a null resolver", async () => {
-      await checkErrorRevert(metaColony.addExtensionToNetwork(TEST_EXTENSION, ethers.constants.AddressZero), "colony-network-extension-bad-resolver");
+      await checkErrorRevert(metaColony.addExtensionToNetwork(TEST_EXTENSION, ethers.ZeroAddress), "colony-network-extension-bad-resolver");
     });
 
     it("does not allow other colonies to add new extensions", async () => {
@@ -171,23 +171,23 @@ contract("Colony Network Extensions", (accounts) => {
       let extension1Address = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       let extension2Address = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
 
-      expect(extension1Address).to.equal(ethers.constants.AddressZero);
-      expect(extension2Address).to.equal(ethers.constants.AddressZero);
+      expect(extension1Address).to.equal(ethers.ZeroAddress);
+      expect(extension2Address).to.equal(ethers.ZeroAddress);
 
       await colony.multicall([installExtension1Data, installExtension2Data], { from: ROOT });
       extension1Address = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
       extension2Address = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
 
-      expect(extension1Address).to.not.equal(ethers.constants.AddressZero);
-      expect(extension2Address).to.not.equal(ethers.constants.AddressZero);
+      expect(extension1Address).to.not.equal(ethers.ZeroAddress);
+      expect(extension2Address).to.not.equal(ethers.ZeroAddress);
 
       const res = await colonyNetwork.multicall.call([
         colonyNetwork.contract.methods.getExtensionInstallation(TEST_EXTENSION, colony.address).encodeABI(),
         colonyNetwork.contract.methods.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address).encodeABI(),
       ]);
 
-      const extension1AddressViaMulticall = ethers.utils.getAddress(res[0].slice(26));
-      const extension2AddressViaMulticall = ethers.utils.getAddress(res[1].slice(26));
+      const extension1AddressViaMulticall = ethers.getAddress(res[0].slice(26));
+      const extension2AddressViaMulticall = ethers.getAddress(res[1].slice(26));
 
       expect(extension1Address).to.equal(extension1AddressViaMulticall);
       expect(extension2Address).to.equal(extension2AddressViaMulticall);
@@ -209,7 +209,7 @@ contract("Colony Network Extensions", (accounts) => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
       const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_EXTENSION, colony.address);
-      expect(extensionAddress).to.not.equal(ethers.constants.AddressZero);
+      expect(extensionAddress).to.not.equal(ethers.ZeroAddress);
 
       let extension = await ColonyExtension.at(extensionAddress);
       let version = await extension.version();

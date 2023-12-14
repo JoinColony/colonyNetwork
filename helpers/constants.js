@@ -3,8 +3,8 @@ const BN = require("bn.js");
 const shortid = require("shortid");
 const { ethers } = require("ethers");
 
-const HASHZERO = ethers.constants.HashZero;
-const ADDRESS_ZERO = ethers.constants.AddressZero;
+const HASHZERO = ethers.ZeroHash;
+const ADDRESS_ZERO = ethers.ZeroAddress;
 
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);
