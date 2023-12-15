@@ -8,7 +8,7 @@ const apicache = require("apicache")
 const ReputationMiner = require("./ReputationMiner");
 const { ConsoleAdapter, getFeeData } = require("../package-utils");
 
-const minStake = BigInt(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
+const minStake = BigInt(10) ** BigInt(18) * BigInt(2000); // eslint-disable-line prettier/prettier
 const MINUTE_IN_SECONDS = 60;
 const disputeStages = {
  CONFIRM_JRH: 0,
@@ -483,7 +483,7 @@ class ReputationMinerClient {
           // Then we don't have an opponent
           if (round.eq(0)) {
             // We can only advance if the window is closed
-            if (BigInt(block.timestamp).sub(windowOpened).lt(this._miner.getMiningCycleDuration())) {
+            if (BigInt(block.timestamp) - BigInt(windowOpened) < BigInt(this._miner.getMiningCycleDuration())) {
               this.endDoBlockChecks();
               return;
             };
@@ -535,7 +535,7 @@ class ReputationMinerClient {
           oppEntry.upperBound.eq(oppEntry.lowerBound) &&
           entry.upperBound.eq(entry.lowerBound) &&
           entry.challengeStepCompleted.gte(2) &&
-          BigInt(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
+          BigInt(2) ** BigInt(BigInt(entry.challengeStepCompleted) - BigInt(2)) <= BigInt(submission.jrhNLeaves)
         )
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
@@ -549,10 +549,10 @@ class ReputationMinerClient {
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
         } else if (
             oppEntry.challengeStepCompleted.gte(2) &&
-            BigInt(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNLeaves) &&
+            BigInt(2) ** BigInt(BigInt(oppEntry.challengeStepCompleted) - BigInt(2)) > BigInt(oppSubmission.jrhNLeaves) &&
             entry.challengeStepCompleted.gte(3) &&
-            BigInt(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNLeaves) &&
-            BigInt(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
+            BigInt(2) ** BigInt(BigInt(entry.challengeStepCompleted) - BigInt(2)) > BigInt(submission.jrhNLeaves) &&
+            BigInt(2) ** BigInt(BigInt(entry.challengeStepCompleted) - BigInt(3)) <= BigInt(submission.jrhNLeaves)
           )
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
@@ -566,11 +566,11 @@ class ReputationMinerClient {
 
         // Has our opponent timed out?
 
-        const opponentTimeout = BigInt(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(CHALLENGE_RESPONSE_WINDOW_DURATION);
+        const opponentTimeout = BigInt(block.timestamp) - BigInt(oppEntry.lastResponseTimestamp) >= BigInt(CHALLENGE_RESPONSE_WINDOW_DURATION);
         if (opponentTimeout){
           const responsePossible = await repCycle.getResponsePossible(
             disputeStages.INVALIDATE_HASH,
-            BigInt(oppEntry.lastResponseTimestamp).add(CHALLENGE_RESPONSE_WINDOW_DURATION)
+            BigInt(oppEntry.lastResponseTimestamp) + BigInt(CHALLENGE_RESPONSE_WINDOW_DURATION)
           );
           if (responsePossible) {
             // If so, invalidate them.
@@ -584,7 +584,7 @@ class ReputationMinerClient {
 
       }
 
-      if (lastHashStanding && BigInt(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
+      if (lastHashStanding && BigInt(block.timestamp) - BigInt(windowOpened) >= BigInt (this._miner.getMiningCycleDuration())) {
         // If the submission window is closed and we are the last hash, confirm it
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
         const disputeRound = await repCycle.getDisputeRound(round);
@@ -711,9 +711,9 @@ class ReputationMinerClient {
     const rootHash = await this._miner.getRootHash();
 
     const timeAbleToSubmitEntries = [];
-    for (let i = BigInt(1); i.lte(balance.div(minStake)); i = i.add(1)) {
+    for (let i = BigInt(1); i <= BigInt(balance.div(minStake)); i += 1) {
       const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);
-      const timeAbleToSubmitEntry = BigInt(entryHash).div(this._miner.constant).add(reputationMiningWindowOpenTimestamp);
+      const timeAbleToSubmitEntry = (BigInt(entryHash) / BigInt(this._miner.constant)) + BigInt(reputationMiningWindowOpenTimestamp);
 
       const validEntry = {
         timestamp: timeAbleToSubmitEntry,

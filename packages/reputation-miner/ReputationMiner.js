@@ -50,7 +50,7 @@ class ReputationMiner {
           }
         ]
       });
-      this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
+      this.ganacheProvider = new ethers.BrowserProvider(ganacheProvider);
       this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
     }
 
@@ -58,7 +58,7 @@ class ReputationMiner {
     if (provider) {
       this.realProvider = provider;
     } else {
-      this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
+      this.realProvider = new ethers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
     }
 
     if (minerAddress) {

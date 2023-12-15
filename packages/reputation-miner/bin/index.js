@@ -83,10 +83,10 @@ if (network) {
     console.log(`❗️ "network" option accepts only supported Infura networks: ${supportedInfuraNetworks} !`);
     process.exit();
   }
-  provider = new ethers.providers.InfuraProvider(network);
+  provider = new ethers.InfuraProvider(network);
 } else if (providerAddress.length === 0){
   const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
-  provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
+  provider = new ethers.JsonRpcProvider(rpcEndpoint);
 } else {
   const providers = providerAddress.map(endpoint => {
     const {protocol, username, password, host, pathname} = new URL(endpoint);
@@ -103,7 +103,7 @@ if (network) {
   // The Fallback provider somehow strips out blockTag, so isn't suitable for use during syncing.
   // See https://github.com/ethers-io/ethers.js/discussions/1960
   // When sorted, use this line instead.
-  // provider = new ethers.providers.FallbackProvider(providers, 1)
+  // provider = new ethers.FallbackProvider(providers, 1)
   [ provider ] = providers;
 }
 
