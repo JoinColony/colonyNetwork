@@ -1,8 +1,8 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
+
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
-const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { TruffleLoader } = require("../../packages/package-utils");
@@ -35,8 +35,6 @@ const Resolver = artifacts.require("Resolver");
 const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
-
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 contract("Token Locking", (addresses) => {
   const usersTokens = 10;
@@ -73,7 +71,7 @@ contract("Token Locking", (addresses) => {
     const client = new ReputationMinerTestWrapper({
       loader: contractLoader,
       minerAddress: addresses[4],
-      realProviderPort: REAL_PROVIDER_PORT,
+      provider: ethers.provider,
       useJsTree: true,
     });
     await client.initialise(colonyNetwork.address);

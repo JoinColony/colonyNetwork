@@ -1,8 +1,7 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
 
 const { padLeft, soliditySha3 } = require("web3-utils");
 const BN = require("bn.js");
-const { ethers } = require("ethers");
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const path = require("path");
@@ -19,6 +18,7 @@ const {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   getTokenArgs,
+  bn2bytes32,
 } = require("../../helpers/test-helper");
 const {
   setupClaimedExpenditure,
@@ -49,8 +49,6 @@ const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-
 contract("Colony Network Recovery", (accounts) => {
   let colonyNetwork;
   let client;
@@ -71,7 +69,7 @@ contract("Colony Network Recovery", (accounts) => {
     client = new ReputationMinerTestWrapper({
       loader: contractLoader,
       minerAddress: accounts[5],
-      realProviderPort: REAL_PROVIDER_PORT,
+      provider: ethers.provider,
       useJsTree: true,
     });
   });
@@ -397,7 +395,7 @@ contract("Colony Network Recovery", (accounts) => {
           const newClient = new ReputationMinerTestWrapper({
             loader: contractLoader,
             minerAddress: accounts[5],
-            realProviderPort: REAL_PROVIDER_PORT,
+            provider: ethers.provider,
             useJsTree: true,
           });
           await newClient.initialise(colonyNetwork.address);
@@ -443,7 +441,7 @@ contract("Colony Network Recovery", (accounts) => {
 
           // slots 13 and 14 are hash and number of leaves respectively
           await colonyNetwork.setStorageSlotRecovery(13, rootHash);
-          const nLeavesHex = nLeaves.toHexString();
+          const nLeavesHex = bn2bytes32(nLeaves);
           await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nLeavesHex, 64)}`);
 
           await colonyNetwork.approveExitRecovery();
@@ -468,7 +466,7 @@ contract("Colony Network Recovery", (accounts) => {
           const ignorantclient = new ReputationMinerTestWrapper({
             loader: contractLoader,
             minerAddress: accounts[5],
-            realProviderPort: REAL_PROVIDER_PORT,
+            provider: ethers.provider,
             useJsTree: true,
           });
           await ignorantclient.initialise(colonyNetwork.address);
@@ -616,7 +614,7 @@ contract("Colony Network Recovery", (accounts) => {
           const newClient = new ReputationMinerTestWrapper({
             loader: contractLoader,
             minerAddress: accounts[5],
-            realProviderPort: REAL_PROVIDER_PORT,
+            provider: ethers.provider,
             useJsTree: true,
           });
           await newClient.initialise(colonyNetwork.address);

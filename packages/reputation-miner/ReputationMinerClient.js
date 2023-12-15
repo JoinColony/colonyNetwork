@@ -8,8 +8,8 @@ const apicache = require("apicache")
 const ReputationMiner = require("./ReputationMiner");
 const { ConsoleAdapter, getFeeData } = require("../package-utils");
 
-const minStake = BigInt(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
-const MINUTE_IN_SECONDS = 60;
+const minStake = 10n ** 18n * 2000n; // eslint-disable-line prettier/prettier
+
 const disputeStages = {
  CONFIRM_JRH: 0,
  BINARY_SEARCH_RESPONSE: 1,
@@ -266,7 +266,7 @@ class ReputationMinerClient {
           if (currentStateHash === lastStateHash){
           // Loading the state was successful...
             const submittedState = await repCycle.getReputationHashSubmission(this._miner.minerAddress);
-            if (submittedState.proposedNewRootHash === ethers.zeroPadValue(0, 32)) {
+            if (submittedState.proposedNewRootHash === ethers.ZeroHash) {
               resumedSuccessfully = true;
               this._adapter.log("Successfully resumed pre-submission");
             } else {
@@ -288,7 +288,7 @@ class ReputationMinerClient {
       // Get latest state from database if available, otherwise sync to current state on-chain
       await ReputationMiner.createDB(this._miner.db);
       await this._miner.loadState(latestConfirmedReputationHash);
-      if (this._miner.nReputations.eq(0)) {
+      if (this._miner.nReputations === 0n) {
         this._adapter.log("Latest state not found - need to sync");
         await this._miner.sync(this.startingBlock, true);
       }
@@ -457,7 +457,7 @@ class ReputationMinerClient {
 
       const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
       const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
-      const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
+      const lastHashStanding = nUniqueSubmittedHashes - nInvalidatedHashes === 1n;
 
       // We are in a state of dispute! Run through the process.
       if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
@@ -468,7 +468,7 @@ class ReputationMinerClient {
         const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
 
         // Do we have an opponent?
-        const oppIndex = index.mod(2).isZero() ? index.add(1) : index.sub(1);
+        const oppIndex = index % 2n === 0 ? index + 1n : index - 1n;
         // this._adapter.log(`oppIndex ${oppIndex}`);
         const oppEntry = disputeRound[oppIndex];
         // this._adapter.log(`oppEntry ${oppEntry}`);
@@ -481,9 +481,9 @@ class ReputationMinerClient {
             return;
           }
           // Then we don't have an opponent
-          if (round.eq(0)) {
+          if (round === 0n) {
             // We can only advance if the window is closed
-            if (BigInt(block.timestamp).sub(windowOpened).lt(this._miner.getMiningCycleDuration())) {
+            if (BigInt(block.timestamp) - windowOpened < this._miner.getMiningCycleDuration()) {
               this.endDoBlockChecks();
               return;
             };
@@ -506,7 +506,7 @@ class ReputationMinerClient {
         // If we're here, we do have an opponent.
         // Before checking if our opponent has timed out yet, check if we can respond to something
         // 1. Do we still need to confirm JRH?
-        if (submission.jrhNLeaves.eq(0)) {
+        if (submission.jrhNLeaves === 0n) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateFeeData("fast");
@@ -516,7 +516,7 @@ class ReputationMinerClient {
           }
         // 2. Are we in the middle of a binary search?
         // Check our opponent has confirmed their JRH, and the binary search is ongoing.
-        } else if (!oppSubmission.jrhNLeaves.eq(0) && !entry.upperBound.eq(entry.lowerBound)){
+        } else if (!oppSubmission.jrhNLeaves === 0n && entry.upperBound !== entry.lowerBound) {
           // Yes. Are we able to respond?
           // We can respond if neither of us have responded to this stage yet or
           // if they have responded already
@@ -532,12 +532,11 @@ class ReputationMinerClient {
         // 3. Are we at the end of a binary search and need to confirm?
         // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
         } else if (
-          oppEntry.upperBound.eq(oppEntry.lowerBound) &&
-          entry.upperBound.eq(entry.lowerBound) &&
-          entry.challengeStepCompleted.gte(2) &&
-          BigInt(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNLeaves)
-        )
-        {
+          oppEntry.upperBound === oppEntry.lowerBound &&
+          entry.upperBound === entry.lowerBound &&
+          entry.challengeStepCompleted >= 2n &&
+          2n ** (entry.challengeStepCompleted - 2n) <= submission.jrhNLeaves
+        ) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateFeeData("fast");
@@ -548,13 +547,12 @@ class ReputationMinerClient {
         // 4. Is the binary search confirmed, and we need to respond to challenge?
         // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
         } else if (
-            oppEntry.challengeStepCompleted.gte(2) &&
-            BigInt(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNLeaves) &&
-            entry.challengeStepCompleted.gte(3) &&
-            BigInt(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNLeaves) &&
-            BigInt(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNLeaves)
-          )
-        {
+            oppEntry.challengeStepCompleted >= 2n &&
+            2n ** (oppEntry.challengeStepCompleted - 2n) > oppSubmission.jrhNLeaves &&
+            entry.challengeStepCompleted >= 3n &&
+            2n ** (entry.challengeStepCompleted - 2n) > submission.jrhNLeaves &&
+            2n ** (entry.challengeStepCompleted - 2n) <= submission.jrhNLeaves
+          ) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
           if (responsePossible){
             await this.updateFeeData("fast");
@@ -566,11 +564,11 @@ class ReputationMinerClient {
 
         // Has our opponent timed out?
 
-        const opponentTimeout = BigInt(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(CHALLENGE_RESPONSE_WINDOW_DURATION);
+        const opponentTimeout = BigInt(block.timestamp) - oppEntry.lastResponseTimestamp >= CHALLENGE_RESPONSE_WINDOW_DURATION;
         if (opponentTimeout){
           const responsePossible = await repCycle.getResponsePossible(
             disputeStages.INVALIDATE_HASH,
-            BigInt(oppEntry.lastResponseTimestamp).add(CHALLENGE_RESPONSE_WINDOW_DURATION)
+            BigInt(oppEntry.lastResponseTimestamp) + CHALLENGE_RESPONSE_WINDOW_DURATION
           );
           if (responsePossible) {
             // If so, invalidate them.
@@ -584,7 +582,7 @@ class ReputationMinerClient {
 
       }
 
-      if (lastHashStanding && BigInt(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
+      if (lastHashStanding && BigInt(block.timestamp) - windowOpened >= this._miner.getMiningCycleDuration()) {
         // If the submission window is closed and we are the last hash, confirm it
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
         const disputeRound = await repCycle.getDisputeRound(round);
@@ -680,7 +678,7 @@ class ReputationMinerClient {
     const nLeaves = await this._miner.colonyNetwork.getReputationRootHashNNodes();
     const currentRootHash = await this._miner.colonyNetwork.getReputationRootHash();
     const localRootHash = await this._miner.reputationTree.getRootHash();
-    if (!nLeaves.eq(this._miner.nReputations) || localRootHash !== currentRootHash) {
+    if (nLeaves !== this._miner.nReputations || localRootHash !== currentRootHash) {
       this._adapter.log(`Unexpected confirmed hash seen on colonyNetwork. Let's resync.`)
       await this._miner.sync(this.startingBlock, true);
       return false;
@@ -711,9 +709,9 @@ class ReputationMinerClient {
     const rootHash = await this._miner.getRootHash();
 
     const timeAbleToSubmitEntries = [];
-    for (let i = BigInt(1); i.lte(balance.div(minStake)); i = i.add(1)) {
+    for (let i = 1n; i <= balance / minStake; i += 1n) {
       const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);
-      const timeAbleToSubmitEntry = BigInt(entryHash).div(this._miner.constant).add(reputationMiningWindowOpenTimestamp);
+      const timeAbleToSubmitEntry = BigInt(entryHash) / this._miner.constant + reputationMiningWindowOpenTimestamp;
 
       const validEntry = {
         timestamp: timeAbleToSubmitEntry,
@@ -723,18 +721,22 @@ class ReputationMinerClient {
     }
 
     timeAbleToSubmitEntries.sort(function (a, b) {
-      return a.timestamp.sub(b.timestamp).toNumber();
+      return a.timestamp - b.timestamp;
     });
 
     const maxEntries = Math.min(12, timeAbleToSubmitEntries.length);
     return timeAbleToSubmitEntries.slice(0, maxEntries);
   }
 
-  async setMiningCycleTimeout(repCycle){
-    const openTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+  async setMiningCycleTimeout(repCycle) {
+    const tenMinutes = 60 * 10;
+    const nowInSeconds = Date.now() / 1000;
+    const openTimestamp = Number(await repCycle.getReputationMiningWindowOpenTimestamp());
+    const miningCyleDuration = Number(this._miner.getMiningCycleDuration());
+
     this.confirmTimeoutCheck = setTimeout(
       this.reportConfirmTimeout.bind(this),
-      (this._miner.getMiningCycleDuration() + 10 * MINUTE_IN_SECONDS - (Date.now() / 1000 - openTimestamp)) * 1000
+      (miningCyleDuration + tenMinutes - nowInSeconds - openTimestamp) * 1000
     );
   }
 

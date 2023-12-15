@@ -1,10 +1,9 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
 
 const BN = require("bn.js");
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const shortid = require("shortid");
-const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 const path = require("path");
 const { TruffleLoader } = require("../../packages/package-utils"); // eslint-disable-line import/no-unresolved
@@ -2050,9 +2049,6 @@ contract("Voting Reputation", (accounts) => {
     let motionId;
 
     beforeEach(async () => {
-      const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-      const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
-
       const loader = new TruffleLoader({
         contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
       });
@@ -2067,7 +2063,7 @@ contract("Voting Reputation", (accounts) => {
       broadcaster = new MetatransactionBroadcaster({
         privateKey,
         loader,
-        provider,
+        provider: ethers.provider,
       });
       await broadcaster.initialise(colonyNetwork.address);
     });

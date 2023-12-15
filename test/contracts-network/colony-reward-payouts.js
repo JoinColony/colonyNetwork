@@ -1,6 +1,6 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
+
 const { BN } = require("bn.js");
-const { ethers } = require("ethers");
 const { sha3 } = require("web3-utils");
 const chai = require("chai");
 const bnChai = require("bn-chai");
@@ -38,8 +38,6 @@ const DSRoles = artifacts.require("DSRoles");
 const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
-
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 contract("Colony Reward Payouts", (accounts) => {
   let colony;
@@ -105,7 +103,7 @@ contract("Colony Reward Payouts", (accounts) => {
     client = new ReputationMinerTestWrapper({
       loader: contractLoader,
       minerAddress: accounts[4],
-      realProviderPort: REAL_PROVIDER_PORT,
+      provider: ethers.provider,
       useJsTree: true,
     });
     await client.initialise(colonyNetwork.address);

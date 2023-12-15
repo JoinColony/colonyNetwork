@@ -26,7 +26,7 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
     // If this is called before the binary search has finished, these would be -1 and 0, respectively, which will throw errors
     // when we try and pass -ve hex values. Instead, set them to values that will allow us to send a tx that will fail.
 
-    lastAgreeIdx = lastAgreeIdx.lt(0) ? ethers.constants.Zero : lastAgreeIdx;
+    lastAgreeIdx = lastAgreeIdx.lt(0) ? 0n : lastAgreeIdx;
     firstDisagreeIdx = firstDisagreeIdx.lt(1) ? ethers.constants.One : firstDisagreeIdx;
 
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
@@ -35,7 +35,7 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
 
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
-    let logEntryNumber = ethers.constants.Zero;
+    let logEntryNumber = 0n;
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
