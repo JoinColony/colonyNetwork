@@ -82,7 +82,7 @@ module.exports = async () => {
 };
 
 async function deployContracts() {
-  console.log("Deploying Colony Network");
+  console.log("  => Deploying Colony Network");
 
   const etherRouter = await EtherRouter.new();
   EtherRouter.setAsDeployed(etherRouter);
