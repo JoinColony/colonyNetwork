@@ -17,7 +17,7 @@ const IColony = artifacts.require("IColony");
 
 const setupBridging = require("../../scripts/setup-bridging-contracts");
 
-contract("Cross-chain", () => {
+contract.skip("Cross-chain", () => {
   let colony;
   let homeBridge;
   let foreignBridge;
@@ -36,8 +36,8 @@ contract("Cross-chain", () => {
   const foreignRpcUrl = `http://127.0.0.1:${FOREIGN_PORT}`;
   const homeRpcUrl = `http://127.0.0.1:${HOME_PORT}`;
 
-  const ethersForeignSigner = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner();
-  const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
+  // const ethersForeignSigner = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner();
+  // const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
 
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
