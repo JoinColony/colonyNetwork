@@ -9,7 +9,7 @@ const { soliditySha3 } = require("web3-utils");
 const axios = require("axios");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
-const { UINT256_MAX } = require("../../helpers/constants");
+const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
 const { web3GetTransaction } = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
@@ -199,6 +199,56 @@ contract("Metatransaction broadcaster", (accounts) => {
       valid = await broadcaster.isTokenTransactionValid(metaTxToken.address, txData);
 
       expect(valid).to.be.equal(true);
+    });
+
+    it("transactions to set token authority are accepted immediately after colony creation", async function () {
+      let txData = await colonyNetwork.contract.methods.deployTokenViaNetwork("TST", "TST", 18).encodeABI();
+      let { r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address);
+      let tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAddress } = tx.receipt.logs.filter((l) => l.event === "TokenDeployed")[0].args;
+
+      txData = await colonyNetwork.contract.methods["createColony(address,uint256,string,string)"](tokenAddress, CURR_VERSION, "", "").encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { colonyAddress } = tx.receipt.logs.filter((l) => l.event === "ColonyAdded")[0].args;
+
+      txData = await colonyNetwork.contract.methods.deployTokenAuthority(tokenAddress, colonyAddress, []).encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAuthorityAddress } = tx.receipt.logs.filter((l) => l.event === "TokenAuthorityDeployed")[0].args;
+
+      const token = await MetaTxToken.at(tokenAddress);
+      txData = await token.contract.methods.setAuthority(tokenAuthorityAddress).encodeABI();
+      const valid = await broadcaster.isTokenTransactionValid(token.address, txData, USER1);
+      expect(valid).to.be.equal(true);
+    });
+
+    it("transactions to set token authority are accepted _only_ immediately after colony creation", async function () {
+      let txData = await colonyNetwork.contract.methods.deployTokenViaNetwork("TST", "TST", 18).encodeABI();
+      let { r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address);
+      let tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAddress } = tx.receipt.logs.filter((l) => l.event === "TokenDeployed")[0].args;
+
+      txData = await colonyNetwork.contract.methods["createColony(address,uint256,string,string)"](tokenAddress, CURR_VERSION, "", "").encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { colonyAddress } = tx.receipt.logs.filter((l) => l.event === "ColonyAdded")[0].args;
+
+      txData = await colonyNetwork.contract.methods.deployTokenAuthority(tokenAddress, colonyAddress, []).encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAuthorityAddress } = tx.receipt.logs.filter((l) => l.event === "TokenAuthorityDeployed")[0].args;
+
+      // Do another metatransaction
+      txData = await colonyNetwork.contract.methods["createColony(address,uint256,string,string)"](tokenAddress, CURR_VERSION, "", "").encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+
+      // Now we won't pay to set the authority
+      const token = await MetaTxToken.at(tokenAddress);
+      txData = await token.contract.methods.setAuthority(tokenAuthorityAddress).encodeABI();
+      const valid = await broadcaster.isTokenTransactionValid(token.address, txData, USER1);
+      expect(valid).to.be.equal(false);
     });
   });
 
