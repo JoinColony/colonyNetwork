@@ -52,6 +52,7 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
     delete feeData.lastBaseFeePerGas;
     if (feeData.maxFeePerGas) {
       delete feeData.gasPrice;
+      feeData.maxFeePerGas = feeData.maxFeePerGas.mul(5).add(feeData.maxPriorityFeePerGas);
     }
     // Update gas prices from whichever oracle
     try {

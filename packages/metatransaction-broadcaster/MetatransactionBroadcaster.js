@@ -305,6 +305,7 @@ class MetatransactionBroadcaster {
     let toBlock = await this.provider.getBlockNumber();
     let fromBlock = toBlock - stepSize;
     let data = [];
+    // TODO: avoid endless loop here if user never sent a metatx
     while (data.length === 0) {
       logs = await this.provider.getLogs({
         address: this.colonyNetwork.address,
