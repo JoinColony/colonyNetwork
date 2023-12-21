@@ -1,8 +1,9 @@
+/* globals ethers */
+
 const path = require("path");
 const BN = require("bn.js");
 const chai = require("chai");
 const bnChai = require("bn-chai");
-const { ethers } = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
@@ -29,7 +30,6 @@ let colonyNetwork;
 let metaColony;
 let clnyToken;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -50,7 +50,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
-  goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+  goodClient = new ReputationMinerTestWrapper({ loader, provider: ethers.provider, useJsTree, minerAddress: MINER1 });
 };
 
 process.env.SOLIDITY_COVERAGE

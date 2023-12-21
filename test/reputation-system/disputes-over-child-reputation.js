@@ -1,3 +1,5 @@
+/* globals ethers */
+
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
@@ -42,13 +44,13 @@ const loader = new TruffleLoader({
 });
 
 const useJsTree = true;
+const { provider } = ethers;
 
 let colonyNetwork;
 let metaColony;
 let clnyToken;
 let localSkillId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -69,7 +71,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
-  goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+  goodClient = new ReputationMinerTestWrapper({ loader, provider, useJsTree, minerAddress: MINER1 });
 };
 
 contract("Reputation Mining - disputes over child reputation", (accounts) => {
@@ -143,7 +145,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(9);
 
       const badClient = new MaliciousReputationMinerClaimNoOriginReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        { loader, provider, useJsTree, minerAddress: MINER2 },
         50, // Passing in update number for colony wide skillId: 5, user: 0
         1,
       );
@@ -198,7 +200,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       assert.equal(nLogEntries.toNumber(), 9);
 
       const badClient = new MaliciousReputationMinerClaimNoUserChildReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        { loader, provider, useJsTree, minerAddress: MINER2 },
         46, // Passing in update number for colony wide skillId: 5, user: 0
         1,
       );
@@ -254,7 +256,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       assert.equal(nLogEntries.toNumber(), 9);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        { loader, provider, useJsTree, minerAddress: MINER2 },
         35, // Passing in update number for colony wide skillId: 5, user: 0
         "0xfffffffffffffffffffffff",
       );
@@ -301,12 +303,12 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       assert.equal(nLogEntries.toNumber(), 5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        { loader, provider, useJsTree, minerAddress: MINER2 },
         26, // Passing in update number for colony wide skillId: 5, user: 0
         "0xfffffffffffffffffffffff",
       );
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 15, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, provider, useJsTree }, 15, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       // Moving the state to the bad client
@@ -375,12 +377,12 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       assert.equal(nLogEntries.toNumber(), 9);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        { loader, provider, useJsTree, minerAddress: MINER2 },
         40, // Passing in update number for colony wide skillId: 5, user: 0
         "0xfffffffffffffffffffffff",
       );
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 18, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, provider, useJsTree }, 18, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       // Moving the state to the bad client
@@ -456,21 +458,21 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClientWrongSkill = new MaliciousReputationMinerClaimWrongOriginReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        { loader, provider, useJsTree, minerAddress: MINER2 },
         31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         30,
         "skillId",
       );
 
       const badClientWrongColony = new MaliciousReputationMinerClaimWrongOriginReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER3 },
+        { loader, provider, useJsTree, minerAddress: MINER3 },
         31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         30,
         "colonyAddress",
       );
 
       const badClientWrongUser = new MaliciousReputationMinerClaimWrongOriginReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER4 },
+        { loader, provider, useJsTree, minerAddress: MINER4 },
         31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         30,
         "userAddress",
@@ -537,7 +539,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         34, // Passing in colony wide update number for skillId: 4, user: 0
         "0xfffffffffffffffffffffff",
       );
@@ -609,7 +611,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerGlobalOriginNotChildOrigin(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         29, // Passing in update number for skillId: 5, user: 0000000000000000000000000000000000000000
       );
 
@@ -654,7 +656,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         "0xf",
       );
@@ -700,7 +702,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         "4800000000000",
       );
@@ -739,7 +741,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nLogEntries).to.eq.BN(5);
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         21, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         "0xffffffffffffffff",
       );
@@ -786,7 +788,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         30, // Passing in colony wide update number for skillId: 4, user: 0
         "0xffff",
       );
@@ -832,7 +834,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         30, // Passing in update number for skillId: 5, user: 0
         "0xfffffffffff",
       );
@@ -884,7 +886,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       assert.equal(nLogEntries.toNumber(), 5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         37, // Passing in update number for skillId: 5, user: 0
         "0xfffffffffffffffffffffff",
       );
@@ -936,7 +938,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
       await goodClient.saveCurrentState();
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 28, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 28, 0xfffffffff);
 
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for one task completion (manager, worker (domain and skill), evaluator);
@@ -946,17 +948,17 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClientWrongSkill = new MaliciousReputationMinerClaimWrongChildReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER1 },
+        { loader, provider, useJsTree, minerAddress: MINER1 },
         "skillId",
       );
 
       const badClientWrongColony = new MaliciousReputationMinerClaimWrongChildReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER1 },
+        { loader, provider, useJsTree, minerAddress: MINER1 },
         "colonyAddress",
       );
 
       const badClientWrongUser = new MaliciousReputationMinerClaimWrongChildReputation(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER1 },
+        { loader, provider, useJsTree, minerAddress: MINER1 },
         "userAddress",
       );
 
@@ -1020,7 +1022,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        { loader, minerAddress: MINER2, provider, useJsTree },
         32, // Passing in colony wide update number for skillId: 5, user: 0
         "0xfffffffff",
       );
@@ -1073,13 +1075,13 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        { loader, provider, useJsTree, minerAddress: MINER2 },
         25, // Passing in update number for skillId: 1, user: 0
         "0xfffffffff",
       );
 
       const badClient2 = new MaliciousReputationMinerExtraRep(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER3 },
+        { loader, provider, useJsTree, minerAddress: MINER3 },
         28, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         "0xfffffffff",
       );

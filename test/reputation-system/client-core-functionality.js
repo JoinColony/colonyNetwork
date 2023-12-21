@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
 
 const path = require("path");
 const request = require("async-request");
@@ -27,8 +27,6 @@ const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
   : contract("Reputation mining - client core functionality", (accounts) => {
@@ -55,7 +53,7 @@ process.env.SOLIDITY_COVERAGE
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
         expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
-        reputationMiner = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree: true });
+        reputationMiner = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, provider: ethers.provider, useJsTree: true });
       });
 
       beforeEach(async () => {
@@ -75,7 +73,7 @@ process.env.SOLIDITY_COVERAGE
 
         const adapter = new TestAdapter();
 
-        client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
+        client = new ReputationMinerClient({ loader, provider: ethers.provider, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
         await client.initialise(colonyNetwork.address, 1);
       });
 

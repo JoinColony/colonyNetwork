@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
 
 const path = require("path");
 const chai = require("chai");
@@ -26,8 +26,8 @@ const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const useJsTree = true;
+const { provider } = ethers;
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
@@ -53,8 +53,8 @@ process.env.SOLIDITY_COVERAGE
         const clnyAddress = await metaColony.getToken();
         clnyToken = await Token.at(clnyAddress);
 
-        reputationMiner1 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
-        reputationMiner2 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree });
+        reputationMiner1 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, provider, useJsTree });
+        reputationMiner2 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, provider, useJsTree });
       });
 
       beforeEach(async () => {
@@ -178,7 +178,7 @@ process.env.SOLIDITY_COVERAGE
           await reputationMiner2.sync(startingBlockNumber);
 
           // And load a state on a client that's not using the JS Tree
-          const reputationMiner3 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree: !useJsTree });
+          const reputationMiner3 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, provider, useJsTree: !useJsTree });
           await reputationMiner3.initialise(colonyNetwork.address);
           await reputationMiner3.loadState(savedHash);
           await reputationMiner3.sync(startingBlockNumber);
@@ -232,7 +232,7 @@ process.env.SOLIDITY_COVERAGE
 
         it("should be able to download a sqlite file containing the latest state", async () => {
           const adapter = new TestAdapter();
-          const client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
+          const client = new ReputationMinerClient({ loader, provider, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
           await client.initialise(colonyNetwork.address, 1);
 
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
@@ -258,7 +258,7 @@ process.env.SOLIDITY_COVERAGE
           const reputationMiner3 = new ReputationMinerTestWrapper({
             loader,
             minerAddress: MINER1,
-            realProviderPort,
+            provider,
             useJsTree: true,
             dbPath: fileName,
           });

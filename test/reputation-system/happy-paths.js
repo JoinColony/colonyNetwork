@@ -1,8 +1,7 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
 
 const path = require("path");
 const BN = require("bn.js");
-const { ethers } = require("ethers");
 const chai = require("chai");
 const bnChai = require("bn-chai");
 
@@ -57,13 +56,13 @@ const loader = new TruffleLoader({
 });
 
 const useJsTree = true;
+const { provider } = ethers;
 
 let colonyNetwork;
 let metaColony;
 let clnyToken;
 let localSkillId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -94,7 +93,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
-  goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+  goodClient = new ReputationMinerTestWrapper({ loader, provider, useJsTree, minerAddress: MINER1 });
 };
 
 contract("Reputation Mining - happy paths", (accounts) => {
@@ -163,11 +162,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         accounts.slice(3, 11).map(async (addr, index) => {
           const entryToFalsify = 7 - index;
           const amountToFalsify = index; // NB The first client is 'bad', but told to get the calculation wrong by 0, so is actually good.
-          const client = new MaliciousReputationMinerExtraRep(
-            { loader, realProviderPort, useJsTree, minerAddress: addr },
-            entryToFalsify,
-            amountToFalsify,
-          );
+          const client = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: addr }, entryToFalsify, amountToFalsify);
           // Each client will get a different reputation update entry wrong by a different amount, apart from the first one which
           // will submit a correct hash.
           await client.initialise(colonyNetwork.address);
@@ -251,7 +246,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree: false, minerAddress: MINER1 });
+      goodClient = new ReputationMinerTestWrapper({ loader, provider, useJsTree: false, minerAddress: MINER1 });
       await goodClient.initialise(colonyNetwork.address);
       await goodClient.resetDB();
 
@@ -259,7 +254,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should allow submitted hashes to go through multiple responses to a challenge", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -295,7 +290,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER1 });
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER2 });
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 29, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 29, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       // Send rep to 0
@@ -325,7 +320,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER1 });
       await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER2 });
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 31, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 31, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       // Manager, evaluator, worker
@@ -356,11 +351,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const bigPayout = new BN("10").pow(new BN("38"));
 
-      const badClient = new MaliciousReputationMinerExtraRep(
-        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-        29,
-        bigPayout.muln(2).neg(),
-      );
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 29, bigPayout.muln(2).neg());
       await badClient.initialise(colonyNetwork.address);
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
@@ -400,7 +391,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
       await badClient.initialise(colonyNetwork.address);
 
       const skillId = localSkillId;
@@ -803,7 +794,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       expect(nInactiveLogEntries).to.eq.BN(13);
 
       // Skill 4
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 40, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 40, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -866,7 +857,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
       await badClient.initialise(colonyNetwork.address);
 
       const skillId = new BN(1);
@@ -940,9 +931,9 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("a miner using delegated mining should be able to go through the whole process", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
-      const delegatedClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: WORKER });
+      const delegatedClient = new ReputationMinerTestWrapper({ loader, provider, useJsTree, minerAddress: WORKER });
       await colonyNetwork.setMiningDelegate(WORKER, true, { from: MINER1 });
       await delegatedClient.initialise(colonyNetwork.address);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });

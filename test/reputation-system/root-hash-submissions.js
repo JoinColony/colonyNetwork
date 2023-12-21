@@ -1,6 +1,6 @@
-/* globals artifacts */
+/* globals artifacts, ethers */
+
 const BN = require("bn.js");
-const { ethers } = require("ethers");
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
@@ -48,8 +48,8 @@ const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const useJsTree = true;
+const { provider } = ethers;
 
 let colonyNetwork;
 let tokenLocking;
@@ -73,13 +73,13 @@ const setupNewNetworkInstance = async (MINER1, MINER2, MINER3, MINER4) => {
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
-  goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
+  goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, provider, useJsTree });
   // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
-  badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 1, 0xfffffffff);
+  badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, provider, useJsTree }, 1, 0xfffffffff);
   // Mess up the second calculation in a different way
-  badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, 0xeeeeeeeee);
+  badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, provider, useJsTree }, 1, 0xeeeeeeeee);
   // And one test needs a third bad client...
-  badClient3 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER4, realProviderPort, useJsTree }, 1, 0xddddddddd);
+  badClient3 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER4, provider, useJsTree }, 1, 0xddddddddd);
 };
 
 contract("Reputation mining - root hash submissions", (accounts) => {
@@ -574,7 +574,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      const goodClient2 = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER3 });
+      const goodClient2 = new ReputationMinerTestWrapper({ loader, provider, useJsTree, minerAddress: MINER3 });
       await goodClient2.initialise(colonyNetwork.address);
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -624,7 +624,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const user3MiningBalanceBefore = await colonyNetwork.getMiningStake(MINER3);
 
       // We want badClient2 to submit the same hash as badClient for this test.
-      badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, "0xfffffffff");
+      badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, provider, useJsTree }, 1, "0xfffffffff");
       badClient2.initialise(colonyNetwork.address);
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -688,7 +688,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       expect(userMiningBalance3.amount, "Mining stake was not docked properly").to.eq.BN(new BN(user3MiningBalanceBefore.amount).sub(MIN_STAKE));
 
       // Reset badClient2 to its default behaviour.
-      badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, "0xeeeeeeeee");
+      badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, provider, useJsTree }, 1, "0xeeeeeeeee");
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {

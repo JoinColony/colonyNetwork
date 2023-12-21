@@ -1,10 +1,9 @@
-/* globals artifacts, BigInt */
+/* globals artifacts, BigInt, ethers */
 
 const path = require("path");
 const BN = require("bn.js");
 const chai = require("chai");
 const bnChai = require("bn-chai");
-const { ethers } = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const {
@@ -56,14 +55,13 @@ const loader = new TruffleLoader({
 });
 
 const useJsTree = true;
+const { provider } = ethers;
 
 let colonyNetwork;
 let metaColony;
 let clnyToken;
 let localSkillId;
 let goodClient;
-
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -84,7 +82,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
-  goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+  goodClient = new ReputationMinerTestWrapper({ loader, provider, useJsTree, minerAddress: MINER1 });
 };
 
 contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
@@ -131,7 +129,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
   // invalidateHash => confirmNewHash
   describe("when dispute flow order is not kept", () => {
     it("should prevent a user from jumping ahead during dispute resolution", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -202,7 +200,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     });
 
     it("should prevent a user from attempting to defend a DisputedEntry beyond the size of a round.", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -280,9 +278,9 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await goodClient.saveCurrentState();
       const savedHash = await goodClient.reputationTree.getRootHash();
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
-      const badClient2 = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER3 }, 1, 0xffffffffff);
+      const badClient2 = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER3 }, 1, 0xffffffffff);
       await badClient2.initialise(colonyNetwork.address);
 
       await badClient.loadState(savedHash);
@@ -339,7 +337,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const clients = await Promise.all(
         accountsForTest.map(async (addr, index) => {
           const client = new MaliciousReputationMinerExtraRep(
-            { loader, realProviderPort, useJsTree, minerAddress: addr },
+            { loader, provider, useJsTree, minerAddress: addr },
             accountsForTest.length - index,
             index,
           );
@@ -559,7 +557,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await goodClient.saveCurrentState();
       const savedHash = await goodClient.reputationTree.getRootHash();
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 5, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 5, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await badClient.loadState(savedHash);
@@ -634,7 +632,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -671,7 +669,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
     it(`should not allow miners to respond immediately during a dispute,
       but they should be able to some time before the end of the window`, async function gateTest() {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -784,7 +782,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
   describe("when miner misbehaving during confirmJustificationRootHash stage", async () => {
     it("should prevent a user from confirming a JRH they can't prove is correct", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -830,7 +828,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
   describe("when miner misbehaving during respondToBinarySearchForChallenge stage", async () => {
     it("should fail to respondToBinarySearchForChallenge if not consistent with JRH", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -862,7 +860,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     it("incorrectly confirming a binary search result should fail", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 3, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 3, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -919,10 +917,10 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nLogEntries).to.eq.BN(5);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 14, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, provider, useJsTree }, 14, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 14, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, provider, useJsTree }, 14, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -976,10 +974,10 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nLogEntries).to.eq.BN(9);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 30, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, provider, useJsTree }, 30, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 17, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, provider, useJsTree }, 17, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -1014,13 +1012,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 24, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 24, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 4, 123456);
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, provider, useJsTree }, 4, 123456);
       await badClient2.initialise(colonyNetwork.address);
 
-      const badClient3 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 6, 123456);
+      const badClient3 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, provider, useJsTree }, 6, 123456);
       await badClient3.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -1053,7 +1051,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     it("should fail to respondToChallenge if any part of the key or hashedKey is wrong", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 3, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 3, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -1144,7 +1142,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     });
 
     it("should fail to respondToChallenge if binary search for challenge is not complete yet", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -1212,15 +1210,11 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
         await goodClient.addLogContentsToReputationTree();
 
-        const badClient = new MaliciousReputationMinerExtraRep(
-          { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-          args.badClient1Argument,
-          10,
-        );
+        const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, args.badClient1Argument, 10);
         await badClient.initialise(colonyNetwork.address);
 
         const badClient2 = new MaliciousReputationMinerWrongProofLogEntry(
-          { loader, realProviderPort, useJsTree, minerAddress: MINER3 },
+          { loader, provider, useJsTree, minerAddress: MINER3 },
           args.badClient2Argument,
         );
         await badClient2.initialise(colonyNetwork.address);
@@ -1257,7 +1251,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
   describe("when miner misbehaving during confirmNewHash stage", async () => {
     it("should only allow the last hash standing to be confirmed", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -1283,7 +1277,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, provider, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
