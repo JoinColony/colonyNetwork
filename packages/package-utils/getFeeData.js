@@ -58,7 +58,6 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
     try {
       const request = await axios.request(options);
       const gasEstimates = request.data;
-
       if (feeData.maxFeePerGas) {
         // Update the EIP1559 fee data based on the type
         const ratio = gasEstimates[type] / gasEstimates.average;
@@ -69,6 +68,13 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
         // Increase the max fee per gas by the same amount (not the same ratio)
         feeData.maxFeePerGas = feeData.maxFeePerGas.add(newMaxPriorityFeePerGas).sub(feeData.maxPriorityFeePerGas);
         feeData.maxPriorityFeePerGas = newMaxPriorityFeePerGas;
+        const minPriorityFee = ethers.BigNumber.from(10).pow(9);
+        if (feeData.maxPriorityFeePerGas.lt(minPriorityFee)) {
+          const delta = minPriorityFee.sub(feeData.maxPriorityFeePerGas);
+          feeData.maxPriorityFeePerGas = minPriorityFee;
+          feeData.maxFeePerGas = feeData.maxFeePerGas.add(delta);
+          adapter.log("Min too low, bumping. Fee data is: ", JSON.stringify(feeData));
+        }
         return feeData;
       }
 
