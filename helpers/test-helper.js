@@ -263,7 +263,15 @@ exports.currentBlockTime = async function currentBlockTime() {
 };
 
 exports.currentBlock = async function currentBlock() {
-  return helpers.time.latestBlock();
+  const p = new Promise((resolve, reject) => {
+    web3.eth.getBlock("latest", (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res);
+    });
+  });
+  return p;
 };
 
 exports.getBlock = async function getBlock(blockNumber) {
@@ -398,8 +406,7 @@ exports.forwardTimeTo = async function forwardTimeTo(timestamp) {
   return helpers.time.increaseTo(timestamp);
 };
 
-exports.mineBlock = async function mineBlock(timestamp) {
-  await helpers.time.increaseTo(timestamp);
+exports.mineBlock = async function mineBlock() {
   return helpers.mine();
 };
 
