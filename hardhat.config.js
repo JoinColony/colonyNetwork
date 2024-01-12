@@ -37,6 +37,16 @@ module.exports = {
     ],
   },
   networks: {
+    localhost: {
+      url: "http://localhost:8545",
+      chainId: 2656691,
+      throwOnCallFailures: false,
+      throwOnTransactionFailures: false,
+      allowBlocksWithSameTimestamp: true,
+      gas: 6721975,
+      blockGasLimit: 6721975,
+      timeout: 80000,
+    },
     hardhat: {
       chainId: 2656691,
       throwOnCallFailures: false,
