@@ -242,12 +242,10 @@ contract("Voting Reputation", (accounts) => {
       makeReputationKey(colony.address, domain3.skillId, USER1), // User1, domain 3
       makeReputationValue(WAD.muln(2), 12),
     );
-
     reputationTree.insert(
       makeReputationKey(colony.address, domain4.skillId), // Colony total, domain 4
       makeReputationValue(0, 13),
     );
-
     reputationTree.insert(
       makeReputationKey(colony.address, domain4.skillId, USER1), // User1, domain 4
       makeReputationValue(0, 14),
@@ -427,7 +425,7 @@ contract("Voting Reputation", (accounts) => {
     it("can create a domain motion in a child domain", async () => {
       const key = makeReputationKey(colony.address, domain2.skillId);
       const value = makeReputationValue(WAD, 6);
-      const [mask, siblings] = await reputationTree.getProof(key);
+      const [mask, siblings] = reputationTree.getProof(key);
 
       // Create motion in domain of action (2)
       const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
@@ -479,7 +477,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot create a domain motion with an action in a higher domain", async () => {
       const key = makeReputationKey(colony.address, domain2.skillId);
       const value = makeReputationValue(WAD, 6);
-      const [mask, siblings] = await reputationTree.getProof(key);
+      const [mask, siblings] = reputationTree.getProof(key);
 
       // Action in domain 1, motion in domain 2
       const action = await encodeTxData(colony, "makeExpenditure", [1, UINT256_MAX, 1]);
@@ -490,7 +488,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot create a domain motion with an alternative target with an action in a higher domain", async () => {
       const key = makeReputationKey(colony.address, domain2.skillId);
       const value = makeReputationValue(WAD, 6);
-      const [mask, siblings] = await reputationTree.getProof(key);
+      const [mask, siblings] = reputationTree.getProof(key);
 
       const oneTxPayment = await OneTxPayment.new();
       await oneTxPayment.install(colony.address);
@@ -508,7 +506,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot externally escalate a domain motion with an invalid domain proof", async () => {
       const key = makeReputationKey(colony.address, domain3.skillId);
       const value = makeReputationValue(WAD.muln(3), 7);
-      const [mask, siblings] = await reputationTree.getProof(key);
+      const [mask, siblings] = reputationTree.getProof(key);
 
       // Provide proof for (3) instead of (2)
       const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
@@ -522,7 +520,7 @@ contract("Voting Reputation", (accounts) => {
       let action = await encodeTxData(colony, "moveFundsBetweenPots", [1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address]);
       const key = makeReputationKey(colony.address, domain2.skillId);
       const value = makeReputationValue(WAD, 6);
-      const [mask, siblings] = await reputationTree.getProof(key);
+      const [mask, siblings] = reputationTree.getProof(key);
       checkErrorRevert(voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, key, value, mask, siblings), "voting-rep-disallowed-function");
 
       // Now we make an action with the new moveFundsBetweenPots
@@ -548,7 +546,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot create a motion if there is no reputation in the domain", async () => {
       const key = makeReputationKey(colony.address, domain4.skillId);
       const value = makeReputationValue(0, 13);
-      const [mask, siblings] = await reputationTree.getProof(key);
+      const [mask, siblings] = reputationTree.getProof(key);
 
       // Try to create motion in domain of action (4)
       const action = await encodeTxData(colony, "makeExpenditure", [1, 2, 4]);
@@ -925,7 +923,7 @@ contract("Voting Reputation", (accounts) => {
     it("cannot stake with insufficient reputation", async () => {
       const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
-      const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
+      const [user2Mask, user2Siblings] = reputationTree.getProof(user2Key);
 
       await checkErrorRevert(
         voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user2Key, user2Value, user2Mask, user2Siblings, { from: USER2 }),
@@ -1118,9 +1116,9 @@ contract("Voting Reputation", (accounts) => {
       const user0Value2 = makeReputationValue(WAD.muln(2), 2);
       await reputationTree.insert(user0Key, user0Value2);
 
-      const [domain1Mask2, domain1Siblings2] = await reputationTree.getProof(domain1Key);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key);
-      const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key);
+      const [domain1Mask2, domain1Siblings2] = reputationTree.getProof(domain1Key);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key);
+      const [user1Mask2, user1Siblings2] = reputationTree.getProof(user1Key);
 
       const newRootHash = await reputationTree.getRootHash();
       expect(oldRootHash).to.not.equal(newRootHash);
@@ -1217,7 +1215,7 @@ contract("Voting Reputation", (accounts) => {
       let key, value, mask, siblings; // eslint-disable-line one-var
       key = makeReputationKey(metaColony.address, domain1.skillId, USER0);
       value = makeReputationValue(WAD, 3);
-      [mask, siblings] = await reputationTree.getProof(key);
+      [mask, siblings] = reputationTree.getProof(key);
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
@@ -1227,7 +1225,7 @@ contract("Voting Reputation", (accounts) => {
       // Invalid skill id
       key = makeReputationKey(colony.address, 1234, USER0);
       value = makeReputationValue(WAD, 4);
-      [mask, siblings] = await reputationTree.getProof(key);
+      [mask, siblings] = reputationTree.getProof(key);
 
       await checkErrorRevert(
         voting.revealVote(motionId, SALT, NAY, key, value, mask, siblings, { from: USER0 }),
@@ -1626,7 +1624,7 @@ contract("Voting Reputation", (accounts) => {
 
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
       await voting.stakeMotion(motionId1, 1, 0, YAY, REQUIRED_STAKE_DOMAIN_2, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
       await forwardTime(STAKE_PERIOD, this);
@@ -1660,11 +1658,11 @@ contract("Voting Reputation", (accounts) => {
 
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
       const user1Key2 = makeReputationKey(colony.address, domain2.skillId, USER1);
       const user1Value2 = makeReputationValue(WAD.divn(3).muln(2), 10);
-      const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key2);
+      const [user1Mask2, user1Siblings2] = reputationTree.getProof(user1Key2);
 
       await voting.stakeMotion(motionId1, 1, 0, YAY, REQUIRED_STAKE_DOMAIN_2, user0Key2, user0Value2, user0Mask2, user0Siblings2, { from: USER0 });
       await voting.stakeMotion(motionId1, 1, 0, NAY, REQUIRED_STAKE_DOMAIN_2, user1Key2, user1Value2, user1Mask2, user1Siblings2, { from: USER1 });
@@ -1750,7 +1748,7 @@ contract("Voting Reputation", (accounts) => {
 
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
       await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
       motionId = await voting.getMotionCount();
@@ -1952,11 +1950,11 @@ contract("Voting Reputation", (accounts) => {
     it("can take a multicall domain action", async () => {
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
       const user1Key2 = makeReputationKey(colony.address, domain2.skillId, USER1);
       const user1Value2 = makeReputationValue(WAD.divn(3).muln(2), 10);
-      const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key2);
+      const [user1Mask2, user1Siblings2] = reputationTree.getProof(user1Key2);
 
       const action2 = await encodeTxData(colony, "setFundingRole", [1, 0, USER0, 2, true]);
       const action1 = await encodeTxData(colony, "setAdministrationRole", [1, 0, USER0, 2, true]);
@@ -1993,11 +1991,11 @@ contract("Voting Reputation", (accounts) => {
     it("can take a multicall expenditure action", async () => {
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
       const user1Key2 = makeReputationKey(colony.address, domain2.skillId, USER1);
       const user1Value2 = makeReputationValue(WAD.divn(3).muln(2), 10);
-      const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key2);
+      const [user1Mask2, user1Siblings2] = reputationTree.getProof(user1Key2);
 
       await colony.makeExpenditure(1, 0, 2);
       const expenditureId = await colony.getExpenditureCount();
@@ -2244,7 +2242,7 @@ contract("Voting Reputation", (accounts) => {
     it("can let stakers claim rewards, based on the vote outcome, with multiple losing stakers", async () => {
       const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
-      const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
+      const [user2Mask, user2Siblings] = reputationTree.getProof(user2Key);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
       await voting.stakeMotion(motionId, 1, UINT256_MAX, NAY, REQUIRED_STAKE.divn(3).muln(2), user1Key, user1Value, user1Mask, user1Siblings, {
@@ -2293,7 +2291,7 @@ contract("Voting Reputation", (accounts) => {
     it("can let stakers claim rewards, based on the vote outcome, with multiple winning stakers", async () => {
       const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
-      const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
+      const [user2Mask, user2Siblings] = reputationTree.getProof(user2Key);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3).muln(2), user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
@@ -2347,7 +2345,7 @@ contract("Voting Reputation", (accounts) => {
     it("can let all stakers claim rewards, based on the vote outcome, with multiple winning stakers", async () => {
       const user2Key = makeReputationKey(colony.address, domain1.skillId, USER2);
       const user2Value = makeReputationValue(REQUIRED_STAKE.subn(1), 8);
-      const [user2Mask, user2Siblings] = await reputationTree.getProof(user2Key);
+      const [user2Mask, user2Siblings] = reputationTree.getProof(user2Key);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE.divn(3).muln(2), user0Key, user0Value, user0Mask, user0Siblings, {
         from: USER0,
@@ -2486,11 +2484,11 @@ contract("Voting Reputation", (accounts) => {
     beforeEach(async () => {
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
       const user1Key2 = makeReputationKey(colony.address, domain2.skillId, USER1);
       const user1Value2 = makeReputationValue(WAD.divn(3).muln(2), 10);
-      const [user1Mask2, user1Siblings2] = await reputationTree.getProof(user1Key2);
+      const [user1Mask2, user1Siblings2] = reputationTree.getProof(user1Key2);
 
       const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
       await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
@@ -2763,15 +2761,15 @@ contract("Voting Reputation", (accounts) => {
       // Run a vote in domain 3, same rep as domain 1
       const domain3Key = makeReputationKey(colony.address, domain3.skillId);
       const domain3Value = makeReputationValue(WAD.muln(3), 7);
-      const [domain3Mask, domain3Siblings] = await reputationTree.getProof(domain3Key);
+      const [domain3Mask, domain3Siblings] = reputationTree.getProof(domain3Key);
 
       const user0Key3 = makeReputationKey(colony.address, domain3.skillId, USER0);
       const user0Value3 = makeReputationValue(WAD, 11);
-      const [user0Mask3, user0Siblings3] = await reputationTree.getProof(user0Key3);
+      const [user0Mask3, user0Siblings3] = reputationTree.getProof(user0Key3);
 
       const user1Key3 = makeReputationKey(colony.address, domain3.skillId, USER1);
       const user1Value3 = makeReputationValue(WAD.muln(2), 12);
-      const [user1Mask3, user1Siblings3] = await reputationTree.getProof(user1Key3);
+      const [user1Mask3, user1Siblings3] = reputationTree.getProof(user1Key3);
 
       const action = await encodeTxData(colony, "makeExpenditure", [1, 1, 3]);
       await voting.createMotion(3, UINT256_MAX, ADDRESS_ZERO, action, domain3Key, domain3Value, domain3Mask, domain3Siblings);
@@ -3064,7 +3062,7 @@ contract("Voting Reputation", (accounts) => {
 
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
-      const [user0Mask2, user0Siblings2] = await reputationTree.getProof(user0Key2);
+      const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
       await colony.approveStake(voting.address, 1, WAD.muln(3), { from: USER0 });
       await colony.approveStake(voting.address, 2, WAD.muln(3), { from: USER0 });
