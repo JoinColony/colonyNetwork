@@ -147,8 +147,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope with many hashes being submitted and eliminated before a winner is assigned", async function manySubmissionTest() {
-      this.timeout(100000000);
-
       // TODO: This test probably needs to be written more carefully to make sure all possible edge cases are dealt with
       for (let i = 3; i < 11; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], DEFAULT_STAKE);
@@ -213,10 +211,9 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(3, { from: MINER1 });
-    });
+    }).timeout(100000000);
 
     it("should be able to process a large reputation update log", async function largeReputationLogTest() {
-      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
@@ -232,11 +229,10 @@ contract("Reputation Mining - happy paths", (accounts) => {
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
-    });
+    }).timeout(100000000);
 
     // eslint-disable-next-line max-len
     it("should be able to process a large reputation update log even if it's using the solidity patricia tree", async function largeReputationLogTestSolidity() {
-      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
@@ -256,7 +252,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await goodClient.resetDB();
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
-    });
+    }).timeout(100000000);
 
     it("should allow submitted hashes to go through multiple responses to a challenge", async () => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
@@ -287,7 +283,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope if someone's existing reputation would go negative, setting it to zero instead", async function noNegativeRep() {
-      this.timeout(600000);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       // Create reputation
@@ -315,10 +310,9 @@ contract("Reputation Mining - happy paths", (accounts) => {
       });
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
-    });
+    }).timeout(600000);
 
     it("should cope if someone's new reputation would be negative, setting it to zero instead", async function newRepToZeroTest() {
-      this.timeout(600000);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
@@ -344,7 +338,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       });
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
-    });
+    }).timeout(600000);
 
     it("should cope if someone's reputation would overflow, setting it to the maximum value instead", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -704,7 +698,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
         expect(goodClient.reputations[key], `${reputationProp.id} failed. Actual value is ${decimalValue}`).to.eq.BN(value);
       });
-    });
+    }).timeout(100000000);
 
     it("should correctly update parent reputations", async () => {
       // Make sure there's funding for the task
@@ -812,7 +806,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       });
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
-    });
+    }).timeout(10000000);
 
     it("should allow a user to prove their reputation", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });

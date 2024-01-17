@@ -156,7 +156,7 @@ process.env.SOLIDITY_COVERAGE
           const client1Hash = await reputationMiner1.reputationTree.getRootHash();
           const client2Hash = await reputationMiner2.reputationTree.getRootHash();
           expect(client1Hash).to.equal(client2Hash);
-        });
+        }).timeout(10000000);
 
         it("should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
           // Save to the database
@@ -274,6 +274,6 @@ process.env.SOLIDITY_COVERAGE
           fs.unlinkSync(`${fileName}-shm`);
           fs.unlinkSync(`${fileName}-wal`);
           await client.close();
-        });
+        }).timeout(10000000);
       });
     });

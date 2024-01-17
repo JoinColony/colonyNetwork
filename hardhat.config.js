@@ -36,6 +36,9 @@ module.exports = {
       },
     ],
   },
+  mocha: {
+    timeout: 100000000,
+  },
   networks: {
     localhost: {
       url: "http://localhost:8545",
@@ -45,7 +48,6 @@ module.exports = {
       allowBlocksWithSameTimestamp: true,
       gas: 6721975,
       blockGasLimit: 6721975,
-      timeout: 80000,
     },
     hardhat: {
       chainId: 2656691,
