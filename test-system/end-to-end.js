@@ -90,8 +90,6 @@ contract("End to end Colony network and Reputation mining testing", function (ac
   });
 
   describe("when working with larger volumes", function () {
-    this.timeout(0);
-
     it("can create 100 colonies", async function () {
       // Setup 100 random colonies, reward set to default 0%
       const a = Array.from(Array(100).keys());
@@ -384,7 +382,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
         expect(decimalValueInClient, `${globalRep.id} failed. Actual value is ${decimalValueInClient}`).to.eq.BN(decimalValueExpected);
       });
     });
-  });
+  }).timeout(0);
 
   describe("when there is a dispute over reputation root hash", function () {
     // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
