@@ -1,17 +1,28 @@
 /* globals artifacts */
-const fs = require("fs");
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
+const baseExec = require("child_process").exec;
 
-const Promise = require("bluebird");
-
-const exec = Promise.promisify(require("child_process").exec);
+const exec = function (command) {
+  return new Promise((resolve, reject) => {
+    const execCallback = (error, stdout) => {
+      console.log("callback", error, stdout);
+      if (error) {
+        reject(error);
+      } else {
+        resolve(stdout);
+      }
+    };
+    baseExec(command, execCallback);
+  });
+};
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 
@@ -38,43 +49,33 @@ contract("Cross-chain", () => {
 
   const ethersForeignSigner = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner();
   const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
+  let etherRouterAddress;
 
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
-
     ({ bridgeMonitor, gnosisSafe, zodiacBridge, homeBridge, foreignBridge } = await setupBridging(homeRpcUrl, foreignRpcUrl));
 
     // If Truffle is not on the home chain, then deploy colonyNetwork to the home chain
     if (process.env.TRUFFLE_FOREIGN === "true") {
       try {
-        await exec(`npm run provision:token:contracts`);
-        await exec(`npm run provision:safe:contracts`);
-        await exec(`npx truffle migrate --all --network development2`);
+        // await exec(`npm run provision:token:contracts`);
+        // await exec(`npm run provision:safe:contracts`);
+        const output = await exec(`npx hardhat run test/hardhat-deploy.js --network localhost2`);
+        [, , , etherRouterAddress] = output
+          .split("\n")
+          .filter((x) => x.includes("EtherRouter deployed at"))[0]
+          .split(" ");
       } catch (err) {
         console.log(err);
-        process.exit();
+        process.exit(1);
       }
+    } else {
+      etherRouterAddress = (await EtherRouter.deployed()).address;
     }
   });
 
   beforeEach(async () => {
     // Set up a colony on the home chain. That may or may not be the truffle chain...
-    // Get the etherrouter address
-    const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
-    const homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
-    let etherRouterInfo;
-    // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
-    // we see it in our tests that's the coverage chain, which builds the contract artifacts
-    // in to a different location. If we see another chain id, we assume it's non-coverage
-    // truffle and look for the build artifacts in the normal place.
-    if (homeChainId.toString() === "0x539") {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
-    } else {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build/contracts/EtherRouter.json"));
-    }
-
-    const etherRouterAddress = etherRouterInfo.networks[homeNetworkId.toString()].address;
-
     const colonyNetworkEthers = await new ethers.Contract(etherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
 
     let tx = await colonyNetworkEthers.deployTokenViaNetwork("Test", "TST", 18);

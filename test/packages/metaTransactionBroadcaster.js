@@ -10,7 +10,7 @@ const axios = require("axios");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
-const { web3GetTransaction } = require("../../helpers/test-helper");
+const { web3GetTransaction, currentBlockTime } = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
@@ -491,8 +491,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("a valid EIP712 transaction is broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
-
+      const deadline = (await currentBlockTime()) + 3600;
       const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, colony.address, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
@@ -533,8 +532,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("an EIP712 transaction with an invalid spender is not broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
-
+      const deadline = (await currentBlockTime()) + 3600;
       const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, USER1, 1, deadline, metaTxToken.address);
 
       // Send to endpoint

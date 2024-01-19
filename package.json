@@ -36,8 +36,8 @@
     "test:reputation:2": "npm run start:blockchain:client hardhat & truffle migrate --reset --compile-all && nyc truffle test ./test/reputation-system/reputation-mining-client/* --network development",
     "test:reputation:coverage": "SOLIDITY_COVERAGE=1 truffle run coverage --solcoverjs ./.solcover.reputation.js --network coverage --temp build-coverage --file='./test/reputation-system/**/*'",
     "test:contracts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test ./test/contracts-network/* ./test/packages/* --network development",
-    "test:contracts:bridging:1": "npm run start:blockchain:client & npm run start:blockchain:client:2 & truffle migrate --reset --compile-all && TRUFFLE_FOREIGN=false truffle test ./test/cross-chain/* --network development",
-    "test:contracts:bridging:2": "npm run start:blockchain:client & npm run start:blockchain:client:2 & truffle migrate --reset --compile-all && TRUFFLE_FOREIGN=true truffle test ./test/cross-chain/* --network development",
+    "test:contracts:bridging:1": "npm run start:blockchain:client hardhat & npm run wait:port 8545 && npm run start:blockchain:client:2 hardhat & npm run wait:port 8546 && TRUFFLE_FOREIGN=false npx hardhat test ./test/cross-chain/* --network localhost",
+    "test:contracts:bridging:2": "npm run start:blockchain:client hardhat & npm run wait:port 8545 && npm run start:blockchain:client:2 hardhat & npm run wait:port 8546 && TRUFFLE_FOREIGN=true npx hardhat test ./test/cross-chain/* --network localhost",
     "test:contracts:bridging:1:coverage": "npm run start:blockchain:client & npm run start:blockchain:client:2 & SOLIDITY_COVERAGE=1 TRUFFLE_FOREIGN=false truffle run coverage --solcoverjs ./.solcover.crosschain.js --network coverage --temp build-coverage --file='./test/cross-chain/**/*'",
     "test:contracts:bridging:2:coverage": "npm run start:blockchain:client & npm run start:blockchain:client:2 & SOLIDITY_COVERAGE=1 TRUFFLE_FOREIGN=true truffle run coverage --solcoverjs ./.solcover.crosschain.js --network coverage --temp build-coverage --file='./test/cross-chain/**/*'",
     "test:contracts:extensions": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test ./test/extensions/* --network development",
@@ -71,7 +71,8 @@
     "posttest:contracts:watch": "npm run stop:blockchain:client",
     "viz:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/viz-bootstrap.js",
     "kyc:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/kyc-bootstrap.js",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "wait:port": "bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1"
   },
   "repository": {
     "type": "git",
@@ -89,6 +90,7 @@
     "@openzeppelin/contracts": "^4.9.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomiclabs/hardhat-truffle5": "^2.0.7",
+    "@nomiclabs/hardhat-web3": "^2.0.0",
     "@solidity-parser/parser": "^0.14.2",
     "@truffle/contract": "^4.6.31",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
