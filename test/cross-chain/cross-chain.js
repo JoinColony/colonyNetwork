@@ -60,7 +60,7 @@ contract("Cross-chain", () => {
       try {
         // await exec(`npm run provision:token:contracts`);
         // await exec(`npm run provision:safe:contracts`);
-        const output = await exec(`npx hardhat run test/hardhat-deploy.js --network localhost2`);
+        const output = await exec(`npx hardhat deploy --network localhost2`);
         [, , , etherRouterAddress] = output
           .split("\n")
           .filter((x) => x.includes("EtherRouter deployed at"))[0]

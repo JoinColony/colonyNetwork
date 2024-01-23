@@ -82,8 +82,6 @@ module.exports = async () => {
 };
 
 async function deployContracts() {
-  console.log("  => Deploying Colony Network");
-
   const etherRouter = await EtherRouter.new();
   EtherRouter.setAsDeployed(etherRouter);
 
@@ -150,6 +148,8 @@ async function setupColonyNetwork() {
 
   const routerJson = JSON.stringify({ etherRouterAddress: etherRouter.address });
   writeFileSync(path.resolve(__dirname, "..", "etherrouter-address.json"), routerJson, { encoding: "utf8" });
+
+  console.log(`  => Colony Network deployed at ${etherRouter.address}`);
 }
 
 async function setupColony() {

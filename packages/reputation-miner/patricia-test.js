@@ -11,7 +11,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const PatriciaTree = artifacts.require("PatriciaTree");
 
 const contractLoader = new TruffleLoader({
-  contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 contract("Javascript Patricia Tree", accounts => {

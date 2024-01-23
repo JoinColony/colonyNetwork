@@ -20,7 +20,7 @@ if ((!adminAddress && !privateKey) || !whitelistAddress || !apiKey) {
 }
 
 const loader = new TruffleLoader({
-  contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 let provider;
