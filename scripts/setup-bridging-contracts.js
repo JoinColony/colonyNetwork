@@ -27,12 +27,36 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   const ethersHomeSigner = ethersHomeProvider.getSigner();
 
   const accounts = await ethersForeignProvider.listAccounts();
-  const GnosisSafeProxyFactory = await loader.load({ contractName: "GnosisSafeProxyFactory" }, { abi: true, address: false });
-  const GnosisSafe = await loader.load({ contractName: "GnosisSafe" }, { abi: true, address: false });
-  const ZodiacBridgeModuleMock = await loader.load({ contractName: "ZodiacBridgeModuleMock" }, { abi: true, address: false });
-  const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
-  const Erc721Mock = await loader.load({ contractName: "ERC721Mock" }, { abi: true, address: false });
-  const Token = await loader.load({ contractName: "Token" }, { abi: true, address: false });
+  const GnosisSafeProxyFactory = await loader.load(
+    {
+      contractDir: path.resolve(__dirname, "..", "artifacts", "safe-contracts", "proxies"),
+      contractName: "GnosisSafeProxyFactory",
+    },
+    { abi: true, address: false },
+  );
+  const GnosisSafe = await loader.load(
+    {
+      contractName: "GnosisSafe",
+      contractDir: path.resolve(__dirname, "..", "artifacts", "safe-contracts"),
+    },
+    { abi: true, address: false },
+  );
+  const ZodiacBridgeModuleMock = await loader.load(
+    { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "ZodiacBridgeModuleMock" },
+    { abi: true, address: false },
+  );
+  const BridgeMock = await loader.load(
+    { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "BridgeMock" },
+    { abi: true, address: false },
+  );
+  const Erc721Mock = await loader.load(
+    { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "ERC721Mock" },
+    { abi: true, address: false },
+  );
+  const Token = await loader.load(
+    { contractDir: path.resolve(__dirname, "..", "artifacts", "colonyToken"), contractName: "Token" },
+    { abi: true, address: false },
+  );
 
   // This is the address that the gnosis safe proxy factory should have been deployed to by the deploy command using hardhat in their repo
   const gspf = await new ethers.Contract("0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", GnosisSafeProxyFactory.abi, ethersForeignSigner);

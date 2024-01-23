@@ -48,7 +48,7 @@ start_ganache() {
 }
 
 start_hardhat() {
-  npx hardhat node >/dev/null 2>&1
+  HARDHAT_CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1
 }
 
 start_parity() {
