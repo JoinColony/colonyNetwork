@@ -7,7 +7,7 @@ function readArtifact(contractDir, contractName) {
   const artifactPath = `./artifacts/contracts/${contractDir}/${contractName}.sol/${contractName}.json`;
   try {
     return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
-  } catch {
+  } catch (err) {
     const commonArtifactPath = `./artifacts/contracts/common/${contractName}.sol/${contractName}.json`;
     return JSON.parse(fs.readFileSync(commonArtifactPath, "utf8"));
   }
@@ -17,7 +17,7 @@ function readSource(contractDir, contractName) {
   const contractPath = `./contracts/${contractDir}/${contractName}.sol`;
   try {
     return fs.readFileSync(contractPath, "utf8");
-  } catch {
+  } catch (err) {
     const commonContractPath = `./contracts/common/${contractName}.sol`;
     return fs.readFileSync(commonContractPath, "utf8");
   }
