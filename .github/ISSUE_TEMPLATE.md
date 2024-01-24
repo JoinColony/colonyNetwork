@@ -1,8 +1,8 @@
 # Prerequisites
-Please answer the following questions for yourself before submitting an issue. **YOU MAY DELETE THE PREREQUISITES SECTION.**
+Please answer the following questions for yourself before submitting an issue.
 
 - [ ] I checked to make sure that this issue has not already been filed
-- [ ] I've asked for help in the [Colony Network Gitter](http://gitter.im/JoinColony/colonyNetwork) before filing this issue.
+- [ ] I've asked for help in the **Colony Network Discord** before filing this issue.
 
 ## Summary
 <!--- Concise overview of the issue. -->
