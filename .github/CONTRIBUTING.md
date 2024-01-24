@@ -4,8 +4,6 @@ The focus currently is implementing the [Colony White Paper](https://colony.io/w
 
 Specifically we need help with the [Colony Contribute Backlog](https://github.com/JoinColony/colonyNetwork/projects/2). Items suitable for external contributors are labelled "good for collaborators".
 
-When making a larger change, please consult with the team on [Colony Network Gitter channel](http://gitter.im/JoinColony/colonyNetwork).
-
 ## How to report issues
 
 To report an issue, use the [GitHub issues tracker](https://github.com/JoinColony/colonyNetwork/issues).
