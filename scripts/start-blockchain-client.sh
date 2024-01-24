@@ -10,10 +10,10 @@ DBPATH=${DBPATH:-./ganache-chain-db/}
 # Get the choice of client: ganache is default
 if [ "$1" == "parity" ]; then
   bc_client=$1
-elif [ "$1" == "hardhat" ]; then
+elif [ "$1" == "ganache" ]; then
   bc_client=$1
 else
-  bc_client="ganache"
+  bc_client="hardhat"
 fi
 
 echo "Chosen client $bc_client"
@@ -48,7 +48,7 @@ start_ganache() {
 }
 
 start_hardhat() {
-  HARDHAT_CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1
+  HARDHAT_CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1 & bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 $PORT
 }
 
 start_parity() {

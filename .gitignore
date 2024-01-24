@@ -30,3 +30,5 @@ colonyNetwork-*
 artifacts/
 cache/
 .DS_Store
+ganache-chain-db-2/
+*Updated*.sol*

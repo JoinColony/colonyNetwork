@@ -4,6 +4,8 @@ const fs = require("fs");
 const path = require("path");
 
 require("@nomiclabs/hardhat-truffle5");
+require("hardhat-contract-sizer");
+require("solidity-coverage");
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
   await runSuper();
@@ -25,9 +27,9 @@ task("compile", "Compile Colony contracts with pinned Token").setAction(async ()
   //  recursive: true,
   // });
 
-  fs.rmSync(path.resolve(__dirname, `${config.paths.artifacts}/safe-contracts/`), { recursive: true, force: true });
-  copyRecursiveSync(path.resolve(__dirname, "lib/safe-contracts/build/artifacts/contracts"), `${config.paths.artifacts}/safe-contracts/`);
-  fs.rmSync(path.resolve(__dirname, `${config.paths.artifacts}/safe-contracts/test`), { recursive: true, force: true });
+  // fs.rmSync(path.resolve(__dirname, `${config.paths.artifacts}/safe-contracts/`), { recursive: true, force: true });
+  // copyRecursiveSync(path.resolve(__dirname, "lib/safe-contracts/build/artifacts/contracts"), `${config.paths.artifacts}/safe-contracts/`);
+  // fs.rmSync(path.resolve(__dirname, `${config.paths.artifacts}/safe-contracts/test`), { recursive: true, force: true });
 });
 
 task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(async () => {
@@ -54,6 +56,9 @@ module.exports = {
   mocha: {
     timeout: 100000000,
   },
+  contractSizer: {
+    strict: true,
+  },
   networks: {
     development: {
       url: "http://localhost:8545",
@@ -67,6 +72,24 @@ module.exports = {
     development2: {
       url: "http://localhost:8546",
       chainId: 2656692,
+      throwOnCallFailures: false,
+      throwOnTransactionFailures: false,
+      allowBlocksWithSameTimestamp: true,
+      gas: 6721975,
+      blockGasLimit: 6721975,
+    },
+    integration: {
+      url: "http://localhost:8545",
+      chainId: 1998,
+      throwOnCallFailures: false,
+      throwOnTransactionFailures: false,
+      allowBlocksWithSameTimestamp: true,
+      gas: 6721975,
+      blockGasLimit: 6721975,
+    },
+    coverage: {
+      url: "http://localhost:8555",
+      chainId: parseInt(process.env.CHAIN_ID, 10) || 1999,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -103,22 +126,22 @@ module.exports = {
   },
 };
 
-// https://stackoverflow.com/questions/13786160/copy-folder-recursively-in-node-js
-/**
- * Look ma, it's cp -R.
- * @param {string} src  The path to the thing to copy.
- * @param {string} dest The path to the new copy.
- */
-function copyRecursiveSync(src, dest) {
-  const exists = fs.existsSync(src);
-  const stats = exists && fs.statSync(src);
-  const isDirectory = exists && stats.isDirectory();
-  if (isDirectory) {
-    fs.mkdirSync(dest);
-    fs.readdirSync(src).forEach(function (childItemName) {
-      copyRecursiveSync(path.join(src, childItemName), path.join(dest, childItemName));
-    });
-  } else {
-    fs.copyFileSync(src, dest);
-  }
-}
+// // https://stackoverflow.com/questions/13786160/copy-folder-recursively-in-node-js
+// /**
+//  * Look ma, it's cp -R.
+//  * @param {string} src  The path to the thing to copy.
+//  * @param {string} dest The path to the new copy.
+//  */
+// function copyRecursiveSync(src, dest) {
+//   const exists = fs.existsSync(src);
+//   const stats = exists && fs.statSync(src);
+//   const isDirectory = exists && stats.isDirectory();
+//   if (isDirectory) {
+//     fs.mkdirSync(dest);
+//     fs.readdirSync(src).forEach(function (childItemName) {
+//       copyRecursiveSync(path.join(src, childItemName), path.join(dest, childItemName));
+//     });
+//   } else {
+//     fs.copyFileSync(src, dest);
+//   }
+// }

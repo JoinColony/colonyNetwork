@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const BN = require("bn.js");
 const chai = require("chai");
@@ -41,7 +41,6 @@ const { setupRandomColony, getMetaTransactionParameters, fundColonyWithTokens } 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
 
-const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
 const { deployOldExtensionVersion } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
@@ -2078,15 +2077,8 @@ contract("Voting Reputation", (accounts) => {
         contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
       });
 
-      // Old and new versions of ganache (which currently represents with or without coverage...)
-      // either do or don't have the hex prefix...
-      let privateKey = ganacheAccounts.private_keys[accounts[0].toLowerCase()];
-      if (privateKey.slice(0, 2) !== "0x") {
-        privateKey = `0x${privateKey}`;
-      }
-
       broadcaster = new MetatransactionBroadcaster({
-        privateKey,
+        privateKey: hre.config.networks.hardhat.accounts[0].privateKey,
         loader,
         provider,
       });

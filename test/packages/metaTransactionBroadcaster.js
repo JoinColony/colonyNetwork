@@ -16,7 +16,6 @@ const MetatransactionBroadcaster = require("../../packages/metatransaction-broad
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
-const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -57,7 +56,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
     broadcaster = new MetatransactionBroadcaster({
-      privateKey: `${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
+      privateKey: hre.config.networks.hardhat.accounts[0].privateKey,
       loader,
       provider,
     });

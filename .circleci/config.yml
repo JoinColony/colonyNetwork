@@ -33,8 +33,6 @@ step_setup_global_packages: &step_setup_global_packages
       npm ci
       git submodule update --init
       npm run provision:token:contracts
-      cd ./lib/safe-contracts && yarn --ignore-scripts && cd ../../
-      npm run provision:safe:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
@@ -85,7 +83,43 @@ jobs:
       - run:
           name: "Running storage consistency smoke tests"
           command: npm run test:contracts:smoke
-  lint-and-unit-test:
+  build-checks:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Linting JavaScript"
+          command: npm run eslint
+      - run:
+          name: "Linting Solidity"
+          command: npm run solhint
+      - run:
+          name: "Building Docs"
+          command: npm run build:docs
+      - run:
+          name: "Check git hooks run"
+          command: npm run check:gitchanges
+      - run:
+          name: "Checking contract storage variables"
+          command: npm run check:storagevars
+      - run:
+          name: "Checking contract recovery modifiers"
+          command: npm run check:recoverymods
+      - run:
+          name: "Checking contract versions"
+          command: npm run check:versioning
+      - run:
+          name: "Checking contract authDomain modifiers"
+          command: npm run check:auth
+      - run:
+          name: "Check contract sizes"
+          command: npx hardhat size-contracts
+  unit-test-network:
     <<: *job_common
     steps:
       - checkout
@@ -128,51 +162,115 @@ jobs:
             sudo apt-get update
             sudo apt-get install lsof
       - run:
-          name: "Linting JavaScript"
-          command: npm run eslint
-      - run:
-          name: "Linting Solidity"
-          command: npm run solhint
-      - run:
-          name: "Building Docs"
-          command: npm run build:docs
-      - run:
-          name: "Check git hooks run"
-          command: npm run check:gitchanges
-      - run:
-          name: "Checking contract storage variables"
-          command: npm run check:storagevars
-      - run:
-          name: "Checking contract recovery modifiers"
-          command: npm run check:recoverymods
-      - run:
-          name: "Checking contract versions"
-          command: npm run check:versioning
-      - run:
-          name: "Provision token contracts again (needed after version check script)"
-          command: npm run provision:token:contracts
-      - run:
-          name: "Checking contract authDomain modifiers"
-          command: npm run check:auth
-      - run:
           name: "Running network contracts unit tests"
           command: npm run test:contracts
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+      - <<: *step_save_cache
+      # Save test results
+      - store_test_results:
+          path: test-results.xml
+      - store_artifacts:
+          path: test-results.xml
+      - store_artifacts:
+          path: coverage-miner
+  unit-test-extensions:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
       - run:
-          name: "Check contract sizes"
-          command: npx truffle run contract-size --checkMaxSize
+          name: "Download parity"
+          command: wget https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
       - run:
-          name: "Cleanup ganache leftovers"
-          command: npm run clean:ganache
+          name: "Setup parity"
+          command: |
+            sudo mv parity /usr/bin
+            chmod 755 /usr/bin/parity
+            echo "password" > parityPassword
+            cp ./parity-genesis.template.json ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef01/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef02/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef03/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef04/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef05/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef06/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef07/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef08/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef09/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef10/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef11/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef12/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef13/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef14/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef15/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef16/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef17/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
       - run:
           name: "Running extension contracts unit tests"
           command: npm run test:contracts:extensions
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+      - <<: *step_save_cache
+      # Save test results
+      - store_test_results:
+          path: test-results.xml
+      - store_artifacts:
+          path: test-results.xml
+      - store_artifacts:
+          path: coverage-miner
+  unit-test-other:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: 19.03.13
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
       - run:
-          name: "Cleanup ganache leftovers"
-          command: npm run clean:ganache
+          name: "Download parity"
+          command: wget https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
+      - run:
+          name: "Setup parity"
+          command: |
+            sudo mv parity /usr/bin
+            chmod 755 /usr/bin/parity
+            echo "password" > parityPassword
+            cp ./parity-genesis.template.json ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef01/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef02/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef03/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef04/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef05/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef06/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef07/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef08/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef09/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef10/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef11/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef12/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef13/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef14/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef15/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef16/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef17/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
       - run:
           name: "Running upgrade tests"
           command: npm run test:contracts:upgrade:parity && npm run test:contracts:upgrade:ganache
@@ -382,7 +480,13 @@ workflows:
   version: 2
   commit:
     jobs:
-      - lint-and-unit-test:
+      - build-checks:
+          context: dockerhub-credentials
+      - unit-test-network:
+          context: dockerhub-credentials
+      - unit-test-extensions:
+          context: dockerhub-credentials
+      - unit-test-other:
           context: dockerhub-credentials
       - security-analysis:
           context: dockerhub-credentials
