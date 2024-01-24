@@ -1,8 +1,5 @@
-# Prerequisites
-Please answer the following questions for yourself before submitting an issue.
-
-- [ ] I checked to make sure that this issue has not already been filed
-- [ ] I've asked for help in the **Colony Network Discord** before filing this issue.
+# Prerequisite
+Please make sure that this issue has not already been filed.
 
 ## Summary
 <!--- Concise overview of the issue. -->
