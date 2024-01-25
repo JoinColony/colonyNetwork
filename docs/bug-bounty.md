@@ -123,7 +123,7 @@ The Bug Bounty Program is not open to any of the following persons (“Ineligibl
 
 We may modify the terms of this program or terminate this program at any time. We won’t apply any changes we make to these program terms retroactively.
 
-All conditions specified in the [general terms agreement of colony.io] apply to this program.
+All conditions specified in the general terms agreement of colony.io apply to this program.
 
 ### 1. Definitions
 
