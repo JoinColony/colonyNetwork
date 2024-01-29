@@ -123,7 +123,7 @@ The Bug Bounty Program is not open to any of the following persons (“Ineligibl
 
 We may modify the terms of this program or terminate this program at any time. We won’t apply any changes we make to these program terms retroactively.
 
-All conditions specified in the [general terms agreement of colony.io](https://xdai.colony.io/terms-and-services) apply to this program.
+All conditions specified in the general terms agreement of colony.io apply to this program.
 
 ### 1. Definitions
 
@@ -137,7 +137,7 @@ A disclosure of any software flaw or attack vector submitted to the bug bounty p
 
 ### 1.4 "Colony"
 
-This program is sponsored by Collectively Intelligent Ltd (3 Butler House, 49-51 Curtain Road, London, United Kingdom EC2A 3PT ("Colony"). Colony is responsible for any website hosting, marketing, bug report assessment, prize disbursement, and any other activities not listed here related to the Bug Bounty Program.
+This program is sponsored by Metacolony Inc. ("Colony"). Colony is responsible for any website hosting, marketing, bug report assessment, prize disbursement, and any other activities not listed here related to the Bug Bounty Program.
 
 ### 1.7 "Submitter", or "Participant"
 
