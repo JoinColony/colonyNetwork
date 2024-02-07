@@ -10,7 +10,7 @@ function provisionTokenContracts(config){
   output = execSync(provisionColonyToken);
   log(output.toString())
 
-  const provisionSafeContracts = `BUILD_DIR="build-coverage" bash ./scripts/provision-safe-contracts.sh`;
+  const provisionSafeContracts = `BUILD_DIR="build-coverage" npm run provision:safe:contracts`;
 
   log('Provisioning Safe contracts...')
   output = execSync(provisionSafeContracts);

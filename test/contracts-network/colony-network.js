@@ -37,10 +37,13 @@ const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const TokenLocking = artifacts.require("TokenLocking");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
+
+const TokenAuthority = process.env.SOLIDITY_COVERAGE
+  ? artifacts.require("TokenAuthority")
+  : artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
   const sig = await resolverFrom.stringToSig(functionSig);

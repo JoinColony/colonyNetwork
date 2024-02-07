@@ -58,6 +58,6 @@ module.exports = async function (deployer, network, accounts) {
     VotingReputationStaking,
     VotingReputationMisalignedRecovery,
   ]);
-  await addExtension(colonyNetwork, "Whitelist", "Whitelist", [Whitelist]);
-  await addExtension(colonyNetwork, "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
+  await addExtension(colonyNetwork, "extensions", "Whitelist", "Whitelist", [Whitelist]);
+  await addExtension(colonyNetwork, "extensions", "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
 };

@@ -645,7 +645,9 @@ contract("MetaTxToken", (accounts) => {
   });
 
   describe("when using the permit functionality", () => {
-    const PRIVATE_KEY0 = hre.config.networks.hardhat.accounts[0].privateKey;
+    const privateKey = process.env.SOLIDITY_COVERAGE
+      ? "0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae"
+      : hre.config.networks.hardhat.accounts[0].privateKey;
 
     it("permit should work", async () => {
       await metaTxToken.unlock();
@@ -653,7 +655,7 @@ contract("MetaTxToken", (accounts) => {
       let allowance = await metaTxToken.allowance(USER0, USER1);
       expect(allowance).to.eq.BN(0);
 
-      const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, USER1, 100, 1000000000000, metaTxToken.address);
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, USER1, 100, 1000000000000, metaTxToken.address);
 
       const tx = await metaTxToken.permit(USER0, USER1, 100, 1000000000000, v, r, s, { from: USER2 });
 
@@ -666,7 +668,7 @@ contract("MetaTxToken", (accounts) => {
     it("permit with deadline in the past doesn't work", async () => {
       await metaTxToken.unlock();
 
-      const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, USER1, 100, 1, metaTxToken.address);
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, USER1, 100, 1, metaTxToken.address);
 
       await checkErrorRevert(metaTxToken.permit(USER0, USER1, 100, 1, v, r, s, { from: USER2 }), "colony-token-expired-deadline");
 
@@ -680,7 +682,7 @@ contract("MetaTxToken", (accounts) => {
       let allowance = await metaTxToken.allowance(USER0, USER1);
       expect(allowance).to.eq.BN(0);
 
-      const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, USER1, 100, 1000000000000, metaTxToken.address);
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, USER1, 100, 1000000000000, metaTxToken.address);
 
       await metaTxToken.permit(USER0, USER1, 100, 1000000000000, v, r, s, { from: USER2 });
 
@@ -698,7 +700,7 @@ contract("MetaTxToken", (accounts) => {
       let allowance = await metaTxToken.allowance(USER0, USER1);
       expect(allowance).to.eq.BN(0);
 
-      const { r, s } = await getPermitParameters(USER0, PRIVATE_KEY0, USER1, 100, 1000000000000, metaTxToken.address);
+      const { r, s } = await getPermitParameters(USER0, privateKey, USER1, 100, 1000000000000, metaTxToken.address);
 
       const v = 100;
 

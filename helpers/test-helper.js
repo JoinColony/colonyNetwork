@@ -259,7 +259,20 @@ exports.getTokenArgs = function getTokenArgs() {
 };
 
 exports.currentBlockTime = async function currentBlockTime() {
-  return helpers.time.latest();
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    return helpers.time.latest();
+  }
+
+  const p = new Promise((resolve, reject) => {
+    web3.eth.getBlock("latest", (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res.timestamp);
+    });
+  });
+  return p;
 };
 
 exports.currentBlock = async function currentBlock() {
@@ -440,7 +453,15 @@ exports.forwardTime = async function forwardTime(seconds, test) {
 };
 
 exports.forwardTimeTo = async function forwardTimeTo(timestamp) {
-  return helpers.time.increaseTo(timestamp);
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    return helpers.time.increaseTo(timestamp);
+  }
+
+  const lastBlockTime = await exports.getBlockTime("latest");
+  const amountToForward = new BN(timestamp).sub(new BN(lastBlockTime));
+  // Forward that much
+  return exports.forwardTime(amountToForward.toNumber(), test);
 };
 
 exports.mineBlock = async function mineBlock() {
@@ -549,8 +570,46 @@ exports.startMining = async function startMining() {
 };
 
 exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp) {
-  await helpers.time.setNextBlockTimestamp(timestamp);
-  return f(...args);
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    await helpers.time.setNextBlockTimestamp(timestamp);
+    return f(...args);
+  }
+
+  await exports.stopMining();
+  let mined;
+  // Send the transaction to the RPC endpoint. This might be a truffle contract object, which doesn't
+  // return until the transaction has been mined... but we've stopped mining. So we can't await it
+  // now. But if we `mineBlock` straight away, the transaction might not have pecolated all the way through
+  // to the pending transaction pool, especially on CI.
+
+  // I have tried lots of better ways to solve this problem. The problem is, while mining is stopped, the
+  // 'pending' block isn't updated and, even when mining, in some cases it is interpreted to mean 'latest' in
+  // ganache cli. The sender's nonce isn't updated, the number of pending transactions is not updated... I'm at a
+  // loss for how to do this better.
+  // This works for ethers and truffle
+  const promise = f(...args);
+  // Chaining these directly on the above declaration doesn't work in the case of being passed an ethers function
+  // (They don't seem to return the original promise, somehow?)
+  promise
+    .then(() => {
+      mined = true;
+    })
+    .catch(() => {
+      mined = true;
+    });
+  while (!mined) {
+    // eslint-disable-next-line no-await-in-loop
+    await exports.mineBlock(timestamp);
+  }
+  // Turn auto-mining back on
+  await exports.startMining();
+
+  // Tests are written assuming all future blocks will be from this time, which used to be
+  // how ganache operated. It's not any more, so explicitly forward time.
+  await exports.forwardTimeTo(timestamp, test);
+
+  return promise;
 };
 
 exports.bnSqrt = function bnSqrt(bn, isGreater) {

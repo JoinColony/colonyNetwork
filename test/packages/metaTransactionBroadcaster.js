@@ -46,6 +46,8 @@ contract("Metatransaction broadcaster", (accounts) => {
   let broadcaster;
   let metaTxToken;
 
+  let privateKey;
+
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
@@ -55,11 +57,11 @@ contract("Metatransaction broadcaster", (accounts) => {
     metaTxToken = await MetaTxToken.new("Test", "TEST", 18);
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
-    broadcaster = new MetatransactionBroadcaster({
-      privateKey: hre.config.networks.hardhat.accounts[0].privateKey,
-      loader,
-      provider,
-    });
+    privateKey = process.env.SOLIDITY_COVERAGE
+      ? "0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae"
+      : hre.config.networks.hardhat.accounts[0].privateKey;
+
+    broadcaster = new MetatransactionBroadcaster({ privateKey, loader, provider });
     await broadcaster.initialise(colonyNetwork.address);
   });
 
@@ -202,8 +204,6 @@ contract("Metatransaction broadcaster", (accounts) => {
   });
 
   describe("should correctly respond to POSTs to the /broadcast endpoint", function () {
-    const PRIVATE_KEY0 = hre.config.networks.hardhat.accounts[0].privateKey;
-
     it("a valid transaction is broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
@@ -441,7 +441,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
       const deadline = (await currentBlockTime()) + 3600;
-      const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, colony.address, 1, deadline, metaTxToken.address);
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, colony.address, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 
@@ -482,7 +482,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
       const deadline = (await currentBlockTime()) + 3600;
-      const { r, s, v } = await getPermitParameters(USER0, PRIVATE_KEY0, USER1, 1, deadline, metaTxToken.address);
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, USER1, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 

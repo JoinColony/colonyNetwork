@@ -11,13 +11,16 @@ const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const BasicMetaTransaction = artifacts.require("BasicMetaTransaction");
 const MultiChain = artifacts.require("MultiChain");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+
+const TokenAuthority = process.env.SOLIDITY_COVERAGE
+  ? artifacts.require("TokenAuthority")
+  : artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 exports.makeExpenditure = async function makeExpenditure({ colonyNetwork, colony, domainId = 1, skillId, manager, evaluator, worker }) {
   if (colonyNetwork === undefined) {
