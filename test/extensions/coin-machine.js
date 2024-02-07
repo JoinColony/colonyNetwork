@@ -27,9 +27,10 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const CoinMachine = artifacts.require("CoinMachine");
 const Whitelist = artifacts.require("Whitelist");
+
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const COIN_MACHINE = soliditySha3("CoinMachine");
 

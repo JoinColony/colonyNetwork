@@ -27,10 +27,11 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const ToggleableToken = artifacts.require("ToggleableToken");
 const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
+
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
