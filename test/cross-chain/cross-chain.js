@@ -101,7 +101,7 @@ contract("Cross-chain", (accounts) => {
       addSkillFromBridgeTxDataToBeSentToAMB.slice(0, 266), // skill before
       `0x${addSkillFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // skill after
       "0x", // root hash before
-      "0x" // root hash after
+      "0x", // root hash after
     );
 
     await tx.wait();
@@ -130,7 +130,7 @@ contract("Cross-chain", (accounts) => {
       `0x`, // skill before
       "0x", // skill after
       setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(0, 266), // root hash before
-      `0x${setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(-56)}` // root hash after
+      `0x${setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // root hash after
     );
     await tx.wait();
   }
@@ -283,9 +283,9 @@ contract("Cross-chain", (accounts) => {
       expect(ethers.BigNumber.from(bridgeData.chainId).toHexString()).to.equal(ethers.BigNumber.from(foreignChainId).toHexString());
       expect(bridgeData.setReputationRootHashBefore.toLowerCase()).to.equal(
         `0xdc8601b3000000000000000000000000${foreignColonyNetwork.address.slice(
-          2
+          2,
           // eslint-disable-next-line max-len
-        )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000064`.toLowerCase()
+        )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000064`.toLowerCase(),
       );
       expect(bridgeData.setReputationRootHashAfter).to.equal(`0x00000000000000000000000000000000000000000000000000000000`);
     });
@@ -311,7 +311,7 @@ contract("Cross-chain", (accounts) => {
         "0x00",
         "0x00",
         "0x00",
-        { gasLimit: 1000000 }
+        { gasLimit: 1000000 },
       );
       await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
     });
@@ -333,7 +333,7 @@ contract("Cross-chain", (accounts) => {
         "0x00",
         "0x00",
         "0x00",
-        { gasLimit: 1000000 }
+        { gasLimit: 1000000 },
       );
       await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
 
@@ -343,7 +343,7 @@ contract("Cross-chain", (accounts) => {
         UINT256_MAX_ETHERS,
         accounts[2],
         1,
-        ethers.utils.hexZeroPad(ethers.BigNumber.from(ethers.BigNumber.from(2).pow(ROOT_ROLE)).toHexString(), 32)
+        ethers.utils.hexZeroPad(ethers.BigNumber.from(ethers.BigNumber.from(2).pow(ROOT_ROLE)).toHexString(), 32),
       );
       await tx.wait();
 
@@ -371,7 +371,7 @@ contract("Cross-chain", (accounts) => {
         "0x00",
         "0x00",
         "0x00",
-        { gasLimit: 1000000 }
+        { gasLimit: 1000000 },
       );
       await checkErrorRevertEthers(tx.wait(), "colony-network-can-only-set-mining-chain-bridge");
     });
@@ -391,7 +391,7 @@ contract("Cross-chain", (accounts) => {
         "0x00",
         {
           gasLimit: 1000000,
-        }
+        },
       );
       await checkErrorRevertEthers(tx.wait(), "colony-network-chainid-too-large");
     });
@@ -409,10 +409,10 @@ contract("Cross-chain", (accounts) => {
         `0x`, // skill before
         "0x", // skill after
         `0xdc8601b3000000000000000000000000${foreignColonyNetwork.address.slice(
-          2
+          2,
           // eslint-disable-next-line max-len
         )}000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000f42400000000000000000000000000000000000000000000000000000000000000044`,
-        "0x00000000000000000000000000000000000000000000000000000000" // root hash after
+        "0x00000000000000000000000000000000000000000000000000000000", // root hash after
       );
       await tx.wait();
 
@@ -1149,7 +1149,7 @@ contract("Cross-chain", (accounts) => {
         1000000,
         ethers.utils.hexZeroPad("0x01", 32),
         homeColonyNetwork.address,
-        { gasLimit: 1000000 }
+        { gasLimit: 1000000 },
       );
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
     });
@@ -1159,7 +1159,7 @@ contract("Cross-chain", (accounts) => {
       const tx = await homeBridge.requireToPassMessage(
         foreignColonyNetwork.address,
         foreignColonyNetwork.interface.encodeFunctionData("setReputationRootHashFromBridge", [ethers.utils.hexZeroPad("0xdeadbeef", 32), 0, 1]),
-        1000000
+        1000000,
       );
       await tx.wait();
       const bridgingTx = await p;
@@ -1249,7 +1249,7 @@ contract("Cross-chain", (accounts) => {
         1000000,
         ethers.utils.hexZeroPad("0x01", 32),
         foreignColonyNetwork.address,
-        { gasLimit: 1000000 }
+        { gasLimit: 1000000 },
       );
       await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
 
@@ -1263,7 +1263,7 @@ contract("Cross-chain", (accounts) => {
       const tx = await foreignBridge.requireToPassMessage(
         homeColonyNetwork.address,
         homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [1, 2]),
-        1000000
+        1000000,
       );
       await tx.wait();
       const bridgingTx = await p;
@@ -1328,7 +1328,7 @@ contract("Cross-chain", (accounts) => {
       const tx = await foreignBridge.requireToPassMessage(
         homeColonyNetwork.address,
         homeColonyNetwork.interface.encodeFunctionData("addReputationUpdateLogFromBridge", [ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0]),
-        1000000
+        1000000,
       );
       await tx.wait();
       const bridgingTx = await p;

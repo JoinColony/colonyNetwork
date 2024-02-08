@@ -622,7 +622,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
           _miningSkillId, //This should be the special 'mining' skill.
           _metaColonyAddress, // They earn this reputation in the meta colony.
           4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
-          i*4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
+          i * 4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
         )
       );
     }

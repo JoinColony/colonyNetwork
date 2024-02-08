@@ -98,4 +98,5 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     require(keyUserAddress == _user, "colony-extension-invalid-user-address");
 
     return reputationValue;
-  }}
+  }
+}

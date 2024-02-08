@@ -28,7 +28,6 @@ import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-
 contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
@@ -119,12 +118,12 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
 
   // A mapping that stores the latest reputation update received from a colony on a particular chain
   // networkId -> colonyAddress -> updateCount
-  mapping(uint256 => mapping( address => uint256)) reputationUpdateCount; // Storage slot 47
+  mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 47
 
   // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
   // received out of order, or because the skill in question hasn't been bridged yet.
   // networkId -> colonyAddress -> updateCount -> update
-  mapping(uint256 => mapping( address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
+  mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
 
   mapping(uint256 => uint256) bridgeCurrentRootHashNonces;
 
@@ -154,20 +153,25 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
 
   modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
-    require(isMiningChain() || toChainId(skillId) == getChainId() , "colony-invalid-skill-id");
+    require(isMiningChain() || toChainId(skillId) == getChainId(), "colony-invalid-skill-id");
     _;
   }
 
-  modifier checkBridgedSender(){
+  modifier checkBridgedSender() {
     // Block scoping to avoid stack too deep errors
     {
       address bridgeAddress = msgSender();
       Bridge storage bridge = bridgeData[bridgeAddress];
       require(bridge.chainId != 0, "colony-network-not-known-bridge");
-      (bool success, bytes memory data) = bridgeAddress.staticcall(abi.encodeWithSelector(bridge.msgSenderSig));
+      (bool success, bytes memory data) = bridgeAddress.staticcall(
+        abi.encodeWithSelector(bridge.msgSenderSig)
+      );
       require(success, "colony-network-bridge-msg-sender-failed");
-      (address returnedAddr) = abi.decode(data, (address));
-      require(returnedAddr == bridge.correspondingNetwork, "colony-network-bridged-tx-only-from-network");
+      address returnedAddr = abi.decode(data, (address));
+      require(
+        returnedAddr == bridge.correspondingNetwork,
+        "colony-network-bridged-tx-only-from-network"
+      );
     }
     _;
   }

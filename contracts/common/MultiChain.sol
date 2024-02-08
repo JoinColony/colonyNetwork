@@ -64,5 +64,4 @@ contract MultiChain {
     require(!isMiningChain(), "colony-only-valid-not-on-mining-chain");
     _;
   }
-
 }
