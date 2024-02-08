@@ -68,7 +68,6 @@ const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TestExtension0 = artifacts.require("TestExtension0");
 const Resolver = artifacts.require("Resolver");
-const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
 contract.skip("ColonyTask", (accounts) => {
   const MANAGER = accounts[0];
@@ -2100,17 +2099,6 @@ contract.skip("ColonyTask", (accounts) => {
 
       const task = await colony.getTask(taskId);
       expect(task.domainId).to.eq.BN(2);
-    });
-
-    it("should allow a task with 35 skills to finalise", async () => {
-      // 60 was an overestimate, it seems - I can't go much higher than this.
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
-      for (let i = 0; i < 35; i += 1) {
-        await taskSkillEditingColony.addTaskSkill(taskId, GLOBAL_SKILL_ID);
-      }
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized", [MANAGER, taskId]);
     });
 
     it("should NOT be able to set a nonexistent domain on task", async () => {

@@ -95,16 +95,13 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     emit ColonyVersionAdded(_version, _resolver);
   }
 
-  function initialise(address _resolver, uint256 _version) public
-  stoppable
-  auth
-  {
+  function initialise(address _resolver, uint256 _version) public stoppable auth {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
     require(_version > 0, "colony-network-invalid-version");
     colonyVersionResolver[_version] = _resolver;
     currentColonyVersion = _version;
 
-    if (!isMiningChain()){
+    if (!isMiningChain()) {
       skillCount = toRootSkillId(getChainId());
     }
 
@@ -115,7 +112,8 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     return colonies[_id];
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view { // solhint-disable-line no-empty-blocks
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
+    // solhint-disable-line no-empty-blocks
   }
 
   function getFeeInverse() public view returns (uint256 _feeInverse) {

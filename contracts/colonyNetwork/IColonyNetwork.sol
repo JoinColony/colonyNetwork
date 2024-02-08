@@ -549,7 +549,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param newHash The new root hash
   /// @param newNLeaves The new nLeaves in the root hash
   /// @param nonce The nonce to ensure these txs can't be replayed
-  function setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves, uint256 nonce) external;
+  function setReputationRootHashFromBridge(
+    bytes32 newHash,
+    uint256 newNLeaves,
+    uint256 nonce
+  ) external;
 
   /// @notice Initiate a cross-chain update of the current reputation state
   /// @param bridgeAddress The bridge we're going over
@@ -574,7 +578,10 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _chainId The chainId we're bridging from
   /// @param _skillCount The skill count
   /// @return parentId The parent id of the skill being added
-  function getPendingSkillAddition(uint256 _chainId, uint256 _skillCount) external view returns (uint256 parentId);
+  function getPendingSkillAddition(
+    uint256 _chainId,
+    uint256 _skillCount
+  ) external view returns (uint256 parentId);
 
   /// @notice Get the (currently bridged) skill count of another chain
   /// @param _chainId The chainid of foreign chain
@@ -588,7 +595,13 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
   /// @param _skillId The skill for the reputation update
   /// @param _updateNumber The counter used for ordering bridged updates
-  function addReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber) external;
+  function addReputationUpdateLogFromBridge(
+    address _colony,
+    address _user,
+    int _amount,
+    uint _skillId,
+    uint256 _updateNumber
+  ) external;
 
   /// @notice Get the (currently bridged) reputation update count of a chain
   /// @param _chainId The chainid of the chain
@@ -597,7 +610,10 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @dev  On the non-mining chain, this tracks the number of reputation updates that have either been bridged, or attempted to
   /// be bridged (and failed, and are now pending bridging). On the mining chain, it tracks how many have been successfully bridged
   /// and added to the log.
-  function getBridgedReputationUpdateCount(uint256 _chainId, address _colony) external view returns (uint256 bridgedReputationCount);
+  function getBridgedReputationUpdateCount(
+    uint256 _chainId,
+    address _colony
+  ) external view returns (uint256 bridgedReputationCount);
 
   /// @notice Try to bridge a reputation update that (previously) failed
   /// @param _colony The colony being queried
@@ -610,11 +626,14 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _colony The colony being queried
   /// @param _updateNumber the updatenumber being queries
   /// @return update The update stored for that chain/colony/updateNumber
-  function getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber) external view returns (PendingReputationUpdate memory update);
+  function getPendingReputationUpdate(
+    uint256 _chainId,
+    address _colony,
+    uint256 _updateNumber
+  ) external view returns (PendingReputationUpdate memory update);
 
   /// @notice Try to emit the next reputation update that was bridged but previously failed, if any
   /// @param _chainId The chainId the update was bridged from
   /// @param _colony The colony being queried
   function addPendingReputationUpdate(uint256 _chainId, address _colony) external;
-
 }

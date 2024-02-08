@@ -25,11 +25,10 @@ import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
-
 contract ColonyRewards is
   ColonyStorage,
   PatriciaTreeProofs // ignore-swc-123
-  {
+{
   function lockToken() public stoppable onlyOwnExtension returns (uint256) {
     uint256 lockId = ITokenLocking(tokenLockingAddress).lockToken(token);
     tokenLocks[msgSender()][lockId] = true;

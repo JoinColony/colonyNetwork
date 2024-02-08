@@ -949,4 +949,5 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       mstore(add(reputationKey, 52), skill)
     }
     return reputationKey;
-  }}
+  }
+}

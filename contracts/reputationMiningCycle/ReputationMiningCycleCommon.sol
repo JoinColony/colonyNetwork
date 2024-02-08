@@ -225,7 +225,7 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
   function getChainId() internal view returns (uint256) {
     uint256 id;
     assembly {
-        id := chainid()
+      id := chainid()
     }
     return id;
   }

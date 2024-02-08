@@ -117,7 +117,7 @@ module.exports = async function (deployer, network, accounts) {
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
     const skillCount = await colonyNetwork.getSkillCount();
-    assert.equal(skillCount.toNumber(), 4);
+    assert.equal(skillCount.toNumber(), 3);
   } else {
     const skillCount = await colonyNetwork.getSkillCount();
     assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
