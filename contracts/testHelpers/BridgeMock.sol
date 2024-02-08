@@ -23,7 +23,6 @@ contract BridgeMock {
   bool bridgeEnabled = true;
   address public messageSender = address(0);
 
-
   function requireToPassMessage(address _target, bytes memory _data, uint256 _gasLimit) public {
     require(bridgeEnabled, "bridge-not-working");
     emit UserRequestForSignature(
@@ -41,22 +40,22 @@ contract BridgeMock {
     bytes32 _messageId,
     address _sender
   ) public {
-      require(messageSender == address(0), "bridge-no-nested-calls");
-      messageSender = _sender;
+    require(messageSender == address(0), "bridge-no-nested-calls");
+    messageSender = _sender;
 
-      // call contract at address a with input mem[in…(in+insize))
-      //   providing g gas and v wei and output area mem[out…(out+outsize))
-      //   returning 0 on error (eg. out of gas) and 1 on success
+    // call contract at address a with input mem[in…(in+insize))
+    //   providing g gas and v wei and output area mem[out…(out+outsize))
+    //   returning 0 on error (eg. out of gas) and 1 on success
 
-      (bool success, bytes memory returndata) = address(_target).call{gas:_gasLimit}(_data);
+    (bool success, bytes memory returndata) = address(_target).call{ gas: _gasLimit }(_data);
 
-      // call failed
-      if (!success) {
-        if (returndata.length == 0) revert();
-        assembly {
-          revert(add(32, returndata), mload(returndata))
-        }
+    // call failed
+    if (!success) {
+      if (returndata.length == 0) revert();
+      assembly {
+        revert(add(32, returndata), mload(returndata))
       }
+    }
 
     messageSender = address(0);
 
@@ -66,5 +65,4 @@ contract BridgeMock {
   function setBridgeEnabled(bool val) public {
     bridgeEnabled = val;
   }
-
 }

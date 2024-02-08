@@ -230,7 +230,7 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
           gas: ethers.utils.hexValue(tx.gasLimit),
           value: ethers.utils.hexValue(parseInt(tx.value, 10)),
         },
-        receipt.blockNumber
+        receipt.blockNumber,
       );
       reason = web3.eth.abi.decodeParameter("string", callResult.slice(10));
     } catch (err2) {

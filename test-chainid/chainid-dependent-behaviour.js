@@ -178,14 +178,6 @@ contract("Contract Storage", (accounts) => {
       }
     });
 
-    it("Global skills can only be created on the mining chain", async () => {
-      if (await isXdai()) {
-        await metaColony.addGlobalSkill();
-      } else {
-        await checkErrorRevert(metaColony.addGlobalSkill(), "colony-only-valid-on-mining-chain");
-      }
-    });
-
     it("Reputation mining cannot be initialised on non-mining chain", async () => {
       if (!(await isXdai())) {
         await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-only-valid-on-mining-chain");
