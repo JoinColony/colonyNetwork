@@ -418,7 +418,13 @@ contract("Meta Colony", (accounts) => {
     });
   });
 
+<<<<<<< HEAD
   describe.skip("when interacting with (now removed) global skills", () => {
+||||||| parent of 14e8b7ce (Make upgrade tests work with next version)
+  describe("when interacting with (now removed) global skills", () => {
+=======
+  describe.only("when interacting with (now removed) global skills", () => {
+>>>>>>> 14e8b7ce (Make upgrade tests work with next version)
     let globalSkillId;
     beforeEach(async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
