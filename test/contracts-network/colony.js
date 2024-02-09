@@ -4,8 +4,16 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, HASHZERO } = require("../../helpers/constants");
-const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
+const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, HASHZERO, CURR_VERSION } = require("../../helpers/constants");
+const {
+  getTokenArgs,
+  web3GetBalance,
+  checkErrorRevert,
+  expectNoEvent,
+  expectAllEvents,
+  expectEvent,
+  upgradeColonyTo,
+} = require("../../helpers/test-helper");
 const {
   setupRandomColony,
   getMetaTransactionParameters,
@@ -13,7 +21,7 @@ const {
   fundColonyWithTokens,
   setupColony,
 } = require("../../helpers/test-data-generator");
-const { deployColonyVersionGLWSS4 } = require("../../scripts/deployOldUpgradeableVersion");
+const { deployColonyVersionGLWSS4, deployColonyVersionHMWSS } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -448,6 +456,7 @@ contract("Colony", (accounts) => {
     let oldColony;
     before(async () => {
       ({ OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork));
+      await deployColonyVersionHMWSS(colonyNetwork);
     });
 
     beforeEach(async () => {
@@ -464,7 +473,7 @@ contract("Colony", (accounts) => {
 
     it("should be able to query for a task", async () => {
       await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, localSkillId, 0, { from: USER0 });
-      await colony.upgrade(14);
+      await upgradeColonyTo(oldColony, CURR_VERSION);
       const taskId = await colony.getTaskCount();
       const task = await colony.getTask(taskId);
 
@@ -485,7 +494,7 @@ contract("Colony", (accounts) => {
 
     it("should be able to query for a payment", async () => {
       await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, localSkillId, { from: USER0 });
-      await colony.upgrade(14);
+      await upgradeColonyTo(oldColony, CURR_VERSION);
 
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
@@ -505,7 +514,7 @@ contract("Colony", (accounts) => {
 
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
-      await colony.upgrade(14);
+      await upgradeColonyTo(oldColony, CURR_VERSION);
       // Move funds back
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });
@@ -521,7 +530,7 @@ contract("Colony", (accounts) => {
 
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
-      await colony.upgrade(14);
+      await upgradeColonyTo(oldColony, CURR_VERSION);
       // Move funds back
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });

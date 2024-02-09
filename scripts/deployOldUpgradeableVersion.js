@@ -8,7 +8,7 @@ const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
 const contract = require("@truffle/contract");
 const { getColonyEditable, getColonyNetworkEditable, web3GetCode } = require("../helpers/test-helper");
-const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE } = require("../helpers/constants");
+const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE, ADDRESS_ZERO } = require("../helpers/constants");
 
 const colonyDeployed = {};
 const colonyNetworkDeployed = {};
@@ -59,6 +59,19 @@ module.exports.deployColonyVersionGLWSS4 = (colonyNetwork) => {
   );
 };
 
+module.exports.deployColonyVersionHMWSS = (colonyNetwork) => {
+  return module.exports.deployOldColonyVersion(
+    "Colony",
+    "IMetaColony",
+    [
+      // eslint-disable-next-line max-len
+      "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyRewards,ColonyRoles,ContractRecovery,ColonyArbitraryTransaction",
+    ],
+    "hmwss",
+    colonyNetwork,
+  );
+};
+
 module.exports.deployColonyNetworkVersionGLWSS4 = () => {
   return module.exports.deployOldColonyNetworkVersion(
     "",
@@ -66,6 +79,22 @@ module.exports.deployColonyNetworkVersionGLWSS4 = () => {
     ["ColonyNetwork,ColonyNetworkAuction,ColonyNetworkDeployer,ColonyNetworkENS,ColonyNetworkExtensions,ColonyNetworkMining,ContractRecovery"],
     "glwss4",
   );
+};
+
+const registerOldColonyVersion = async (colonyVersionResolverAddress, colonyNetwork) => {
+  const colonyVersionResolver = await artifacts.require("Resolver").at(colonyVersionResolverAddress);
+  const versionImplementationAddress = await colonyVersionResolver.lookup(web3.utils.soliditySha3("version()").slice(0, 10));
+  const versionImplementation = await artifacts.require("IMetaColony").at(versionImplementationAddress);
+  const version = await versionImplementation.version();
+
+  const registeredResolver = await colonyNetwork.getColonyVersionResolver(version);
+  if (registeredResolver !== ADDRESS_ZERO && registeredResolver !== colonyVersionResolverAddress) {
+    throw new Error(`Version ${version} already registered at unexpected address`);
+  } else if (registeredResolver === ADDRESS_ZERO) {
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
+    await metaColony.addNetworkColonyVersion(version, colonyVersionResolverAddress);
+  }
 };
 
 module.exports.deployOldColonyVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {
@@ -80,6 +109,8 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     const { resolverAddress } = colonyDeployed[interfaceName][versionTag];
     const code = await web3GetCode(resolverAddress);
     if (code !== "0x") {
+      // Must also check it's registered
+      await registerOldColonyVersion(resolverAddress, colonyNetwork);
       return colonyDeployed[interfaceName][versionTag];
     }
   }
@@ -93,14 +124,7 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
       colonyNetwork,
     );
 
-    const colonyVersionResolver = await artifacts.require("Resolver").at(colonyVersionResolverAddress);
-    const versionImplementationAddress = await colonyVersionResolver.lookup(web3.utils.soliditySha3("version()").slice(0, 10));
-    const versionImplementation = await artifacts.require("IMetaColony").at(versionImplementationAddress);
-    const version = await versionImplementation.version();
-
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
-    await metaColony.addNetworkColonyVersion(version, colonyVersionResolverAddress);
+    await registerOldColonyVersion(colonyVersionResolverAddress, colonyNetwork);
 
     const interfaceArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/${interfaceName}.json`);
     const OldInterface = contract(JSON.parse(interfaceArtifact));
