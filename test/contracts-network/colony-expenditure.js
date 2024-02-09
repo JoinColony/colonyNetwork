@@ -5,8 +5,18 @@ const { BN } = require("bn.js");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, IPFS_HASH, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
-const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
+const {
+  UINT256_MAX,
+  INT128_MAX,
+  WAD,
+  SECONDS_PER_DAY,
+  MAX_PAYOUT,
+  IPFS_HASH,
+  ADDRESS_ZERO,
+  HASHZERO,
+  CURR_VERSION,
+} = require("../../helpers/constants");
+const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32, upgradeColonyTo } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const {
@@ -14,6 +24,7 @@ const {
   downgradeColony,
   deployColonyNetworkVersionGLWSS4,
   downgradeColonyNetwork,
+  deployColonyVersionHMWSS,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
@@ -301,6 +312,7 @@ contract("Colony Expenditure", (accounts) => {
 
     it.skip("should not allow owners to set a (now defunct) global skill, either deprecated or undeprecated", async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await deployColonyVersionHMWSS(colonyNetwork);
       await downgradeColony(colonyNetwork, metaColony, "glwss4");
 
       // Make the colonyNetwork the old version
@@ -321,7 +333,7 @@ contract("Colony Expenditure", (accounts) => {
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14);
+      await upgradeColonyTo(metaColony, CURR_VERSION);
 
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId, { from: ADMIN }), "colony-not-valid-local-skill");
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId2, { from: ADMIN }), "colony-not-valid-local-skill");

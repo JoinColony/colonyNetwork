@@ -4,14 +4,15 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 
 const { soliditySha3 } = require("web3-utils");
-const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
-const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit, bn2bytes32 } = require("../../helpers/test-helper");
+const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO, CURR_VERSION } = require("../../helpers/constants");
+const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit, bn2bytes32, upgradeColonyTo } = require("../../helpers/test-helper");
 const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } = require("../../helpers/test-data-generator");
 const {
   downgradeColony,
   downgradeColonyNetwork,
   deployColonyVersionGLWSS4,
   deployColonyNetworkVersionGLWSS4,
+  deployColonyVersionHMWSS,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 const IMetaColony = artifacts.require("IMetaColony");
@@ -421,6 +422,7 @@ contract("Meta Colony", (accounts) => {
     let globalSkillId;
     beforeEach(async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await deployColonyVersionHMWSS(colonyNetwork);
       await downgradeColony(colonyNetwork, metaColony, "glwss4");
 
       // Make the colonyNetwork the old version
@@ -438,7 +440,7 @@ contract("Meta Colony", (accounts) => {
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14);
+      await upgradeColonyTo(metaColony, CURR_VERSION);
     });
 
     describe("when getting a skill", () => {

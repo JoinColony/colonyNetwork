@@ -14,9 +14,10 @@ const {
   ADMINISTRATION_ROLE,
   ADDRESS_ZERO,
   SECONDS_PER_DAY,
+  CURR_VERSION,
 } = require("../../helpers/constants");
 
-const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } = require("../../helpers/test-helper");
+const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent, upgradeColonyTo } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -34,6 +35,7 @@ const {
   downgradeColonyNetwork,
   deployColonyVersionGLWSS4,
   deployColonyNetworkVersionGLWSS4,
+  deployColonyVersionHMWSS,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 contract("One transaction payments", (accounts) => {
@@ -260,6 +262,7 @@ contract("One transaction payments", (accounts) => {
 
     it.skip("should not allow an admin to specify a global skill (removed functionality), either deprecated or undeprecated", async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await deployColonyVersionHMWSS(colonyNetwork);
       await downgradeColony(colonyNetwork, metaColony, "glwss4");
 
       // Make the colonyNetwork the old version
@@ -280,7 +283,7 @@ contract("One transaction payments", (accounts) => {
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14);
+      await upgradeColonyTo(metaColony, CURR_VERSION);
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, globalSkillId),
