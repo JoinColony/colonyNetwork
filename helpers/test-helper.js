@@ -1190,6 +1190,22 @@ exports.sleep = function sleep(ms) {
   });
 };
 
+exports.upgradeColonyTo = async function (colony, _version) {
+  let version = _version;
+  if (!BN.isBN(_version)) {
+    try {
+      version = new BN(_version);
+    } catch (err) {
+      console.log("Unable to convert passed version to BN");
+    }
+  }
+  let currentVersion = await colony.version();
+  while (currentVersion.ltn(version)) {
+    await colony.upgrade(currentVersion.addn(1));
+    currentVersion = await colony.version();
+  }
+};
+
 class TestAdapter {
   constructor() {
     this.outputs = [];

@@ -14,9 +14,10 @@ const {
   ADMINISTRATION_ROLE,
   ADDRESS_ZERO,
   SECONDS_PER_DAY,
+  CURR_VERSION,
 } = require("../../helpers/constants");
 
-const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent } = require("../../helpers/test-helper");
+const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent, upgradeColonyTo } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -282,8 +283,7 @@ contract("One transaction payments", (accounts) => {
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14);
-      await metaColony.upgrade(15);
+      await upgradeColonyTo(metaColony, CURR_VERSION);
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, globalSkillId),
