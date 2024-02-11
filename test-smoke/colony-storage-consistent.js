@@ -30,14 +30,13 @@ contract("Contract Storage", (accounts) => {
   let otherToken;
   let colonyNetwork;
   let metaColony;
-  let domain1;
   let tokenLockingAddress;
 
   before(async () => {
     // We use our own providers for these test(s) so we can really get in to it...
-
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
@@ -45,7 +44,6 @@ contract("Contract Storage", (accounts) => {
     await token.unlock();
 
     colony = await setupColony(colonyNetwork, token.address);
-
     await colony.addLocalSkill();
     localSkillId = await colonyNetwork.getSkillCount();
 
@@ -57,7 +55,6 @@ contract("Contract Storage", (accounts) => {
     await colony.setAdministrationRole(1, UINT256_MAX, ADMIN, 1, true);
     await colony.setArbitrationRole(1, UINT256_MAX, ARBITRATOR, 1, true);
     await fundColonyWithTokens(colony, token, UINT256_MAX);
-    domain1 = await colony.getDomain(1);
 
     otherToken = await Token.new("otherName", "otherSymbol", 18);
     await otherToken.unlock();
@@ -95,7 +92,9 @@ contract("Contract Storage", (accounts) => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
       await colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN });
 
+      const domain1 = await colony.getDomain(1);
       const expenditure = await colony.getExpenditure(expenditureId);
+
       await colony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, domain1.fundingPotId, expenditure.fundingPotId, WAD, token.address);
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
@@ -155,11 +154,11 @@ contract("Contract Storage", (accounts) => {
       console.log("miningCycleStateHash:", miningCycleStateHash);
       console.log("tokenLockingStateHash:", tokenLockingStateHash);
 
-      expect(colonyNetworkStateHash).to.equal("0xe2a19d28c1a68778bfe793623d1b9f71f43db3e98b46fef29f3ea1040968f26c");
-      expect(colonyStateHash).to.equal("0x58b09676f8fb26ec467b5bb8ea3392b6da0db191acc5ee2f400a0940ee79f4ce");
-      expect(metaColonyStateHash).to.equal("0xa09c107f9a66e313434ba2d6633e09c15fcb365db7678cf4dc4a19ca481a3954");
-      expect(miningCycleStateHash).to.equal("0xfd18a690f69132bd95d32bf3a91cb2b60d0da16993cd60087bf8ccc1fa75b680");
-      expect(tokenLockingStateHash).to.equal("0x0a66e763122dc805a1fcd36aa1f0cc40228ffa53ed050fec4ac78c70cad4d31a");
+      expect(colonyNetworkStateHash).to.equal("0xa62f83158fc871cc2d3921b6799c3da1083dec8165f0139c19b3fdd0290f45c3");
+      expect(colonyStateHash).to.equal("0xbc7f1688e7dc803ea410d3b3911ef0e41eabd747a006d0cd123225598f29ed20");
+      expect(metaColonyStateHash).to.equal("0x6326681b874f53dd9b665ebf4df264cd970d18b945c6ede9a5aff06f586f474c");
+      expect(miningCycleStateHash).to.equal("0x9a64ffc9de314c2a02283c132dc75bdc519154b3d1115e883ee8fc5d7e45fb98");
+      expect(tokenLockingStateHash).to.equal("0x28f542f9f8b062291896243afad7343f4571801e02ca4f07ad34d29eec879993");
     });
   });
 });

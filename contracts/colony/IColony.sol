@@ -410,6 +410,17 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
   function getDomainCount() external view returns (uint256 count);
 
+  /// @notice Evaluates a "domain proof" which checks that childDomainId is part of the subtree starting at permissionDomainId
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_childDomainId` is relative to `_permissionDomainId`
+  /// @param _childDomainId The domainId which some action is taking place in that requires the permission that is held in _permissionDomainId
+  /// @return valid True if the proof is valid, false otherwise.
+  function validateDomainInheritance(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _childDomainId
+  ) external view returns (bool valid);
+
   /// @notice Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
   /// @param key The key of the element the proof is for.
   /// @param value The value of the element that the proof is for.
