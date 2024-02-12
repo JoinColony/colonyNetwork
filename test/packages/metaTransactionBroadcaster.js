@@ -57,10 +57,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     metaTxToken = await MetaTxToken.new("Test", "TEST", 18);
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
-    privateKey = process.env.SOLIDITY_COVERAGE
-      ? "0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae"
-      : hre.config.networks.hardhat.accounts[0].privateKey;
-
+    privateKey = hre.config.networks.hardhat.accounts[0].privateKey;
     broadcaster = new MetatransactionBroadcaster({ privateKey, loader, provider });
     await broadcaster.initialise(colonyNetwork.address);
   });

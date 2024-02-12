@@ -30,9 +30,7 @@ const Token = artifacts.require("Token");
 const CoinMachine = artifacts.require("CoinMachine");
 const Whitelist = artifacts.require("Whitelist");
 
-const TokenAuthority = process.env.SOLIDITY_COVERAGE
-  ? artifacts.require("TokenAuthority")
-  : artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const COIN_MACHINE = soliditySha3("CoinMachine");
 

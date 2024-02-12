@@ -24,9 +24,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
 
-const TokenAuthority = process.env.SOLIDITY_COVERAGE
-  ? artifacts.require("TokenAuthority")
-  : artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 contract("Colony", (accounts) => {
   let colony;

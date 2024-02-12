@@ -16,9 +16,7 @@ const Token = artifacts.require("Token");
 const ContractEditing = artifacts.require("ContractEditing");
 const Resolver = artifacts.require("Resolver");
 
-const TokenAuthority = process.env.SOLIDITY_COVERAGE
-  ? artifacts.require("TokenAuthority")
-  : artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 contract("Contract Storage", (accounts) => {
   const SLOT0 = 0;

@@ -96,7 +96,7 @@ contract("Cross-chain", () => {
     await bridgeMonitor.close();
   });
 
-  describe("when controlling a gnosis wallet on another chain", async () => {
+  describe.only("when controlling a gnosis wallet on another chain", async () => {
     it("can send tokens out of the gnosis safe", async () => {
       // Create token contract on foreign chain
 

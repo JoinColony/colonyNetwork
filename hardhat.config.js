@@ -1,7 +1,10 @@
-/* global config, task, runSuper */
+/* global hre, config, task, runSuper */
 
 const fs = require("fs");
 const path = require("path");
+
+const express = require("express");
+const bodyParser = require("body-parser");
 
 require("@nomiclabs/hardhat-truffle5");
 require("hardhat-contract-sizer");
@@ -36,6 +39,22 @@ task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(asyn
   const deployNetwork = require("./test/truffle-fixture"); // eslint-disable-line global-require
 
   await deployNetwork();
+});
+
+task("coverage", "Run coverage with an open port").setAction(async () => {
+  const app = express();
+  const port = 8555;
+
+  app.use(bodyParser.json());
+  app.post("/", async function (req, res) {
+    console.log("Message received!");
+    res.send(await hre.network.provider.request(req.body));
+  });
+  app.listen(port, function () {
+    console.log(`Exposing the provider on port ${port}!`);
+  });
+
+  await runSuper();
 });
 
 module.exports = {

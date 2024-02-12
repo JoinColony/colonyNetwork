@@ -4,11 +4,6 @@ const assert = require("assert");
 const fs = require("fs");
 
 function readArtifact(contractDir, contractName) {
-  if (process.env.SOLIDITY_COVERAGE) {
-    const artifactPath = `./build/contracts/${contractName}.json`;
-    return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
-  }
-
   const artifactPath = `./artifacts/contracts/${contractDir}/${contractName}.sol/${contractName}.json`;
   try {
     return JSON.parse(fs.readFileSync(artifactPath, "utf8"));

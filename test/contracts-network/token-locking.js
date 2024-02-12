@@ -31,9 +31,7 @@ const ToggleableToken = artifacts.require("ToggleableToken");
 const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
 
-const TokenAuthority = process.env.SOLIDITY_COVERAGE
-  ? artifacts.require("TokenAuthority")
-  : artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),

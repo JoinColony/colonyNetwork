@@ -18,9 +18,7 @@ const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
-const TokenAuthority = process.env.SOLIDITY_COVERAGE
-  ? artifacts.require("TokenAuthority")
-  : artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 exports.makeExpenditure = async function makeExpenditure({ colonyNetwork, colony, domainId = 1, skillId, manager, evaluator, worker }) {
   if (colonyNetwork === undefined) {
@@ -320,10 +318,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
 
   const r = `0x${sig.substring(2, 66)}`;
   const s = `0x${sig.substring(66, 130)}`;
-
-  // Ganache has fixed this discrepancy with the real world, but the version used by solidity coverage is still old...
-  const vOffset = process.env.SOLIDITY_COVERAGE ? 27 : 0;
-  const v = parseInt(sig.substring(130), 16) + vOffset;
+  const v = parseInt(sig.substring(130), 16);
 
   return { r, s, v };
 };

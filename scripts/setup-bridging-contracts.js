@@ -32,15 +32,15 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   const accounts = await ethersForeignProvider.listAccounts();
   const GnosisSafeProxyFactory = await loader.load(
     {
-      contractDir: path.resolve(__dirname, "..", "artifacts", "safe-contracts", "proxies"),
+      contractDir: path.resolve(__dirname, "..", "artifacts", "lib", "safe-contracts", "contracts", "proxies"),
       contractName: "GnosisSafeProxyFactory",
     },
     flags,
   );
   const GnosisSafe = await loader.load(
     {
+      contractDir: path.resolve(__dirname, "..", "artifacts", "lib", "safe-contracts", "contracts"),
       contractName: "GnosisSafe",
-      contractDir: path.resolve(__dirname, "..", "artifacts", "safe-contracts"),
     },
     flags,
   );
