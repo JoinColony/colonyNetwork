@@ -396,7 +396,7 @@ exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
 };
 
 exports.forwardTime = async function forwardTime(seconds) {
-  helpers.time.increase(seconds);
+  return helpers.time.increase(seconds);
 };
 
 exports.forwardTimeTo = async function forwardTimeTo(timestamp) {

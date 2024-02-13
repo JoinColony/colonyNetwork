@@ -2054,7 +2054,7 @@ contract("Voting Reputation", (accounts) => {
         contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
       });
 
-      const { privateKey } = hre.config.networks.hardhat.accounts[0].privateKey;
+      const { privateKey } = hre.config.networks.hardhat.accounts[0];
       broadcaster = new MetatransactionBroadcaster({ privateKey, loader, provider });
       await broadcaster.initialise(colonyNetwork.address);
     });
