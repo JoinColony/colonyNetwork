@@ -6,18 +6,8 @@ const existingCompileComplete = config.onCompileComplete;
 
 config.istanbulFolder = `./coverage-cross-chain-${process.env.TRUFFLE_HOME ? "home" : "foreign"}`
 
-
-// function provisionSafeContracts(){
-//   let output;
-//   const provisionSafeContracts = `yarn run provision:safe:contracts`;
-
-//   log('Provisioning Safe contracts...')
-//   execSync(provisionSafeContracts);
-// }
-
 config.onCompileComplete = function() {
 	existingCompileComplete();
-	// provisionSafeContracts();
 }
 
 module.exports = config

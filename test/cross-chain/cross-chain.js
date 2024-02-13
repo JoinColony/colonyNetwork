@@ -59,7 +59,6 @@ contract("Cross-chain", () => {
     if (process.env.TRUFFLE_FOREIGN === "true") {
       try {
         // await exec(`npm run provision:token:contracts`);
-        // await exec(`npm run provision:safe:contracts`);
         const output = await exec(`npx hardhat deploy --network localhost2`);
         [, , , etherRouterAddress] = output
           .split("\n")
