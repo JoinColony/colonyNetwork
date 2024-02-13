@@ -9,13 +9,6 @@ function provisionTokenContracts(config){
   log('Provisioning ColonyToken contracts...')
   output = execSync(provisionColonyToken);
   log(output.toString())
-
-  // const provisionSafeContracts = `BUILD_DIR="build-coverage" npm run provision:safe:contracts`;
-
-  // log('Provisioning Safe contracts...')
-  // output = execSync(provisionSafeContracts);
-  // log(output.toString())
-
 }
 
 module.exports = {
