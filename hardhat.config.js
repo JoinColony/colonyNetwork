@@ -98,7 +98,7 @@ module.exports = {
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
-      gas: 6721975,
+      gas: 6721975 * 2,
       blockGasLimit: 6721975,
     },
     integration: {
@@ -124,7 +124,8 @@ module.exports = {
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
-      blockGasLimit: 6721975,
+      allowUnlimitedContractSize: true,
+      blockGasLimit: 6721975 * 2,
       accounts: [
         { privateKey: "0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae", balance: "100000000000000000000" },
         { privateKey: "0xe9aebe8791ad1ebd33211687e9c53f13fe8cca53b271a6529c7d7ba05eda5ce2", balance: "100000000000000000000" },

@@ -50,7 +50,7 @@ step_setup_slither: &step_setup_slither
         solc-select use 0.8.25
 
 jobs:
-  reputation-test:
+  unit-test-reputation:
     <<: *job_common
     steps:
       - checkout
@@ -111,15 +111,15 @@ jobs:
           name: "Checking contract recovery modifiers"
           command: npm run check:recoverymods
       - run:
-          name: "Checking contract versions"
-          command: npm run check:versioning
-      - run:
           name: "Checking contract authDomain modifiers"
           command: npm run check:auth
       - run:
           name: "Check contract sizes"
           command: npx hardhat size-contracts
-  unit-test-network:
+      - run:
+          name: "Checking contract versions"
+          command: npm run check:versioning
+  unit-test-contracts:
     <<: *job_common
     steps:
       - checkout
@@ -128,34 +128,6 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - run:
-          name: "Download parity"
-          command: wget https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
-      - run:
-          name: "Setup parity"
-          command: |
-            sudo mv parity /usr/bin
-            chmod 755 /usr/bin/parity
-            echo "password" > parityPassword
-            cp ./parity-genesis.template.json ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef01/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef02/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef03/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef04/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef05/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef06/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef07/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef08/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef09/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef10/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef11/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef12/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef13/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef14/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef15/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef16/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef17/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
       - run:
           name: "Install lsof"
           command: |
@@ -183,34 +155,6 @@ jobs:
           version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - run:
-          name: "Download parity"
-          command: wget https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
-      - run:
-          name: "Setup parity"
-          command: |
-            sudo mv parity /usr/bin
-            chmod 755 /usr/bin/parity
-            echo "password" > parityPassword
-            cp ./parity-genesis.template.json ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef01/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef02/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef03/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef04/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef05/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef06/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef07/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef08/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef09/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef10/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef11/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef12/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef13/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef14/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef15/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef16/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef17/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
       - run:
           name: "Install lsof"
           command: |
@@ -290,7 +234,7 @@ jobs:
           path: test-results.xml
       - store_artifacts:
           path: coverage-miner
-  test-contracts-coverage:
+  coverage-test-contracts:
     <<: *job_common
     steps:
       - checkout
@@ -308,7 +252,7 @@ jobs:
           root: ./
           paths:
             - coverage-contracts
-  test-upgrade-coverage:
+  coverage-test-upgrade:
     <<: *job_common
     steps:
       - checkout
@@ -326,7 +270,7 @@ jobs:
           root: ./
           paths:
             - coverage-upgrade
-  test-contracts-extensions-coverage:
+  coverage-test-extensions:
     <<: *job_common
     steps:
       - checkout
@@ -344,7 +288,7 @@ jobs:
           root: ./
           paths:
             - coverage-extensions
-  test-reputation-coverage:
+  coverage-test-reputation:
     <<: *job_common
     steps:
       - checkout
@@ -362,7 +306,7 @@ jobs:
           root: ./
           paths:
             - coverage-reputation
-  test-chainid-coverage:
+  coverage-test-chainid:
     <<: *job_common
     steps:
       - checkout
@@ -398,7 +342,7 @@ jobs:
             - coverage-chainid-5
             - coverage-chainid-100
             - coverage-chainid-777
-  test-bridging-coverage:
+  coverage-test-bridging:
     <<: *job_common
     steps:
       - checkout
@@ -407,6 +351,9 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - run:
+          name: "Installing the safe-contracts dependencies"
+          command: cd ./lib/safe-contracts && npm i --ignore-scripts
       - run:
           name: "Running coverage tests for home-side of bridge"
           command: npm run test:contracts:bridging:1:coverage
@@ -482,37 +429,37 @@ workflows:
     jobs:
       - build-checks:
           context: dockerhub-credentials
-      - unit-test-network:
+      - security-analysis:
+          context: dockerhub-credentials
+      - unit-test-contracts:
           context: dockerhub-credentials
       - unit-test-extensions:
           context: dockerhub-credentials
+      - unit-test-reputation:
+          context: dockerhub-credentials
       - unit-test-other:
           context: dockerhub-credentials
-      - security-analysis:
+      - coverage-test-contracts:
           context: dockerhub-credentials
-      - reputation-test:
+      - coverage-test-extensions:
           context: dockerhub-credentials
-      - test-contracts-coverage:
+      - coverage-test-reputation:
           context: dockerhub-credentials
-      - test-contracts-extensions-coverage:
+      - coverage-test-chainid:
           context: dockerhub-credentials
-      - test-reputation-coverage:
+      - coverage-test-upgrade:
           context: dockerhub-credentials
-      - test-chainid-coverage:
-          context: dockerhub-credentials
-      - test-upgrade-coverage:
-          context: dockerhub-credentials
-      - test-bridging-coverage:
+      - coverage-test-bridging:
           context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials
           requires:
-            - test-contracts-coverage
-            - test-contracts-extensions-coverage
-            - test-reputation-coverage
-            - test-chainid-coverage
-            - test-upgrade-coverage
-            - test-bridging-coverage
+            - coverage-test-contracts
+            - coverage-test-extensions
+            - coverage-test-reputation
+            - coverage-test-chainid
+            - coverage-test-upgrade
+            - coverage-test-bridging
  # nightly:
  #   triggers:
  #     - schedule:

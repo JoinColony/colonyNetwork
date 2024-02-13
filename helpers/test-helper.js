@@ -395,8 +395,51 @@ exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
   return expect(events).to.be.true;
 };
 
-exports.forwardTime = async function forwardTime(seconds) {
-  helpers.time.increase(seconds);
+exports.forwardTime = async function forwardTime(seconds, test) {
+  if (typeof seconds !== "number") {
+    throw new Error("typeof seconds is not a number");
+  }
+
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    return helpers.time.increase(seconds);
+  }
+
+  const p = new Promise((resolve, reject) => {
+    if (client.indexOf("TestRPC") === -1 && client.indexOf("Hardhat") === -1) {
+      resolve(test.skip());
+    } else {
+      // console.log(`Forwarding time with ${seconds}s ...`);
+      web3.currentProvider.send(
+        {
+          jsonrpc: "2.0",
+          method: "evm_increaseTime",
+          params: [seconds],
+          id: 0,
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return web3.currentProvider.send(
+            {
+              jsonrpc: "2.0",
+              method: "evm_mine",
+              params: [],
+              id: 0,
+            },
+            (err2, res) => {
+              if (err2) {
+                return reject(err2);
+              }
+              return resolve(res);
+            },
+          );
+        },
+      );
+    }
+  });
+  return p;
 };
 
 exports.forwardTimeTo = async function forwardTimeTo(timestamp) {

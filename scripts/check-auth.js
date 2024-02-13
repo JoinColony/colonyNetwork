@@ -129,6 +129,10 @@ walkSync("./contracts/").forEach((contractName) => {
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
 
+  if (!contract) {
+    return;
+  }
+
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes
     .filter((child) => child.type === "FunctionDefinition" && child.name !== "")

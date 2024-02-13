@@ -59,10 +59,10 @@ contract("Cross-chain", () => {
     if (process.env.TRUFFLE_FOREIGN === "true") {
       try {
         // await exec(`npm run provision:token:contracts`);
-        const output = await exec(`npx hardhat deploy --network localhost2`);
-        [, , , etherRouterAddress] = output
+        const output = await exec(`npx hardhat deploy --network development2`);
+        [, , , , , , , etherRouterAddress] = output
           .split("\n")
-          .filter((x) => x.includes("EtherRouter deployed at"))[0]
+          .filter((x) => x.includes("Colony Network deployed at"))[0]
           .split(" ");
       } catch (err) {
         console.log(err);

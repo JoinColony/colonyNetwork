@@ -157,15 +157,12 @@ async function getSig(provider, account, dataHash) {
   const r = `${sig.substring(2, 66)}`;
   const s = `${sig.substring(66, 130)}`;
 
-  // Sigs are caculated differently on the 'normal' ganache and the ganache used for coverage
-  let vOffset = provider.connection.url.indexOf("8555") > -1 ? 27 : 0;
   // Add 4 to v for... reasons... see https://docs.gnosis-safe.io/contracts/signatures
-  vOffset += 4;
-  const v = parseInt(sig.substring(130), 16) + vOffset;
+  const v = parseInt(sig.substring(130), 16) + 4;
   const vString = ethers.utils.hexlify(v).slice(2);
+
   // put back together
   const modifiedSig = `0x${r}${s}${vString}`;
-  console.log(modifiedSig);
   return modifiedSig;
 }
 

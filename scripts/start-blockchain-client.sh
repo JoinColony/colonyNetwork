@@ -72,9 +72,11 @@ else
   echo "Starting our own $bc_client client instance at port $bc_client_port"
   if [ "$bc_client" == "parity" ]; then
     start_parity
-  elif [ "$bc_client" == "hardhat" ]; then
-    start_hardhat
-  else
+  elif [ "$bc_client" == "ganache" ]; then
     start_ganache
+  else
+    start_hardhat
   fi
 fi
+
+echo "Client initialised!"
