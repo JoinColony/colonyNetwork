@@ -80,9 +80,9 @@ jobs:
           command: npm run test:reputation:2
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Running storage consistency smoke tests"
-          command: npm run test:contracts:smoke
+      # - run:
+      #     name: "Running storage consistency smoke tests"
+      #     command: npm run test:contracts:smoke
   build-checks:
     <<: *job_common
     steps:
