@@ -93,6 +93,11 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
           name: "Linting JavaScript"
           command: npm run eslint
       - run:
@@ -407,6 +412,9 @@ jobs:
           version: 19.03.13
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - run:
+          name: "Installing the safe-contracts dependencies"
+          command: cd ./lib/safe-contracts && npm i --ignore-scripts
       - run:
           name: "Running coverage tests for home-side of bridge"
           command: npm run test:contracts:bridging:1:coverage

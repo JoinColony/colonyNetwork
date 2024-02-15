@@ -7,7 +7,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 require("@nomiclabs/hardhat-truffle5");
-require("@nomicfoundation/hardhat-verify");
 require("hardhat-contract-sizer");
 require("solidity-coverage");
 
