@@ -47,8 +47,12 @@ task("coverage", "Run coverage with an open port").setAction(async () => {
 
   app.use(bodyParser.json());
   app.post("/", async function (req, res) {
-    const response = await hre.network.provider.request(req.body);
-    res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
+    try {
+      const response = await hre.network.provider.request(req.body);
+      res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
+    } catch (error) {
+      res.send({ jsonrpc: "2.0", error, id: req.body.id });
+    }
   });
   app.listen(port, function () {
     console.log(`Exposing the provider on port ${port}!`);
