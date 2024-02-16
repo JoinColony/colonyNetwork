@@ -132,6 +132,7 @@ contract ColonyAuthority is CommonAuthority {
     // Added in colony v15 (hazel-lwss-2)
     addRoleCapability(ARBITRATION_ROLE, "cancelExpenditureViaArbitration(uint256,uint256,uint256)");
     addRoleCapability(ARBITRATION_ROLE, "finalizeExpenditureViaArbitration(uint256,uint256,uint256)");
+    addRoleCapability(ROOT_ROLE, "setColonyBridgeAddress(address)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

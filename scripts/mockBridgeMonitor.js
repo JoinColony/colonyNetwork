@@ -1,6 +1,11 @@
 const ethers = require("ethers");
 
-const bridgeAbi = require("../build/contracts/BridgeMock.json").abi; // eslint-disable-line import/no-unresolved
+const bridgeAbi = require("../build/contracts/WormholeMock.json").abi; // eslint-disable-line import/no-unresolved
+const wormholeBridgeForColonyAbi = require("../build/contracts/WormholeBridgeForColony.json").abi; // eslint-disable-line import/no-unresolved
+
+const ethereumAddressToWormholeAddress = (address) => {
+  return ethers.utils.hexZeroPad(ethers.utils.hexStripZeros(ethers.utils.hexlify(address)), 32);
+};
 
 class MockBridgeMonitor {
   /**
@@ -11,90 +16,152 @@ class MockBridgeMonitor {
    * @param {string} foreignRpc           The endpoint that the foreign chain can be queried on
    * @param {string} homeBridgeAddress    The address of the home bridge contract
    * @param {string} foreignBridgeAddress The address of the foreign bridge contract
+   * @param {string} homeColonyBridgeAddress The address of the home colony bridge contract
+   * @param {string} foreignColonyBridgeAddress The address of the foreign colony bridge contract
    */
-  constructor(homeRpc, foreignRpc, homeBridgeAddress, foreignBridgeAddress) {
-    const providerHome = new ethers.providers.JsonRpcProvider(homeRpc).getSigner();
-    const providerForeign = new ethers.providers.JsonRpcProvider(foreignRpc).getSigner();
+  constructor(homeRpc, foreignRpc, homeBridgeAddress, foreignBridgeAddress, homeColonyBridgeAddress, foreignColonyBridgeAddress) {
+    this.homeRpc = homeRpc;
+    this.foreignRpc = foreignRpc;
+    this.homeBridgeAddress = homeBridgeAddress;
+    this.foreignBridgeAddress = foreignBridgeAddress;
+    this.homeColonyBridgeAddress = homeColonyBridgeAddress;
+    this.foreignColonyBridgeAddress = foreignColonyBridgeAddress;
 
-    const homeBridge = new ethers.Contract(homeBridgeAddress, bridgeAbi, providerHome);
-    const foreignBridge = new ethers.Contract(foreignBridgeAddress, bridgeAbi, providerForeign);
+    this.setupListeners();
+  }
+  // const providerHome = new ethers.providers.JsonRpcProvider(homeRpc).getSigner();
+  // const providerForeign = new ethers.providers.JsonRpcProvider(foreignRpc).getSigner();
+
+  // const homeBridge = new ethers.Contract(homeBridgeAddress, bridgeAbi, providerHome);
+  // const foreignBridge = new ethers.Contract(foreignBridgeAddress, bridgeAbi, providerForeign);
+
+  // const homeWormholeBridgeForColony = new ethers.Contract(homeColonyBridgeAddress, wormholeBridgeForColonyAbi, providerHome);
+  // const foreignWormholeBridgeForColony = new ethers.Contract(foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, providerForeign);
+
+  getPromiseForNextBridgedTransaction(_count = 1) {
+    return new Promise((resolve) => {
+      this.bridgingPromiseCount = _count;
+      this.resolveBridgingPromise = resolve;
+    });
+  }
+
+  async encodeMockVAA(sender, sequence, nonce, payload, consistencyLevel, chainId) {
+    const version = 1;
+    const timestamp = Math.floor(Date.now() / 1000);
+    const emitterChainId = chainId;
+    const emitterAddress = ethereumAddressToWormholeAddress(sender);
+    const guardianSetIndex = 0;
+    const signatures = [];
+    const hash = ethers.utils.id("something");
+
+    const vaa = await this.homeBridge.buildVM(
+      version,
+      timestamp,
+      nonce,
+      emitterChainId,
+      emitterAddress,
+      sequence.toString(),
+      consistencyLevel,
+      payload,
+      guardianSetIndex,
+      signatures,
+      hash,
+    );
+    return vaa;
+  }
+
+  setupListeners() {
+    if (this.homeBridge) {
+      this.homeBridge.removeAllListeners("LogMessagePublished");
+    }
+    if (this.foreignBridge) {
+      this.foreignBridge.removeAllListeners("LogMessagePublished");
+    }
+
+    this.signerHome = new ethers.providers.JsonRpcProvider(this.homeRpc).getSigner();
+    this.signerForeign = new ethers.providers.JsonRpcProvider(this.foreignRpc).getSigner();
+    this.homeBridge = new ethers.Contract(this.homeBridgeAddress, bridgeAbi, this.signerHome);
+    this.foreignBridge = new ethers.Contract(this.foreignBridgeAddress, bridgeAbi, this.signerForeign);
+    this.homeWormholeBridgeForColony = new ethers.Contract(this.homeColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerHome);
+    this.foreignWormholeBridgeForColony = new ethers.Contract(this.foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerForeign);
 
     this.skipCount = 0;
 
+    this.queue = [];
     this.skipped = [];
+    this.locked = false;
+    this.homeBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
+      const { chainId } = await this.signerHome.provider.getNetwork();
+      const wormholeChainId = chainId % 265669;
 
-    this.getPromiseForNextBridgedTransaction = (_count = 1) => {
-      return new Promise((resolve) => {
-        this.bridgingPromiseCount = _count;
-        this.resolveBridgingPromise = resolve;
-      });
-    };
-
-    homeBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
       if (this.skipCount > 0) {
+        this.skipped.push([this.foreignWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
         this.skipCount -= 1;
-        this.skipped.push([foreignBridge, messageId, encodedData]);
         return;
       }
-      console.log("seen on home bridge");
-      const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
-      const tx = await foreignBridge.execute(target, data, gasLimit, messageId, sender, { gasLimit: gasLimit * 1.5 });
-      try {
-        await tx.wait();
-      } catch (err) {
-        // We don't need to do anything here, we just want to make sure the transaction is mined
-      }
-      this.bridgingPromiseCount -= 1;
-      if (this.bridgingPromiseCount === 0) {
-        this.resolveBridgingPromise(tx);
-      }
+      this.queue.push([this.foreignWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
+      await this.processQueue();
     });
 
-    foreignBridge.on("UserRequestForSignature", async (messageId, encodedData) => {
-      console.log("seeen UserRequestForSignature with messageId", messageId);
+    this.foreignBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
+      const { chainId } = await this.signerForeign.provider.getNetwork();
+      const wormholeChainId = chainId % 265669;
+
       if (this.skipCount > 0) {
+        this.skipped.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
         this.skipCount -= 1;
-        this.skipped.push([homeBridge, messageId, encodedData]);
         return;
       }
-      const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
+      this.queue.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
 
-      const tx = await homeBridge.execute(target, data, gasLimit, messageId, sender, { gasLimit: gasLimit * 1.5 });
-      try {
-        const receipt = await tx.wait();
-
-        // console.log(receipt);
-        const relayedEvent = receipt.events.filter((e) => e.event === "RelayedMessage")[0];
-        if (!relayedEvent.args.status) {
-          console.log("WARNING: Bridged transaction failed");
-        }
-      } catch (err) {
-        // console.log(err);
-      }
-      console.log("bridging transaction on home chain", tx.hash);
-      this.bridgingPromiseCount -= 1;
-      if (this.bridgingPromiseCount === 0) {
-        this.resolveBridgingPromise(tx);
-      }
+      await this.processQueue();
     });
 
     console.log("Mock Bridge Monitor running");
-    console.log("Home bridge address: ", homeBridgeAddress);
-    console.log("Foreign bridge address: ", foreignBridgeAddress);
+    console.log("Home bridge address: ", this.homeBridgeAddress);
+    console.log("Foreign bridge address: ", this.foreignBridgeAddress);
   }
 
   close() {} // eslint-disable-line class-methods-use-this
 
-  async bridgeSkipped() {
-    const [bridge, messageId, encodedData] = this.skipped.shift();
-    const [target, data, gasLimit, sender] = ethers.utils.defaultAbiCoder.decode(["address", "bytes", "uint256", "address"], encodedData);
-    const tx = await bridge.execute(target, data, gasLimit, messageId, sender, { gasLimit: gasLimit * 1.5 });
+  async processQueue() {
+    if (this.locked) {
+      return;
+    }
+    if (this.queue.length === 0) {
+      return;
+    }
+    this.locked = true;
+    const [bridge, sender, sequence, nonce, payload, consistencyLevel, wormholeChainID] = this.queue.shift();
+    const vaa = await this.encodeMockVAA(sender, sequence, nonce, payload, consistencyLevel, wormholeChainID);
+    const tx = await bridge.receiveMessage(vaa, { gasLimit: 1000000 });
     try {
       await tx.wait();
     } catch (err) {
       // We don't need to do anything here, we just want to make sure the transaction is mined
     }
-    console.log("bridged pending request");
+    this.bridgingPromiseCount -= 1;
+
+    if (this.bridgingPromiseCount === 0) {
+      this.resolveBridgingPromise(tx);
+    }
+    if (this.locked) {
+      this.locked = false;
+    }
+    if (this.queue.length > 0) {
+      await this.processQueue();
+    }
+  }
+
+  async bridgeSkipped() {
+    const [bridge, sender, sequence, nonce, payload, consistencyLevel, homeWormholeChainId] = this.skipped.shift();
+    const vaa = await this.encodeMockVAA(sender, sequence, nonce, payload, consistencyLevel, homeWormholeChainId);
+    const tx = await bridge.receiveMessage(vaa, { gasLimit: 1000000 });
+    try {
+      await tx.wait();
+    } catch (err) {
+      // We don't need to do anything here, we just want to make sure the transaction is mined
+    }
     this.bridgingPromiseCount -= 1;
 
     if (this.bridgingPromiseCount === 0) {
@@ -114,7 +181,10 @@ class MockBridgeMonitor {
 
   reset() {
     this.skipCount = 0;
+    this.queue = [];
     this.skipped = [];
+    this.locked = false;
+    this.setupListeners();
   }
 }
 
