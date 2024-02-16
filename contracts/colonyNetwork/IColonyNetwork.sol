@@ -509,40 +509,44 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
 
-  /// @notice Called to set the details about bridge _bridgeAddress
-  /// @param _bridgeAddress The address of the bridge
-  /// @param _chainId The chainId of the corresponding network
-  /// @param _gas How much gas to use for a bridged transaction
-  /// @param _msgSenderFunctionSig The function signature of the function to call on the bridge to get the msgSender
-  /// @param _correspondingNetwork The address of the corresponding colony network contract on the other network
-  /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
-  /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
-  /// @param _skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
-  /// @param _skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
-  /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
-  /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
-  function setBridgeData(
-    address _bridgeAddress,
-    uint256 _chainId,
-    uint256 _gas,
-    bytes4 _msgSenderFunctionSig,
-    address _correspondingNetwork,
-    bytes memory _updateLogBefore,
-    bytes memory _updateLogAfter,
-    bytes memory _skillCreationBefore,
-    bytes memory _skillCreationAfter,
-    bytes memory _setReputationRootHashBefore,
-    bytes memory _setReputationRootHashAfter
-  ) external;
+  // /// @notice Called to set the details about bridge _bridgeAddress
+  // /// @param _bridgeAddress The address of the bridge
+  // /// @param _chainId The chainId of the corresponding network
+  // /// @param _gas How much gas to use for a bridged transaction
+  // /// @param _msgSenderFunctionSig The function signature of the function to call on the bridge to get the msgSender
+  // /// @param _correspondingNetwork The address of the corresponding colony network contract on the other network
+  // /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
+  // /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
+  // /// @param _skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
+  // /// @param _skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
+  // /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
+  // /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
+  // function setBridgeData(
+  //   address _bridgeAddress,
+  //   uint256 _chainId,
+  //   uint256 _gas,
+  //   bytes4 _msgSenderFunctionSig,
+  //   address _correspondingNetwork,
+  //   bytes memory _updateLogBefore,
+  //   bytes memory _updateLogAfter,
+  //   bytes memory _skillCreationBefore,
+  //   bytes memory _skillCreationAfter,
+  //   bytes memory _setReputationRootHashBefore,
+  //   bytes memory _setReputationRootHashAfter
+  // ) external;
 
-  /// @notice Called to get the details about known bridge _bridgeAddress
+  // /// @notice Called to get the details about known bridge _bridgeAddress
+  // /// @param _bridgeAddress The address of the bridge
+  // /// @return bridge The bridge data
+  // function getBridgeData(address _bridgeAddress) external view returns (Bridge memory bridge);
+
+  // @notice Called to set the address of the colony bridge contract
   /// @param _bridgeAddress The address of the bridge
-  /// @return bridge The bridge data
-  function getBridgeData(address _bridgeAddress) external view returns (Bridge memory bridge);
+  function setColonyBridgeAddress(address _bridgeAddress) external;
 
   /// @notice Called to get the next bridge in the list after bridge _bridgeAddress
   /// @return bridge The address of the bridge to the mining chain, if set
-  function getMiningBridgeAddress() external view returns (address bridge);
+  function getColonyBridgeAddress() external view returns (address bridge);
 
   /// @notice Update the reputation on a foreign chain from the mining chain
   /// @dev Should error if called by anyone other than the known bridge from the mining chain
@@ -556,8 +560,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   ) external;
 
   /// @notice Initiate a cross-chain update of the current reputation state
-  /// @param bridgeAddress The bridge we're going over
-  function bridgeCurrentRootHash(address bridgeAddress) external;
+  /// @param chainId The chainid we want to bridge to
+  function bridgeCurrentRootHash(uint256 chainId) external;
 
   /// @notice Called to re-send the bridging transaction for a skill to the
   /// @param skillId The skillId we're bridging the creation of
@@ -570,9 +574,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Called to add a bridged skill that wasn't next when it was bridged,
   /// but now is
-  /// @param _bridgeAddress The address of the bridge we're bridging from
   /// @param _skillId The skillId of the skill being bridged
-  function addPendingSkill(address _bridgeAddress, uint256 _skillId) external;
+  function addPendingSkill(uint256 _skillId) external;
 
   /// @notice Called to get the information about a skill that has been bridged out of order
   /// @param _chainId The chainId we're bridging from

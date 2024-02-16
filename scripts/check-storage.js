@@ -16,6 +16,7 @@ walkSync("./contracts/").forEach((contractName) => {
   // Contracts listed here are allowed to have storage variables
   if (
     [
+      "contracts/bridging/WormholeBridgeForColony.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colonyNetwork/ColonyNetworkAuthority.sol",
@@ -50,6 +51,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/TestExtensions.sol",
       "contracts/testHelpers/GasGuzzler.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
+      "contracts/testHelpers/WormholeMock.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo

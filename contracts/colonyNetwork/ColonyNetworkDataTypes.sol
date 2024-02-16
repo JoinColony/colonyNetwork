@@ -149,7 +149,7 @@ interface ColonyNetworkDataTypes {
 
   /// @notice Event logged when the colony network has data about a bridge contract set.
   /// @param bridgeAddress The address of the bridge contract that will be interacted with
-  event BridgeDataSet(address bridgeAddress);
+  event BridgeSet(address bridgeAddress);
 
   /// @notice Event logged when bridging of a skill creation did not succeed.
   /// @param skillId The skillId that failed to bridge

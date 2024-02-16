@@ -26,6 +26,7 @@ import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMi
 import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
 
 contract ColonyNetworkMining is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
@@ -98,37 +99,32 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     bytes32 newHash,
     uint256 newNLeaves,
     uint256 _nonce
-  ) public onlyNotMiningChain checkBridgedSender stoppable {
+  ) public onlyNotMiningChain onlyColonyBridge stoppable {
     require(
-      _nonce >= bridgeCurrentRootHashNonces[bridgeData[msgSender()].chainId],
+      _nonce >= bridgeCurrentRootHashNonces[block.chainid],
       "colony-mining-bridge-invalid-nonce"
     );
-    bridgeCurrentRootHashNonces[bridgeData[msgSender()].chainId] = _nonce;
+    bridgeCurrentRootHashNonces[block.chainid] = _nonce;
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
 
     emit ReputationRootHashSet(newHash, newNLeaves, newAddressArray(), 0);
   }
 
-  function bridgeCurrentRootHash(address _bridgeAddress) public onlyMiningChain stoppable {
-    uint256 chainId = bridgeData[_bridgeAddress].chainId;
-    require(chainId != 0, "colony-network-not-known-bridge");
+  function bridgeCurrentRootHash(uint256 _chainId) public onlyMiningChain stoppable {
+    require(colonyBridgeAddress != address(0x0), "colony-network-bridge-not-set");
 
-    bridgeCurrentRootHashNonces[chainId] += 1;
+    bridgeCurrentRootHashNonces[_chainId] += 1;
 
-    bytes memory payload = abi.encodePacked(
-      bridgeData[_bridgeAddress].setReputationRootHashBefore,
-      abi.encodeWithSignature(
-        "setReputationRootHashFromBridge(bytes32,uint256,uint256)",
-        reputationRootHash,
-        reputationRootHashNLeaves,
-        bridgeCurrentRootHashNonces[chainId]
-      ),
-      bridgeData[_bridgeAddress].setReputationRootHashAfter
+    bytes memory payload = abi.encodeWithSignature(
+      "setReputationRootHashFromBridge(bytes32,uint256,uint256)",
+      reputationRootHash,
+      reputationRootHashNLeaves,
+      bridgeCurrentRootHashNonces[_chainId]
     );
 
     // slither-disable-next-line unchecked-lowlevel
-    (bool success, ) = _bridgeAddress.call(payload);
+    bool success = IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, payload);
     // We require success so estimation calls can tell us if bridging is going to work
     require(success, "colony-mining-bridge-call-failed");
   }

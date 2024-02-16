@@ -49,7 +49,7 @@ Try to emit the next reputation update that was bridged but previously failed, i
 |_colony|address|The colony being queried
 
 
-### ▸ `addPendingSkill(address _bridgeAddress, uint256 _skillId)`
+### ▸ `addPendingSkill(uint256 _skillId)`
 
 Called to add a bridged skill that wasn't next when it was bridged, but now is
 
@@ -58,7 +58,6 @@ Called to add a bridged skill that wasn't next when it was bridged, but now is
 
 |Name|Type|Description|
 |---|---|---|
-|_bridgeAddress|address|The address of the bridge we're bridging from
 |_skillId|uint256|The skillId of the skill being bridged
 
 
@@ -142,7 +141,7 @@ Adds a reputation update entry to the log.
 |_skillId|uint256|The skill for the reputation update
 
 
-### ▸ `bridgeCurrentRootHash(address bridgeAddress)`
+### ▸ `bridgeCurrentRootHash(uint256 chainId)`
 
 Initiate a cross-chain update of the current reputation state
 
@@ -151,7 +150,7 @@ Initiate a cross-chain update of the current reputation state
 
 |Name|Type|Description|
 |---|---|---|
-|bridgeAddress|address|The bridge we're going over
+|chainId|uint256|The chainid we want to bridge to
 
 
 ### ▸ `bridgePendingReputationUpdate(address _colony, uint256 _updateNumber)`
@@ -426,23 +425,6 @@ Set deprecation status for a skill
 |---|---|---|
 |_changed|bool|Whether the deprecated state was changed
 
-### ▸ `getBridgeData(address _bridgeAddress):Bridge bridge`
-
-Called to get the details about known bridge _bridgeAddress
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_bridgeAddress|address|The address of the bridge
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|bridge|Bridge|The bridge data
-
 ### ▸ `getBridgedReputationUpdateCount(uint256 _chainId, address _colony):uint256 bridgedReputationCount`
 
 Get the (currently bridged) reputation update count of a chain
@@ -513,6 +495,18 @@ Get a colony address by its Id in the network.
 |Name|Type|Description|
 |---|---|---|
 |_colonyAddress|address|The colony address, if no colony was found, returns 0x0
+
+### ▸ `getColonyBridgeAddress():address bridge`
+
+Called to get the next bridge in the list after bridge _bridgeAddress
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|bridge|address|The address of the bridge to the mining chain, if set
 
 ### ▸ `getColonyCount():uint256 _count`
 
@@ -626,18 +620,6 @@ Get the Meta Colony address.
 |Name|Type|Description|
 |---|---|---|
 |_colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
-
-### ▸ `getMiningBridgeAddress():address bridge`
-
-Called to get the next bridge in the list after bridge _bridgeAddress
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|bridge|address|The address of the bridge to the mining chain, if set
 
 ### ▸ `getMiningDelegator(address _delegate):address _delegator`
 
@@ -1063,9 +1045,9 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
-### ▸ `setBridgeData(address _bridgeAddress, uint256 _chainId, uint256 _gas, bytes4 _msgSenderFunctionSig, address _correspondingNetwork, bytes memory _updateLogBefore, bytes memory _updateLogAfter, bytes memory _skillCreationBefore, bytes memory _skillCreationAfter, bytes memory _setReputationRootHashBefore, bytes memory _setReputationRootHashAfter)`
+### ▸ `setColonyBridgeAddress(address _bridgeAddress)`
 
-Called to set the details about bridge _bridgeAddress
+Called to set the address of the colony bridge contract
 
 
 **Parameters**
@@ -1073,16 +1055,6 @@ Called to set the details about bridge _bridgeAddress
 |Name|Type|Description|
 |---|---|---|
 |_bridgeAddress|address|The address of the bridge
-|_chainId|uint256|The chainId of the corresponding network
-|_gas|uint256|How much gas to use for a bridged transaction
-|_msgSenderFunctionSig|bytes4|The function signature of the function to call on the bridge to get the msgSender
-|_correspondingNetwork|address|The address of the corresponding colony network contract on the other network
-|_updateLogBefore|bytes|The tx data before the dynamic part of the tx to bridge to the update log
-|_updateLogAfter|bytes|The tx data after the dynamic part of the tx to bridge to the update log
-|_skillCreationBefore|bytes|The tx data before the dynamic part of the tx to brdige skill creation
-|_skillCreationAfter|bytes|The tx data after the dynamic part of the tx to brdige skill creation
-|_setReputationRootHashBefore|bytes|The tx data before the dynamic part of the tx to bridge a new reputation root hash
-|_setReputationRootHashAfter|bytes|The tx data after the dynamic part of the tx to bridge a new reputation root hash
 
 
 ### ▸ `setFeeInverse(uint256 _feeInverse)`

@@ -28,7 +28,13 @@ async function addExtension(colonyNetwork, interfaceName, extensionName, impleme
   const metaColony = await IMetaColony.at(metaColonyAddress);
 
   const NAME_HASH = soliditySha3(extensionName);
-  const deployments = await Promise.all(implementations.map((x) => x.new()));
+  const deployments = [];
+  // eslint-disable-next-line no-restricted-syntax
+  for (const implementation of implementations) {
+    const deployment = await implementation.new();
+    deployments.push(deployment);
+  }
+
   const resolver = await Resolver.new();
 
   const deployedImplementations = {};

@@ -10,3 +10,6 @@
 	path = lib/safe-contracts
 	url = https://github.com/safe-global/safe-contracts
 	ignore = dirty
+[submodule "lib/wormhole"]
+	path = lib/wormhole
+	url = https://github.com/wormhole-foundation/wormhole.git

@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./../common/Multicall.sol";
 import "./ColonyNetworkStorage.sol";
+import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
 
 contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   // Skills
@@ -88,44 +89,14 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   // Bridging (sending)
 
-  function setBridgeData(
-    address _bridgeAddress,
-    uint256 _chainId,
-    uint256 _gas,
-    bytes4 _msgSenderFunctionSig,
-    address _correspondingNetwork,
-    bytes memory _updateLogBefore,
-    bytes memory _updateLogAfter,
-    bytes memory _skillCreationBefore,
-    bytes memory _skillCreationAfter,
-    bytes memory _setReputationRootHashBefore,
-    bytes memory _setReputationRootHashAfter
-  ) public always calledByMetaColony {
-    require(_chainId <= type(uint128).max, "colony-network-chainid-too-large");
-    if (!isMiningChain()) {
-      require(isMiningChainId(_chainId), "colony-network-can-only-set-mining-chain-bridge");
-      miningBridgeAddress = _bridgeAddress;
-    }
+  function setColonyBridgeAddress(address _bridgeAddress) public always calledByMetaColony {
+    // TODO: Move this somewhere else to guard against unsupported chainids
+    // require(_chainId <= type(uint128).max, "colony-network-chainid-too-large");
 
-    bridgeData[_bridgeAddress] = Bridge(
-      _chainId,
-      _gas,
-      _msgSenderFunctionSig,
-      _correspondingNetwork,
-      _updateLogBefore,
-      _updateLogAfter,
-      _skillCreationBefore,
-      _skillCreationAfter,
-      _setReputationRootHashBefore,
-      _setReputationRootHashAfter
-    );
+    colonyBridgeAddress = _bridgeAddress;
+    // TODO: Move this to where the first
 
-    if (networkSkillCounts[_chainId] == 0) {
-      // Initialise the skill count to match the foreign chain
-      networkSkillCounts[_chainId] = toRootSkillId(_chainId);
-    }
-
-    emit BridgeDataSet(_bridgeAddress);
+    emit BridgeSet(_bridgeAddress);
   }
 
   function bridgeSkill(uint256 _skillId) public stoppable skillExists(_skillId) onlyNotMiningChain {
@@ -135,27 +106,37 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       ? (toRootSkillId(getChainId()))
       : skills[_skillId].parents[0];
 
-    bytes memory payload = abi.encodePacked(
-      bridgeData[miningBridgeAddress].skillCreationBefore,
-      abi.encodeWithSignature("addSkillFromBridge(uint256,uint256)", parentSkillId, _skillId),
-      bridgeData[miningBridgeAddress].skillCreationAfter
+    bytes memory payload = abi.encodeWithSignature(
+      "addSkillFromBridge(uint256,uint256)",
+      parentSkillId,
+      _skillId
     );
 
     // Send bridge transaction
     // This succeeds if not set, but we don't want to block e.g. domain creation if that's the situation we're in,
     // and we can re-call this function to bridge later if necessary.
     // slither-disable-next-line unchecked-lowlevel
-    (bool success, ) = miningBridgeAddress.call(payload);
-    if (!success) {
-      emit SkillCreationStored(_skillId);
+
+    // Try-catch does not catch if the bridge is not a contract, so we need to check that first
+    if (isContract(colonyBridgeAddress)) {
+      try IColonyBridge(colonyBridgeAddress).sendMessage(MINING_CHAIN_ID, payload) returns (
+        bool success
+      ) {
+        if (success) {
+          return;
+          // Every other type of failure drops through to the emitted event
+        }
+      } catch Error(string memory err) {}
     }
+
+    emit SkillCreationStored(_skillId);
   }
 
   function bridgePendingReputationUpdate(
     address _colony,
     uint256 _updateNumber
   ) public stoppable onlyNotMiningChain {
-    require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
+    require(colonyBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
     require(
       pendingReputationUpdates[getChainId()][_colony][_updateNumber - 1].colony == address(0x00),
       "colony-network-not-next-pending-update"
@@ -169,49 +150,44 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     int256 updateAmount = decayReputation(pendingUpdate.amount, pendingUpdate.timestamp);
 
     // Build the transaction we're going to send to the bridge
-    bytes memory payload = abi.encodePacked(
-      bridgeData[miningBridgeAddress].updateLogBefore,
-      abi.encodeWithSignature(
-        "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
-        pendingUpdate.colony,
-        pendingUpdate.user,
-        updateAmount,
-        pendingUpdate.skillId,
-        _updateNumber
-      ),
-      bridgeData[miningBridgeAddress].updateLogAfter
+    bytes memory payload = abi.encodeWithSignature(
+      "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
+      pendingUpdate.colony,
+      pendingUpdate.user,
+      updateAmount,
+      pendingUpdate.skillId,
+      _updateNumber
     );
 
     delete pendingReputationUpdates[getChainId()][_colony][_updateNumber];
 
-    // slither-disable-next-line unchecked-lowlevel
-    (bool success, ) = miningBridgeAddress.call(payload);
-    if (!success || !isContract(miningBridgeAddress)) {
-      revert("colony-network-bridging-tx-unsuccessful");
+    // Try-catch does not catch if the bridge is not a contract, so we need to check that first
+    if (isContract(colonyBridgeAddress)) {
+      try IColonyBridge(colonyBridgeAddress).sendMessage(MINING_CHAIN_ID, payload) returns (
+        bool success
+      ) {
+        if (success) {
+          emit ReputationUpdateSentToBridge(_colony, _updateNumber);
+          return;
+          // Every other type of failure will drop through and revert
+        }
+      } catch Error(string memory err) {}
     }
-    emit ReputationUpdateSentToBridge(_colony, _updateNumber);
+    revert("colony-network-bridging-tx-unsuccessful");
   }
 
   // Bridging (receiving)
 
-  modifier skillAndBridgeConsistent(address bridgeAddress, uint256 _skillId) {
-    uint256 bridgeChainId = bridgeData[bridgeAddress].chainId;
-    require(bridgeChainId != 0, "colony-network-not-known-bridge");
-    require(bridgeChainId == toChainId(_skillId), "colony-network-invalid-skill-id-for-bridge");
-    _;
-  }
-
   function addSkillFromBridge(
     uint256 _parentSkillId,
     uint256 _skillId
-  )
-    public
-    always
-    onlyMiningChain
-    checkBridgedSender
-    skillAndBridgeConsistent(msgSender(), _skillId)
-  {
-    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
+  ) public always onlyMiningChain onlyColonyBridge {
+    uint256 bridgeChainId = toChainId(_skillId);
+    if (networkSkillCounts[bridgeChainId] == 0) {
+      // Initialise the skill count to match the foreign chain
+      networkSkillCounts[bridgeChainId] = toRootSkillId(bridgeChainId);
+    }
+
     require(networkSkillCounts[bridgeChainId] < _skillId, "colony-network-skill-already-added");
 
     // Check skill count - if not next, then store for later.
@@ -238,14 +214,8 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     int256 _amount,
     uint256 _skillId,
     uint256 _updateNumber
-  )
-    public
-    stoppable
-    onlyMiningChain
-    checkBridgedSender
-    skillAndBridgeConsistent(msgSender(), _skillId)
-  {
-    uint256 bridgeChainId = bridgeData[msgSender()].chainId;
+  ) public stoppable onlyMiningChain onlyColonyBridge {
+    uint256 bridgeChainId = toChainId(_skillId);
 
     require(
       reputationUpdateCount[bridgeChainId][_colony] < _updateNumber,
@@ -280,11 +250,8 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     }
   }
 
-  function addPendingSkill(
-    address _bridgeAddress,
-    uint256 _skillId
-  ) public always onlyMiningChain skillAndBridgeConsistent(_bridgeAddress, _skillId) {
-    uint256 bridgeChainId = bridgeData[_bridgeAddress].chainId;
+  function addPendingSkill(uint256 _skillId) public always onlyMiningChain {
+    uint256 bridgeChainId = toChainId(_skillId);
 
     // Require that specified skill is next
     // Note this also implicitly checks that the chainId prefix of the skill is correct
@@ -338,15 +305,18 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   // View
 
-  function getMiningBridgeAddress() public view returns (address) {
-    return miningBridgeAddress;
+  function getColonyBridgeAddress() public view returns (address) {
+    return colonyBridgeAddress;
   }
 
-  function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {
-    return bridgeData[bridgeAddress];
-  }
+  // function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {
+  //   return bridgeData[bridgeAddress];
+  // }
 
   function getBridgedSkillCounts(uint256 _chainId) public view returns (uint256) {
+    if (networkSkillCounts[_chainId] == 0) {
+      return toRootSkillId(_chainId);
+    }
     return networkSkillCounts[_chainId];
   }
 
@@ -489,48 +459,48 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   function bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) internal {
     // TODO: Maybe force to be set on deployment?
-    require(miningBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
+    require(colonyBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
     address colonyAddress = msgSender();
     reputationUpdateCount[getChainId()][colonyAddress] += 1;
     // Build the transaction we're going to send to the bridge
-    bytes memory payload = abi.encodePacked(
-      bridgeData[miningBridgeAddress].updateLogBefore,
-      abi.encodeWithSignature(
-        "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
-        colonyAddress,
-        _user,
-        _amount,
-        _skillId,
-        reputationUpdateCount[getChainId()][colonyAddress]
-      ),
-      bridgeData[miningBridgeAddress].updateLogAfter
+    bytes memory payload = abi.encodeWithSignature(
+      "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
+      colonyAddress,
+      _user,
+      _amount,
+      _skillId,
+      reputationUpdateCount[getChainId()][colonyAddress]
     );
 
-    // slither-disable-next-line unchecked-lowlevel
-    (bool success, ) = miningBridgeAddress.call(payload);
-    if (!success || !isContract(miningBridgeAddress)) {
-      // Store to resend later
-      PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(
-        _user,
-        _amount,
-        _skillId,
-        msgSender(),
-        block.timestamp
-      );
-      pendingReputationUpdates[getChainId()][colonyAddress][
-        reputationUpdateCount[getChainId()][colonyAddress]
-      ] = pendingReputationUpdate;
-
-      emit ReputationUpdateStored(
-        colonyAddress,
-        reputationUpdateCount[getChainId()][colonyAddress]
-      );
-    } else {
-      emit ReputationUpdateSentToBridge(
-        colonyAddress,
-        reputationUpdateCount[getChainId()][colonyAddress]
-      );
+    // Try-catch does not catch if the bridge is not a contract, so we need to check that first
+    if (isContract(colonyBridgeAddress)) {
+      try IColonyBridge(colonyBridgeAddress).sendMessage(MINING_CHAIN_ID, payload) returns (
+        bool success
+      ) {
+        if (success) {
+          emit ReputationUpdateSentToBridge(
+            colonyAddress,
+            reputationUpdateCount[getChainId()][colonyAddress]
+          );
+          return;
+          // Every other type of failure will drop through and store
+        }
+      } catch Error(string memory err) {}
     }
+
+    // Store to resend later
+    PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(
+      _user,
+      _amount,
+      _skillId,
+      msgSender(),
+      block.timestamp
+    );
+    pendingReputationUpdates[getChainId()][colonyAddress][
+      reputationUpdateCount[getChainId()][colonyAddress]
+    ] = pendingReputationUpdate;
+
+    emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
   }
 
   // Mining cycle decay constants

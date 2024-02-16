@@ -523,6 +523,44 @@ exports.getHardhatAutomine = async function checkHardhatAutomine() {
   });
 };
 
+exports.snapshot = async function snapshot(provider) {
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_snapshot",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(res.result);
+      },
+    );
+  });
+};
+
+exports.revert = async function revert(provider, snapshotId) {
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_revert",
+        params: [snapshotId],
+        id: new Date().getTime(),
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      },
+    );
+  });
+};
+
 exports.stopMining = async function stopMining() {
   const client = await exports.web3GetClient();
   if (client.indexOf("Hardhat") !== -1) {

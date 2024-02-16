@@ -141,7 +141,7 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
 
     colonyDeployed[interfaceName] = colonyDeployed[interfaceName] || {};
     colonyDeployed[interfaceName][versionTag] = { OldInterface, OldAuthority, resolverAddress: colonyVersionResolverAddress };
-
+    console.log("Deployed", interfaceName, "at version", versionTag, "with resolver", colonyVersionResolverAddress);
     return colonyDeployed[interfaceName][versionTag];
   } catch (e) {
     console.log(e);
@@ -242,7 +242,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   }
 
   if (!exists) {
-    console.log("doesnt exist");
+    console.log("Cloning necessary version of repository");
     await exec(`rm -rf colonyNetwork-${versionTag}`);
     await exec(`git clone --depth 1 --branch ${versionTag} https://github.com/JoinColony/colonyNetwork.git colonyNetwork-${versionTag}`);
     await exec(`cd colonyNetwork-${versionTag} && git submodule update --init --recursive`);
@@ -264,6 +264,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   //   const extensionVersion = await relevantEvents[0].returnValues.version;
   //   const extensionResolverAddress = await otherColonyNetwork.getExtensionResolver(web3.utils.soliditySha3(contractName), extensionVersion);
 
+  console.log("Deploying old version of contract");
   await exec(`cp ./scripts/deployOldUpgradeableVersionTruffle.js ./colonyNetwork-${versionTag}/scripts/deployOldUpgradeableVersionTruffle.js`);
 
   const network = process.env.SOLIDITY_COVERAGE ? "coverage" : "development";

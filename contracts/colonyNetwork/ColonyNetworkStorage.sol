@@ -107,25 +107,24 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // Mining delegation mapping
   mapping(address => address) miningDelegators; // Storage slot 42
 
-  address miningBridgeAddress; // Storage slot 43
-  mapping(address => Bridge) bridgeData; // Storage slot 44
+  address colonyBridgeAddress; // Storage slot 43
 
   // A mapping that maps network id -> skill count
-  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 45
+  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 44
   // A mapping that stores pending bridged skill additions that have been bridged out-of-order
   // networkId -> skillCount -> parentSkillId
-  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 46
+  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 45
 
   // A mapping that stores the latest reputation update received from a colony on a particular chain
   // networkId -> colonyAddress -> updateCount
-  mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 47
+  mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 46
 
   // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
   // received out of order, or because the skill in question hasn't been bridged yet.
   // networkId -> colonyAddress -> updateCount -> update
-  mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
+  mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 47
 
-  mapping(uint256 => uint256) bridgeCurrentRootHashNonces;
+  mapping(uint256 => uint256) bridgeCurrentRootHashNonces; // Storage slot 48
 
   // Modifiers
 
@@ -157,22 +156,8 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
     _;
   }
 
-  modifier checkBridgedSender() {
-    // Block scoping to avoid stack too deep errors
-    {
-      address bridgeAddress = msgSender();
-      Bridge storage bridge = bridgeData[bridgeAddress];
-      require(bridge.chainId != 0, "colony-network-not-known-bridge");
-      (bool success, bytes memory data) = bridgeAddress.staticcall(
-        abi.encodeWithSelector(bridge.msgSenderSig)
-      );
-      require(success, "colony-network-bridge-msg-sender-failed");
-      address returnedAddr = abi.decode(data, (address));
-      require(
-        returnedAddr == bridge.correspondingNetwork,
-        "colony-network-bridged-tx-only-from-network"
-      );
-    }
+  modifier onlyColonyBridge() {
+    require(msgSender() == colonyBridgeAddress, "colony-network-caller-must-be-colony-bridge");
     _;
   }
 

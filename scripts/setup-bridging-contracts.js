@@ -14,7 +14,7 @@ const { TruffleLoader } = require("../packages/package-utils");
 const { WAD } = require("../helpers/constants");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts"),
+  contractDir: path.resolve(__dirname, "..", `build${process.env.SOLIDITY_COVERAGE ? "-coverage" : ""}`, "contracts"),
 });
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;
@@ -106,22 +106,31 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   }
 
   // Deploy a foreign bridge
-  const foreignBridge = await deployBridge(ethersForeignSigner);
+  const [foreignBridge, foreignColonyBridge] = await deployBridge(ethersForeignSigner);
 
   // Deploy a home bridge
-  const homeBridge = await deployBridge(ethersHomeSigner);
+  const [homeBridge, homeColonyBridge] = await deployBridge(ethersHomeSigner);
 
   // Start the bridge service
   console.log(`Home RPC Url: ${homeRpcUrl}`);
   console.log(`Foreign RPC Url: ${foreignRpcUrl}`);
-  const bridgeMonitor = new MockBridgeMonitor(homeRpcUrl, foreignRpcUrl, homeBridge.address, foreignBridge.address); // eslint-disable-line no-unused-vars
+  const bridgeMonitor = new MockBridgeMonitor(
+    homeRpcUrl,
+    foreignRpcUrl,
+    homeBridge.address,
+    foreignBridge.address,
+    homeColonyBridge.address,
+    foreignColonyBridge.address,
+  ); // eslint-disable-line no-unused-vars
   console.log(`Home bridge address: ${homeBridge.address}`);
   console.log(`Foreign bridge address: ${foreignBridge.address}`);
+  console.log(`Home colony bridge address: ${homeColonyBridge.address}`);
+  console.log(`Foreign colony bridge address: ${foreignColonyBridge.address}`);
   console.log(`Gnosis Safe address: ${gnosisSafe.address}`);
   console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
   console.log(`Token address: ${token.address}`);
-  return { gnosisSafe, bridgeMonitor, zodiacBridge, homeBridge, foreignBridge };
+  return { gnosisSafe, bridgeMonitor, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
 }
 
 async function getSig(provider, account, dataHash) {
@@ -142,11 +151,25 @@ async function getSig(provider, account, dataHash) {
 }
 
 async function deployBridge(signer) {
-  const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
-  const bridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, signer);
+  // const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
+  // const bridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, signer);
+  // const bridge = await bridgeFactory.deploy();
+  // await bridge.deployTransaction.wait();
+  // return bridge;
+  const WormholeBridgeForColony = await loader.load({ contractName: "WormholeBridgeForColony" }, { abi: true, address: false });
+  const bridgeFactory = new ethers.ContractFactory(WormholeBridgeForColony.abi, WormholeBridgeForColony.bytecode, signer);
   const bridge = await bridgeFactory.deploy();
   await bridge.deployTransaction.wait();
-  return bridge;
+
+  const WormholeMock = await loader.load({ contractName: "WormholeMock" }, { abi: true, address: false });
+  const wormholeFactory = new ethers.ContractFactory(WormholeMock.abi, WormholeMock.bytecode, signer);
+  const wormhole = await wormholeFactory.deploy();
+  await wormhole.deployTransaction.wait();
+
+  const tx = await bridge.setWormholeAddress(wormhole.address);
+  await tx.wait();
+
+  return [wormhole, bridge];
 }
 
 if (process.argv.includes("start-bridging-environment")) {
