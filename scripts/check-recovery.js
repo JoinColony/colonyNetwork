@@ -25,6 +25,8 @@ walkSync("./contracts/").forEach((contractName) => {
   // ColonyNetwork, ColonyNetworkAuction, ColonyNetworkENS, ColonyNetworkMining
   if (
     [
+      "contracts/bridging/IColonyBridge.sol",
+      "contracts/bridging/WormholeBridgeForColony.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colony/IColony.sol",
@@ -96,6 +98,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/TransferTest.sol",
       "contracts/testHelpers/RequireExecuteCall.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
+      "contracts/testHelpers/WormholeMock.sol",
       "contracts/testHelpers/ZodiacBridgeModuleMock.sol",
       "contracts/tokenLocking/ITokenLocking.sol",
       "contracts/tokenLocking/TokenLocking.sol",
