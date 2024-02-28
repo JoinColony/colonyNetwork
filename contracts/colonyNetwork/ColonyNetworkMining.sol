@@ -99,7 +99,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     bytes32 _newHash,
     uint256 _newNLeaves,
     uint256 _nonce
-  ) public onlyNotMiningChain onlyColonyBridge stoppable {
+  ) public stoppable onlyNotMiningChain onlyColonyBridge {
     require(
       _nonce >= bridgeCurrentRootHashNonces[block.chainid],
       "colony-mining-bridge-invalid-nonce"

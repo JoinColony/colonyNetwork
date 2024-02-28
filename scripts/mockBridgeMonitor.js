@@ -45,6 +45,10 @@ class MockBridgeMonitor {
     });
   }
 
+  // VAAs are the primitives used on wormhole (Verified Action Approvals)
+  // See https://docs.wormhole.com/wormhole/explore-wormhole/vaa for more details
+  // Note that the documentation sometimes also calls them VMs (as does IWormhole)
+  // I believe VM stands for 'Verified Message'
   async encodeMockVAA(sender, sequence, nonce, payload, consistencyLevel, chainId) {
     const version = 1;
     const timestamp = Math.floor(Date.now() / 1000);
