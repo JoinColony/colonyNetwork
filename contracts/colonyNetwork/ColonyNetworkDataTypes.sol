@@ -221,19 +221,6 @@ interface ColonyNetworkDataTypes {
     uint256 timestamp;
   }
 
-  struct Bridge {
-    uint256 chainId;
-    uint256 gas;
-    bytes4 msgSenderSig;
-    address correspondingNetwork;
-    bytes updateLogBefore;
-    bytes updateLogAfter;
-    bytes skillCreationBefore;
-    bytes skillCreationAfter;
-    bytes setReputationRootHashBefore;
-    bytes setReputationRootHashAfter;
-  }
-
   struct PendingReputationUpdate {
     address user;
     int256 amount;

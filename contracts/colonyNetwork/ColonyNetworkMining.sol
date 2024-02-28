@@ -96,8 +96,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   // Well this is a weird hack to need
   function newAddressArray() internal pure returns (address[] memory) {}
   function setReputationRootHashFromBridge(
-    bytes32 newHash,
-    uint256 newNLeaves,
+    bytes32 _newHash,
+    uint256 _newNLeaves,
     uint256 _nonce
   ) public onlyNotMiningChain onlyColonyBridge stoppable {
     require(
@@ -105,10 +105,10 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       "colony-mining-bridge-invalid-nonce"
     );
     bridgeCurrentRootHashNonces[block.chainid] = _nonce;
-    reputationRootHash = newHash;
-    reputationRootHashNLeaves = newNLeaves;
+    reputationRootHash = _newHash;
+    reputationRootHashNLeaves = _newNLeaves;
 
-    emit ReputationRootHashSet(newHash, newNLeaves, newAddressArray(), 0);
+    emit ReputationRootHashSet(_newHash, _newNLeaves, newAddressArray(), 0);
   }
 
   function bridgeCurrentRootHash(uint256 _chainId) public onlyMiningChain stoppable {
