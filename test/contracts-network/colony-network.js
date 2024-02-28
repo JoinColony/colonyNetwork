@@ -507,11 +507,7 @@ contract("Colony Network", (accounts) => {
     let suffix;
 
     before(async () => {
-      if (await isXdai()) {
-        suffix = "colonyxdai";
-      } else {
-        suffix = "eth";
-      }
+      suffix = (await isXdai()) ? "colonyxdai" : "eth";
     });
 
     beforeEach(async () => {

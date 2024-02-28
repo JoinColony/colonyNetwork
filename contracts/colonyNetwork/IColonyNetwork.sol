@@ -565,7 +565,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Called to re-send the bridging transaction for a skill to the
   /// @param skillId The skillId we're bridging the creation of
-  function bridgeSkill(uint256 skillId) external;
+  function bridgeSkillIfNotMiningChain(uint256 skillId) external;
 
   /// @notice Function called by bridge transactions to add a new skill
   /// @param _parentSkillId The parent id of the new skill

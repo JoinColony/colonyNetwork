@@ -33,9 +33,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     addSkillToChainTree(_parentSkillId, skillCount);
 
     // If we're not mining chain, then bridge the skill
-    if (!isMiningChain()) {
-      bridgeSkill(skillCount);
-    }
+    bridgeSkillIfNotMiningChain(skillCount);
 
     return skillCount;
   }
@@ -61,9 +59,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   function initialiseRootLocalSkill() public stoppable calledByColony returns (uint256) {
     skillCount += 1;
     // If we're not mining chain, then bridge the skill
-    if (!isMiningChain()) {
-      bridgeSkill(skillCount);
-    }
+    bridgeSkillIfNotMiningChain(skillCount);
     return skillCount;
   }
 
@@ -99,7 +95,10 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     emit BridgeSet(_bridgeAddress);
   }
 
-  function bridgeSkill(uint256 _skillId) public stoppable skillExists(_skillId) onlyNotMiningChain {
+  function bridgeSkillIfNotMiningChain(uint256 _skillId) public stoppable skillExists(_skillId) {
+    if (isMiningChain()) {
+      return;
+    }
     // Build the transaction we're going to send to the bridge to register the
     // creation of this skill on the home chain
     uint256 parentSkillId = skills[_skillId].parents.length == 0

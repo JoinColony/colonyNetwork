@@ -153,9 +153,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     skillCount += 1;
 
     // If we're not mining chain, then bridge the skill
-    if (!isMiningChain()) {
-      IColonyNetwork(address(this)).bridgeSkill(skillCount);
-    }
+    IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
 
     colony.initialiseColony(address(this), _tokenAddress);
 

@@ -6,7 +6,17 @@ const BN = require("bn.js");
 const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
 
-const { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("./constants");
+const {
+  UINT256_MAX,
+  MIN_STAKE,
+  MINING_CYCLE_DURATION,
+  DEFAULT_STAKE,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  FORKED_MAINNET_CHAINID,
+  MAINNET_CHAINID,
+  XDAI_CHAINID,
+  FORKED_XDAI_CHAINID,
+} = require("./constants");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -431,12 +441,7 @@ exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
 };
 
 exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
-  let web3provider;
-  if (!_web3provider) {
-    web3provider = web3.currentProvider;
-  } else {
-    web3provider = _web3provider;
-  }
+  const web3provider = _web3provider || web3.currentProvider;
   if (typeof seconds !== "number") {
     throw new Error("typeof seconds is not a number");
   }
@@ -1247,14 +1252,7 @@ exports.sleep = function sleep(ms) {
 };
 
 exports.upgradeColonyTo = async function (colony, _version) {
-  let version = _version;
-  if (!BN.isBN(_version)) {
-    try {
-      version = new BN(_version);
-    } catch (err) {
-      console.log("Unable to convert passed version to BN");
-    }
-  }
+  const version = new BN(_version);
   let currentVersion = await colony.version();
   while (currentVersion.ltn(version)) {
     await colony.upgrade(currentVersion.addn(1));
@@ -1264,12 +1262,12 @@ exports.upgradeColonyTo = async function (colony, _version) {
 
 exports.isMainnet = async function isMainnet() {
   const chainId = await exports.web3GetChainId();
-  return chainId === 1 || chainId === 2656691;
+  return chainId === MAINNET_CHAINID || chainId === FORKED_MAINNET_CHAINID;
 };
 
 exports.isXdai = async function isXdai() {
   const chainId = await exports.web3GetChainId();
-  return chainId === 100 || chainId === 265669100;
+  return chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID;
 };
 
 class TestAdapter {

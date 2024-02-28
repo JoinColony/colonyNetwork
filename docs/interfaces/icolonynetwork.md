@@ -166,7 +166,7 @@ Try to bridge a reputation update that (previously) failed
 |_updateNumber|uint256|the emission index to bridge
 
 
-### ▸ `bridgeSkill(uint256 skillId)`
+### ▸ `bridgeSkillIfNotMiningChain(uint256 skillId)`
 
 Called to re-send the bridging transaction for a skill to the
 
