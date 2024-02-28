@@ -21,9 +21,10 @@ pragma solidity 0.8.23;
 import { IWormhole } from "../../lib/wormhole/ethereum/contracts/interfaces/IWormhole.sol";
 import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";
 import { IColonyBridge } from "./IColonyBridge.sol";
+import { CallWithGuards } from "../common/CallWithGuards.sol";
 import { DSAuth } from "../../lib/dappsys/auth.sol";
 
-contract WormholeBridgeForColony is DSAuth, IColonyBridge {
+contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
   address colonyNetwork;
   // ChainId => colonyBridge
   mapping(uint256 => address) colonyBridges;
@@ -100,22 +101,15 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge {
 
     // Do the thing
 
-    (bool success, bytes memory returndata) = address(colonyNetwork).call(wormholeMessage.payload);
+    (bool success, bytes memory returndata) = callWithGuards(
+      colonyNetwork,
+      wormholeMessage.payload
+    );
+    // Note that this is not a require because returndata might not be a string, and if we try
+    // to decode it we'll get a revert.
     if (!success) {
-      // Stolen shamelessly from
-      // https://ethereum.stackexchange.com/questions/83528/how-can-i-get-the-revert-reason-of-a-call-in-solidity-so-that-i-can-use-it-in-th
-      // If the _res length is less than 68, then the transaction failed silently (without a revert message)
-      if (returndata.length >= 68) {
-        assembly {
-          // Slice the sighash.
-          returndata := add(returndata, 0x04)
-        }
-        require(false, abi.decode(returndata, (string))); // All that remains is the revert string
-      }
-      require(false, "require-execute-call-reverted-with-no-error");
+      revert(abi.decode(returndata, (string)));
     }
-
-    require(success, "wormhole-bridge-receive-message-failed");
   }
 
   function sendMessage(

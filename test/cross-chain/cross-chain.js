@@ -234,7 +234,7 @@ contract("Cross-chain", (accounts) => {
     const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      const tx = await foreignColonyNetwork.bridgeSkill(i);
+      const tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
       await tx.wait();
       await p;
       // process.exit(1);
@@ -313,7 +313,7 @@ contract("Cross-chain", (accounts) => {
     //   console.log("now latest bridged skill id", i.toHexString());
     //   console.log("bridging skill", i);
     //   const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-    //   tx = await foreignColonyNetwork.bridgeSkill(i);
+    //   tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
     //   await tx.wait();
     //   await p;
     // }
@@ -395,6 +395,14 @@ contract("Cross-chain", (accounts) => {
 
       tx = await homeColonyBridge.connect(ethersHomeSigner2).setWormholeAddress(ADDRESS_ZERO, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
+
+      tx = await homeColonyBridge.connect(ethersHomeSigner2).setChainIdMapping([1], [2], { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
+    });
+
+    it("setChainIdMapping can only be called with sane arguments", async () => {
+      const tx = await homeColonyBridge.setChainIdMapping([1, 3], [2], { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-bridge-chainid-mapping-length-mismatch");
     });
   });
 
@@ -508,7 +516,7 @@ contract("Cross-chain", (accounts) => {
 
       // Need to clean up
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
       await tx.wait();
       await p;
       tx = await homeColonyNetwork.addPendingSkill(foreignSkillCount, { gasLimit: 1000000 });
@@ -536,7 +544,7 @@ contract("Cross-chain", (accounts) => {
 
       // Bridge the next skill
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
       await tx.wait();
       await p;
 
@@ -574,7 +582,7 @@ contract("Cross-chain", (accounts) => {
 
       // Bridge the next skill
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount.sub(1));
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount.sub(1));
       await tx.wait();
       await p;
 
@@ -588,7 +596,7 @@ contract("Cross-chain", (accounts) => {
 
       // And bridging again doesn't work
       p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      tx = await foreignColonyNetwork.bridgeSkill(foreignSkillCount);
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(foreignSkillCount);
       await tx.wait();
       await p;
 
@@ -602,7 +610,7 @@ contract("Cross-chain", (accounts) => {
     it("can't bridge a skill that doesn't exist", async () => {
       const skillCount = await foreignColonyNetwork.getSkillCount();
       const nonExistentSkillId = skillCount.add(10000000);
-      const tx = await foreignColonyNetwork.bridgeSkill(nonExistentSkillId, {
+      const tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(nonExistentSkillId, {
         gasLimit: 1000000,
       });
       await checkErrorRevertEthers(tx.wait(), "colony-invalid-skill-id");
@@ -613,7 +621,7 @@ contract("Cross-chain", (accounts) => {
       await tx.wait();
       const skillCount = await foreignColonyNetwork.getSkillCount();
 
-      tx = await foreignColonyNetwork.bridgeSkill(skillCount, {
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(skillCount, {
         gasLimit: 1000000,
       });
       let receipt = await tx.wait();
@@ -740,9 +748,15 @@ contract("Cross-chain", (accounts) => {
     it("if bridge disabled, cannot bridge current state", async () => {
       let tx = await homeBridge.setBridgeEnabled(false);
       await tx.wait();
-      console.log(foreignChainId);
       tx = await homeColonyNetwork.bridgeCurrentRootHash(foreignChainId, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-mining-bridge-call-failed");
+    });
+
+    it("if bridge not set, cannot bridge current state", async () => {
+      let tx = await homeMetacolony.setColonyBridgeAddress(ADDRESS_ZERO);
+      await tx.wait();
+      tx = await homeColonyNetwork.bridgeCurrentRootHash(foreignChainId, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-bridge-not-set");
     });
 
     it("if bridge unknown, cannot bridge current state", async () => {
