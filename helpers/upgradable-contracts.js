@@ -107,6 +107,7 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   colonyNetworkAuction,
   colonyNetworkENS,
   colonyNetworkExtensions,
+  colonyNetworkSkills,
   contractRecovery,
 ) {
   const deployedImplementations = {};
@@ -115,6 +116,7 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   deployedImplementations.ColonyNetworkMining = colonyNetworkMining.address;
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
   deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;
+  deployedImplementations.ColonyNetworkSkills = colonyNetworkSkills.address;
   deployedImplementations.ColonyNetworkExtensions = colonyNetworkExtensions.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
