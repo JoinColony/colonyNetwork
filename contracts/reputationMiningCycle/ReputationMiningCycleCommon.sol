@@ -222,11 +222,9 @@ contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTr
     return _idx % 2 == 1 ? _idx - 1 : _idx + 1;
   }
 
-  function getChainId() internal view returns (uint256) {
-    uint256 id;
+  function getChainId() internal view returns (uint256 id) {
     assembly {
       id := chainid()
     }
-    return id;
   }
 }
