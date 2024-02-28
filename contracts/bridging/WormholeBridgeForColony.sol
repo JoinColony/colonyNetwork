@@ -31,6 +31,11 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge {
   mapping(uint256 => uint16) public evmChainIdToWormholeChainIdMapping;
   IWormhole public wormhole;
 
+  modifier onlyColonyNetwork() {
+    require(msg.sender == colonyNetwork, "wormhole-bridge-only-colony-network");
+    _;
+  }
+
   function setChainIdMapping(
     uint256[] calldata evmChainIds,
     uint16[] calldata wormholeChainIds
@@ -126,10 +131,5 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge {
     } catch {
       return false;
     }
-  }
-
-  modifier onlyColonyNetwork() {
-    require(msg.sender == colonyNetwork, "wormhole-bridge-only-colony-network");
-    _;
   }
 }

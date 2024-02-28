@@ -43,10 +43,6 @@ contract BridgeMock {
     require(messageSender == address(0), "bridge-no-nested-calls");
     messageSender = _sender;
 
-    // call contract at address a with input mem[in…(in+insize))
-    //   providing g gas and v wei and output area mem[out…(out+outsize))
-    //   returning 0 on error (eg. out of gas) and 1 on success
-
     (bool success, bytes memory returndata) = address(_target).call{ gas: _gasLimit }(_data);
 
     // call failed
