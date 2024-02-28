@@ -166,7 +166,9 @@ async function deployBridge(signer) {
   const wormhole = await wormholeFactory.deploy();
   await wormhole.deployTransaction.wait();
 
-  const tx = await bridge.setWormholeAddress(wormhole.address);
+  let tx = await bridge.setWormholeAddress(wormhole.address);
+  await tx.wait();
+  tx = await bridge.setChainIdMapping([100, 265669100, 265669101], [200, 200, 202]);
   await tx.wait();
 
   return [wormhole, bridge];

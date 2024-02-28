@@ -194,11 +194,11 @@ contract("Cross-chain", (accounts) => {
     // Add bridge to the foreign colony network
     const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
-    wormholeHomeChainId = BigNumber.from(homeChainId).mod(265669);
+    wormholeHomeChainId = BigNumber.from(homeChainId).mod(265669).mul(2);
 
     const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
-    wormholeForeignChainId = BigNumber.from(foreignChainId).mod(265669);
+    wormholeForeignChainId = BigNumber.from(foreignChainId).mod(265669).mul(2);
 
     let etherRouterInfo;
     // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
@@ -744,6 +744,7 @@ contract("Cross-chain", (accounts) => {
     it("if bridge disabled, cannot bridge current state", async () => {
       let tx = await homeBridge.setBridgeEnabled(false);
       await tx.wait();
+      console.log(foreignChainId);
       tx = await homeColonyNetwork.bridgeCurrentRootHash(foreignChainId, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-mining-bridge-call-failed");
     });
@@ -1413,6 +1414,21 @@ contract("Cross-chain", (accounts) => {
       await bridgeMonitor.bridgeSkipped();
       bridgingTx = await p;
       await checkErrorRevertEthers(bridgingTx.wait(), "colony-network-update-already-added");
+    });
+
+    it("an invalid VM is respected", async () => {
+      await homeBridge.setVerifyVMResult(false, "some-good-reason");
+      const vaa = await bridgeMonitor.encodeMockVAA(
+        homeColonyBridge.address,
+        0,
+        0,
+        foreignColonyNetwork.interface.encodeFunctionData("setReputationRootHashFromBridge", [ethers.utils.hexZeroPad("0xdeadbeef", 32), 0, 1]),
+        100,
+        wormholeHomeChainId,
+      );
+      const tx = await homeColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "some-good-reason");
+      await homeBridge.setVerifyVMResult(true, "");
     });
   });
 });

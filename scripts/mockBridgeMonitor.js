@@ -92,7 +92,7 @@ class MockBridgeMonitor {
     this.locked = false;
     this.homeBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
       const { chainId } = await this.signerHome.provider.getNetwork();
-      const wormholeChainId = chainId % 265669;
+      const wormholeChainId = (chainId % 265669) * 2;
 
       if (this.skipCount > 0) {
         this.skipped.push([this.foreignWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
@@ -105,7 +105,7 @@ class MockBridgeMonitor {
 
     this.foreignBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
       const { chainId } = await this.signerForeign.provider.getNetwork();
-      const wormholeChainId = chainId % 265669;
+      const wormholeChainId = (chainId % 265669) * 2;
 
       if (this.skipCount > 0) {
         this.skipped.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);

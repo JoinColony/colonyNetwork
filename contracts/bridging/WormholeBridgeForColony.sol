@@ -28,32 +28,24 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge {
   // ChainId => colonyBridge
   mapping(uint256 => address) colonyBridges;
 
+  mapping(uint256 => uint16) public evmChainIdToWormholeChainIdMapping;
   IWormhole public wormhole;
 
-  function evmChainIdToWormholeChainId(uint256 _evmChainId) public pure returns (uint16) {
-    if (_evmChainId == 1) {
-      return 2;
-    } else if (_evmChainId == 137 || _evmChainId == 80001) {
-      return 5; // Polygon
-    } else if (_evmChainId == 10 || _evmChainId == 420) {
-      return 24; // Optimism
-    } else if (_evmChainId == 100) {
-      return 25; // xDai
-    } else {
-      return uint16(_evmChainId % 265669);
+  function setChainIdMapping(
+    uint256[] calldata evmChainIds,
+    uint16[] calldata wormholeChainIds
+  ) public auth {
+    require(
+      evmChainIds.length == wormholeChainIds.length,
+      "colony-bridge-chainid-mapping-length-mismatch"
+    );
+    for (uint256 i = 0; i < evmChainIds.length; i++) {
+      evmChainIdToWormholeChainIdMapping[evmChainIds[i]] = wormholeChainIds[i];
     }
   }
 
-  function supportedEvmChainId(uint256 _evmChainId) public pure returns (bool) {
-    return
-      _evmChainId == 1 ||
-      _evmChainId == 137 ||
-      _evmChainId == 80001 ||
-      _evmChainId == 10 ||
-      _evmChainId == 420 ||
-      _evmChainId == 100 ||
-      _evmChainId == 265669100 ||
-      _evmChainId == 265669101;
+  function supportedEvmChainId(uint256 _evmChainId) public view returns (bool) {
+    return evmChainIdToWormholeChainIdMapping[_evmChainId] != 0;
   }
 
   function setWormholeAddress(address _wormhole) public auth {
@@ -70,12 +62,12 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge {
 
   function setColonyBridgeAddress(uint256 evmChainId, address _colonyNetwork) public auth {
     require(evmChainId <= type(uint128).max, "colony-bridge-chainid-too-large");
-    uint16 requestedWormholeChainId = evmChainIdToWormholeChainId(evmChainId);
+    uint16 requestedWormholeChainId = evmChainIdToWormholeChainIdMapping[evmChainId];
     colonyBridges[requestedWormholeChainId] = _colonyNetwork;
   }
 
   function getColonyBridgeAddress(uint256 evmChainId) public view returns (address) {
-    uint16 requestedWormholeChainId = evmChainIdToWormholeChainId(evmChainId);
+    uint16 requestedWormholeChainId = evmChainIdToWormholeChainIdMapping[evmChainId];
     return colonyBridges[requestedWormholeChainId];
   }
 
@@ -125,9 +117,7 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge {
     uint256 evmChainId,
     bytes memory payload
   ) public onlyColonyNetwork returns (bool) {
-    if (!supportedEvmChainId(evmChainId)) {
-      revert("colony-bridge-not-known-chain");
-    }
+    require(supportedEvmChainId(evmChainId), "colony-bridge-not-known-chain");
     // This returns a sequence, but we don't care about it
     // The first sequence ID is, I believe 0, so all return values are potentially valid
     // slither-disable-next-line unused-return

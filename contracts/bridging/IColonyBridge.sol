@@ -20,7 +20,7 @@ pragma solidity 0.8.23;
 pragma experimental "ABIEncoderV2";
 
 interface IColonyBridge {
-  function supportedEvmChainId(uint256 _evmChainId) external pure returns (bool);
+  function supportedEvmChainId(uint256 _evmChainId) external view returns (bool);
 
   function setColonyNetworkAddress(address _colonyNetwork) external;
 
