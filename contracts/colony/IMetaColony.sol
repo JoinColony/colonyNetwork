@@ -79,4 +79,17 @@ interface IMetaColony is IColony {
   // @notice Called to set the address of the colony bridge contract
   /// @param _bridgeAddress The address of the bridge
   function setColonyBridgeAddress(address _bridgeAddress) external;
+
+  /// @notice Creates initial inactive reputation mining cycle.
+  /// @dev Only callable from metacolony
+  /// @param miningChainId The chainId of the chain the mining cycle is being created on
+  /// Can either be this chain or another chain, and the function will behave differently depending
+  /// on which is the case.
+  /// @param newHash The root hash of the reputation state tree
+  /// @param newNLeaves The number of leaves in the state tree
+  function initialiseReputationMining(
+    uint256 miningChainId,
+    bytes32 newHash,
+    uint256 newNLeaves
+  ) external;
 }

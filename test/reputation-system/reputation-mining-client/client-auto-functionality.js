@@ -3,6 +3,7 @@
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../../packages/package-utils");
 
@@ -26,6 +27,7 @@ const {
   sleep,
   stopMining,
   startMining,
+  getChainId,
 } = require("../../../helpers/test-helper");
 const {
   setupColonyNetwork,
@@ -70,8 +72,8 @@ process.env.SOLIDITY_COVERAGE
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER1, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER2, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER3, DEFAULT_STAKE);
-        await colonyNetwork.initialiseReputationMining();
-        await colonyNetwork.startNextCycle();
+        const chainId = await getChainId();
+        await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
         await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });

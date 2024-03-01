@@ -136,6 +136,7 @@ contract("Colony Network Recovery", (accounts) => {
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
       await checkErrorRevert(colonyNetwork.createColony(clny.address), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColonyForFrontend(ADDRESS_ZERO, "", "", 18, 0, "", ""), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.createMetaColony(clny.address), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setTokenLocking(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.initialiseRootLocalSkill(), "colony-in-recovery-mode");
@@ -175,7 +176,7 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.deployTokenAuthority(ADDRESS_ZERO, ADDRESS_ZERO, []), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setMiningDelegate(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, []), "colony-in-recovery-mode");
-      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(1, HASHZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.punishStakers([], 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.reward(ADDRESS_ZERO, 0), "colony-in-recovery-mode");

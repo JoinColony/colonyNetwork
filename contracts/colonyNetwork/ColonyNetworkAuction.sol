@@ -243,15 +243,15 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     finalized = true;
 
     // Burn all CLNY received
-    if (isXdai()) {
+    if (isMainnet()) {
+      clnyToken.burn(receivedTotal);
+    } else {
       // On Xdai, we can't burn bridged tokens
       // so let's send them to the metacolony for now.
       require(
         clnyToken.transfer(metaColonyAddress, receivedTotal),
         "colony-network-transfer-failed"
       );
-    } else {
-      clnyToken.burn(receivedTotal);
     }
     emit AuctionFinalized(finalPrice);
   }

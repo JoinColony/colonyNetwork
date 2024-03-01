@@ -135,7 +135,7 @@ contract VotingReputationStorage is
   }
 
   function version() public pure override returns (uint256 _version) {
-    return 10;
+    return 11;
   }
 
   function install(address _colony) public override {
