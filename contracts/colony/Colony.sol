@@ -166,23 +166,6 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit TokensMinted(msgSender(), _guy, _wad);
   }
 
-  function mintTokensForColonyNetwork(uint _wad) public stoppable {
-    // Only the colony Network can call this function
-    require(msgSender() == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
-    // Function only valid on the Meta Colony
-    require(
-      address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(),
-      "colony-access-denied-only-meta-colony-allowed"
-    );
-    // Not callable on Xdai
-    require(!isXdai(), "colony-network-forbidden-on-xdai");
-
-    ERC20Extended(token).mint(_wad);
-    assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
-
-    emit TokensMinted(msgSender(), colonyNetworkAddress, _wad);
-  }
-
   function registerColonyLabel(
     string memory colonyName,
     string memory orbitdb

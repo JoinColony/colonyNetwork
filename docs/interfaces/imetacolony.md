@@ -35,18 +35,6 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
-### ▸ `mintTokensForColonyNetwork(uint256 _wad)`
-
-Mints CLNY in the Meta Colony and transfers them to the colony network. Only allowed to be called on the Meta Colony by the colony network.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_wad|uint256|Amount to mint and transfer to the colony network
-
-
 ### ▸ `setColonyBridgeAddress(address _bridgeAddress)`
 
 Called to set the address of the colony bridge contract
