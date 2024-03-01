@@ -22,11 +22,6 @@ pragma experimental "ABIEncoderV2";
 import { IColony } from "./IColony.sol";
 
 interface IMetaColony is IColony {
-  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network.
-  /// Only allowed to be called on the Meta Colony by the colony network.
-  /// @param _wad Amount to mint and transfer to the colony network
-  function mintTokensForColonyNetwork(uint256 _wad) external;
-
   /// @notice Set the Colony Network fee inverse amount.
   /// @dev Calls `IColonyNetwork.setFeeInverse`.
   /// @param _feeInverse Nonzero amount for the fee inverse

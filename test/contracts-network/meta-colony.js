@@ -499,12 +499,6 @@ contract("Meta Colony", (accounts) => {
     });
   });
 
-  describe("when minting tokens for the Network", () => {
-    it("should NOT allow anyone but the Network to call mintTokensForColonyNetwork", async () => {
-      await checkErrorRevert(metaColony.mintTokensForColonyNetwork(100), "colony-access-denied-only-network-allowed");
-    });
-  });
-
   describe("when setting the per-cycle miner reward", () => {
     it("should allow the reward to be set", async () => {
       const rewardBefore = await colonyNetwork.getReputationMiningCycleReward();

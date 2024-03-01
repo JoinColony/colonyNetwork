@@ -193,7 +193,7 @@ exports.setupMetaColonyWithLockedCLNYToken = async function setupMetaColonyWithL
 
   // The following are the needed `transfer` function permissions on the locked CLNY that we setup via the TokenAuthority here
   // IColonyNetworkMining: rewardStakers
-  // IColony: bootstrapColony, mintTokensForColonyNetwork, claimPayout and claimRewardPayout
+  // IColony: bootstrapColony, claimPayout and claimRewardPayout
   // ITokenLocking: withdraw, deposit
   const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [colonyNetwork.address, tokenLockingAddress]);
 
