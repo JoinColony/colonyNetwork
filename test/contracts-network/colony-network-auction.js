@@ -13,6 +13,7 @@ const {
   getBlockTime,
   getColonyEditable,
   isMainnet,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const { WAD, SECONDS_PER_DAY } = require("../../helpers/constants");
@@ -54,8 +55,8 @@ contract("Colony Network Auction", (accounts) => {
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
     await unlockCLNYToken(metaColony);
 
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const chainId = await getChainId();
+    await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
     const args = getTokenArgs();
     token = await Token.new(...args);

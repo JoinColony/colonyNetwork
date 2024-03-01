@@ -1,4 +1,5 @@
 /* globals artifacts */
+const ChainId = artifacts.require("ChainId");
 const shortid = require("shortid");
 const chai = require("chai");
 const { asciiToHex, isBN } = require("web3-utils");
@@ -127,6 +128,12 @@ exports.web3GetChainId = async function web3GetChainId() {
       return resolve(parseInt(res.result, 16));
     });
   });
+};
+
+exports.getChainId = async function getChainId() {
+  const c = await ChainId.new();
+  const chainId = await c.getChainId();
+  return chainId.toNumber();
 };
 
 exports.web3SignTypedData = function web3SignTypedData(address, typedData) {

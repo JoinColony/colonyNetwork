@@ -101,8 +101,8 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     colonyVersionResolver[_version] = _resolver;
     currentColonyVersion = _version;
 
-    if (!isMiningChain()) {
-      skillCount = toRootSkillId(getChainId());
+    if (!isXdai()) {
+      skillCount = toRootSkillId(block.chainid);
     }
 
     emit ColonyNetworkInitialised(_resolver);

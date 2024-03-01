@@ -102,7 +102,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // Build the transaction we're going to send to the bridge to register the
     // creation of this skill on the home chain
     uint256 parentSkillId = skills[_skillId].parents.length == 0
-      ? (toRootSkillId(getChainId()))
+      ? (toRootSkillId(block.chainid))
       : skills[_skillId].parents[0];
 
     bytes memory payload = abi.encodeWithSignature(
@@ -118,9 +118,12 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
     // Try-catch does not catch if the bridge is not a contract, so we need to check that first
     if (isContract(colonyBridgeAddress)) {
-      try IColonyBridge(colonyBridgeAddress).sendMessage(MINING_CHAIN_ID, payload) returns (
-        bool success
-      ) {
+      try
+        IColonyBridge(colonyBridgeAddress).sendMessage(
+          getAndCacheReputationMiningChainId(),
+          payload
+        )
+      returns (bool success) {
         if (success) {
           return;
           // Every other type of failure drops through to the emitted event
@@ -137,13 +140,13 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   ) public stoppable onlyNotMiningChain {
     require(colonyBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
     require(
-      pendingReputationUpdates[getChainId()][_colony][_updateNumber - 1].colony == address(0x00),
+      pendingReputationUpdates[block.chainid][_colony][_updateNumber - 1].colony == address(0x00),
       "colony-network-not-next-pending-update"
     );
 
-    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[getChainId()][_colony][
-      _updateNumber
-    ];
+    PendingReputationUpdate storage pendingUpdate = pendingReputationUpdates[block.chainid][
+      _colony
+    ][_updateNumber];
     require(pendingUpdate.colony != address(0x00), "colony-network-update-does-not-exist");
 
     int256 updateAmount = decayReputation(pendingUpdate.amount, pendingUpdate.timestamp);
@@ -158,13 +161,16 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       _updateNumber
     );
 
-    delete pendingReputationUpdates[getChainId()][_colony][_updateNumber];
+    delete pendingReputationUpdates[block.chainid][_colony][_updateNumber];
 
     // Try-catch does not catch if the bridge is not a contract, so we need to check that first
     if (isContract(colonyBridgeAddress)) {
-      try IColonyBridge(colonyBridgeAddress).sendMessage(MINING_CHAIN_ID, payload) returns (
-        bool success
-      ) {
+      try
+        IColonyBridge(colonyBridgeAddress).sendMessage(
+          getAndCacheReputationMiningChainId(),
+          payload
+        )
+      returns (bool success) {
         if (success) {
           emit ReputationUpdateSentToBridge(_colony, _updateNumber);
           return;
@@ -460,7 +466,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // TODO: Maybe force to be set on deployment?
     require(colonyBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
     address colonyAddress = msgSender();
-    reputationUpdateCount[getChainId()][colonyAddress] += 1;
+    reputationUpdateCount[block.chainid][colonyAddress] += 1;
     // Build the transaction we're going to send to the bridge
     bytes memory payload = abi.encodeWithSignature(
       "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
@@ -468,18 +474,21 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       _user,
       _amount,
       _skillId,
-      reputationUpdateCount[getChainId()][colonyAddress]
+      reputationUpdateCount[block.chainid][colonyAddress]
     );
 
     // Try-catch does not catch if the bridge is not a contract, so we need to check that first
     if (isContract(colonyBridgeAddress)) {
-      try IColonyBridge(colonyBridgeAddress).sendMessage(MINING_CHAIN_ID, payload) returns (
-        bool success
-      ) {
+      try
+        IColonyBridge(colonyBridgeAddress).sendMessage(
+          getAndCacheReputationMiningChainId(),
+          payload
+        )
+      returns (bool success) {
         if (success) {
           emit ReputationUpdateSentToBridge(
             colonyAddress,
-            reputationUpdateCount[getChainId()][colonyAddress]
+            reputationUpdateCount[block.chainid][colonyAddress]
           );
           return;
           // Every other type of failure will drop through and store
@@ -495,11 +504,11 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       msgSender(),
       block.timestamp
     );
-    pendingReputationUpdates[getChainId()][colonyAddress][
-      reputationUpdateCount[getChainId()][colonyAddress]
+    pendingReputationUpdates[block.chainid][colonyAddress][
+      reputationUpdateCount[block.chainid][colonyAddress]
     ] = pendingReputationUpdate;
 
-    emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[getChainId()][colonyAddress]);
+    emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[block.chainid][colonyAddress]);
   }
 
   // Mining cycle decay constants

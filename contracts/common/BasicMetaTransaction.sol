@@ -36,7 +36,7 @@ abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender, Mult
     uint8 _sigV
   ) public payable returns (bytes memory) {
     require(
-      verify(_user, getMetatransactionNonce(_user), getChainId(), _payload, _sigR, _sigS, _sigV),
+      verify(_user, getMetatransactionNonce(_user), block.chainid, _payload, _sigR, _sigS, _sigV),
       "metatransaction-signer-signature-mismatch"
     );
     incrementMetatransactionNonce(_user);

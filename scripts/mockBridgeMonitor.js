@@ -96,6 +96,7 @@ class MockBridgeMonitor {
     this.locked = false;
     this.homeBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
       const { chainId } = await this.signerHome.provider.getNetwork();
+      // For our local test chains, I've decreed that the wormhole chain ID is the evmChain ID modulo 265669, times 2
       const wormholeChainId = (chainId % 265669) * 2;
 
       if (this.skipCount > 0) {

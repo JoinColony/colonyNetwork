@@ -225,6 +225,18 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     IColonyNetwork(colonyNetworkAddress).setColonyBridgeAddress(_bridgeAddress);
   }
 
+  function initialiseReputationMining(
+    uint256 miningChainId,
+    bytes32 newHash,
+    uint256 newNLeaves
+  ) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).initialiseReputationMining(
+      miningChainId,
+      newHash,
+      newNLeaves
+    );
+  }
+
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).addExtensionToNetwork(_extensionId, _resolver);
   }
@@ -329,6 +341,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
 
     sig = bytes4(keccak256("setColonyBridgeAddress(address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("initialiseReputationMining(uint256,bytes32,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 

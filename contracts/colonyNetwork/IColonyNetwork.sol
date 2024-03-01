@@ -295,7 +295,17 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   function startNextCycle() external;
 
   /// @notice Creates initial inactive reputation mining cycle.
-  function initialiseReputationMining() external;
+  /// @dev Only callable from metacolony
+  /// @param miningChainId The chainId of the chain the mining cycle is being created on
+  /// Can either be this chain or another chain, and the function will behave differently depending
+  /// on which is the case.
+  /// @param newHash The root hash of the reputation state tree
+  /// @param newNLeaves The number of leaves in the state tree
+  function initialiseReputationMining(
+    uint256 miningChainId,
+    bytes32 newHash,
+    uint256 newNLeaves
+  ) external;
 
   /// @notice Get the root hash of the current reputation state tree.
   /// @return rootHash The current Reputation Root Hash

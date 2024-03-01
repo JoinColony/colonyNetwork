@@ -27,6 +27,8 @@ import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { IMetaColony } from "./../colony/IMetaColony.sol";
 import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
+import { IColonyNetwork } from "./IColonyNetwork.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 
 contract ColonyNetworkMining is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
@@ -145,13 +147,35 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   // slither-disable-next-line reentrancy-no-eth
-  function initialiseReputationMining() public onlyMiningChain stoppable {
+  function initialiseReputationMining(
+    uint256 _reputationMiningChainId,
+    bytes32 _newHash,
+    uint256 _newNLeaves
+  ) public stoppable calledByMetaColony {
     require(
-      inactiveReputationMiningCycle == address(0x0),
+      (reputationMiningChainId == 0) || // Either it's the first time setting it
+        // Or we're moving from a chain that's not this chain to another chain that's not this one
+        (reputationMiningChainId != block.chainid && _reputationMiningChainId != block.chainid),
       "colony-reputation-mining-already-initialised"
     );
+    reputationMiningChainId = _reputationMiningChainId;
+
+    if (reputationMiningChainId != block.chainid) {
+      // Reputation mining is on another chain, so we will need to set up the bridge
+      // But we're done here for now other than making sure everything is unset
+      reputationMiningSkillId = 0;
+      inactiveReputationMiningCycle = address(0x0);
+      activeReputationMiningCycle = address(0x0);
+      return;
+    }
+
     address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
+
+    // Add the special mining skill
+    ColonyDataTypes.Domain memory d = IMetaColony(metaColony).getDomain(1);
+
+    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(d.skillId);
 
     EtherRouter e = new EtherRouter();
     e.setResolver(miningCycleResolver);
@@ -159,6 +183,13 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
 
     emit ReputationMiningInitialised(inactiveReputationMiningCycle);
+
+    reputationRootHash = _newHash;
+    reputationRootHashNLeaves = _newNLeaves;
+
+    emit ReputationRootHashSet(_newHash, _newNLeaves, newAddressArray(), 0);
+
+    startNextCycle();
   }
 
   // slither-disable-next-line reentrancy-no-eth
@@ -166,10 +197,6 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
     require(activeReputationMiningCycle == address(0x0), "colony-reputation-mining-still-active");
-    require(
-      inactiveReputationMiningCycle != address(0x0),
-      "colony-reputation-mining-not-initialised"
-    );
     // Inactive now becomes active
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     IReputationMiningCycle(activeReputationMiningCycle).resetWindow();
@@ -300,7 +327,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     ITokenLocking(tokenLocking).transfer(clnyToken, amount, _recipient, true);
   }
 
-  function stakeForMining(uint256 _amount) public onlyMiningChain stoppable {
+  function stakeForMining(uint256 _amount) public onlyMiningChainOrDuringSetup stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
 
     ITokenLocking(tokenLocking).approveStake(msgSender(), _amount, clnyToken);
@@ -381,7 +408,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     // slither-disable-end divide-before-multiply
   }
 
-  function setMiningResolver(address _miningResolver) public onlyMiningChain stoppable auth {
+  function setMiningResolver(
+    address _miningResolver
+  ) public stoppable onlyMiningChainOrDuringSetup auth {
     require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
 
     miningCycleResolver = _miningResolver;

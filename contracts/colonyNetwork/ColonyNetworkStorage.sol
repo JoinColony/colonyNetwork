@@ -126,6 +126,8 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
 
   mapping(uint256 => uint256) bridgeCurrentRootHashNonces; // Storage slot 48
 
+  uint256 reputationMiningChainId; // Storage slot 49
+
   // Modifiers
 
   modifier calledByColony() {
@@ -152,12 +154,36 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
 
   modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
-    require(isMiningChain() || toChainId(skillId) == getChainId(), "colony-invalid-skill-id");
+    require(toChainId(skillId) == block.chainid || isXdai(), "colony-invalid-skill-id");
     _;
   }
 
   modifier onlyColonyBridge() {
     require(msgSender() == colonyBridgeAddress, "colony-network-caller-must-be-colony-bridge");
+    _;
+  }
+
+  modifier onlyMiningChain() {
+    if (getReputationMiningChainId() == block.chainid) {
+      require(
+        inactiveReputationMiningCycle != address(0x0),
+        "colony-reputation-mining-not-initialised"
+      );
+    }
+    require(isMiningChain(), "colony-only-valid-on-mining-chain");
+    _;
+  }
+
+  modifier onlyMiningChainOrDuringSetup() {
+    require(
+      isMiningChain() || getReputationMiningChainId() == 0,
+      "colony-only-valid-on-mining-chain-or-during-setup"
+    );
+    _;
+  }
+
+  modifier onlyNotMiningChain() {
+    require(!isMiningChain(), "colony-only-valid-not-on-mining-chain");
     _;
   }
 
@@ -170,5 +196,23 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
 
   function toChainId(uint256 _skillId) internal pure returns (uint256) {
     return _skillId >> 128;
+  }
+
+  function isMiningChain() internal view returns (bool) {
+    return block.chainid == getReputationMiningChainId();
+  }
+
+  function getReputationMiningChainId() internal view returns (uint256) {
+    if (reputationMiningChainId == 0 && isXdai()) {
+      return block.chainid;
+    }
+    return reputationMiningChainId;
+  }
+
+  function getAndCacheReputationMiningChainId() internal returns (uint256) {
+    if (reputationMiningChainId == 0 && isXdai()) {
+      reputationMiningChainId = block.chainid;
+    }
+    return reputationMiningChainId;
   }
 }
