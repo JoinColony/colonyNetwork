@@ -68,7 +68,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 4;
+    return 5;
   }
 
   /// @notice Configures the extension

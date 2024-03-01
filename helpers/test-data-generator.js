@@ -5,14 +5,13 @@ const { signTypedData_v4: signTypedData } = require("eth-sig-util");
 
 const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, isXdai } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, isXdai, getChainId } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const BasicMetaTransaction = artifacts.require("BasicMetaTransaction");
-const MultiChain = artifacts.require("MultiChain");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
@@ -306,8 +305,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
   const nonce = await contract.getMetatransactionNonce(userAddress);
   // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,
   // we dance around the houses.
-  const multichain = await MultiChain.new();
-  const chainId = await multichain.getChainId();
+  const chainId = await getChainId();
 
   // Sign data
   const msg = web3.utils.soliditySha3(
@@ -328,8 +326,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
 exports.getPermitParameters = async function getPermitParameters(owner, privateKey, spender, amount, deadline, targetAddress) {
   const contract = await MetaTxToken.at(targetAddress);
   const nonce = await contract.nonces(owner);
-  const multichain = await MultiChain.new();
-  const chainId = await multichain.getChainId();
+  const chainId = await getChainId();
   const name = await contract.name();
 
   const sigObject = {
@@ -379,7 +376,7 @@ exports.getPermitParameters = async function getPermitParameters(owner, privateK
     domain: {
       name,
       version: "1",
-      chainId: chainId.toNumber(),
+      chainId,
       verifyingContract: contract.address,
     },
     message: {

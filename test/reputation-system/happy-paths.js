@@ -19,6 +19,7 @@ const {
   makeReputationValue,
   removeSubdomainLimit,
   checkErrorRevert,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const {
@@ -69,6 +70,11 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+
   await metaColony.addLocalSkill();
   localSkillId = await colonyNetwork.getSkillCount();
   expect(localSkillId).to.eq.BN(4);
@@ -88,11 +94,6 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   const domainCount = await metaColony.getDomainCount();
   const latestDomain = await metaColony.getDomain(domainCount);
   expect(latestDomain.skillId).to.eq.BN(11);
-
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };

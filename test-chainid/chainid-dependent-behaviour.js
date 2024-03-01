@@ -2,6 +2,7 @@
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const BN = require("bn.js");
+const ethers = require("ethers");
 
 const { setupENSRegistrar } = require("../helpers/upgradable-contracts");
 const {
@@ -22,11 +23,11 @@ const {
   isMainnet,
   isXdai,
 } = require("../helpers/test-helper");
-const { MINING_CYCLE_DURATION, MIN_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION, WAD, DEFAULT_STAKE } = require("../helpers/constants");
+const { MINING_CYCLE_DURATION, MIN_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION, WAD, DEFAULT_STAKE, XDAI_CHAINID } = require("../helpers/constants");
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
-const MultiChain = artifacts.require("MultiChain");
+const ChainId = artifacts.require("ChainId");
 const DutchAuction = artifacts.require("DutchAuction");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
@@ -47,8 +48,8 @@ contract("Contract Storage", (accounts) => {
   let chainId;
 
   before(async () => {
-    const multiChain = await MultiChain.new();
-    chainId = await multiChain.getChainId();
+    const c = await ChainId.new();
+    chainId = await c.getChainId();
     chainId = chainId.toNumber();
   });
 
@@ -62,8 +63,9 @@ contract("Contract Storage", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
 
-      await colonyNetwork.initialiseReputationMining();
-      await colonyNetwork.startNextCycle();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+    } else {
+      await metaColony.initialiseReputationMining(XDAI_CHAINID, ethers.constants.HashZero, 0);
     }
   });
 
@@ -95,7 +97,7 @@ contract("Contract Storage", (accounts) => {
       if (await isXdai()) {
         await tx;
       } else {
-        await checkErrorRevert(tx, "colony-only-valid-on-mining-chain");
+        await checkErrorRevert(tx, "colony-only-valid-on-mining-chain-or-during-setup");
       }
     });
 
@@ -167,21 +169,29 @@ contract("Contract Storage", (accounts) => {
       const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
       expect(balanceAfter).to.be.zero;
       const supplyAfter = await clnyToken.totalSupply();
-      if (await isXdai()) {
-        // tokens should be transferred to metacolony
-        expect(supplyBefore).to.eq.BN(supplyAfter);
-        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [tokenAuction.address, metaColony.address, receivedTotal]);
-      } else {
+      if (await isMainnet()) {
         // tokens should be burned.
         expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
         await expectEvent(tx, "Burn(address indexed,uint256)", [tokenAuction.address, receivedTotal]);
+      } else {
+        // tokens should be transferred to metacolony
+        expect(supplyBefore).to.eq.BN(supplyAfter);
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [tokenAuction.address, metaColony.address, receivedTotal]);
       }
     });
 
-    it("Reputation mining cannot be initialised on non-mining chain", async () => {
-      if (!(await isXdai())) {
-        await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-only-valid-on-mining-chain");
+    it("Reputation mining chain can be changed on non-mining chain", async function () {
+      if (await isXdai()) {
+        // Not appropriate test on xdai
+        this.skip();
       }
+
+      const otherChainId = chainId + 1;
+      await metaColony.initialiseReputationMining(otherChainId, ethers.constants.HashZero, 0);
+    });
+
+    it.skip("Reputation mining chain can be changed on mining chain", async () => {
+      // Not a test, or contract code, that has been written yet
     });
   });
 });

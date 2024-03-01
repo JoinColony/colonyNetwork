@@ -18,22 +18,8 @@
 
 pragma solidity 0.8.23;
 
-contract MultiChain {
-  // Prefixes of 265669 indicate a private forked version of the network
-  // used for testing
-
-  function isXdai() internal view returns (bool) {
-    uint256 chainId = block.chainid;
-    return (chainId == 100 || chainId == 265669100);
-  }
-
-  function isMainnet() internal view returns (bool) {
-    uint256 chainId = block.chainid;
-    return (chainId == 1 || chainId == 2656691);
-  }
-
-  function isGoerli() internal view returns (bool) {
-    uint256 chainId = block.chainid;
-    return (chainId == 5 || chainId == 2656695);
+contract ChainId {
+  function getChainId() public view returns (uint256) {
+    return block.chainid;
   }
 }

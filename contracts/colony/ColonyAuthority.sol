@@ -131,6 +131,7 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony vxxx
     addRoleCapability(ROOT_ROLE, "setColonyBridgeAddress(address)");
+    addRoleCapability(ROOT_ROLE, "initialiseReputationMining(uint256,bytes32,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

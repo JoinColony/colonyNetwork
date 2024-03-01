@@ -175,7 +175,7 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.deployTokenAuthority(ADDRESS_ZERO, ADDRESS_ZERO, []), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setMiningDelegate(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, []), "colony-in-recovery-mode");
-      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(1, HASHZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.punishStakers([], 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.reward(ADDRESS_ZERO, 0), "colony-in-recovery-mode");

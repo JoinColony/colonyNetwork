@@ -1,4 +1,5 @@
 /* globals artifacts */
+const ChainId = artifacts.require("ChainId");
 const shortid = require("shortid");
 const chai = require("chai");
 const { asciiToHex, isBN } = require("web3-utils");
@@ -126,6 +127,28 @@ exports.web3GetChainId = async function web3GetChainId() {
     web3.currentProvider.send(packet, (err, res) => {
       if (err !== null) return reject(err);
       return resolve(parseInt(res.result, 16));
+    });
+  });
+};
+
+exports.getChainId = async function getChainId() {
+  const c = await ChainId.new();
+  const chainId = await c.getChainId();
+  return chainId.toNumber();
+};
+
+exports.web3SignTypedData = function web3SignTypedData(address, typedData) {
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_signTypedData",
+    params: [address, typedData],
+    id: new Date().getTime(),
+  };
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(packet, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res.result);
     });
   });
 };

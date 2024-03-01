@@ -38,6 +38,7 @@ const {
   currentBlock,
   currentBlockTime,
   makeReputationKey,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -75,8 +76,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2, MINER3, MINER4) => {
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER4, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
   goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
   // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.

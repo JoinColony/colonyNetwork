@@ -23,6 +23,7 @@ const {
   expectNoEvent,
   getColonyEditable,
   isXdai,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const { CURR_VERSION, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
@@ -149,9 +150,13 @@ contract("Colony Network", (accounts) => {
   });
 
   describe("when managing the mining process", () => {
-    it("should not allow reinitialisation of reputation mining process", async () => {
-      await colonyNetwork.initialiseReputationMining();
-      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
+    it("should not allow reinitialisation of reputation mining process (if we're on the mining chain)", async () => {
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+      await checkErrorRevert(
+        metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0),
+        "colony-reputation-mining-already-initialised",
+      );
     });
 
     it("should not allow setting the mining resolver to null", async () => {
@@ -162,10 +167,22 @@ contract("Colony Network", (accounts) => {
       await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero, { from: accounts[1] }), "ds-auth-unauthorized");
     });
 
-    it("should not allow initialisation if the clny token is 0", async () => {
+    it("should not allow initialisation of mining on this chain if the clny token is 0", async () => {
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
-      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-clny-token-invalid-address");
+      const chainId = await getChainId();
+      await checkErrorRevert(
+        metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0),
+        "colony-reputation-mining-clny-token-invalid-address",
+      );
+    });
+
+    it("should allow initialisation of mining on another chain if the clny token is 0", async () => {
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      let chainId = await getChainId();
+      chainId += 1;
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
     });
 
     it("should not allow another mining cycle to start if the process isn't initialised", async () => {
@@ -173,7 +190,8 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not allow another mining cycle to start if the clny token is 0", async () => {
-      await colonyNetwork.initialiseReputationMining();
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
 
@@ -181,6 +199,9 @@ contract("Colony Network", (accounts) => {
     });
 
     it('should not allow "punishStakers" to be called from an account that is not the mining cycle', async () => {
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+
       await checkErrorRevert(
         colonyNetwork.punishStakers([accounts[0], accounts[1]], MIN_STAKE),
         "colony-reputation-mining-sender-not-active-reputation-cycle",
@@ -316,7 +337,11 @@ contract("Colony Network", (accounts) => {
       expect(colonyCount).to.eq.BN(8);
     });
 
-    it("when meta colony is created, should have the root domain and local skills initialised, plus the local mining skill", async () => {
+    it(`when meta colony is created, after initialising mining,
+        should have the root domain and local skills initialised, plus the local mining skill`, async () => {
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
 

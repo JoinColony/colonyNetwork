@@ -2,10 +2,18 @@
 
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { soliditySha3 } = require("web3-utils");
 const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO, CURR_VERSION } = require("../../helpers/constants");
-const { checkErrorRevert, removeSubdomainLimit, restoreSubdomainLimit, bn2bytes32, upgradeColonyTo } = require("../../helpers/test-helper");
+const {
+  checkErrorRevert,
+  removeSubdomainLimit,
+  restoreSubdomainLimit,
+  bn2bytes32,
+  upgradeColonyTo,
+  getChainId,
+} = require("../../helpers/test-helper");
 const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } = require("../../helpers/test-data-generator");
 const {
   downgradeColony,
@@ -33,6 +41,9 @@ contract("Meta Colony", (accounts) => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
+    const chainId = await getChainId();
+    await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+
     await metaColony.addLocalSkill();
 
     // Skills:
@@ -43,9 +54,6 @@ contract("Meta Colony", (accounts) => {
 
     const skillCount = await colonyNetwork.getSkillCount();
     expect(skillCount).to.eq.BN(4);
-
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
   });
 
   describe("when working with ERC20 properties of Meta Colony token", () => {

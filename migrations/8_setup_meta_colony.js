@@ -1,6 +1,7 @@
 /* globals artifacts */
 
 const assert = require("assert");
+const ethers = require("ethers");
 const { UINT256_MAX, FORKED_XDAI_CHAINID, XDAI_CHAINID } = require("../helpers/constants");
 
 const Token = artifacts.require("./Token");
@@ -8,7 +9,7 @@ const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 const ITokenLocking = artifacts.require("./ITokenLocking");
 const TokenAuthority = artifacts.require("./TokenAuthority");
-const MultiChain = artifacts.require("./MultiChain");
+const ChainId = artifacts.require("./ChainId");
 
 const Resolver = artifacts.require("./Resolver");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -45,8 +46,8 @@ module.exports = async function (deployer, network, accounts) {
 
   // Check chain id
   // If not a mining chain, then skip setting up mining
-  const multichain = await MultiChain.new();
-  const chainId = await multichain.getChainId();
+  const c = await ChainId.new();
+  const chainId = await c.getChainId();
 
   if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
     // These commands add MAIN_ACCOUNT as a reputation miner.
@@ -112,11 +113,13 @@ module.exports = async function (deployer, network, accounts) {
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
   if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    await metaColony.initialiseReputationMining(chainId.toString(), ethers.constants.HashZero, 0);
+    // await colonyNetwork.startNextCycle();
     const skillCount = await colonyNetwork.getSkillCount();
+    console.log(skillCount.toString(16));
     assert.equal(skillCount.toNumber(), 3);
   } else {
+    await metaColony.initialiseReputationMining(FORKED_XDAI_CHAINID.toString(), ethers.constants.HashZero, 0);
     const skillCount = await colonyNetwork.getSkillCount();
     assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
   }

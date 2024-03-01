@@ -925,11 +925,19 @@ Initialises the colony network by setting the first Colony version resolver to `
 |_version|uint256|Version of the Colony contract the resolver represents
 
 
-### ▸ `initialiseReputationMining()`
+### ▸ `initialiseReputationMining(uint256 miningChainId, bytes32 newHash, uint256 newNLeaves)`
 
 Creates initial inactive reputation mining cycle.
 
+*Note: Only callable from metacolony*
 
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|miningChainId|uint256|The chainId of the chain the mining cycle is being created on Can either be this chain or another chain, and the function will behave differently depending on which is the case.
+|newHash|bytes32|The root hash of the reputation state tree
+|newNLeaves|uint256|The number of leaves in the state tree
 
 
 ### ▸ `initialiseRootLocalSkill():uint256 _rootLocalSkillId`
