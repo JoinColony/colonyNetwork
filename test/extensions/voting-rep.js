@@ -2802,7 +2802,7 @@ contract("Voting Reputation", (accounts) => {
     before(async () => {
       // See if already deployed
 
-      const resolverAddress = await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 9);
+      let resolverAddress = await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 9);
 
       if (resolverAddress === ADDRESS_ZERO) {
         // V9 is `glwss4`,
@@ -2818,12 +2818,26 @@ contract("Voting Reputation", (accounts) => {
       // though we can skip any tags where the contract did not change
       // I don't think there's an elegant way to automate this, as the deployOldExtensionVersion
       // call might change between versions
+
+      resolverAddress = await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 10);
+
+      if (resolverAddress === ADDRESS_ZERO) {
+        // V10 is `hmwss`,
+        await deployOldExtensionVersion(
+          "VotingReputation",
+          "IVotingReputation",
+          ["VotingReputation,VotingReputationMisalignedRecovery,VotingReputationStaking"],
+          "hmwss",
+          colonyNetwork,
+        );
+      }
     });
 
     // This function as written would also need updating every version, but is infinitely more
     // upgradeable
     async function upgradeFromV9ToLatest(colonyInTest) {
       await colonyInTest.upgradeExtension(VOTING_REPUTATION, 10);
+      await colonyInTest.upgradeExtension(VOTING_REPUTATION, 11);
     }
 
     beforeEach(async () => {
@@ -2867,7 +2881,7 @@ contract("Voting Reputation", (accounts) => {
       expect(expenditure.globalClaimDelay).to.eq.BN(UINT256_MAX.divn(3)); // V9 behavior
 
       await upgradeFromV9ToLatest(colony);
-      expect(await voting.version()).to.eq.BN(10);
+      expect(await voting.version()).to.eq.BN(version);
 
       await forwardTime(STAKE_PERIOD, this);
       await voting.finalizeMotion(motionId);
@@ -2909,7 +2923,7 @@ contract("Voting Reputation", (accounts) => {
       expect(slot.claimDelay).to.eq.BN(UINT256_MAX.divn(3)); // V9 behavior
 
       await upgradeFromV9ToLatest(colony);
-      expect(await voting.version()).to.eq.BN(10);
+      expect(await voting.version()).to.eq.BN(version);
 
       await forwardTime(STAKE_PERIOD, this);
       await voting.finalizeMotion(motionId);
@@ -3171,7 +3185,7 @@ contract("Voting Reputation", (accounts) => {
       const motionId = await voting.getMotionCount();
 
       await upgradeFromV9ToLatest(colony);
-      expect(await voting.version()).to.eq.BN(10);
+      expect(await voting.version()).to.eq.BN(version);
 
       const motion = await voting.getMotion(motionId);
       expect(motion.action).to.equal(action);
@@ -3186,7 +3200,7 @@ contract("Voting Reputation", (accounts) => {
       const motionId = await voting.getMotionCount();
 
       await upgradeFromV9ToLatest(colony);
-      expect(await voting.version()).to.eq.BN(10);
+      expect(await voting.version()).to.eq.BN(version);
 
       const motion = await voting.getMotion(motionId);
       expect(motion.altTarget).to.equal(oneTxPayment.address);
