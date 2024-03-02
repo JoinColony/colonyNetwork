@@ -559,6 +559,8 @@ contract("One transaction payments", (accounts) => {
     before(async () => {
       // V5 is `glwss4`,
       await deployOldExtensionVersion("OneTxPayment", "OneTxPayment", ["OneTxPayment"], "glwss4", colonyNetwork);
+      // V6 is `hmwss`,
+      await deployOldExtensionVersion("OneTxPayment", "OneTxPayment", ["OneTxPayment"], "hmwss", colonyNetwork);
       await deployColonyNetworkVersionGLWSS4();
       await deployColonyVersionGLWSS4(colonyNetwork);
       await deployColonyVersionHMWSS(colonyNetwork);
