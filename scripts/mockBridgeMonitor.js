@@ -1,7 +1,6 @@
 const ethers = require("ethers");
 
-// eslint-disable-next-line import/no-unresolved
-const bridgeAbi = require("../artifacts/contracts/testHelpers/BridgeMock.sol/BridgeMock.json").abi;
+const bridgeAbi = require("../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json").abi;
 const wormholeBridgeForColonyAbi = require("../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json").abi;
 
 const ethereumAddressToWormholeAddress = (address) => {

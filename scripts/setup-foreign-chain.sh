@@ -5,7 +5,7 @@ set -o errexit
 
 # Start second instance of hardhat
 
-export CHAIN_ID=2656692
+export CHAIN_ID=265669101
 export PORT="${PORT:-8546}"
 export DBPATH=./ganache-chain-db-2
 

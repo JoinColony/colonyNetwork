@@ -85,7 +85,7 @@ module.exports = {
   networks: {
     development: {
       url: "http://localhost:8545",
-      chainId: 2656691,
+      chainId: 265669100,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -94,7 +94,7 @@ module.exports = {
     },
     development2: {
       url: "http://localhost:8546",
-      chainId: 2656692,
+      chainId: 265669101,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -103,7 +103,7 @@ module.exports = {
     },
     integration: {
       url: "http://localhost:8545",
-      chainId: 1998,
+      chainId: 265669100,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -120,7 +120,7 @@ module.exports = {
       blockGasLimit: 6721975,
     },
     hardhat: {
-      chainId: Number(process.env.HARDHAT_CHAIN_ID) || 2656691,
+      chainId: Number(process.env.HARDHAT_CHAIN_ID) || 265669100,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,

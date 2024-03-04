@@ -48,10 +48,10 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
     { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "ZodiacBridgeModuleMock" },
     flags,
   );
-  const BridgeMock = await loader.load(
-    { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "BridgeMock" },
-    flags,
-  );
+  // const BridgeMock = await loader.load(
+  //   { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "BridgeMock" },
+  //   flags,
+  // );
   const Erc721Mock = await loader.load(
     { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "ERC721Mock" },
     flags,
@@ -179,12 +179,21 @@ async function deployBridge(signer) {
   // const bridge = await bridgeFactory.deploy();
   // await bridge.deployTransaction.wait();
   // return bridge;
-  const WormholeBridgeForColony = await loader.load({ contractName: "WormholeBridgeForColony" }, { abi: true, address: false });
+  const WormholeBridgeForColony = await loader.load(
+    {
+      contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "bridging"),
+      contractName: "WormholeBridgeForColony",
+    },
+    { abi: true, address: false },
+  );
   const bridgeFactory = new ethers.ContractFactory(WormholeBridgeForColony.abi, WormholeBridgeForColony.bytecode, signer);
   const bridge = await bridgeFactory.deploy();
   await bridge.deployTransaction.wait();
 
-  const WormholeMock = await loader.load({ contractName: "WormholeMock" }, { abi: true, address: false });
+  const WormholeMock = await loader.load(
+    { contractName: "WormholeMock", contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers") },
+    { abi: true, address: false },
+  );
   const wormholeFactory = new ethers.ContractFactory(WormholeMock.abi, WormholeMock.bytecode, signer);
   const wormhole = await wormholeFactory.deploy();
   await wormhole.deployTransaction.wait();

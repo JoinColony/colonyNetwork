@@ -93,6 +93,9 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
+          name: "Building contracts"
+          command: npx hardhat compile
+      - run:
           name: "Linting JavaScript"
           command: npm run eslint
       - run:

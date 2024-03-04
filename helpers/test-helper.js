@@ -456,7 +456,7 @@ exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
       resolve(test.skip());
     } else {
       // console.log(`Forwarding time with ${seconds}s ...`);
-      web3.currentProvider.send(
+      web3provider.send(
         {
           jsonrpc: "2.0",
           method: "evm_increaseTime",
@@ -467,7 +467,7 @@ exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
           if (err) {
             return reject(err);
           }
-          return web3.currentProvider.send(
+          return web3provider.send(
             {
               jsonrpc: "2.0",
               method: "evm_mine",

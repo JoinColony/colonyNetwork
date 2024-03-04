@@ -1,5 +1,7 @@
 /* globals artifacts */
 
+const ethers = require("ethers");
+
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const ContractRecovery = artifacts.require("ContractRecovery");
@@ -20,6 +22,7 @@ const ColonyNetworkMining = artifacts.require("ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("ColonyNetworkAuction");
 const ColonyNetworkENS = artifacts.require("ColonyNetworkENS");
 const ColonyNetworkExtensions = artifacts.require("ColonyNetworkExtensions");
+const ColonyNetworkSkills = artifacts.require("ColonyNetworkSkills");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
 const ENSRegistry = artifacts.require("ENSRegistry");
@@ -69,6 +72,8 @@ const {
   setupENSRegistrar,
   setupEtherRouter,
 } = require("../helpers/upgradable-contracts");
+const { isXdai } = require("../helpers/test-helper");
+const { UINT256_MAX } = require("../helpers/constants");
 
 module.exports = async () => {
   await deployContracts();
@@ -109,6 +114,9 @@ async function deployContracts() {
   const colonyNetworkExtensions = await ColonyNetworkExtensions.new();
   ColonyNetworkExtensions.setAsDeployed(colonyNetworkExtensions);
 
+  const colonyNetworkSkills = await ColonyNetworkSkills.new();
+  ColonyNetworkSkills.setAsDeployed(colonyNetworkSkills);
+
   const reputationMiningCycle = await ReputationMiningCycle.new();
   ReputationMiningCycle.setAsDeployed(reputationMiningCycle);
 
@@ -126,6 +134,7 @@ async function setupColonyNetwork() {
   const colonyNetworkAuction = await ColonyNetworkAuction.deployed();
   const colonyNetworkENS = await ColonyNetworkENS.deployed();
   const colonyNetworkExtensions = await ColonyNetworkExtensions.deployed();
+  const colonyNetworkSkills = await ColonyNetworkSkills.deployed();
   const etherRouter = await EtherRouter.deployed();
   const resolver = await Resolver.deployed();
   const contractRecovery = await ContractRecovery.deployed();
@@ -139,6 +148,7 @@ async function setupColonyNetwork() {
     colonyNetworkAuction,
     colonyNetworkENS,
     colonyNetworkExtensions,
+    colonyNetworkSkills,
     contractRecovery,
   );
 
@@ -311,11 +321,14 @@ async function setupMetaColony() {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  await metaColony.initialiseReputationMining(265669100, ethers.constants.HashZero, 0);
 
   const skillCount = await colonyNetwork.getSkillCount();
-  assert.equal(skillCount.toNumber(), 3); // Root domain, root local skill, mining skill
+  if (await isXdai()) {
+    assert.equal(skillCount.toNumber(), 3); // Root domain, root local skill, mining skill
+  } else {
+    assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
+  }
 }
 
 async function setupExtensions() {

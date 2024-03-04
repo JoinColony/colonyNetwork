@@ -25,7 +25,7 @@
     "provision:token:contracts": "truffle compile && truffle compile --contracts_directory 'lib/dappsys/[!note][!stop][!proxy][!thing][!token]*.sol' && bash ./scripts/provision-token-contracts.sh",
     "start:bridging": "cd ./lib/safe-contracts && npm i || true && cd ../../ && bash ./scripts/setup-foreign-chain.sh && node ./scripts/setup-bridging-contracts.js &",
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
-    "start:blockchain:client:2": "CHAIN_ID=2656692 PORT=8546 DBPATH=./ganache-chain-db-2 bash ./scripts/start-blockchain-client.sh",
+    "start:blockchain:client:2": "CHAIN_ID=265669101 PORT=8546 DBPATH=./ganache-chain-db-2 bash ./scripts/start-blockchain-client.sh",
     "start:reputation:oracle": "./scripts/start-reputation-oracle.js",
     "reset:blockchain:client": "npm run stop:blockchain:client && rm -rf ./ganache-chain-db*",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",

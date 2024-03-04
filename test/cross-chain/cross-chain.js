@@ -39,14 +39,16 @@ const { TruffleLoader } = require("../../packages/package-utils");
 const UINT256_MAX_ETHERS = ethers.BigNumber.from(2).pow(256).sub(1);
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "../..", "artifacts", "contracts"),
 });
 
 contract("Cross-chain", (accounts) => {
   let homeColony;
   let foreignColony;
   let homeColonyNetwork;
+  let homeColonyNetworkAddress;
   let foreignColonyNetwork;
+  let foreignColonyNetworkAddress;
   let homeBridge;
   let foreignBridge;
   let homeColonyBridge;
@@ -196,7 +198,7 @@ contract("Cross-chain", (accounts) => {
       try {
         // await exec(`npm run provision:token:contracts`);
         const output = await exec(`npx hardhat deploy --network development2`);
-        [, , , , , , , etherRouterAddress] = output
+        [, , , , , , , homeColonyNetworkAddress] = output
           .split("\n")
           .filter((x) => x.includes("Colony Network deployed at"))[0]
           .split(" ");
@@ -204,32 +206,44 @@ contract("Cross-chain", (accounts) => {
         console.log(err);
         process.exit(1);
       }
+      foreignColonyNetworkAddress = (await EtherRouter.deployed()).address;
     } else {
-      etherRouterAddress = (await EtherRouter.deployed()).address;
+      try {
+        // await exec(`npm run provision:token:contracts`);
+        const output = await exec(`npx hardhat deploy --network development2`);
+        [, , , , , , , foreignColonyNetworkAddress] = output
+          .split("\n")
+          .filter((x) => x.includes("Colony Network deployed at"))[0]
+          .split(" ");
+      } catch (err) {
+        console.log(err);
+        process.exit(1);
+      }
+
+      homeColonyNetworkAddress = (await EtherRouter.deployed()).address;
     }
 
-    const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
+    // const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
     wormholeHomeChainId = BigNumber.from(homeChainId).mod(265669).mul(2);
 
-    const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
+    // const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
     wormholeForeignChainId = BigNumber.from(foreignChainId).mod(265669).mul(2);
+  });
 
   beforeEach(async () => {
-    // Set up a colony on the home chain. That may or may not be the truffle chain...
-    const colonyNetworkEthers = await new ethers.Contract(etherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
-
+    homeColonyNetwork = await new ethers.Contract(homeColonyNetworkAddress, IColonyNetwork.abi, ethersHomeSigner);
+    foreignColonyNetwork = await new ethers.Contract(foreignColonyNetworkAddress, IColonyNetwork.abi, ethersForeignSigner);
     const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
     foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
     const homeMCAddress = await homeColonyNetwork.getMetaColony();
     homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
-
     await setForeignBridgeData(foreignColonyBridge.address);
     await setHomeBridgeData(homeColonyBridge.address);
-
     // Bridge over skills that have been created on the foreign chain
 
+    bridgeMonitor.reset();
     const latestSkillId = await foreignColonyNetwork.getSkillCount();
     const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
@@ -282,8 +296,6 @@ contract("Cross-chain", (accounts) => {
   beforeEach(async () => {
     homeSnapshotId = await snapshot(web3HomeProvider);
     foreignSnapshotId = await snapshot(web3ForeignProvider);
-    bridgeMonitor.reset();
-
     let tx = await foreignBridge.setBridgeEnabled(true);
     await tx.wait();
     tx = await homeBridge.setBridgeEnabled(true);
