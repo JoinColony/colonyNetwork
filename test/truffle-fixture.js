@@ -327,7 +327,14 @@ async function setupExtensions() {
 
   async function addExtension(contractDir, interfaceName, extensionName, implementations) {
     const NAME_HASH = soliditySha3(extensionName);
-    const deployments = await Promise.all(implementations.map((x) => x.new()));
+    const deployments = [];
+
+    for (let i = 0; i < implementations.length; i += 1) {
+      const implementation = implementations[i];
+      const deployment = await implementation.new();
+      deployments.push(deployment);
+    }
+
     const resolver = await Resolver.new();
 
     const deployedImplementations = {};
