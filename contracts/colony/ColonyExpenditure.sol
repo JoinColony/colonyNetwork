@@ -91,6 +91,21 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureTransferred(msgSender(), _id, _newOwner);
   }
 
+  function cancelExpenditureViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id
+  )
+    public
+    stoppable
+    expenditureDraftOrLocked(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
+  {
+    expenditures[_id].status = ExpenditureStatus.Cancelled;
+
+    emit ExpenditureCancelled(msgSender(), _id);
+  }
+
   function cancelExpenditure(
     uint256 _id
   ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {

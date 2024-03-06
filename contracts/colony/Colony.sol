@@ -34,7 +34,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   // prettier-ignore
-  function version() public pure returns (uint256 colonyVersion) { return 14; }
+  function version() public pure returns (uint256 colonyVersion) { return 15; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -303,57 +303,12 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit ColonyUpgraded(msgSender(), currentVersion, _newVersion);
   }
 
-  // v11 to v12
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
+    sig = bytes4(keccak256("cancelExpenditureViaArbitration(uint256,uint256,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
-
-    // Remove Task & Payment functions
-    sig = bytes4(keccak256("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
-    sig = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
-    sig = bytes4(keccak256("setPaymentRecipient(uint256,uint256,uint256,address)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
-    sig = bytes4(keccak256("setPaymentSkill(uint256,uint256,uint256,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
-    sig = bytes4(keccak256("setPaymentPayout(uint256,uint256,uint256,address,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
-    sig = bytes4(keccak256("finalizePayment(uint256,uint256,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Administration), address(this), sig, false);
-
-    // Remove Global Skills functions
-    sig = bytes4(keccak256("addGlobalSkill()"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, false);
-    sig = bytes4(keccak256("deprecateGlobalSkill(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, false);
-
-    // If OneTxPayment extension is installed, add the new role and upgrade it
-    bytes32 ONE_TX_PAYMENT = keccak256("OneTxPayment");
-    IColonyNetwork network = IColonyNetwork(colonyNetworkAddress);
-    address oneTxPaymentAddress = network.getExtensionInstallation(ONE_TX_PAYMENT, address(this));
-
-    if (oneTxPaymentAddress != address(0x0)) {
-      uint256 installedVersion = ColonyExtension(oneTxPaymentAddress).version();
-      require(installedVersion >= 5, "colony-upgrade-one-tx-payment-to-6");
-      if (installedVersion == 5) {
-        // If installed in root, add arbitration permission
-        if (colonyAuthority.hasUserRole(oneTxPaymentAddress, 1, uint8(ColonyRole.Administration))) {
-          colonyAuthority.setUserRole(oneTxPaymentAddress, 1, uint8(ColonyRole.Arbitration), true);
-        }
-        // Upgrade extension
-        network.upgradeExtension(ONE_TX_PAYMENT, 6);
-      }
-    }
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

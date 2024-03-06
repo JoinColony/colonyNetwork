@@ -14,6 +14,7 @@ const {
   downgradeColony,
   deployColonyNetworkVersionGLWSS4,
   downgradeColonyNetwork,
+  deployColonyVersionHMWSS,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
@@ -146,6 +147,20 @@ contract("Colony Expenditure", (accounts) => {
       expect(expenditure.owner).to.equal(USER);
     });
 
+    it("should allow arbitration users to cancel expenditures", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1, { from: ADMIN });
+      const expenditureId = await colony.getExpenditureCount();
+
+      let expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.status).to.eq.BN(DRAFT);
+
+      await checkErrorRevert(colony.cancelExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ADMIN }), "ds-auth-unauthorized");
+      await colony.cancelExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ARBITRATOR });
+
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.status).to.eq.BN(CANCELLED);
+    });
+
     it("a non-root user cannot setDefaultGlobalClaimDelay", async () => {
       await checkErrorRevert(colony.setDefaultGlobalClaimDelay(0, { from: ADMIN }), "ds-auth-unauthorized");
     });
@@ -179,6 +194,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should error if the expenditure does not exist", async () => {
       await checkErrorRevert(colony.setExpenditureSkills(100, [SLOT0], [localSkillId]), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.transferExpenditure(100, USER), "colony-expenditure-does-not-exist");
+      await checkErrorRevert(colony.cancelExpenditure(100, { from: ARBITRATOR }), "colony-expenditure-does-not-exist");
       await checkErrorRevert(
         colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ARBITRATOR }),
         "colony-expenditure-does-not-exist",
@@ -301,6 +317,7 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should not allow owners to set a (now defunct) global skill, either deprecated or undeprecated", async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await deployColonyVersionHMWSS(colonyNetwork);
       await downgradeColony(colonyNetwork, metaColony, "glwss4");
 
       // Make the colonyNetwork the old version
@@ -322,6 +339,7 @@ contract("Colony Expenditure", (accounts) => {
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
       await metaColony.upgrade(14);
+      await metaColony.upgrade(15);
 
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId, { from: ADMIN }), "colony-not-valid-local-skill");
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId2, { from: ADMIN }), "colony-not-valid-local-skill");
@@ -458,6 +476,15 @@ contract("Colony Expenditure", (accounts) => {
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
 
       await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN }), "colony-expenditure-not-draft");
+    });
+
+    it("should not allow arbitration to cancel an expenditure that has been finalized", async () => {
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+
+      await checkErrorRevert(
+        colony.cancelExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ARBITRATOR }),
+        "colony-expenditure-not-draft-or-locked",
+      );
     });
 
     it("should not allow non-owners to set a payout", async () => {

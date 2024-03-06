@@ -59,6 +59,19 @@ module.exports.deployColonyVersionGLWSS4 = (colonyNetwork) => {
   );
 };
 
+module.exports.deployColonyVersionHMWSS = (colonyNetwork) => {
+  return module.exports.deployOldColonyVersion(
+    "Colony",
+    "IMetaColony",
+    [
+      // eslint-disable-next-line max-len
+      "Colony,ColonyDomains,ColonyExpenditure,ColonyFunding,ColonyRewards,ColonyRoles,ContractRecovery,ColonyArbitraryTransaction",
+    ],
+    "hmwss",
+    colonyNetwork,
+  );
+};
+
 module.exports.deployColonyNetworkVersionGLWSS4 = () => {
   return module.exports.deployOldColonyNetworkVersion(
     "",

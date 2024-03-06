@@ -128,6 +128,20 @@ Cancels the expenditure and prevents further editing. Can only be called by expe
 |_id|uint256|Expenditure identifier
 
 
+### ▸ `cancelExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)`
+
+Cancels the expenditure and prevents further editing.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
+|_id|uint256|Expenditure identifier
+
+
 ### ▸ `claimColonyFunds(address _token)`
 
 Move any funds received by the colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
