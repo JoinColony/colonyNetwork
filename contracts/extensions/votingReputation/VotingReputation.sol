@@ -275,6 +275,14 @@ contract VotingReputation is VotingReputationStorage {
   }
 
   function finalizeMotion(uint256 _motionId) public {
+    finalizeMotionFunctionality(_motionId, true);
+  }
+
+  function finalizeMotionWithoutFailure(uint256 _motionId) public {
+    finalizeMotionFunctionality(_motionId, false);
+  }
+
+  function finalizeMotionFunctionality(uint256 _motionId, bool failingAllowedByUser) internal {
     Motion storage motion = motions[_motionId];
     require(
       getMotionState(_motionId) == MotionState.Finalizable,
@@ -333,10 +341,10 @@ contract VotingReputation is VotingReputationStorage {
 
     if (canExecute) {
       executed = executeCall(_motionId, motion.action);
-      require(
-        executed || failingExecutionAllowed(_motionId),
-        "voting-execution-failed-not-one-week"
-      );
+      if (!executed) {
+        require(failingAllowedByUser, "voting-execution-failed-and-not-allowed");
+        require(failingExecutionAllowed(_motionId), "voting-execution-failed-not-one-week");
+      }
     }
 
     emit MotionFinalized(_motionId, motion.action, executed);

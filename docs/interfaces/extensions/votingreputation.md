@@ -104,6 +104,18 @@ Finalized a motion, executing its action if appropriate
 |_motionId|uint256|The id of the motion to finalize
 
 
+### ▸ `finalizeMotionWithoutFailure(uint256 _motionId)`
+
+Finalize a motion, executing its action if appropriate, without the call executing successfully
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_motionId|uint256|The id of the motion to finalize
+
+
 ### ▸ `getActionSummary(bytes memory _action, address _altTarget):ActionSummary _summary`
 
 Return a summary of the multicall action
