@@ -284,6 +284,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   const resolverAddress = res.split("\n").slice(-2)[0].trim();
   deployedResolverAddresses[interfaceName] = deployedResolverAddresses[interfaceName] || {};
   deployedResolverAddresses[interfaceName][versionTag] = resolverAddress;
+  console.log("Deployed", interfaceName, "at version", versionTag, "with resolver", resolverAddress);
 
   return resolverAddress;
 };
