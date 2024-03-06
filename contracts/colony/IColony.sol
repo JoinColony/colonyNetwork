@@ -465,6 +465,17 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     address _newOwner
   ) external;
 
+  /// @notice Cancels the expenditure and prevents further editing.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// (only used if `_permissionDomainId` is different to `_domainId`)
+  /// @param _id Expenditure identifier
+  function cancelExpenditureViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id
+  ) external;
+
   /// @notice Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   function cancelExpenditure(uint256 _id) external;

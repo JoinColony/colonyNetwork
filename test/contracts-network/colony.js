@@ -13,7 +13,7 @@ const {
   fundColonyWithTokens,
   setupColony,
 } = require("../../helpers/test-data-generator");
-const { deployColonyVersionGLWSS4 } = require("../../scripts/deployOldUpgradeableVersion");
+const { deployColonyVersionGLWSS4, deployColonyVersionHMWSS } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -448,6 +448,7 @@ contract("Colony", (accounts) => {
     let oldColony;
     before(async () => {
       ({ OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork));
+      await deployColonyVersionHMWSS(colonyNetwork);
     });
 
     beforeEach(async () => {
@@ -465,6 +466,7 @@ contract("Colony", (accounts) => {
     it("should be able to query for a task", async () => {
       await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, localSkillId, 0, { from: USER0 });
       await colony.upgrade(14);
+      await colony.upgrade(15);
       const taskId = await colony.getTaskCount();
       const task = await colony.getTask(taskId);
 
@@ -486,6 +488,7 @@ contract("Colony", (accounts) => {
     it("should be able to query for a payment", async () => {
       await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, localSkillId, { from: USER0 });
       await colony.upgrade(14);
+      await colony.upgrade(15);
 
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
@@ -506,6 +509,7 @@ contract("Colony", (accounts) => {
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
       await colony.upgrade(14);
+      await colony.upgrade(15);
       // Move funds back
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });
@@ -522,6 +526,7 @@ contract("Colony", (accounts) => {
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
       await colony.upgrade(14);
+      await colony.upgrade(15);
       // Move funds back
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });

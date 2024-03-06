@@ -34,6 +34,7 @@ const {
   downgradeColonyNetwork,
   deployColonyVersionGLWSS4,
   deployColonyNetworkVersionGLWSS4,
+  deployColonyVersionHMWSS,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 contract("One transaction payments", (accounts) => {
@@ -260,6 +261,7 @@ contract("One transaction payments", (accounts) => {
 
     it("should not allow an admin to specify a global skill (which is now removed functionality), either deprecated or undeprecated", async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await deployColonyVersionHMWSS(colonyNetwork);
       await downgradeColony(colonyNetwork, metaColony, "glwss4");
 
       // Make the colonyNetwork the old version
@@ -281,6 +283,7 @@ contract("One transaction payments", (accounts) => {
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
       await metaColony.upgrade(14);
+      await metaColony.upgrade(15);
 
       await checkErrorRevert(
         oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, globalSkillId),
@@ -557,6 +560,8 @@ contract("One transaction payments", (accounts) => {
       // V5 is `glwss4`,
       await deployOldExtensionVersion("OneTxPayment", "OneTxPayment", ["OneTxPayment"], "glwss4", colonyNetwork);
       await deployColonyNetworkVersionGLWSS4();
+      await deployColonyVersionGLWSS4(colonyNetwork);
+      await deployColonyVersionHMWSS(colonyNetwork);
     });
 
     beforeEach(async () => {
