@@ -1414,6 +1414,29 @@ contract("Voting Reputation", (accounts) => {
       expect(logs[0].args.executed).to.be.false;
     });
 
+    it("finalize will still fail after a week if finalizeMotionWithoutFailure is called and the action would fail", async () => {
+      const action = soliditySha3("foo");
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      motionId = await voting.getMotionCount();
+
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+
+      let failingExecutionAllowed = await voting.failingExecutionAllowed(motionId);
+      expect(failingExecutionAllowed).to.be.false;
+
+      await checkErrorRevert(voting.finalizeMotion(motionId), "voting-execution-failed-not-one-week");
+
+      // But after a week we can
+      await forwardTime(FAIL_EXECUTION_TIMEOUT_PERIOD, this);
+
+      failingExecutionAllowed = await voting.failingExecutionAllowed(motionId);
+      expect(failingExecutionAllowed).to.be.true;
+      // But still fails if we call finalizeMotionWithoutFailure
+      await checkErrorRevert(voting.finalizeMotionWithoutFailure(motionId), "voting-execution-failed-and-not-allowed");
+    });
+
     it("cannot take an action during staking or voting", async () => {
       let motionState;
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });

@@ -144,6 +144,10 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @param _motionId The id of the motion to finalize
   function finalizeMotion(uint256 _motionId) external;
 
+  /// @notice Finalize a motion, executing its action if appropriate, without the call executing successfully
+  /// @param _motionId The id of the motion to finalize
+  function finalizeMotionWithoutFailure(uint256 _motionId) external;
+
   /// @notice Return whether a motion, assuming it's in the finalizable state,
   /// is allowed to finalize without the call executing successfully.
   /// @param _motionId The id of the motion
