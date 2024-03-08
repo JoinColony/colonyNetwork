@@ -86,7 +86,7 @@
   "devDependencies": {
     "@codechecks/client": "^0.1.12",
     "@colony/eslint-config-colony": "9.0.2",
-    "@openzeppelin/contracts": "^4.9.3",
+    "@openzeppelin/contracts": "^4.9.6",
     "@solidity-parser/parser": "^0.14.2",
     "@truffle/contract": "^4.6.31",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
