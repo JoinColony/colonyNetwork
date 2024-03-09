@@ -779,6 +779,22 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
     });
+
+    it("should allow non-owners with arbitration permission to finalise expenditures, but not repeatedly", async () => {
+      let expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.owner).to.equal(ADMIN);
+
+      await checkErrorRevert(colony.finalizeExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ADMIN }), "ds-auth-unauthorized");
+      await colony.finalizeExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ARBITRATOR });
+
+      expenditure = await colony.getExpenditure(expenditureId);
+      expect(expenditure.status).to.eq.BN(FINALIZED);
+
+      await checkErrorRevert(
+        colony.finalizeExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ARBITRATOR }),
+        "colony-expenditure-not-draft-or-locked",
+      );
+    });
   });
 
   describe("when claiming expenditures", () => {
