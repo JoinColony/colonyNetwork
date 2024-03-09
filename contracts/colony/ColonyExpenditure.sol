@@ -122,6 +122,25 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureLocked(msgSender(), _id);
   }
 
+  function finalizeExpenditureViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id
+  )
+    public
+    stoppable
+    expenditureDraftOrLocked(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
+  {
+    FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
+    require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
+
+    expenditures[_id].status = ExpenditureStatus.Finalized;
+    expenditures[_id].finalizedTimestamp = block.timestamp;
+
+    emit ExpenditureFinalized(msgSender(), _id);
+  }
+
   function finalizeExpenditure(
     uint256 _id
   ) public stoppable expenditureDraftOrLocked(_id) expenditureOnlyOwner(_id) {

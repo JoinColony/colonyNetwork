@@ -349,6 +349,20 @@ Finalizes the expenditure and allows for funds to be claimed. Can only be called
 |_id|uint256|Expenditure identifier
 
 
+### ▸ `finalizeExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)`
+
+Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`,
+|_id|uint256|Expenditure identifier
+
+
 ### ▸ `finalizeRewardPayout(uint256 _payoutId)`
 
 Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`. Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation.

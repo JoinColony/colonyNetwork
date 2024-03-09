@@ -8,7 +8,7 @@ const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
 const contract = require("@truffle/contract");
 const { getColonyEditable, getColonyNetworkEditable, web3GetCode } = require("../helpers/test-helper");
-const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE } = require("../helpers/constants");
+const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE, ADDRESS_ZERO } = require("../helpers/constants");
 
 const colonyDeployed = {};
 const colonyNetworkDeployed = {};
@@ -92,7 +92,19 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     // Already deployed... if truffle's not snapshotted it away. See if there's any code there.
     const { resolverAddress } = colonyDeployed[interfaceName][versionTag];
     const code = await web3GetCode(resolverAddress);
+    console.log(versionTag, "code", code);
     if (code !== "0x") {
+      // Could be a different colony network. Check it's registered with the network.
+      const resolver = await artifacts.require("Resolver").at(resolverAddress);
+      const versionImplementationAddress = await resolver.lookup(web3.utils.soliditySha3("version()").slice(0, 10));
+      const versionImplementation = await artifacts.require("IMetaColony").at(versionImplementationAddress);
+      const version = await versionImplementation.version();
+      const registeredResolverAddress = await colonyNetwork.getColonyVersionResolver(version);
+      if (registeredResolverAddress === ADDRESS_ZERO) {
+        const metaColonyAddress = await colonyNetwork.getMetaColony();
+        const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
+        await metaColony.addNetworkColonyVersion(version, resolverAddress);
+      }
       return colonyDeployed[interfaceName][versionTag];
     }
   }
@@ -257,6 +269,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
 
   const network = process.env.SOLIDITY_COVERAGE ? "coverage" : "development";
   let res;
+  console.log("deploying");
 
   try {
     res = await exec(

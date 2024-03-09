@@ -130,9 +130,8 @@ contract("All", function (accounts) {
       // 1 tx payment to one recipient, with skill
       await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER], [token.address], [10], 1, localSkillId);
 
-      const firstToken = token.address < otherToken.address ? token.address : otherToken.address;
-      const secondToken = token.address < otherToken.address ? otherToken.address : token.address;
-
+      const firstToken = token.address.toLowerCase() < otherToken.address.toLowerCase() ? token.address : otherToken.address;
+      const secondToken = token.address.toLowerCase() < otherToken.address.toLowerCase() ? otherToken.address : token.address;
       // 1 tx payment to one recipient, two tokens
       await oneTxExtension.makePayment(1, UINT256_MAX, 1, UINT256_MAX, [WORKER, WORKER], [firstToken, secondToken], [10, 10], 1, 0);
 
