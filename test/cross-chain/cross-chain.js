@@ -58,7 +58,6 @@ contract("Cross-chain", () => {
     // If Truffle is not on the home chain, then deploy colonyNetwork to the home chain
     if (process.env.TRUFFLE_FOREIGN === "true") {
       try {
-        // await exec(`npm run provision:token:contracts`);
         const output = await exec(`npx hardhat deploy --network development2`);
         [, , , , , , , etherRouterAddress] = output
           .split("\n")

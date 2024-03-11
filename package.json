@@ -22,7 +22,6 @@
     "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
     "clean:contracts": "rimraf ./build/contracts/*",
     "clean:ganache": "rimraf ./ganache-chain-db/",
-    "provision:token:contracts": "truffle compile && truffle compile --contracts_directory 'lib/dappsys/[!note][!stop][!proxy][!thing][!token]*.sol' && bash ./scripts/provision-token-contracts.sh",
     "start:bridging": "cd ./lib/safe-contracts && npm i || true && cd ../../ && bash ./scripts/setup-foreign-chain.sh && node ./scripts/setup-bridging-contracts.js &",
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
     "start:blockchain:client:2": "CHAIN_ID=2656692 PORT=8546 DBPATH=./ganache-chain-db-2 bash ./scripts/start-blockchain-client.sh",
@@ -118,7 +117,7 @@
     "express": "^4.18.2",
     "find-in-files": "^0.5.0",
     "ganache": "7.5",
-    "hardhat": "^2.19.5",
+    "hardhat": "^2.21.0",
     "hardhat-contract-sizer": "^2.10.0",
     "husky": "^8.0.1",
     "istanbul": "^0.4.5",
@@ -143,6 +142,10 @@
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
+  },
+  "engines": {
+    "node": "v14.18.2",
+    "npm": "8.1.4"
   },
   "private": true,
   "workspaces": [
