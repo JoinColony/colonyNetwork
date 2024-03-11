@@ -20,6 +20,7 @@ const ColonyNetworkMining = artifacts.require("ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("ColonyNetworkAuction");
 const ColonyNetworkENS = artifacts.require("ColonyNetworkENS");
 const ColonyNetworkExtensions = artifacts.require("ColonyNetworkExtensions");
+const ColonyNetworkSkills = artifacts.require("ColonyNetworkSkills");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
 const ENSRegistry = artifacts.require("ENSRegistry");
@@ -109,6 +110,9 @@ async function deployContracts() {
   const colonyNetworkExtensions = await ColonyNetworkExtensions.new();
   ColonyNetworkExtensions.setAsDeployed(colonyNetworkExtensions);
 
+  const colonyNetworkSkills = await ColonyNetworkSkills.new();
+  ColonyNetworkSkills.setAsDeployed(colonyNetworkSkills);
+
   const reputationMiningCycle = await ReputationMiningCycle.new();
   ReputationMiningCycle.setAsDeployed(reputationMiningCycle);
 
@@ -126,6 +130,7 @@ async function setupColonyNetwork() {
   const colonyNetworkAuction = await ColonyNetworkAuction.deployed();
   const colonyNetworkENS = await ColonyNetworkENS.deployed();
   const colonyNetworkExtensions = await ColonyNetworkExtensions.deployed();
+  const colonyNetworkSkills = await ColonyNetworkSkills.deployed();
   const etherRouter = await EtherRouter.deployed();
   const resolver = await Resolver.deployed();
   const contractRecovery = await ContractRecovery.deployed();
@@ -139,6 +144,7 @@ async function setupColonyNetwork() {
     colonyNetworkAuction,
     colonyNetworkENS,
     colonyNetworkExtensions,
+    colonyNetworkSkills,
     contractRecovery,
   );
 

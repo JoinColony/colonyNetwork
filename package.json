@@ -84,11 +84,11 @@
   "devDependencies": {
     "@codechecks/client": "^0.1.12",
     "@colony/eslint-config-colony": "9.0.2",
-    "@openzeppelin/contracts": "^4.9.6",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomiclabs/hardhat-truffle5": "^2.0.7",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/contracts": "^4.9.6",
     "@solidity-parser/parser": "^0.14.2",
     "@truffle/contract": "^4.6.31",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
@@ -117,7 +117,7 @@
     "express": "^4.18.2",
     "find-in-files": "^0.5.0",
     "ganache": "7.5",
-    "hardhat": "^2.21.0",
+    "hardhat": "~2.19.5",
     "hardhat-contract-sizer": "^2.10.0",
     "husky": "^8.0.1",
     "istanbul": "^0.4.5",
@@ -139,9 +139,6 @@
     "truffle-contract-size": "^2.0.1",
     "truffle-hdwallet-provider": "^1.0.17",
     "web3-utils": "^1.7.3"
-  },
-  "optionalDependencies": {
-    "fsevents": "^2.3.2"
   },
   "engines": {
     "node": "v14.18.2",

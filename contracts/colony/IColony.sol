@@ -488,7 +488,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _id Expenditure identifier
   function finalizeExpenditure(uint256 _id) external;
 
-  /// @notice Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
+  /// @notice Finalizes the expenditure and allows for funds to be claimed. Can only be called by Arbitration role.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
   /// @param _id Expenditure identifier
