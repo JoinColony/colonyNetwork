@@ -444,7 +444,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe.skip("when viewing deprecated Tasks and Payments", () => {
+  describe("when viewing deprecated Tasks and Payments", () => {
     let OldInterface;
     let oldColony;
     before(async () => {

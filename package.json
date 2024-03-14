@@ -140,6 +140,9 @@
     "truffle-hdwallet-provider": "^1.0.17",
     "web3-utils": "^1.7.3"
   },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
+  },
   "engines": {
     "node": "v14.18.2",
     "npm": "8.1.4"

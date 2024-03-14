@@ -9,6 +9,7 @@ module.exports = async (callback) => {
   const interfaceName = process.argv[interfaceArgPos + 1];
   const implementationNameArgPost = process.argv.indexOf("--implementationNames");
   const implementationNames = process.argv[implementationNameArgPost + 1].split(",");
+
   const implementations = implementationNames.map((x) => artifacts.require(x));
 
   const deployments = [];
@@ -24,6 +25,6 @@ module.exports = async (callback) => {
     deployedImplementations[implementations[idx].contractName] = deployments[idx].address;
   }
   await setupEtherRouter(interfaceName, deployedImplementations, resolver);
-  console.log(resolver.address);
+  console.log(resolver.address); // This returns the address to the caller
   callback();
 };

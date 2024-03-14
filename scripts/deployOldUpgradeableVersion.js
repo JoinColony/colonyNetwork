@@ -2,7 +2,6 @@
 /* globals artifacts */
 
 const fs = require("fs");
-const path = require("path");
 
 const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
@@ -243,11 +242,14 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   }
 
   if (!exists) {
-    console.log("doesnt exist");
+    console.log(`Network version ${versionTag} doesnt exist, attempting to generate`);
+    console.log("Cloning the network...");
     await exec(`rm -rf colonyNetwork-${versionTag}`);
     await exec(`git clone --depth 1 --branch ${versionTag} https://github.com/JoinColony/colonyNetwork.git colonyNetwork-${versionTag}`);
+    await exec(`cd colonyNetwork-${versionTag} && sed -ie 's/parseInt(process.env.CHAIN_ID, 10) || 1999/"*"/g' ./truffle.js`); // Handle hardhat coverage
     await exec(`cd colonyNetwork-${versionTag} && git submodule update --init --recursive`);
 
+    console.log("Installing the network...");
     await exec(`cd colonyNetwork-${versionTag} && npm install`);
     await exec(`cd colonyNetwork-${versionTag} && npm run provision:token:contracts`);
   }
@@ -265,21 +267,17 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   //   const extensionVersion = await relevantEvents[0].returnValues.version;
   //   const extensionResolverAddress = await otherColonyNetwork.getExtensionResolver(web3.utils.soliditySha3(contractName), extensionVersion);
 
-  await exec(`cp ./scripts/deployOldUpgradeableVersionTruffle.js ./colonyNetwork-${versionTag}/scripts/deployOldUpgradeableVersionTruffle.js`);
+  console.log("Deploying upgradable version...");
+  await exec(`cp ./scripts/setupOldUpgradeableVersion.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersion.js`);
 
   const network = process.env.SOLIDITY_COVERAGE ? "coverage" : "development";
-  let res;
-  console.log("deploying");
 
-  try {
-    res = await exec(
-      `cd ${path.resolve(__dirname, `../colonyNetwork-${versionTag}`)} ` +
-        "&& npx truffle exec ./scripts/deployOldUpgradeableVersionTruffle.js " +
-        `--network ${network} --interfaceName ${interfaceName} --implementationNames ${implementationNames.join(",")}`,
-    );
-  } catch (err) {
-    console.log("err", err);
-  }
+  const res = await exec(
+    `cd colonyNetwork-${versionTag} ` +
+      "&& npx truffle exec ./scripts/setupOldUpgradeableVersion.js " +
+      `--network ${network} --interfaceName ${interfaceName} --implementationNames ${implementationNames.join(",")}`,
+    { maxBuffer: 1024 * 5000 },
+  );
 
   const resolverAddress = res.split("\n").slice(-2)[0].trim();
   deployedResolverAddresses[interfaceName] = deployedResolverAddresses[interfaceName] || {};

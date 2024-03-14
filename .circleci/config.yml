@@ -29,7 +29,7 @@ step_setup_global_packages: &step_setup_global_packages
     name: "Set up global packages"
     command: |
       npm set cache ~/.npm
-      sudo npm install -g npm@8.5.5
+      sudo npm install -g npm@8.1.4
       npm ci
       git submodule update --init
 step_pull_solc_docker: &step_pull_solc_docker
@@ -382,7 +382,7 @@ jobs:
       - run:
           name: "Install packages"
           command: |
-            sudo npm install -g npm@8.5.5
+            sudo npm install -g npm@8.1.4
             npm ci
       - attach_workspace:
           at: ./
