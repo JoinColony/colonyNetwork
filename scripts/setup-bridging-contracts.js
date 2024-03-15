@@ -30,33 +30,21 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
 
   const flags = { abi: true, address: false };
   const accounts = await ethersForeignProvider.listAccounts();
-  const GnosisSafeProxyFactory = await loader.load(
-    {
-      contractDir: path.resolve(__dirname, "..", "artifacts", "lib", "safe-contracts", "contracts", "proxies"),
-      contractName: "GnosisSafeProxyFactory",
-    },
-    flags,
-  );
-  const GnosisSafe = await loader.load(
-    {
-      contractDir: path.resolve(__dirname, "..", "artifacts", "lib", "safe-contracts", "contracts"),
-      contractName: "GnosisSafe",
-    },
-    flags,
-  );
-  const ZodiacBridgeModuleMock = await loader.load(
-    { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "ZodiacBridgeModuleMock" },
-    flags,
-  );
-  const BridgeMock = await loader.load(
-    { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "BridgeMock" },
-    flags,
-  );
-  const Erc721Mock = await loader.load(
-    { contractDir: path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers"), contractName: "ERC721Mock" },
-    flags,
-  );
-  const Token = await loader.load({ contractDir: path.resolve(__dirname, "..", "artifacts", "colonyToken"), contractName: "Token" }, flags);
+
+  let contractDir;
+  contractDir = path.resolve(__dirname, "..", "artifacts", "lib", "safe-contracts", "contracts");
+  const GnosisSafe = await loader.load({ contractDir, contractName: "GnosisSafe" }, flags);
+
+  contractDir = path.resolve(__dirname, "..", "artifacts", "lib", "safe-contracts", "contracts", "proxies");
+  const GnosisSafeProxyFactory = await loader.load({ contractDir, contractName: "GnosisSafeProxyFactory" }, flags);
+
+  contractDir = path.resolve(__dirname, "..", "artifacts", "contracts", "testHelpers");
+  const ZodiacBridgeModuleMock = await loader.load({ contractDir, contractName: "ZodiacBridgeModuleMock" }, flags);
+  const BridgeMock = await loader.load({ contractDir, contractName: "BridgeMock" }, flags);
+  const Erc721Mock = await loader.load({ contractDir, contractName: "ERC721Mock" }, flags);
+
+  contractDir = path.resolve(__dirname, "..", "artifacts", "colonyToken");
+  const Token = await loader.load({ contractDir, contractName: "Token" }, flags);
 
   // This is the address that the gnosis safe proxy factory should have been deployed to by the deploy command using hardhat in their repo
   const gspf = new ethers.Contract("0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", GnosisSafeProxyFactory.abi, ethersForeignSigner);

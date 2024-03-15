@@ -60,7 +60,6 @@ contract("Contract Storage", (accounts) => {
     chainId = await multiChain.getChainId();
     chainId = chainId.toNumber();
 
-    console.log(`CHAIN_ID: ${process.env.CHAIN_ID}`); // eslint-disable-line no-console
     console.log(`chainId: ${chainId}`); // eslint-disable-line no-console
   });
 

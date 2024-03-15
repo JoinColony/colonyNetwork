@@ -24,15 +24,6 @@ task("compile", "Compile Colony contracts with pinned Token").setAction(async ()
     }
     fs.copyFileSync(`${artifactSrc}/Pinned${artifact}.json`, `${artifactDst}/${artifact}.json`);
   }
-
-  // Once we upgrade to Node 16, can use
-  //   fs.cpSync(path.resolve(__dirname, "lib/safe-contracts/build/artifacts/contracts"), `${config.paths.artifacts}/safe-contracts/`, {
-  //  recursive: true,
-  // });
-
-  // fs.rmSync(path.resolve(__dirname, `${config.paths.artifacts}/safe-contracts/`), { recursive: true, force: true });
-  // copyRecursiveSync(path.resolve(__dirname, "lib/safe-contracts/build/artifacts/contracts"), `${config.paths.artifacts}/safe-contracts/`);
-  // fs.rmSync(path.resolve(__dirname, `${config.paths.artifacts}/safe-contracts/test`), { recursive: true, force: true });
 });
 
 task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(async () => {
@@ -111,7 +102,7 @@ module.exports = {
       blockGasLimit: 6721975,
     },
     hardhat: {
-      chainId: Number(process.env.CHAIN_ID) || 2656691,
+      chainId: Number(process.env.CHAIN_ID) || 2656691, // Supports chainId tests
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -140,23 +131,3 @@ module.exports = {
     },
   },
 };
-
-// // https://stackoverflow.com/questions/13786160/copy-folder-recursively-in-node-js
-// /**
-//  * Look ma, it's cp -R.
-//  * @param {string} src  The path to the thing to copy.
-//  * @param {string} dest The path to the new copy.
-//  */
-// function copyRecursiveSync(src, dest) {
-//   const exists = fs.existsSync(src);
-//   const stats = exists && fs.statSync(src);
-//   const isDirectory = exists && stats.isDirectory();
-//   if (isDirectory) {
-//     fs.mkdirSync(dest);
-//     fs.readdirSync(src).forEach(function (childItemName) {
-//       copyRecursiveSync(path.join(src, childItemName), path.join(dest, childItemName));
-//     });
-//   } else {
-//     fs.copyFileSync(src, dest);
-//   }
-// }

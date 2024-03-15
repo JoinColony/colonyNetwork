@@ -2,6 +2,10 @@
   "name": "@colony.io/colony-network-contracts",
   "version": "1.0.0",
   "description": "Contracts for Colony Network",
+  "engines": {
+    "node": "v14.18.2",
+    "npm": "8.1.4"
+  },
   "scripts": {
     "solhint-staged": "bash ./scripts/solhint.sh",
     "prepare": "husky install",
@@ -49,27 +53,17 @@
     "test:contracts:patricia": "npm run start:blockchain:client parity & npx hardhat test packages/reputation-miner/patricia-test.js --network integration",
     "test:contracts:coverage": "SOLIDITY_COVERAGE=1 npx hardhat coverage --temp build-coverage --testfiles './test/contracts-network/*'",
     "test:contracts:extensions:coverage": "npx hardhat compile && SOLIDITY_COVERAGE=1 NODE_OPTIONS='--max-old-space-size=6144' npx hardhat coverage --solcoverjs ./.solcover.extensions.js --temp build-coverage --testfiles './test/extensions/*'",
-    "test:contracts:watch": "npm run start:blockchain:client && truffle watch --network development",
     "test:contracts:e2e": "npm run start:blockchain:client && npx hardhat test test-system/end-to-end.js --network development",
     "test:contracts:smoke": "npm run start:blockchain:client && npx hardhat test ./test-smoke/colony-storage-consistent.js --network development",
     "test:security:slither": "slither . --solc-disable-warnings --exclude-low --exclude-informational --exclude-optimization --filter-paths 'lib|contracts/testHelpers|@openzeppelin'",
-    "test:security:mythril": "truffle run verify --mode quick --style json --limit 1 --swc-blacklist 101,123,128,131 > truffle-security-output.json; sed -i '/^\\[{/!d' ./truffle-security-output.json && node ./scripts/process-truffle-security.js",
-    "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:upgrade:ganache": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:gasCosts": "sed -ie \"s/mocha-circleci-reporter/eth-gas-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:extensions:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:watch": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "posttest:contracts": "npm run stop:blockchain:client",
     "posttest:contracts:extensions": "npm run stop:blockchain:client",
     "posttest:contracts:upgrade:parity": "npm run clean:test:contracts | npm run stop:blockchain:client",
     "posttest:contracts:upgrade:ganache": "npm run clean:test:contracts | npm run stop:blockchain:client",
     "posttest:contracts:gasCosts": "npm run stop:blockchain:client",
     "posttest:contracts:patricia": "npm run stop:blockchain:client",
-    "posttest:contracts:watch": "npm run stop:blockchain:client",
-    "viz:bootstrap": "npm run start:blockchain:client && truffle exec --network development scripts/viz-bootstrap.js",
-    "kyc:bootstrap": "npm run start:blockchain:client && truffle exec --network development scripts/kyc-bootstrap.js"
+    "viz:bootstrap": "npm run start:blockchain:client && HARDHAT_NETWORK=development npx hardhat run scripts/viz-bootstrap.js",
+    "kyc:bootstrap": "npm run start:blockchain:client && HARDHAT_NETWORK=development npx hardhat run scripts/kyc-bootstrap.js"
   },
   "repository": {
     "type": "git",
@@ -135,17 +129,10 @@
     "solhint": "^3.3.7",
     "solidity-coverage": "^0.8.7",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "^5.5.30",
-    "truffle-contract-size": "^2.0.1",
-    "truffle-hdwallet-provider": "^1.0.17",
     "web3-utils": "^1.7.3"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
-  },
-  "engines": {
-    "node": "v14.18.2",
-    "npm": "8.1.4"
   },
   "private": true,
   "workspaces": [
