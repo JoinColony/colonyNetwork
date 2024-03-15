@@ -48,7 +48,7 @@ start_ganache() {
 }
 
 start_hardhat() {
-  HARDHAT_CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1 & bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 $PORT
+  CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1 & bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 $PORT
 }
 
 start_parity() {

@@ -110,17 +110,8 @@ module.exports = {
       gas: 6721975,
       blockGasLimit: 6721975,
     },
-    coverage: {
-      url: "http://localhost:8555",
-      chainId: parseInt(process.env.CHAIN_ID, 10) || 1999,
-      throwOnCallFailures: false,
-      throwOnTransactionFailures: false,
-      allowBlocksWithSameTimestamp: true,
-      gas: 6721975,
-      blockGasLimit: 6721975,
-    },
     hardhat: {
-      chainId: Number(process.env.HARDHAT_CHAIN_ID) || 2656691,
+      chainId: Number(process.env.CHAIN_ID) || 2656691,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
