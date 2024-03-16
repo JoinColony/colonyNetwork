@@ -202,7 +202,7 @@ process.env.SOLIDITY_COVERAGE
           assert.equal(oracleHash, minerHash, "The oracle has updated, but does not have the right hash");
 
           await oracleClient.close();
-        }).timeout(100000000);
+        });
 
         it("should successfully resume submitting hashes if it's restarted", async function () {
           const rootHash = await reputationMinerClient._miner.getRootHash();
@@ -328,7 +328,7 @@ process.env.SOLIDITY_COVERAGE
           }
           await reputationMinerClient2.close();
           reputationMinerClient._processingDelay = 10;
-        }).timeout(100000000);
+        });
 
         it("Losing a race shouldn't prevent a miner from continuing", async function () {
           reputationMinerClient._processingDelay = 1;
@@ -461,7 +461,7 @@ process.env.SOLIDITY_COVERAGE
           if ([...new Set(submissionAddresses)].length === 1) {
             assert(false, "Only one miner address seen");
           }
-        }).timeout(100000000);
+        });
 
         it("should successfully complete a dispute resolution", async function () {
           const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER3 }, 1, 0);
@@ -804,7 +804,7 @@ process.env.SOLIDITY_COVERAGE
           // And finally, check the root hash was accepted as expected.
           const acceptedRootHash = await colonyNetwork.getReputationRootHash();
           assert.equal(acceptedRootHash, rootHash);
-        }).timeout(100000000);
+        });
 
         it("should successfully resume a dispute resolution", async function () {
           const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER3 }, 1, 0);
@@ -916,7 +916,7 @@ process.env.SOLIDITY_COVERAGE
           const acceptedRootHash = await colonyNetwork.getReputationRootHash();
           assert.equal(acceptedRootHash, rootHash);
           await reputationMinerClient2.close();
-        }).timeout(100000000);
+        });
 
         it(`should continue to mine successfully even if the submission hash takes a long time to be mined
           (e.g. because it ran out of funds)`, async function () {
@@ -997,7 +997,7 @@ process.env.SOLIDITY_COVERAGE
 
           delayedReputationMinerClient._miner.resolveSubmission();
           await delayedReputationMinerClient.close();
-        }).timeout(100000000);
+        });
 
         function noEventSeen(contract, event) {
           return new Promise(function (resolve, reject) {

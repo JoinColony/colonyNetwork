@@ -117,7 +117,7 @@ contract("Colony Recovery", (accounts) => {
       }
       const userX = web3.utils.randomHex(20);
       await checkErrorRevert(colony.setRecoveryRole(userX), "colony-maximum-num-recovery-roles");
-    }).timeout(100000000);
+    });
 
     it("should not be able to add and remove roles when in recovery", async () => {
       await colony.enterRecoveryMode();

@@ -415,7 +415,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       const righthash = await goodClient.getRootHash();
 
       assert.equal(righthash, acceptedHash, "The correct hash was not accepted");
-    }).timeout(10000000);
+    });
 
     it.skip("if one person lies about what the origin skill is when there is an origin skill for a user update", async () => {
       // We deduce the origin reputation key from the logEntry on chain now so the client cannot lie about it
@@ -716,7 +716,7 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       });
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(1, { from: MINER1 });
-    }).timeout(10000000);
+    });
 
     it("if a child skill reputation calculation is wrong and that user has never had that reputation before", async () => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -1105,6 +1105,6 @@ contract("Reputation Mining - disputes over child reputation", (accounts) => {
       });
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(2, { from: MINER1 });
-    }).timeout(10000000);
+    });
   });
 });

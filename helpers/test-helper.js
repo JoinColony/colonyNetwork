@@ -1049,7 +1049,7 @@ exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePro
     // After 30s, we throw a timeout error
     setTimeout(() => {
       reject(new Error("ERROR: timeout while waiting for confirming hash"));
-    }, 30000);
+    }, 30 * 1000);
   });
 };
 

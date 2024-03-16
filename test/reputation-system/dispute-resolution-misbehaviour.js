@@ -395,7 +395,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await accommodateChallengeAndInvalidateHashViaTimeout(colonyNetwork, this, clients[0], clients[4]);
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(3, { from: MINER1 });
-    }).timeout(10000000);
+    });
 
     it("should allow a hash to be awarded multiple byes if appropriate", async function advancingTest() {
       const clients = await setUpNMiners(9);
@@ -430,7 +430,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await repCycle.confirmNewHash(4, { from: MINER1 });
-    }).timeout(10000000);
+    });
 
     it("should not mark a round as complete even if a bye was awarded in it", async function advancingTest() {
       const clients = await setUpNMiners(9);
@@ -475,7 +475,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       // (0, 8) 6
       // (0, 6)
       // 0
-    }).timeout(10000000);
+    });
 
     it(`should prevent a hash from advancing if it might still get an opponent,
      even if that opponent is from more than one round ago`, async function advancingTest() {
@@ -514,7 +514,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await repCycle.confirmNewHash(4, { from: MINER1 });
-    }).timeout(10000000);
+    });
 
     it("should not allow stages to be skipped even if the number of updates is a power of 2", async function powerOfTwoTest() {
       // Note that our jrhNLeaves can never be a power of two, because we always have an even number of updates (because every reputation change
@@ -620,7 +620,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
       await repCycle.confirmNewHash(1, { from: MINER1 });
-    }).timeout(600000);
+    });
 
     it(`should not allow miners who didn't submit to respond during a dispute,
       but they should be able to during the last part of the window`, async function nonMiner() {
