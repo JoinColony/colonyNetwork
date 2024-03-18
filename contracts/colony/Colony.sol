@@ -193,34 +193,6 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
   }
 
-  // function setBridgeData(
-  //   address _bridgeAddress,
-  //   uint256 _chainId,
-  //   uint256 _gas,
-  //   bytes4 _msgSenderSig,
-  //   address _correspondingNetwork,
-  //   bytes memory _updateLogBefore,
-  //   bytes memory _updateLogAfter,
-  //   bytes memory _skillCreationBefore,
-  //   bytes memory _skillCreationAfter,
-  //   bytes memory _setReputationRootHashBefore,
-  //   bytes memory _setReputationRootHashAfter
-  // ) external stoppable auth {
-  //   IColonyNetwork(colonyNetworkAddress).setBridgeData(
-  //     _bridgeAddress,
-  //     _chainId,
-  //     _gas,
-  //     _msgSenderSig,
-  //     _correspondingNetwork,
-  //     _updateLogBefore,
-  //     _updateLogAfter,
-  //     _skillCreationBefore,
-  //     _skillCreationAfter,
-  //     _setReputationRootHashBefore,
-  //     _setReputationRootHashAfter
-  //   );
-  // }
-
   function setColonyBridgeAddress(address _bridgeAddress) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).setColonyBridgeAddress(_bridgeAddress);
   }

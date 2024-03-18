@@ -307,6 +307,10 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     uint256 newNLeaves
   ) external;
 
+  /// @notice Returns the chainId the network is expecting reputation mining to be one
+  /// @return reputationMiningChainId The chainId
+  function getReputationMiningChainId() external view returns (uint256 reputationMiningChainId);
+
   /// @notice Get the root hash of the current reputation state tree.
   /// @return rootHash The current Reputation Root Hash
   function getReputationRootHash() external view returns (bytes32 rootHash);
@@ -518,37 +522,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _delegate The address that wants to mine
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
-
-  // /// @notice Called to set the details about bridge _bridgeAddress
-  // /// @param _bridgeAddress The address of the bridge
-  // /// @param _chainId The chainId of the corresponding network
-  // /// @param _gas How much gas to use for a bridged transaction
-  // /// @param _msgSenderFunctionSig The function signature of the function to call on the bridge to get the msgSender
-  // /// @param _correspondingNetwork The address of the corresponding colony network contract on the other network
-  // /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
-  // /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
-  // /// @param _skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
-  // /// @param _skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
-  // /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
-  // /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
-  // function setBridgeData(
-  //   address _bridgeAddress,
-  //   uint256 _chainId,
-  //   uint256 _gas,
-  //   bytes4 _msgSenderFunctionSig,
-  //   address _correspondingNetwork,
-  //   bytes memory _updateLogBefore,
-  //   bytes memory _updateLogAfter,
-  //   bytes memory _skillCreationBefore,
-  //   bytes memory _skillCreationAfter,
-  //   bytes memory _setReputationRootHashBefore,
-  //   bytes memory _setReputationRootHashAfter
-  // ) external;
-
-  // /// @notice Called to get the details about known bridge _bridgeAddress
-  // /// @param _bridgeAddress The address of the bridge
-  // /// @return bridge The bridge data
-  // function getBridgeData(address _bridgeAddress) external view returns (Bridge memory bridge);
 
   // @notice Called to set the address of the colony bridge contract
   /// @param _bridgeAddress The address of the bridge

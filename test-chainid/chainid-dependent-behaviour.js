@@ -22,12 +22,12 @@ const {
   getTokenArgs,
   isMainnet,
   isXdai,
+  getChainId,
 } = require("../helpers/test-helper");
 const { MINING_CYCLE_DURATION, MIN_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION, WAD, DEFAULT_STAKE, XDAI_CHAINID } = require("../helpers/constants");
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");
-const ChainId = artifacts.require("ChainId");
 const DutchAuction = artifacts.require("DutchAuction");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
@@ -48,9 +48,7 @@ contract("Contract Storage", (accounts) => {
   let chainId;
 
   before(async () => {
-    const c = await ChainId.new();
-    chainId = await c.getChainId();
-    chainId = chainId.toNumber();
+    chainId = await getChainId();
   });
 
   beforeEach(async () => {
@@ -186,8 +184,13 @@ contract("Contract Storage", (accounts) => {
         this.skip();
       }
 
-      const otherChainId = chainId + 1;
+      const oldChainId = await colonyNetwork.getReputationMiningChainId();
+
+      const otherChainId = oldChainId + 1;
       await metaColony.initialiseReputationMining(otherChainId, ethers.constants.HashZero, 0);
+
+      const newChainId = await colonyNetwork.getReputationMiningChainId();
+      expect(newChainId).to.eq.BN(oldChainId + 1);
     });
 
     it.skip("Reputation mining chain can be changed on mining chain", async () => {

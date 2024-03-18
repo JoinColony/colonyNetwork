@@ -151,11 +151,6 @@ async function getSig(provider, account, dataHash) {
 }
 
 async function deployBridge(signer) {
-  // const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
-  // const bridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, signer);
-  // const bridge = await bridgeFactory.deploy();
-  // await bridge.deployTransaction.wait();
-  // return bridge;
   const WormholeBridgeForColony = await loader.load({ contractName: "WormholeBridgeForColony" }, { abi: true, address: false });
   const bridgeFactory = new ethers.ContractFactory(WormholeBridgeForColony.abi, WormholeBridgeForColony.bytecode, signer);
   const bridge = await bridgeFactory.deploy();

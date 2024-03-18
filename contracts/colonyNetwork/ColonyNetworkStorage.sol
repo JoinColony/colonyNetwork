@@ -107,26 +107,26 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // Mining delegation mapping
   mapping(address => address) miningDelegators; // Storage slot 42
 
-  address colonyBridgeAddress; // Storage slot 43
+  uint256 reputationMiningChainId; // Storage slot 43
 
-  // A mapping that maps network id -> skill count
-  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 44
+  address colonyBridgeAddress; // Storage slot 44
+
+  // A mapping that maps chain id -> skill count
+  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 45
   // A mapping that stores pending bridged skill additions that have been bridged out-of-order
   // networkId -> skillCount -> parentSkillId
-  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 45
+  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 46
 
   // A mapping that stores the latest reputation update received from a colony on a particular chain
   // networkId -> colonyAddress -> updateCount
-  mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 46
+  mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 47
 
   // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
   // received out of order, or because the skill in question hasn't been bridged yet.
   // networkId -> colonyAddress -> updateCount -> update
-  mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 47
+  mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 48
 
-  mapping(uint256 => uint256) bridgeCurrentRootHashNonces; // Storage slot 48
-
-  uint256 reputationMiningChainId; // Storage slot 49
+  mapping(uint256 => uint256) bridgeCurrentRootHashNonces; // Storage slot 49
 
   // Modifiers
 
@@ -202,7 +202,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
     return block.chainid == getReputationMiningChainId();
   }
 
-  function getReputationMiningChainId() internal view returns (uint256) {
+  function getReputationMiningChainId() public view returns (uint256) {
     if (reputationMiningChainId == 0 && isXdai()) {
       return block.chainid;
     }

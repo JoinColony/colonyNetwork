@@ -32,7 +32,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     skillCount += 1;
     addSkillToChainTree(_parentSkillId, skillCount);
 
-    // If we're not mining chain, then bridge the skill
     bridgeSkillIfNotMiningChain(skillCount);
 
     return skillCount;
@@ -230,13 +229,12 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     // If next expected update, add to log
     if (
       reputationUpdateCount[bridgeChainId][_colony] + 1 == _updateNumber && // It's the next reputation update for this colony
-      networkSkillCounts[toChainId(_skillId)] >= _skillId // Skill has been bridged
+      networkSkillCounts[bridgeChainId] >= _skillId // Skill has been bridged
     ) {
       reputationUpdateCount[bridgeChainId][_colony] += 1;
       appendReputationUpdateLogInternal(_user, _amount, _skillId, _colony);
 
       emit ReputationUpdateAddedFromBridge(bridgeChainId, _colony, _updateNumber);
-      return;
     } else {
       // Not next update, store for later
       require(
@@ -310,13 +308,32 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
   // View
 
+  function getParentSkillId(
+    uint256 _skillId,
+    uint256 _parentSkillIndex
+  ) public view returns (uint256) {
+    return ascendSkillTree(_skillId, _parentSkillIndex + 1);
+  }
+
+  function getChildSkillId(
+    uint256 _skillId,
+    uint256 _childSkillIndex
+  ) public view returns (uint256) {
+    if (_childSkillIndex == UINT256_MAX) {
+      return _skillId;
+    } else {
+      Skill storage skill = skills[_skillId];
+      require(
+        _childSkillIndex < skill.children.length,
+        "colony-network-out-of-range-child-skill-index"
+      );
+      return skill.children[_childSkillIndex];
+    }
+  }
+
   function getColonyBridgeAddress() public view returns (address) {
     return colonyBridgeAddress;
   }
-
-  // function getBridgeData(address bridgeAddress) public view returns (Bridge memory) {
-  //   return bridgeData[bridgeAddress];
-  // }
 
   function getBridgedSkillCounts(uint256 _chainId) public view returns (uint256) {
     if (networkSkillCounts[_chainId] == 0) {
@@ -345,29 +362,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     uint256 _updateNumber
   ) public view onlyMiningChain returns (PendingReputationUpdate memory) {
     return pendingReputationUpdates[_chainId][_colony][_updateNumber];
-  }
-
-  function getParentSkillId(
-    uint256 _skillId,
-    uint256 _parentSkillIndex
-  ) public view returns (uint256) {
-    return ascendSkillTree(_skillId, _parentSkillIndex + 1);
-  }
-
-  function getChildSkillId(
-    uint256 _skillId,
-    uint256 _childSkillIndex
-  ) public view returns (uint256) {
-    if (_childSkillIndex == UINT256_MAX) {
-      return _skillId;
-    } else {
-      Skill storage skill = skills[_skillId];
-      require(
-        _childSkillIndex < skill.children.length,
-        "colony-network-out-of-range-child-skill-index"
-      );
-      return skill.children[_childSkillIndex];
-    }
   }
 
   // Internal

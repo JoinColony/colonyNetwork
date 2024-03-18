@@ -26,11 +26,13 @@ import { DSAuth } from "../../lib/dappsys/auth.sol";
 
 contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
   address colonyNetwork;
+  IWormhole public wormhole;
+
   // ChainId => colonyBridge
   mapping(uint256 => address) colonyBridges;
 
-  mapping(uint256 => uint16) public evmChainIdToWormholeChainIdMapping;
-  IWormhole public wormhole;
+  // Maps evm chain id to wormhole chain id
+  mapping(uint256 => uint16) public evmChainIdToWormholeChainId;
 
   modifier onlyColonyNetwork() {
     require(msg.sender == colonyNetwork, "wormhole-bridge-only-colony-network");
@@ -46,12 +48,12 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
       "colony-bridge-chainid-mapping-length-mismatch"
     );
     for (uint256 i = 0; i < evmChainIds.length; i++) {
-      evmChainIdToWormholeChainIdMapping[evmChainIds[i]] = wormholeChainIds[i];
+      evmChainIdToWormholeChainId[evmChainIds[i]] = wormholeChainIds[i];
     }
   }
 
   function supportedEvmChainId(uint256 _evmChainId) public view returns (bool) {
-    return evmChainIdToWormholeChainIdMapping[_evmChainId] != 0;
+    return evmChainIdToWormholeChainId[_evmChainId] != 0;
   }
 
   function setWormholeAddress(address _wormhole) public auth {
@@ -66,24 +68,28 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     return colonyNetwork;
   }
 
-  function setColonyBridgeAddress(uint256 evmChainId, address _colonyNetwork) public auth {
+  function setColonyBridgeAddress(uint256 evmChainId, address _bridgeAddress) public auth {
     require(evmChainId <= type(uint128).max, "colony-bridge-chainid-too-large");
-    uint16 requestedWormholeChainId = evmChainIdToWormholeChainIdMapping[evmChainId];
-    colonyBridges[requestedWormholeChainId] = _colonyNetwork;
+    uint16 requestedWormholeChainId = evmChainIdToWormholeChainId[evmChainId];
+    colonyBridges[requestedWormholeChainId] = _bridgeAddress;
   }
 
   function getColonyBridgeAddress(uint256 evmChainId) public view returns (address) {
-    uint16 requestedWormholeChainId = evmChainIdToWormholeChainIdMapping[evmChainId];
+    uint16 requestedWormholeChainId = evmChainIdToWormholeChainId[evmChainId];
     return colonyBridges[requestedWormholeChainId];
   }
 
-  function wormholeFormatAddressToEthereumAddress(
+  function wormholeAddressToEVMAddress(
     bytes32 _wormholeFormatAddress
   ) public pure returns (address) {
     return address(uint160(uint256(_wormholeFormatAddress)));
   }
 
   function receiveMessage(bytes memory _vaa) public {
+    // VAAs are the primitives used on wormhole (Verified Action Approvals)
+    // See https://docs.wormhole.com/wormhole/explore-wormhole/vaa for more details
+    // Note that the documentation sometimes also calls them VMs (as does IWormhole)
+    // I believe VM stands for 'Verified Message'
     (IWormhole.VM memory wormholeMessage, bool valid, string memory reason) = wormhole
       .parseAndVerifyVM(_vaa);
 
@@ -92,19 +98,19 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
 
     // Check came from a known colony bridge
     require(
-      wormholeFormatAddressToEthereumAddress(wormholeMessage.emitterAddress) ==
+      wormholeAddressToEVMAddress(wormholeMessage.emitterAddress) ==
         colonyBridges[wormholeMessage.emitterChainId],
       "colony-bridge-bridged-tx-only-from-colony-bridge"
     );
 
     // We ignore sequence numbers - bridging out of order is okay, because we have our own way of handling that
 
-    // Do the thing
-
+    // Make the call requested to the colony network
     (bool success, bytes memory returndata) = callWithGuards(
       colonyNetwork,
       wormholeMessage.payload
     );
+
     // Note that this is not a require because returndata might not be a string, and if we try
     // to decode it we'll get a revert.
     if (!success) {

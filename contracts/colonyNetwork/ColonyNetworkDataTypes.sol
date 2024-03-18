@@ -67,6 +67,19 @@ interface ColonyNetworkDataTypes {
   /// @param parentSkillId The id of the parent skill under which this new skill is added
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
+  /// @notice Event logged when bridging of a skill creation did not succeed.
+  /// @param skillId The skillId that failed to bridge
+  event SkillCreationStored(uint256 skillId);
+
+  /// @notice Event logged when a skill is successfully added from a bridge.
+  /// @param skillId The skillId of the skill that was bridged
+  event SkillAddedFromBridge(uint256 skillId);
+
+  /// @notice Event logged when a skill is received from a bridge, but can't yet be
+  /// added to the skill tree.
+  /// @param skillId The skillId of the skill that was bridged
+  event SkillStoredFromBridge(uint256 skillId);
+
   /// @notice Event logged when a new auction is created and started
   /// @dev Emitted from `IColonyNetwork.startTokenAuction` function
   /// @param auction Address of the created auction contract
@@ -151,10 +164,6 @@ interface ColonyNetworkDataTypes {
   /// @param bridgeAddress The address of the bridge contract that will be interacted with
   event BridgeSet(address bridgeAddress);
 
-  /// @notice Event logged when bridging of a skill creation did not succeed.
-  /// @param skillId The skillId that failed to bridge
-  event SkillCreationStored(uint256 skillId);
-
   /// @notice Event logged when bridging of a reputation update did not succeed.
   /// @param colony The address of the colony where reputation is being emitted
   /// @param count The number of the reputation update trying to be bridged in that colony
@@ -164,15 +173,6 @@ interface ColonyNetworkDataTypes {
   /// @param colony The address of the colony where reputation is being emitted
   /// @param count The number of the reputation update trying to be bridged in that colony
   event ReputationUpdateSentToBridge(address colony, uint256 count);
-
-  /// @notice Event logged when a skill is successfully added from a bridge.
-  /// @param skillId The skillId of the skill that was bridged
-  event SkillAddedFromBridge(uint256 skillId);
-
-  /// @notice Event logged when a skill is received from a bridge, but can't yet be
-  /// added to the skill tree.
-  /// @param skillId The skillId of the skill that was bridged
-  event SkillStoredFromBridge(uint256 skillId);
 
   /// @notice Event logged when a reputation update is successfully bridged.
   /// @param chainId The chainId of the chain the bridge is associated with

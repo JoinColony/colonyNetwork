@@ -97,6 +97,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   // Well this is a weird hack to need
   function newAddressArray() internal pure returns (address[] memory) {}
+
   function setReputationRootHashFromBridge(
     bytes32 _newHash,
     uint256 _newNLeaves,

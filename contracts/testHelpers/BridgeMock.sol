@@ -21,7 +21,7 @@ pragma solidity 0.8.23;
 contract BridgeMock {
   event UserRequestForSignature(bytes32 indexed messageId, bytes encodedData);
   bool bridgeEnabled = true;
-  address public messageSender = address(0);
+  address public messageSender;
 
   function requireToPassMessage(address _target, bytes memory _data, uint256 _gasLimit) public {
     require(bridgeEnabled, "bridge-not-working");
