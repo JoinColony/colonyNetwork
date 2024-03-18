@@ -29,14 +29,6 @@ class MockBridgeMonitor {
 
     this.setupListeners();
   }
-  // const providerHome = new ethers.providers.JsonRpcProvider(homeRpc).getSigner();
-  // const providerForeign = new ethers.providers.JsonRpcProvider(foreignRpc).getSigner();
-
-  // const homeBridge = new ethers.Contract(homeBridgeAddress, bridgeAbi, providerHome);
-  // const foreignBridge = new ethers.Contract(foreignBridgeAddress, bridgeAbi, providerForeign);
-
-  // const homeWormholeBridgeForColony = new ethers.Contract(homeColonyBridgeAddress, wormholeBridgeForColonyAbi, providerHome);
-  // const foreignWormholeBridgeForColony = new ethers.Contract(foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, providerForeign);
 
   getPromiseForNextBridgedTransaction(_count = 1) {
     return new Promise((resolve) => {

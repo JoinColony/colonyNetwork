@@ -33,10 +33,8 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
-    // Add the special mining skill
-    // if (isMiningChain()) {
-    //   reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
-    // }
+    // The mining skill used to be created here, but with the move to
+    // multi-chain, it now happens in initialiseReputationMining
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }

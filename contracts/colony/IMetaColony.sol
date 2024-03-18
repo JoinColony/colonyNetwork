@@ -50,32 +50,6 @@ interface IMetaColony is IColony {
   /// @param _resolver The deployed resolver containing the extension contract logic
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) external;
 
-  // /// @notice Called to set the details about bridge _bridgeAddress
-  // /// @param _bridgeAddress The address of the bridge
-  // /// @param _chainId The chainId of the corresponding network
-  // /// @param _gas How much gas to use for a bridged transaction
-  // /// @param _msgSenderFunctionSig The function signature of the function to call on the bridge to get the msgSender
-  // /// @param _correspondingNetwork The address of the corresponding colony network contract on the other network
-  // /// @param _updateLogBefore The tx data before the dynamic part of the tx to bridge to the update log
-  // /// @param _updateLogAfter The tx data after the dynamic part of the tx to bridge to the update log
-  // /// @param _skillCreationBefore The tx data before the dynamic part of the tx to brdige skill creation
-  // /// @param _skillCreationAfter The tx data after the dynamic part of the tx to brdige skill creation
-  // /// @param _setReputationRootHashBefore The tx data before the dynamic part of the tx to bridge a new reputation root hash
-  // /// @param _setReputationRootHashAfter The tx data after the dynamic part of the tx to bridge a new reputation root hash
-  // function setBridgeData(
-  //   address _bridgeAddress,
-  //   uint256 _chainId,
-  //   uint256 _gas,
-  //   bytes4 _msgSenderFunctionSig,
-  //   address _correspondingNetwork,
-  //   bytes memory _updateLogBefore,
-  //   bytes memory _updateLogAfter,
-  //   bytes memory _skillCreationBefore,
-  //   bytes memory _skillCreationAfter,
-  //   bytes memory _setReputationRootHashBefore,
-  //   bytes memory _setReputationRootHashAfter
-  // ) external;
-
   // @notice Called to set the address of the colony bridge contract
   /// @param _bridgeAddress The address of the bridge
   function setColonyBridgeAddress(address _bridgeAddress) external;

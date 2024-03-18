@@ -26,6 +26,7 @@ contract WormholeMock is IWormhole {
 
   bool vmResult = true;
   string invalidVMReason = "";
+
   function setVerifyVMResult(bool _valid, string memory _reason) public {
     vmResult = _valid;
     invalidVMReason = _reason;

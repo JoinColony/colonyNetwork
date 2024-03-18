@@ -1252,17 +1252,6 @@ contract("Cross-chain", (accounts) => {
       const tx = await unknownColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-caller-must-be-colony-bridge");
 
-      // const unknownBridge = await deployBridge(ethersHomeSigner);
-      // const tx = await unknownBridge.execute(
-      //   homeColonyNetwork.address,
-      //   homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [1, 2]),
-      //   1000000,
-      //   ethers.utils.hexZeroPad("0x01", 32),
-      //   foreignColonyNetwork.address,
-      //   { gasLimit: 1000000 },
-      // );
-      // await checkErrorRevertEthers(tx.wait(), "colony-network-not-known-bridge");
-
       const skillCountAfter = await homeColonyNetwork.getSkillCount();
       expect(skillCountAfter.toHexString()).to.be.equal(skillCountBefore.toHexString());
     });
@@ -1282,17 +1271,6 @@ contract("Cross-chain", (accounts) => {
       const tx = await foreignColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
 
       await checkErrorRevertEthers(tx.wait(), "colony-bridge-bridged-tx-only-from-colony-bridge");
-
-      // const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      // const tx = await foreignBridge.requireToPassMessage(
-      //   homeColonyNetwork.address,
-      //   homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [1, 2]),
-      //   1000000,
-      // );
-      // await tx.wait();
-      // const bridgingTx = await p;
-
-      // await checkErrorRevertEthers(bridgingTx.wait(), "colony-network-bridged-tx-only-from-network");
 
       const skillCountAfter = await homeColonyNetwork.getSkillCount();
       expect(skillCountAfter.toHexString()).to.be.equal(skillCountBefore.toHexString());
@@ -1374,17 +1352,6 @@ contract("Cross-chain", (accounts) => {
       const tx = await foreignColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
 
       await checkErrorRevertEthers(tx.wait(), "colony-bridge-bridged-tx-only-from-colony-bridge");
-
-      // const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      // const tx = await foreignBridge.requireToPassMessage(
-      //   homeColonyNetwork.address,
-      //   homeColonyNetwork.interface.encodeFunctionData("addReputationUpdateLogFromBridge", [ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0]),
-      //   1000000,
-      // );
-      // await tx.wait();
-      // const bridgingTx = await p;
-
-      // await checkErrorRevertEthers(bridgingTx.wait(), "colony-network-bridged-tx-only-from-network");
     });
 
     it("addReputationUpdateLogFromBridge does not allow transactions to be replayed (if not enforced by bridge)", async () => {

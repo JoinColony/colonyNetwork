@@ -791,6 +791,18 @@ Used by the client to avoid doubling the number of RPC calls when syncing from s
 |---|---|---|
 |_exists|bool|Boolean indicating whether there is a replacement log
 
+### ▸ `getReputationMiningChainId():uint256 reputationMiningChainId`
+
+Returns the chainId the network is expecting reputation mining to be one
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|reputationMiningChainId|uint256|The chainId
+
 ### ▸ `getReputationMiningCycle(bool _active):address _repMiningCycleAddress`
 
 Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to.

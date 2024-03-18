@@ -35,9 +35,9 @@ interface IColonyBridge {
 
   /// @notice Function to set the address of the instance of this contract on other chains, that
   /// this contract will expect to receive messages from
-  /// @param evmChainId The chain id to set the address for
+  /// @param _evmChainId The chain id to set the address for
   /// @param _colonyBridge The address of the colony bridge contract on the other chain
-  function setColonyBridgeAddress(uint256 evmChainId, address _colonyBridge) external;
+  function setColonyBridgeAddress(uint256 _evmChainId, address _colonyBridge) external;
 
   /// @notice Function to get the address of the instance of this contract on other chains
   /// @param evmChainId The chain id to get the address for
