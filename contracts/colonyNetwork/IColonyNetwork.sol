@@ -309,7 +309,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
 
   /// @notice Returns the chainId the network is expecting reputation mining to be one
   /// @return reputationMiningChainId The chainId
-  function getReputationMiningChainId() external view returns (uint256 reputationMiningChainId);
+  function getMiningChainId() external view returns (uint256 reputationMiningChainId);
 
   /// @notice Get the root hash of the current reputation state tree.
   /// @return rootHash The current Reputation Root Hash

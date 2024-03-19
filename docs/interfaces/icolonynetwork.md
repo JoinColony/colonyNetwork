@@ -621,6 +621,18 @@ Get the Meta Colony address.
 |---|---|---|
 |_colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
 
+### ▸ `getMiningChainId():uint256 reputationMiningChainId`
+
+Returns the chainId the network is expecting reputation mining to be one
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|reputationMiningChainId|uint256|The chainId
+
 ### ▸ `getMiningDelegator(address _delegate):address _delegator`
 
 Called to get the address _delegate is allowed to mine for
@@ -790,18 +802,6 @@ Used by the client to avoid doubling the number of RPC calls when syncing from s
 |Name|Type|Description|
 |---|---|---|
 |_exists|bool|Boolean indicating whether there is a replacement log
-
-### ▸ `getReputationMiningChainId():uint256 reputationMiningChainId`
-
-Returns the chainId the network is expecting reputation mining to be one
-
-
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|reputationMiningChainId|uint256|The chainId
 
 ### ▸ `getReputationMiningCycle(bool _active):address _repMiningCycleAddress`
 
