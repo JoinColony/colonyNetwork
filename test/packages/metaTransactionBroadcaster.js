@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 /* global artifacts, hre */
 
 const path = require("path");
@@ -28,7 +27,7 @@ const GasGuzzler = artifacts.require("GasGuzzler");
 
 chai.use(bnChai(web3.utils.BN));
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
 const loader = new TruffleLoader({

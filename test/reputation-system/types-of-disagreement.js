@@ -1,3 +1,5 @@
+/* globals hre */
+
 const path = require("path");
 const BN = require("bn.js");
 const { toBN } = require("web3-utils");
@@ -52,7 +54,7 @@ let metaColony;
 let clnyToken;
 let localSkillId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();

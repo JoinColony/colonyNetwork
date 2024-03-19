@@ -1,4 +1,5 @@
-/* globals artifacts */
+/* globals artifacts, hre */
+
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
@@ -37,7 +38,7 @@ contract("Cross-chain", () => {
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
-  const TRUFFLE_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+  const TRUFFLE_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
   const OTHER_RPC_PORT = 8546;
 
   const HOME_PORT = process.env.TRUFFLE_FOREIGN === "true" ? OTHER_RPC_PORT : TRUFFLE_PORT;

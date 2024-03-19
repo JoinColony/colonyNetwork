@@ -1,3 +1,5 @@
+/* globals hre */
+
 const path = require("path");
 const BN = require("bn.js");
 const chai = require("chai");
@@ -29,7 +31,7 @@ let colonyNetwork;
 let metaColony;
 let clnyToken;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -53,7 +55,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
 
-process.env.SOLIDITY_COVERAGE
+hre.__SOLIDITY_COVERAGE_RUNNING
   ? contract.skip
   : contract("Reputation mining - client reputation calculations", (accounts) => {
       const MINER1 = accounts[5];

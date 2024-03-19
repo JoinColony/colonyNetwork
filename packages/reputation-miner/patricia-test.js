@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const { fromAscii } = require("web3-utils");
@@ -17,7 +17,7 @@ const contractLoader = new TruffleLoader({
 contract("Javascript Patricia Tree", accounts => {
   const MAIN_ACCOUNT = accounts[5];
   const OTHER_ACCOUNT = accounts[6];
-  const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+  const REAL_PROVIDER_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
   let colonyNetwork;
   let jsClient;

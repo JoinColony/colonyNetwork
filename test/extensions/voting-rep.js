@@ -2070,7 +2070,7 @@ contract("Voting Reputation", (accounts) => {
     let motionId;
 
     beforeEach(async () => {
-      const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+      const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
       const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
       const loader = new TruffleLoader({

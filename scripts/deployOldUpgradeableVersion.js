@@ -1,5 +1,4 @@
-// Input:
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const fs = require("fs");
 
@@ -270,7 +269,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   console.log("Deploying upgradable version...");
   await exec(`cp ./scripts/setupOldUpgradeableVersion.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersion.js`);
 
-  const network = process.env.SOLIDITY_COVERAGE ? "coverage" : "development";
+  const network = hre.__SOLIDITY_COVERAGE_RUNNING ? "coverage" : "development";
 
   const res = await exec(
     `cd colonyNetwork-${versionTag} ` +

@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const { padLeft, soliditySha3 } = require("web3-utils");
 const BN = require("bn.js");
@@ -49,7 +49,7 @@ const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const REAL_PROVIDER_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 contract("Colony Network Recovery", (accounts) => {
   let colonyNetwork;
@@ -383,7 +383,7 @@ contract("Colony Network Recovery", (accounts) => {
   });
 
   describe("when using recovery mode, miners should work correctly", async () => {
-    process.env.SOLIDITY_COVERAGE
+    hre.__SOLIDITY_COVERAGE_RUNNING
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
@@ -459,7 +459,7 @@ contract("Colony Network Recovery", (accounts) => {
           expect(new BN(newValue, 16)).to.be.zero;
         });
 
-    process.env.SOLIDITY_COVERAGE
+    hre.__SOLIDITY_COVERAGE_RUNNING
       ? it.skip
       : it("the ReputationMiningCycle being replaced mid-cycle should be able to be managed okay by miners (new and old)", async () => {
           await client.saveCurrentState();

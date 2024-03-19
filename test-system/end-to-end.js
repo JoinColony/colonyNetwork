@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const BN = require("bn.js");
@@ -53,7 +53,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
   let tokenLocking;
   let clnyToken;
   let goodClient;
-  const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+  const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
   let colonies;
 
   before(async function () {

@@ -20,6 +20,7 @@
     "no-unused-expressions": "off",
     "eslint-comments/no-unlimited-disable": "off",
     "no-await-in-loop": "off",
+    "no-underscore-dangle": "off",
     "no-trailing-spaces": "error",
     "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
     "no-only-tests/no-only-tests": ["error", {"block": ["contract", "it"], "focus": ["only"]}],
