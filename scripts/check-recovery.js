@@ -122,6 +122,7 @@ walkSync("./contracts/").forEach((contractName) => {
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
 
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
   if (!contract) {
     return;
   }

@@ -7,7 +7,6 @@ const baseExec = require("child_process").exec;
 const exec = function (command) {
   return new Promise((resolve, reject) => {
     const execCallback = (error, stdout) => {
-      console.log("callback", error, stdout);
       if (error) {
         reject(error);
       } else {
