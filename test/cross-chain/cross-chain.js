@@ -38,11 +38,11 @@ contract("Cross-chain", () => {
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
-  const TRUFFLE_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
-  const OTHER_RPC_PORT = 8546;
+  const RPC_PORT_1 = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+  const RPC_PORT_2 = 8546;
 
-  const HOME_PORT = process.env.TRUFFLE_FOREIGN === "true" ? OTHER_RPC_PORT : TRUFFLE_PORT;
-  const FOREIGN_PORT = process.env.TRUFFLE_FOREIGN === "true" ? TRUFFLE_PORT : OTHER_RPC_PORT;
+  const HOME_PORT = process.env.HARDHAT_FOREIGN === "true" ? RPC_PORT_2 : RPC_PORT_1;
+  const FOREIGN_PORT = process.env.HARDHAT_FOREIGN === "true" ? RPC_PORT_1 : RPC_PORT_2;
 
   const foreignRpcUrl = `http://127.0.0.1:${FOREIGN_PORT}`;
   const homeRpcUrl = `http://127.0.0.1:${HOME_PORT}`;
@@ -56,7 +56,7 @@ contract("Cross-chain", () => {
     ({ bridgeMonitor, gnosisSafe, zodiacBridge, homeBridge, foreignBridge } = await setupBridging(homeRpcUrl, foreignRpcUrl));
 
     // If Truffle is not on the home chain, then deploy colonyNetwork to the home chain
-    if (process.env.TRUFFLE_FOREIGN === "true") {
+    if (process.env.HARDHAT_FOREIGN === "true") {
       try {
         const output = await exec(`npx hardhat deploy --network development2`);
         [, , , , , , , etherRouterAddress] = output
