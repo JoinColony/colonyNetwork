@@ -90,45 +90,6 @@ contract("Cross-chain", (accounts) => {
 
     tx = await foreignMetacolony.setColonyBridgeAddress(foreignColonyBridgeForColony);
     await tx.wait();
-
-    // The code here demonstrates how to generate the bridge data for a bridge. We work out the transaction (with dummy data), and then
-    // the transaction that would call that on the AMB, before snipping out the AMB call. The non-dummy data is worked out on-chain before
-    // being sandwiched by the before and after bytes.
-    // const addReputationUpdateLogFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("addReputationUpdateLogFromBridge", [
-    //   "0x1111111111111111111111111111111111111111",
-    //   "0x2222222222222222222222222222222222222222",
-    //   0x666666,
-    //   0x88888888,
-    //   0x99999999,
-    // ]);
-    // const addReputationUpdateLogFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
-    //   homeColonyNetwork.address,
-    //   addReputationUpdateLogFromBridgeTx,
-    //   1000000,
-    // ]);
-
-    // const addSkillFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("addSkillFromBridge", [0x666666, 0x88888888]);
-    // const addSkillFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
-    //   homeColonyNetwork.address,
-    //   addSkillFromBridgeTx,
-    //   1000000,
-    // ]);
-
-    // const tx = await foreignMetacolony.setBridgeData(
-    //   foreignBridgeAddress, // bridge address
-    //   100, // chainid
-    //   1000000, // gas
-    //   ethers.utils.solidityKeccak256(["string"], ["messageSender()"]).slice(0, 10), // function to call on bridge for msgSender
-    //   homeColonyNetwork.address, // network on other side of the bridge
-    //   addReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(0, 266), // log before
-    //   `0x${addReputationUpdateLogFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // log after
-    //   addSkillFromBridgeTxDataToBeSentToAMB.slice(0, 266), // skill before
-    //   `0x${addSkillFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // skill after
-    //   "0x", // root hash before
-    //   "0x", // root hash after
-    // );
-
-    // await tx.wait();
   }
 
   async function setHomeBridgeData(homeColonyBridgeAddressForColony) {
@@ -144,32 +105,6 @@ contract("Cross-chain", (accounts) => {
 
     tx = await homeMetacolony.setColonyBridgeAddress(homeColonyBridgeAddressForColony);
     await tx.wait();
-
-    // const setReputationRootHashFromBridgeTx = homeColonyNetwork.interface.encodeFunctionData("setReputationRootHashFromBridge", [
-    //   "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221",
-    //   "0xb8b89e7cf61d1d39d09e98c0ccbb489561e5e1173445a6b34e469f362ebdb221",
-    //   1,
-    // ]);
-    // const setReputationRootHashFromBridgeTxDataToBeSentToAMB = homeBridge.interface.encodeFunctionData("requireToPassMessage", [
-    //   foreignColonyNetwork.address,
-    //   setReputationRootHashFromBridgeTx,
-    //   1000000,
-    // ]);
-
-    // const tx = await homeMetacolony.setBridgeData(
-    //   homeBridgeAddress, // bridge address
-    //   foreignChainId, // chainid
-    //   1000000, // gas
-    //   ethers.utils.solidityKeccak256(["string"], ["messageSender()"]).slice(0, 10), // function to call on bridge for msgSender
-    //   foreignColonyNetwork.address, // network on other side of the bridge
-    //   "0x", // log before
-    //   "0x", // log after
-    //   `0x`, // skill before
-    //   "0x", // skill after
-    //   setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(0, 266), // root hash before
-    //   `0x${setReputationRootHashFromBridgeTxDataToBeSentToAMB.slice(-56)}`, // root hash after
-    // );
-    // await tx.wait();
   }
 
   before(async () => {
@@ -301,26 +236,6 @@ contract("Cross-chain", (accounts) => {
   });
 
   afterEach(async () => {
-    // let tx = await foreignBridge.setBridgeEnabled(true);
-    // await tx.wait();
-    // await setForeignBridgeData(foreignColonyBridge.address);
-    // await setHomeBridgeData(homeColonyBridge.address);
-    // bridgeMonitor.reset();
-    // // Bridge over skills that have been made that haven't been bridged yet for whatever reason in a test
-    // const latestSkillId = await foreignColonyNetwork.getSkillCount();
-    // let latestBridgedSkillId = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
-    // // const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
-    // for (let i = latestBridgedSkillId.add(1); i <= latestSkillId; i = i.add(1)) {
-    //   console.log("latest skill id", latestSkillId.toHexString());
-    //   console.log("latest bridged skill id", latestBridgedSkillId.toHexString());
-    //   latestBridgedSkillId = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId)
-    //   console.log("now latest bridged skill id", i.toHexString());
-    //   console.log("bridging skill", i);
-    //   const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-    //   tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
-    //   await tx.wait();
-    //   await p;
-    // }
     await revert(web3HomeProvider, homeSnapshotId);
     await revert(web3ForeignProvider, foreignSnapshotId);
   });
@@ -390,7 +305,13 @@ contract("Cross-chain", (accounts) => {
       expect(countAfter.sub(countBefore).toNumber()).to.equal(0);
     });
 
-    it("Only owners can set properties on the ColonyBridge", async () => {
+    it("the bridged skill count has a sensible default", async () => {
+      const unsetChainId = ethers.BigNumber.from(123456789);
+      const count = await homeColonyNetwork.getBridgedSkillCounts(unsetChainId);
+      expect(count.toString()).to.equal(unsetChainId.shl(128).toString());
+    });
+
+    it("only owners can set properties on the ColonyBridge", async () => {
       let tx = await homeColonyBridge.connect(ethersHomeSigner2).setColonyNetworkAddress(ADDRESS_ZERO, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
 

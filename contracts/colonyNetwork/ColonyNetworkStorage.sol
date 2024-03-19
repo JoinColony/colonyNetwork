@@ -164,7 +164,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   }
 
   modifier onlyMiningChain() {
-    if (getReputationMiningChainId() == block.chainid) {
+    if (getMiningChainId() == block.chainid) {
       require(
         inactiveReputationMiningCycle != address(0x0),
         "colony-reputation-mining-not-initialised"
@@ -176,7 +176,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
 
   modifier onlyMiningChainOrDuringSetup() {
     require(
-      isMiningChain() || getReputationMiningChainId() == 0,
+      isMiningChain() || getMiningChainId() == 0,
       "colony-only-valid-on-mining-chain-or-during-setup"
     );
     _;
@@ -199,10 +199,10 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   }
 
   function isMiningChain() internal view returns (bool) {
-    return block.chainid == getReputationMiningChainId();
+    return block.chainid == getMiningChainId();
   }
 
-  function getReputationMiningChainId() public view returns (uint256) {
+  function getMiningChainId() public view returns (uint256) {
     if (reputationMiningChainId == 0 && isXdai()) {
       return block.chainid;
     }

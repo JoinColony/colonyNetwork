@@ -184,12 +184,12 @@ contract("Contract Storage", (accounts) => {
         this.skip();
       }
 
-      const oldChainId = await colonyNetwork.getReputationMiningChainId();
+      const oldChainId = await colonyNetwork.getMiningChainId();
 
       const otherChainId = oldChainId + 1;
       await metaColony.initialiseReputationMining(otherChainId, ethers.constants.HashZero, 0);
 
-      const newChainId = await colonyNetwork.getReputationMiningChainId();
+      const newChainId = await colonyNetwork.getMiningChainId();
       expect(newChainId).to.eq.BN(oldChainId + 1);
     });
 
