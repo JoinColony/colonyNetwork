@@ -73,11 +73,10 @@ class ReputationMiner {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
-    const flags = { abi: true, address: false };
-    this.colonyNetworkContractDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" }, flags);
-    this.repCycleContractDef = await this.loader.load({ contractDir: "reputationMiningCycle", contractName: "IReputationMiningCycle" }, flags);
-    this.tokenLockingContractDef = await this.loader.load({ contractDir: "tokenLocking", contractName: "ITokenLocking" }, flags);
-    this.colonyContractDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" }, flags);
+    this.colonyNetworkContractDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
+    this.repCycleContractDef = await this.loader.load({ contractDir: "reputationMiningCycle", contractName: "IReputationMiningCycle" });
+    this.tokenLockingContractDef = await this.loader.load({ contractDir: "tokenLocking", contractName: "ITokenLocking" });
+    this.colonyContractDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
 
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
     const tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
@@ -89,11 +88,11 @@ class ReputationMiner {
     if (!this.useJsTree) {
       this.patriciaTreeContractDef = await this.loader.load(
         { contractDir: "patriciaTree", contractName: "PatriciaTree" },
-        { ...flags, bytecode: true }
+        { abi: true, address: false, bytecode: true }
       );
       this.patriciaTreeNoHashContractDef = await this.loader.load(
         { contractDir: "patriciaTree", contractName: "PatriciaTreeNoHash" },
-        { ...flags, bytecode: true }
+        { abi: true, address: false, bytecode: true }
       );
     }
 

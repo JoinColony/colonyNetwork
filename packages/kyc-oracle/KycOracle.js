@@ -168,8 +168,7 @@ class KycOracle {
     const network = await this.provider.getNetwork();
     this.chainId = network.chainId;
 
-    const flags = { abi: true, address: false };
-    this.whitelistContractDef = await this.loader.load({ contractDir: "extensions", contractName: "Whitelist" }, flags);
+    this.whitelistContractDef = await this.loader.load({ contractDir: "extensions", contractName: "Whitelist" });
     this.whitelist = new ethers.Contract(whitelistAddress, this.whitelistContractDef.abi, this.wallet);
 
     await this.updateGasEstimate("safeLow");
