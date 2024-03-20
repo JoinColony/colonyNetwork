@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.23;
+pragma solidity 0.8.25;
 
 contract MultiChain {
   function getChainId() public view returns (uint256) {
