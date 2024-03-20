@@ -22,8 +22,9 @@ import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./../common/Multicall.sol";
 import "./ColonyNetworkStorage.sol";
 import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
+import { CallWithGuards } from "../common/CallWithGuards.sol";
 
-contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
+contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, CallWithGuards {
   // Skills
 
   function addSkill(
@@ -111,26 +112,11 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     );
 
     // Send bridge transaction
-    // This succeeds if not set, but we don't want to block e.g. domain creation if that's the situation we're in,
-    // and we can re-call this function to bridge later if necessary.
-    // slither-disable-next-line unchecked-lowlevel
+    bool success = callThroughBridgeWithGuards(payload);
 
-    // Try-catch does not catch if the bridge is not a contract, so we need to check that first
-    if (isContract(colonyBridgeAddress)) {
-      try
-        IColonyBridge(colonyBridgeAddress).sendMessage(
-          getAndCacheReputationMiningChainId(),
-          payload
-        )
-      returns (bool success) {
-        if (success) {
-          return;
-          // Every other type of failure drops through to the emitted event
-        }
-      } catch Error(string memory err) {}
+    if (!success) {
+      emit SkillCreationStored(_skillId);
     }
-
-    emit SkillCreationStored(_skillId);
   }
 
   function bridgePendingReputationUpdate(
@@ -162,21 +148,13 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
 
     delete pendingReputationUpdates[block.chainid][_colony][_updateNumber];
 
-    // Try-catch does not catch if the bridge is not a contract, so we need to check that first
-    if (isContract(colonyBridgeAddress)) {
-      try
-        IColonyBridge(colonyBridgeAddress).sendMessage(
-          getAndCacheReputationMiningChainId(),
-          payload
-        )
-      returns (bool success) {
-        if (success) {
-          emit ReputationUpdateSentToBridge(_colony, _updateNumber);
-          return;
-          // Every other type of failure will drop through and revert
-        }
-      } catch Error(string memory err) {}
+    bool success = callThroughBridgeWithGuards(payload);
+
+    if (success) {
+      emit ReputationUpdateSentToBridge(_colony, _updateNumber);
+      return;
     }
+
     revert("colony-network-bridging-tx-unsuccessful");
   }
 
@@ -471,23 +449,14 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       reputationUpdateCount[block.chainid][colonyAddress]
     );
 
-    // Try-catch does not catch if the bridge is not a contract, so we need to check that first
-    if (isContract(colonyBridgeAddress)) {
-      try
-        IColonyBridge(colonyBridgeAddress).sendMessage(
-          getAndCacheReputationMiningChainId(),
-          payload
-        )
-      returns (bool success) {
-        if (success) {
-          emit ReputationUpdateSentToBridge(
-            colonyAddress,
-            reputationUpdateCount[block.chainid][colonyAddress]
-          );
-          return;
-          // Every other type of failure will drop through and store
-        }
-      } catch Error(string memory err) {}
+    bool success = callThroughBridgeWithGuards(payload);
+
+    if (success) {
+      emit ReputationUpdateSentToBridge(
+        colonyAddress,
+        reputationUpdateCount[block.chainid][colonyAddress]
+      );
+      return;
     }
 
     // Store to resend later
@@ -536,9 +505,20 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
     return _reputation;
   }
 
-  function isContract(address addr) internal returns (bool res) {
-    assembly {
-      res := gt(extcodesize(addr), 0)
+  function callThroughBridgeWithGuards(bytes memory payload) internal returns (bool) {
+    bytes memory bridgePayload = abi.encodeWithSignature(
+      "sendMessage(uint256,bytes)",
+      getAndCacheReputationMiningChainId(),
+      payload
+    );
+
+    (bool success, bytes memory returnData) = callWithGuards(colonyBridgeAddress, bridgePayload);
+
+    // If the function call was a success, and it returned true
+    if (success) {
+      bool res = abi.decode(returnData, (bool));
+      return res;
     }
+    return false;
   }
 }
