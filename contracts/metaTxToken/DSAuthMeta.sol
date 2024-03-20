@@ -16,7 +16,7 @@ import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DSAuth, DSAuthEvents, DSAuthority } from "./../../lib/dappsys/auth.sol";
 
-pragma solidity 0.8.23;
+pragma solidity 0.8.25;
 
 abstract contract DSAuthMeta is DSAuthEvents, BasicMetaTransaction {
   DSAuthority public authority;
