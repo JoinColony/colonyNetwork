@@ -1,6 +1,8 @@
 /* globals artifacts */
+const fs = require("fs");
 
 const EtherRouter = artifacts.require("EtherRouter");
+const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
 const Resolver = artifacts.require("Resolver");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
@@ -62,6 +64,8 @@ const path = require("path");
 const assert = require("assert");
 const ethers = require("ethers");
 const { soliditySha3 } = require("web3-utils");
+const truffleContract = require("@truffle/contract");
+const createXABI = require("../lib/createx/artifacts/src/ICreateX.sol/ICreateX.json");
 
 const {
   setupUpgradableColonyNetwork,
@@ -86,8 +90,8 @@ module.exports = async () => {
 };
 
 async function deployContracts() {
-  const etherRouter = await EtherRouter.new();
-  EtherRouter.setAsDeployed(etherRouter);
+  // const etherRouter = await EtherRouter.new();
+  // EtherRouter.setAsDeployed(etherRouter);
 
   const resolver = await Resolver.new();
   Resolver.setAsDeployed(resolver);
@@ -124,6 +128,23 @@ async function deployContracts() {
 
   const reputationMiningCycleBinarySearch = await ReputationMiningCycleBinarySearch.new();
   ReputationMiningCycleBinarySearch.setAsDeployed(reputationMiningCycleBinarySearch);
+
+  // Deploy CreateX
+  const accounts = await web3.eth.getAccounts();
+  await web3.eth.sendTransaction({
+    from: accounts[0],
+    to: "0xeD456e05CaAb11d66C4c797dD6c1D6f9A7F352b5",
+    value: web3.utils.toWei("0.3", "ether"),
+    gasPrice: web3.utils.toWei("1", "gwei"),
+    gas: 300000,
+  });
+  const rawTx = fs
+    .readFileSync("lib/createx/scripts/presigned-createx-deployment-transactions/signed_serialised_transaction_gaslimit_3000000_.json", {
+      encoding: "utf8",
+    })
+    .replace(/"/g, "")
+    .replace("\n", "");
+  await web3.eth.sendSignedTransaction(rawTx);
 }
 
 async function setupColonyNetwork() {
@@ -134,9 +155,31 @@ async function setupColonyNetwork() {
   const colonyNetworkENS = await ColonyNetworkENS.deployed();
   const colonyNetworkExtensions = await ColonyNetworkExtensions.deployed();
   const colonyNetworkSkills = await ColonyNetworkSkills.deployed();
-  const etherRouter = await EtherRouter.deployed();
+  // const etherRouter = await EtherRouter.deployed();
   const resolver = await Resolver.deployed();
   const contractRecovery = await ContractRecovery.deployed();
+
+  const accounts = await web3.eth.getAccounts();
+
+  // Deploy EtherRouter through CreateX
+  const CreateX = truffleContract({ abi: createXABI.abi });
+  CreateX.setProvider(web3.currentProvider);
+  const createX = await CreateX.at("0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed");
+
+  // This is a fake instance of an etherRouter, just so we can call encodeABI
+  const fakeEtherRouter = await EtherRouterCreate3.at(colonyNetwork.address);
+  const setOwnerData = fakeEtherRouter.contract.methods.setOwner(accounts[0]).encodeABI();
+  const tx = await createX.methods["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
+    // `${accounts[0]}001212121212121212121212`,
+    `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e9`,
+    EtherRouterCreate3.bytecode,
+    setOwnerData,
+    [0, 0],
+    { from: accounts[0] },
+  );
+
+  const etherRouter = await EtherRouterCreate3.at(tx.logs.filter((log) => log.event === "ContractCreation")[0].args.newContract);
+  EtherRouter.setAsDeployed(etherRouter);
 
   await setupUpgradableColonyNetwork(
     etherRouter,

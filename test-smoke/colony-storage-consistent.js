@@ -37,7 +37,8 @@ contract("Contract Storage", (accounts) => {
   before(async () => {
     // We use our own providers for these test(s) so we can really get in to it...
 
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);

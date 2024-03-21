@@ -13,3 +13,6 @@
 [submodule "lib/wormhole"]
 	path = lib/wormhole
 	url = https://github.com/wormhole-foundation/wormhole.git
+[submodule "lib/createx"]
+	path = lib/createx
+	url = https://github.com/pcaversaccio/createx

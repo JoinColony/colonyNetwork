@@ -48,7 +48,8 @@ async function addExtension(colonyNetwork, contractDir, interfaceName, extension
 
 // eslint-disable-next-line no-unused-vars
 module.exports = async function (deployer, network, accounts) {
-  const etherRouterDeployed = await EtherRouter.deployed();
+  const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+  const etherRouterDeployed = await EtherRouter.at(cnAddress);
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
   await addExtension(colonyNetwork, "extensions", "CoinMachine", "CoinMachine", [CoinMachine]);

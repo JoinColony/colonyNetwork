@@ -1,5 +1,7 @@
 /* globals artifacts */
 
+const fs = require("fs");
+
 const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkDeployer = artifacts.require("./ColonyNetworkDeployer");
@@ -21,7 +23,7 @@ const Resolver = artifacts.require("./Resolver");
 // See https://github.com/cgewecke/eth-gas-reporter/issues/64
 artifacts.require("./ReputationMiningCycle");
 
-module.exports = async function (deployer, network) {
+module.exports = async function (deployer, network, accounts) {
   console.log(`## ${network} network ##`);
   await deployer.deploy(ColonyNetwork);
   await deployer.deploy(ColonyNetworkDeployer);
@@ -36,4 +38,14 @@ module.exports = async function (deployer, network) {
   await deployer.deploy(EtherRouter);
   await deployer.deploy(Resolver);
   await deployer.deploy(ContractRecovery);
+
+  // Deploy CreateX
+  await web3.eth.sendTransaction({ from: accounts[0], to: "0xeD456e05CaAb11d66C4c797dD6c1D6f9A7F352b5", value: web3.utils.toWei("0.3", "ether") });
+  const rawTx = fs
+    .readFileSync("lib/createx/scripts/presigned-createx-deployment-transactions/signed_serialised_transaction_gaslimit_3000000_.json", {
+      encoding: "utf8",
+    })
+    .replace(/"/g, "")
+    .replace("\n", "");
+  await web3.eth.sendSignedTransaction(rawTx);
 };

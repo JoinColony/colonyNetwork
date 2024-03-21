@@ -14,7 +14,8 @@ module.exports = async function (deployer) {
   const tokenLockingContract = await TokenLocking.new();
   await setupUpgradableTokenLocking(etherRouter, resolver, tokenLockingContract);
 
-  const etherRouterDeployed = await EtherRouter.deployed();
+  const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+  const etherRouterDeployed = await EtherRouter.at(cnAddress);
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
   await colonyNetwork.setTokenLocking(etherRouter.address);
 

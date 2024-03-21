@@ -28,7 +28,8 @@ module.exports = async function (deployer) {
   const reputationMiningCycleBinarySearch = await ReputationMiningCycleBinarySearch.deployed();
   const resolver = await Resolver.new();
 
-  const etherRouterDeployed = await EtherRouter.deployed();
+  const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+  const etherRouterDeployed = await EtherRouter.at(cnAddress);
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
   // Register a new Resolver for ReputationMining instance and set it on the Network
