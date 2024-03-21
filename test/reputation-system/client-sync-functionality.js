@@ -44,7 +44,8 @@ hre.__SOLIDITY_COVERAGE_RUNNING
       let startingBlockNumber;
 
       before(async () => {
-        const etherRouter = await EtherRouter.deployed();
+        const cnAddress = require("../../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+    const etherRouter = await EtherRouter.at(cnAddress);
         colonyNetwork = await IColonyNetwork.at(etherRouter.address);
         const tokenLockingAddress = await colonyNetwork.getTokenLocking();
         tokenLocking = await ITokenLocking.at(tokenLockingAddress);

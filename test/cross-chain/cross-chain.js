@@ -24,14 +24,13 @@ chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
-const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
 
-const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE } = require("../../helpers/constants");
+const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, snapshot, revert } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
@@ -117,7 +116,6 @@ contract("Cross-chain", (accounts) => {
     tx = await homeMetacolony.setColonyBridgeAddress(homeColonyBridgeAddressForColony);
     await tx.wait();
   }
-  let newEtherRouterAddress;
 
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
@@ -139,11 +137,7 @@ contract("Cross-chain", (accounts) => {
     try {
       const nonHardhatChainId = process.env.HARDHAT_FOREIGN === "true" ? homeChainId : foreignChainId;
 
-      const output = await exec(`CHAIN_ID=${parseInt(nonHardhatChainId, 16)} npx hardhat deploy --network development2`);
-      [, , , , , , , newEtherRouterAddress] = output
-        .split("\n")
-        .filter((x) => x.includes("Colony Network deployed at"))[0]
-        .split(" ");
+      await exec(`CHAIN_ID=${parseInt(nonHardhatChainId, 16)} npx hardhat deploy --network development2`);
     } catch (err) {
       console.log(err);
       process.exit(1);
@@ -154,20 +148,10 @@ contract("Cross-chain", (accounts) => {
     // in to a different location. If we see another chain id, we assume it's non-coverage
     // truffle and look for the build artifacts in the normal place.
 
-    let homeEtherRouterAddress;
-    let foreignEtherRouterAddress;
-    if (process.env.HARDHAT_FOREIGN === "true") {
-      homeEtherRouterAddress = newEtherRouterAddress;
-      foreignEtherRouterAddress = (await EtherRouter.deployed()).address;
-    } else {
-      homeEtherRouterAddress = (await EtherRouter.deployed()).address;
-      foreignEtherRouterAddress = newEtherRouterAddress;
-    }
-
-    console.log("foreign colony network", foreignEtherRouterAddress);
-    console.log("home colony network", homeEtherRouterAddress);
-
+    const homeEtherRouterAddress = require("../../etherrouter-address.json").etherRouterAddress; // eslint-disable-line global-require
     homeColonyNetwork = await new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
+
+    const foreignEtherRouterAddress = homeEtherRouterAddress;
     foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, IColonyNetwork.abi, ethersForeignSigner);
   });
 
@@ -258,6 +242,15 @@ contract("Cross-chain", (accounts) => {
   });
 
   describe("administrating cross-network bridges", async () => {
+    it("colonyNetwork should have the same address on each chain", async () => {
+      expect(homeColonyNetwork.address).to.equal(foreignColonyNetwork.address);
+      // Check we have colony Network there - this equality is expected because of how we set up the addresses
+      const homeVersionResolver = await homeColonyNetwork.getColonyVersionResolver(CURR_VERSION);
+      const foreignVersionResolver = await foreignColonyNetwork.getColonyVersionResolver(CURR_VERSION);
+      expect(homeVersionResolver).to.not.equal(ADDRESS_ZERO);
+      expect(foreignVersionResolver).to.not.equal(ADDRESS_ZERO);
+    });
+
     it("bridge data can be queried", async () => {
       const bridgeAddress = await homeColonyNetwork.getColonyBridgeAddress();
       expect(bridgeAddress).to.equal(homeColonyBridge.address);

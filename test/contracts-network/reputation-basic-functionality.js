@@ -31,7 +31,8 @@ contract("Reputation mining - basic functionality", (accounts) => {
   let clnyToken;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = require("../../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();

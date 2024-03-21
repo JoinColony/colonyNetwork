@@ -24,7 +24,8 @@ const DEFAULT_STAKE = "2000000000000000000000000"; // DEFAULT_STAKE
 module.exports = async function (deployer, network, accounts) {
   const MAIN_ACCOUNT = accounts[5];
   const TOKEN_OWNER = accounts[11];
-  const etherRouterDeployed = await EtherRouter.deployed();
+  const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+  const etherRouterDeployed = await EtherRouter.at(cnAddress);
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
   const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);

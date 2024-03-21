@@ -28,7 +28,8 @@ contract("EvaluatedExpenditure", (accounts) => {
   const USER1 = accounts[1];
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = require("../../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const extension = await EvaluatedExpenditure.new();
