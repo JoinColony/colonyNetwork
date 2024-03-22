@@ -25,7 +25,7 @@ import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IMetaColony } from "./../colony/IMetaColony.sol";
 import { DSMath } from "./../../lib/dappsys/math.sol";
 
-contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
+contract ColonyNetworkAuction is ColonyNetworkStorage {
   function startTokenAuction(address _token) public stoppable auth {
     require(_token != address(0x0), "colony-auction-invalid-token");
 
@@ -43,15 +43,15 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
     if (_token == clny) {
       // We don't auction CLNY. We just burn it instead.
       // Note we can do this more often than every 30 days.
-      if (isXdai()) {
-        // On Xdai, we can't burn bridged tokens
+      if (isMainnet()) {
+        ERC20Extended(clny).burn(availableTokens);
+      } else {
+        // Elsewhere, we can't burn bridged tokens
         // so let's send them to the metacolony for now.
         require(
           ERC20Extended(clny).transfer(metaColony, availableTokens),
           "colony-network-transfer-failed"
         );
-      } else {
-        ERC20Extended(clny).burn(availableTokens);
       }
       return;
     }
@@ -243,15 +243,15 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     finalized = true;
 
     // Burn all CLNY received
-    if (isXdai()) {
+    if (isMainnet()) {
+      clnyToken.burn(receivedTotal);
+    } else {
       // On Xdai, we can't burn bridged tokens
       // so let's send them to the metacolony for now.
       require(
         clnyToken.transfer(metaColonyAddress, receivedTotal),
         "colony-network-transfer-failed"
       );
-    } else {
-      clnyToken.burn(receivedTotal);
     }
     emit AuctionFinalized(finalPrice);
   }

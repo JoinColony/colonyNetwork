@@ -33,8 +33,8 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
-    // Add the special mining skill, parent is the root domain
-    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
+    // The mining skill used to be created here, but with the move to
+    // multi-chain, it now happens in initialiseReputationMining
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
@@ -141,14 +141,17 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(colonyAuthority);
-
     colonyAuthority.setOwner(address(etherRouter));
 
-    // Initialise the domain tree with defaults by just incrementing the skillCount
-    skillCount += 1;
     colonyCount += 1;
     colonies[colonyCount] = address(colony);
     _isColony[address(colony)] = true;
+
+    // Initialise the domain tree with defaults by just incrementing the skillCount
+    skillCount += 1;
+
+    // If we're not mining chain, then bridge the skill
+    IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
 
     colony.initialiseColony(address(this), _tokenAddress);
 

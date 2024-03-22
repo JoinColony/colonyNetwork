@@ -1,3 +1,5 @@
+const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
+
 module.exports = {
   defaultNetwork: "hardhat",
   solidity: {
@@ -15,7 +17,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 2656691,
+      chainId: FORKED_XDAI_CHAINID,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       blockGasLimit: 6721975,

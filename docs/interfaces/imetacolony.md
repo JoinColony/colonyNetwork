@@ -35,16 +35,31 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
-### ▸ `mintTokensForColonyNetwork(uint256 _wad)`
+### ▸ `initialiseReputationMining(uint256 miningChainId, bytes32 newHash, uint256 newNLeaves)`
 
-Mints CLNY in the Meta Colony and transfers them to the colony network. Only allowed to be called on the Meta Colony by the colony network.
+Creates initial inactive reputation mining cycle.
+
+*Note: Only callable from metacolony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|miningChainId|uint256|The chainId of the chain the mining cycle is being created on Can either be this chain or another chain, and the function will behave differently depending on which is the case.
+|newHash|bytes32|The root hash of the reputation state tree
+|newNLeaves|uint256|The number of leaves in the state tree
+
+
+### ▸ `setColonyBridgeAddress(address _bridgeAddress)`
+
+Called to set the address of the colony bridge contract
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_wad|uint256|Amount to mint and transfer to the colony network
+|_bridgeAddress|address|The address of the bridge
 
 
 ### ▸ `setNetworkFeeInverse(uint256 _feeInverse)`

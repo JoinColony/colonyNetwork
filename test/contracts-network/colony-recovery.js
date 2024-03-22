@@ -147,7 +147,6 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.editColonyByDelta(""), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.bootstrapColony([], []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.mintTokensFor(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.mintTokensForColonyNetwork(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setNetworkFeeInverse(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setPayoutWhitelist(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setReputationMiningCycleReward(0), "colony-in-recovery-mode");

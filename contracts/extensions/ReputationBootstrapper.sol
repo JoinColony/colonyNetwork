@@ -76,7 +76,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   /// @notice Returns the version of the extension
   function version() public pure override returns (uint256) {
-    return 3;
+    return 4;
   }
 
   /// @notice Configures the extension

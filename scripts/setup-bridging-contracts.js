@@ -14,7 +14,7 @@ const { TruffleLoader } = require("../packages/package-utils");
 const { WAD } = require("../helpers/constants");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts"),
+  contractDir: path.resolve(__dirname, "..", `build${process.env.SOLIDITY_COVERAGE ? "-coverage" : ""}`, "contracts"),
 });
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;
@@ -30,7 +30,6 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   const GnosisSafeProxyFactory = await loader.load({ contractName: "GnosisSafeProxyFactory" }, { abi: true, address: false });
   const GnosisSafe = await loader.load({ contractName: "GnosisSafe" }, { abi: true, address: false });
   const ZodiacBridgeModuleMock = await loader.load({ contractName: "ZodiacBridgeModuleMock" }, { abi: true, address: false });
-  const BridgeMock = await loader.load({ contractName: "BridgeMock" }, { abi: true, address: false });
   const Erc721Mock = await loader.load({ contractName: "ERC721Mock" }, { abi: true, address: false });
   const Token = await loader.load({ contractName: "Token" }, { abi: true, address: false });
 
@@ -107,25 +106,31 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   }
 
   // Deploy a foreign bridge
-
-  const foreignBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersForeignSigner);
-  const foreignBridge = await foreignBridgeFactory.deploy();
-  await foreignBridge.deployTransaction.wait();
+  const [foreignBridge, foreignColonyBridge] = await deployBridge(ethersForeignSigner);
 
   // Deploy a home bridge
-  const homeBridgeFactory = new ethers.ContractFactory(BridgeMock.abi, BridgeMock.bytecode, ethersHomeSigner);
-  const homeBridge = await homeBridgeFactory.deploy();
-  await homeBridge.deployTransaction.wait();
+  const [homeBridge, homeColonyBridge] = await deployBridge(ethersHomeSigner);
 
   // Start the bridge service
-  const bridgeMonitor = new MockBridgeMonitor(homeRpcUrl, foreignRpcUrl, homeBridge.address, foreignBridge.address); // eslint-disable-line no-unused-vars
+  console.log(`Home RPC Url: ${homeRpcUrl}`);
+  console.log(`Foreign RPC Url: ${foreignRpcUrl}`);
+  const bridgeMonitor = new MockBridgeMonitor(
+    homeRpcUrl,
+    foreignRpcUrl,
+    homeBridge.address,
+    foreignBridge.address,
+    homeColonyBridge.address,
+    foreignColonyBridge.address,
+  ); // eslint-disable-line no-unused-vars
   console.log(`Home bridge address: ${homeBridge.address}`);
   console.log(`Foreign bridge address: ${foreignBridge.address}`);
+  console.log(`Home colony bridge address: ${homeColonyBridge.address}`);
+  console.log(`Foreign colony bridge address: ${foreignColonyBridge.address}`);
   console.log(`Gnosis Safe address: ${gnosisSafe.address}`);
   console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
   console.log(`Token address: ${token.address}`);
-  return { gnosisSafe, bridgeMonitor, zodiacBridge, homeBridge, foreignBridge };
+  return { gnosisSafe, bridgeMonitor, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
 }
 
 async function getSig(provider, account, dataHash) {
@@ -145,8 +150,27 @@ async function getSig(provider, account, dataHash) {
   return modifiedSig;
 }
 
+async function deployBridge(signer) {
+  const WormholeBridgeForColony = await loader.load({ contractName: "WormholeBridgeForColony" }, { abi: true, address: false });
+  const bridgeFactory = new ethers.ContractFactory(WormholeBridgeForColony.abi, WormholeBridgeForColony.bytecode, signer);
+  const bridge = await bridgeFactory.deploy();
+  await bridge.deployTransaction.wait();
+
+  const WormholeMock = await loader.load({ contractName: "WormholeMock" }, { abi: true, address: false });
+  const wormholeFactory = new ethers.ContractFactory(WormholeMock.abi, WormholeMock.bytecode, signer);
+  const wormhole = await wormholeFactory.deploy();
+  await wormhole.deployTransaction.wait();
+
+  let tx = await bridge.setWormholeAddress(wormhole.address);
+  await tx.wait();
+  tx = await bridge.setChainIdMapping([100, 265669100, 265669101], [200, 200, 202]);
+  await tx.wait();
+
+  return [wormhole, bridge];
+}
+
 if (process.argv.includes("start-bridging-environment")) {
   setupBridging("http://127.0.0.1:8545", "http://127.0.0.1:8546");
 }
 
-module.exports = setupBridging;
+module.exports = { setupBridging, deployBridge };

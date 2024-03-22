@@ -45,7 +45,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 1;
+    return 2;
   }
 
   /// @notice Configures the extension

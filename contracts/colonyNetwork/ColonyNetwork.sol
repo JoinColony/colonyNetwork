@@ -101,6 +101,13 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     colonyVersionResolver[_version] = _resolver;
     currentColonyVersion = _version;
 
+    // Skills on not-xdai chains are prefixed by the chain id
+    // Xdai was grandfathered in thinking it was the 'only' deployment and has no prefix, predating
+    // when this was a consideration
+    if (!isXdai()) {
+      skillCount = toRootSkillId(block.chainid);
+    }
+
     emit ColonyNetworkInitialised(_resolver);
   }
 

@@ -16,6 +16,7 @@ walkSync("./contracts/").forEach((contractName) => {
   // Contracts listed here are allowed to have storage variables
   if (
     [
+      "contracts/bridging/WormholeBridgeForColony.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colonyNetwork/ColonyNetworkAuthority.sol",
@@ -44,11 +45,13 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
+      "contracts/testHelpers/BridgeMock.sol",
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/TestExtensions.sol",
       "contracts/testHelpers/GasGuzzler.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
+      "contracts/testHelpers/WormholeMock.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo

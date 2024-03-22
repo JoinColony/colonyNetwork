@@ -22,11 +22,6 @@ pragma experimental "ABIEncoderV2";
 import { IColony } from "./IColony.sol";
 
 interface IMetaColony is IColony {
-  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network.
-  /// Only allowed to be called on the Meta Colony by the colony network.
-  /// @param _wad Amount to mint and transfer to the colony network
-  function mintTokensForColonyNetwork(uint256 _wad) external;
-
   /// @notice Set the Colony Network fee inverse amount.
   /// @dev Calls `IColonyNetwork.setFeeInverse`.
   /// @param _feeInverse Nonzero amount for the fee inverse
@@ -54,4 +49,21 @@ interface IMetaColony is IColony {
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _resolver The deployed resolver containing the extension contract logic
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) external;
+
+  // @notice Called to set the address of the colony bridge contract
+  /// @param _bridgeAddress The address of the bridge
+  function setColonyBridgeAddress(address _bridgeAddress) external;
+
+  /// @notice Creates initial inactive reputation mining cycle.
+  /// @dev Only callable from metacolony
+  /// @param miningChainId The chainId of the chain the mining cycle is being created on
+  /// Can either be this chain or another chain, and the function will behave differently depending
+  /// on which is the case.
+  /// @param newHash The root hash of the reputation state tree
+  /// @param newNLeaves The number of leaves in the state tree
+  function initialiseReputationMining(
+    uint256 miningChainId,
+    bytes32 newHash,
+    uint256 newNLeaves
+  ) external;
 }

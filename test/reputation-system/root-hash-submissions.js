@@ -6,7 +6,12 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } = require("../../helpers/test-data-generator");
+const {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  giveUserCLNYTokensAndStake,
+  giveUserCLNYTokens,
+} = require("../../helpers/test-data-generator");
 
 const {
   MINING_CYCLE_DURATION,
@@ -33,6 +38,7 @@ const {
   currentBlock,
   currentBlockTime,
   makeReputationKey,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -70,8 +76,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2, MINER3, MINER4) => {
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER4, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
   goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
   // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
@@ -216,6 +222,10 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const miningSkillId = 3;
 
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
+
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
@@ -694,6 +704,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     it("should reward all stakers if they submitted the agreed new hash", async () => {
       const miningSkillId = 3;
 
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await clnyToken.burn(REWARD, { from: MINER1 });
@@ -768,6 +781,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should be able to complete a cycle and claim rewards even if CLNY has been locked", async () => {
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       await metaColony.mintTokens(WAD);
       await metaColony.claimColonyFunds(clnyToken.address);
@@ -793,7 +809,6 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const colonyWideReputationKey = makeReputationKey(metaColony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await goodClient.getReputationProofObject(colonyWideReputationKey);
       const colonyWideReputationProof = [key, value, branchMask, siblings];
-
       await metaColony.startNextRewardPayout(clnyToken.address, ...colonyWideReputationProof);
 
       await goodClient.saveCurrentState();

@@ -4,10 +4,18 @@ const path = require("path");
 const request = require("async-request");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
-const { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } = require("../../helpers/test-helper");
+const {
+  currentBlock,
+  makeReputationKey,
+  advanceMiningCycleNoContest,
+  getActiveRepCycle,
+  TestAdapter,
+  getChainId,
+} = require("../../helpers/test-helper");
 const {
   fundColonyWithTokens,
   setupColonyNetwork,
@@ -49,8 +57,8 @@ process.env.SOLIDITY_COVERAGE
         ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-        await colonyNetwork.initialiseReputationMining();
-        await colonyNetwork.startNextCycle();
+        const chainId = await getChainId();
+        await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
         expect(lock.balance).to.eq.BN(DEFAULT_STAKE);

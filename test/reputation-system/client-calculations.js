@@ -6,7 +6,13 @@ const { ethers } = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
-const { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle, removeSubdomainLimit } = require("../../helpers/test-helper");
+const {
+  advanceMiningCycleNoContest,
+  getActiveRepCycle,
+  finishReputationMiningCycle,
+  removeSubdomainLimit,
+  getChainId,
+} = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 
 const {
@@ -35,6 +41,13 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+  // await colonyNetwork.startNextCycle();
+
   await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
   // Initialise local skill: 3. Set up local skills tree 1 -> 4 -> 5
@@ -44,11 +57,6 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await metaColony.addDomain(1, 1, 2);
   // 1 -> M
   //   -> 2 -> 3
-
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };

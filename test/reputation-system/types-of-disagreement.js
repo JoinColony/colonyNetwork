@@ -3,6 +3,7 @@ const BN = require("bn.js");
 const { toBN } = require("web3-utils");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const {
@@ -15,6 +16,7 @@ const {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const {
@@ -63,8 +65,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };

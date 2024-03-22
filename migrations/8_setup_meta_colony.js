@@ -1,12 +1,15 @@
 /* globals artifacts */
 
 const assert = require("assert");
+const ethers = require("ethers");
+const { UINT256_MAX, FORKED_XDAI_CHAINID, XDAI_CHAINID } = require("../helpers/constants");
 
 const Token = artifacts.require("./Token");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 const ITokenLocking = artifacts.require("./ITokenLocking");
 const TokenAuthority = artifacts.require("./TokenAuthority");
+const ChainId = artifacts.require("./ChainId");
 
 const Resolver = artifacts.require("./Resolver");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -21,10 +24,8 @@ const DEFAULT_STAKE = "2000000000000000000000000"; // DEFAULT_STAKE
 module.exports = async function (deployer, network, accounts) {
   const MAIN_ACCOUNT = accounts[5];
   const TOKEN_OWNER = accounts[11];
-
   const etherRouterDeployed = await EtherRouter.deployed();
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
-
   const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -43,15 +44,22 @@ module.exports = async function (deployer, network, accounts) {
   await clnyToken.setAuthority(tokenAuthority.address);
   await clnyToken.setOwner(TOKEN_OWNER);
 
-  // These commands add MAIN_ACCOUNT as a reputation miner.
-  // This is necessary because the first miner must have staked before the mining cycle begins.
-  await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
-  await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
-  const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
-  assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
-  const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-  await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, DEFAULT_STAKE, true, { from: MAIN_ACCOUNT });
-  await colonyNetwork.stakeForMining(DEFAULT_STAKE, { from: MAIN_ACCOUNT });
+  // Check chain id
+  // If not a mining chain, then skip setting up mining
+  const c = await ChainId.new();
+  const chainId = await c.getChainId();
+
+  if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
+    // These commands add MAIN_ACCOUNT as a reputation miner.
+    // This is necessary because the first miner must have staked before the mining cycle begins.
+    await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
+    await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
+    const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
+    assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
+    const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+    await tokenLocking.methods["deposit(address,uint256,bool)"](clnyToken.address, DEFAULT_STAKE, true, { from: MAIN_ACCOUNT });
+    await colonyNetwork.stakeForMining(DEFAULT_STAKE, { from: MAIN_ACCOUNT });
+  }
 
   // Set up functional resolvers that identify correctly as previous versions.
   const Colony = artifacts.require("./Colony");
@@ -104,11 +112,17 @@ module.exports = async function (deployer, network, accounts) {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
-
-  const skillCount = await colonyNetwork.getSkillCount();
-  assert.equal(skillCount.toNumber(), 3); // Root domain, root local skill, mining skill
+  if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
+    await metaColony.initialiseReputationMining(chainId.toString(), ethers.constants.HashZero, 0);
+    // await colonyNetwork.startNextCycle();
+    const skillCount = await colonyNetwork.getSkillCount();
+    console.log(skillCount.toString(16));
+    assert.equal(skillCount.toNumber(), 3);
+  } else {
+    await metaColony.initialiseReputationMining(FORKED_XDAI_CHAINID.toString(), ethers.constants.HashZero, 0);
+    const skillCount = await colonyNetwork.getSkillCount();
+    assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
+  }
 
   console.log("### Meta Colony created at", metaColony.address);
 };

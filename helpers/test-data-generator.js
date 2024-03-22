@@ -3,7 +3,7 @@ const BN = require("bn.js");
 
 const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData, isXdai, getChainId } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -11,7 +11,6 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const BasicMetaTransaction = artifacts.require("BasicMetaTransaction");
-const MultiChain = artifacts.require("MultiChain");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
@@ -193,7 +192,7 @@ exports.setupMetaColonyWithLockedCLNYToken = async function setupMetaColonyWithL
 
   // The following are the needed `transfer` function permissions on the locked CLNY that we setup via the TokenAuthority here
   // IColonyNetworkMining: rewardStakers
-  // IColony: bootstrapColony, mintTokensForColonyNetwork, claimPayout and claimRewardPayout
+  // IColony: bootstrapColony, claimPayout and claimRewardPayout
   // ITokenLocking: withdraw, deposit
   const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [colonyNetwork.address, tokenLockingAddress]);
 
@@ -242,9 +241,11 @@ exports.setupColonyNetwork = async function setupColonyNetwork() {
   // Initialise with originally deployed version
   await colonyNetwork.initialise(colonyVersionResolverAddress, version);
 
-  // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-  const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
-  await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  if (await isXdai()) {
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+  }
 
   // Get token-locking router from when it was deployed during migrations
   const deployedTokenLockingAddress = await deployedColonyNetwork.getTokenLocking();
@@ -301,8 +302,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
   const nonce = await contract.getMetatransactionNonce(userAddress);
   // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,
   // we dance around the houses.
-  const multichain = await MultiChain.new();
-  const chainId = await multichain.getChainId();
+  const chainId = await getChainId();
 
   // Sign data
   const msg = web3.utils.soliditySha3(
@@ -326,8 +326,7 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
 exports.getPermitParameters = async function getPermitParameters(owner, spender, amount, deadline, targetAddress) {
   const contract = await MetaTxToken.at(targetAddress);
   const nonce = await contract.nonces(owner);
-  const multichain = await MultiChain.new();
-  const chainId = await multichain.getChainId();
+  const chainId = await getChainId();
   const name = await contract.name();
 
   const sigObject = {
@@ -377,7 +376,7 @@ exports.getPermitParameters = async function getPermitParameters(owner, spender,
     domain: {
       name,
       version: "1",
-      chainId: chainId.toNumber(),
+      chainId,
       verifyingContract: contract.address,
     },
     message: {

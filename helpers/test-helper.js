@@ -1,4 +1,5 @@
 /* globals artifacts */
+const ChainId = artifacts.require("ChainId");
 const shortid = require("shortid");
 const chai = require("chai");
 const { asciiToHex, isBN } = require("web3-utils");
@@ -6,7 +7,17 @@ const BN = require("bn.js");
 const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
 
-const { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("./constants");
+const {
+  UINT256_MAX,
+  MIN_STAKE,
+  MINING_CYCLE_DURATION,
+  DEFAULT_STAKE,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  FORKED_MAINNET_CHAINID,
+  MAINNET_CHAINID,
+  XDAI_CHAINID,
+  FORKED_XDAI_CHAINID,
+} = require("./constants");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -119,6 +130,12 @@ exports.web3GetChainId = async function web3GetChainId() {
   });
 };
 
+exports.getChainId = async function getChainId() {
+  const c = await ChainId.new();
+  const chainId = await c.getChainId();
+  return chainId.toNumber();
+};
+
 exports.web3SignTypedData = function web3SignTypedData(address, typedData) {
   const packet = {
     jsonrpc: "2.0",
@@ -208,25 +225,37 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
     receipt = await promise;
   } catch (err) {
     const txid = err.transactionHash;
-    const tx = await exports.web3GetTransaction(txid);
-    receipt = await exports.web3GetTransactionReceipt(txid);
 
-    const response = await exports.web3GetRawCall(
-      {
-        from: tx.from,
-        to: tx.to,
-        data: tx.input,
-        gas: ethers.utils.hexValue(tx.gas),
-        value: ethers.utils.hexValue(parseInt(tx.value, 10)),
-      },
-      ethers.utils.hexValue(receipt.blockNumber),
-    );
-    const reason = exports.extractReasonString(response);
+    const TRUFFLE_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+    const OTHER_RPC_PORT = 8546;
+
+    let provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
+    receipt = await provider.getTransactionReceipt(txid);
+    if (!receipt) {
+      provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${OTHER_RPC_PORT}`);
+      receipt = await provider.getTransactionReceipt(txid);
+    }
+
+    const tx = await provider.getTransaction(txid);
+    let reason;
+    try {
+      const callResult = await provider.call(
+        {
+          from: tx.from,
+          to: tx.to,
+          data: tx.data,
+          gas: ethers.utils.hexValue(tx.gasLimit),
+          value: ethers.utils.hexValue(parseInt(tx.value, 10)),
+        },
+        receipt.blockNumber,
+      );
+      reason = web3.eth.abi.decodeParameter("string", callResult.slice(10));
+    } catch (err2) {
+      reason = web3.eth.abi.decodeParameter("string", err2.error.error.data.slice(10));
+    }
     expect(reason).to.equal(errorMessage);
-    return;
   }
-
-  expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.be.zero;
+  expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.equal(0);
 };
 
 // Sometimes we might have to use this function because of
@@ -418,7 +447,8 @@ exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
   return expect(events).to.be.true;
 };
 
-exports.forwardTime = async function forwardTime(seconds, test) {
+exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
+  const web3provider = _web3provider || web3.currentProvider;
   if (typeof seconds !== "number") {
     throw new Error("typeof seconds is not a number");
   }
@@ -428,7 +458,7 @@ exports.forwardTime = async function forwardTime(seconds, test) {
       resolve(test.skip());
     } else {
       // console.log(`Forwarding time with ${seconds}s ...`);
-      web3.currentProvider.send(
+      web3provider.send(
         {
           jsonrpc: "2.0",
           method: "evm_increaseTime",
@@ -439,7 +469,7 @@ exports.forwardTime = async function forwardTime(seconds, test) {
           if (err) {
             return reject(err);
           }
-          return web3.currentProvider.send(
+          return web3provider.send(
             {
               jsonrpc: "2.0",
               method: "evm_mine",
@@ -500,6 +530,44 @@ exports.getHardhatAutomine = async function checkHardhatAutomine() {
           return reject(err);
         }
         return resolve(Boolean(res.result));
+      },
+    );
+  });
+};
+
+exports.snapshot = async function snapshot(provider) {
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_snapshot",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(res.result);
+      },
+    );
+  });
+};
+
+exports.revert = async function revert(provider, snapshotId) {
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_revert",
+        params: [snapshotId],
+        id: new Date().getTime(),
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
       },
     );
   });
@@ -1188,6 +1256,25 @@ exports.sleep = function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+};
+
+exports.upgradeColonyTo = async function (colony, _version) {
+  const version = new BN(_version);
+  let currentVersion = await colony.version();
+  while (currentVersion.ltn(version)) {
+    await colony.upgrade(currentVersion.addn(1));
+    currentVersion = await colony.version();
+  }
+};
+
+exports.isMainnet = async function isMainnet() {
+  const chainId = await exports.web3GetChainId();
+  return chainId === MAINNET_CHAINID || chainId === FORKED_MAINNET_CHAINID;
+};
+
+exports.isXdai = async function isXdai() {
+  const chainId = await exports.web3GetChainId();
+  return chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID;
 };
 
 class TestAdapter {

@@ -4,6 +4,7 @@ const path = require("path");
 const BN = require("bn.js");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../packages/package-utils");
 const {
@@ -14,6 +15,7 @@ const {
   makeReputationKey,
   makeReputationValue,
   removeSubdomainLimit,
+  getChainId,
 } = require("../helpers/test-helper");
 
 const {
@@ -67,8 +69,8 @@ contract("End to end Colony network and Reputation mining testing", function (ac
     await removeSubdomainLimit(colonyNetwork);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
+    const chainId = await getChainId();
+    await colonyNetwork.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
     goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
     await goodClient.resetDB();

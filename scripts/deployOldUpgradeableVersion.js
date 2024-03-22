@@ -81,6 +81,22 @@ module.exports.deployColonyNetworkVersionGLWSS4 = () => {
   );
 };
 
+const registerOldColonyVersion = async (colonyVersionResolverAddress, colonyNetwork) => {
+  const colonyVersionResolver = await artifacts.require("Resolver").at(colonyVersionResolverAddress);
+  const versionImplementationAddress = await colonyVersionResolver.lookup(web3.utils.soliditySha3("version()").slice(0, 10));
+  const versionImplementation = await artifacts.require("IMetaColony").at(versionImplementationAddress);
+  const version = await versionImplementation.version();
+
+  const registeredResolver = await colonyNetwork.getColonyVersionResolver(version);
+  if (registeredResolver !== ADDRESS_ZERO && registeredResolver !== colonyVersionResolverAddress) {
+    throw new Error(`Version ${version} already registered at unexpected address`);
+  } else if (registeredResolver === ADDRESS_ZERO) {
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
+    await metaColony.addNetworkColonyVersion(version, colonyVersionResolverAddress);
+  }
+};
+
 module.exports.deployOldColonyVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {
   if (versionTag.indexOf(" ") !== -1) {
     throw new Error("Version tag cannot contain spaces");
@@ -92,19 +108,9 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     // Already deployed... if truffle's not snapshotted it away. See if there's any code there.
     const { resolverAddress } = colonyDeployed[interfaceName][versionTag];
     const code = await web3GetCode(resolverAddress);
-    console.log(versionTag, "code", code);
     if (code !== "0x") {
-      // Could be a different colony network. Check it's registered with the network.
-      const resolver = await artifacts.require("Resolver").at(resolverAddress);
-      const versionImplementationAddress = await resolver.lookup(web3.utils.soliditySha3("version()").slice(0, 10));
-      const versionImplementation = await artifacts.require("IMetaColony").at(versionImplementationAddress);
-      const version = await versionImplementation.version();
-      const registeredResolverAddress = await colonyNetwork.getColonyVersionResolver(version);
-      if (registeredResolverAddress === ADDRESS_ZERO) {
-        const metaColonyAddress = await colonyNetwork.getMetaColony();
-        const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
-        await metaColony.addNetworkColonyVersion(version, resolverAddress);
-      }
+      // Must also check it's registered
+      await registerOldColonyVersion(resolverAddress, colonyNetwork);
       return colonyDeployed[interfaceName][versionTag];
     }
   }
@@ -118,14 +124,7 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
       colonyNetwork,
     );
 
-    const colonyVersionResolver = await artifacts.require("Resolver").at(colonyVersionResolverAddress);
-    const versionImplementationAddress = await colonyVersionResolver.lookup(web3.utils.soliditySha3("version()").slice(0, 10));
-    const versionImplementation = await artifacts.require("IMetaColony").at(versionImplementationAddress);
-    const version = await versionImplementation.version();
-
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
-    await metaColony.addNetworkColonyVersion(version, colonyVersionResolverAddress);
+    await registerOldColonyVersion(colonyVersionResolverAddress, colonyNetwork);
 
     const interfaceArtifact = fs.readFileSync(`./colonyNetwork-${versionTag}/build/contracts/${interfaceName}.json`);
     const OldInterface = contract(JSON.parse(interfaceArtifact));
@@ -142,7 +141,7 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
 
     colonyDeployed[interfaceName] = colonyDeployed[interfaceName] || {};
     colonyDeployed[interfaceName][versionTag] = { OldInterface, OldAuthority, resolverAddress: colonyVersionResolverAddress };
-
+    console.log("Deployed", interfaceName, "at version", versionTag, "with resolver", colonyVersionResolverAddress);
     return colonyDeployed[interfaceName][versionTag];
   } catch (e) {
     console.log(e);
@@ -243,7 +242,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   }
 
   if (!exists) {
-    console.log("doesnt exist");
+    console.log("Cloning necessary version of repository");
     await exec(`rm -rf colonyNetwork-${versionTag}`);
     await exec(`git clone --depth 1 --branch ${versionTag} https://github.com/JoinColony/colonyNetwork.git colonyNetwork-${versionTag}`);
     await exec(`cd colonyNetwork-${versionTag} && git submodule update --init --recursive`);
@@ -265,6 +264,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   //   const extensionVersion = await relevantEvents[0].returnValues.version;
   //   const extensionResolverAddress = await otherColonyNetwork.getExtensionResolver(web3.utils.soliditySha3(contractName), extensionVersion);
 
+  console.log("Deploying old version of contract");
   await exec(`cp ./scripts/deployOldUpgradeableVersionTruffle.js ./colonyNetwork-${versionTag}/scripts/deployOldUpgradeableVersionTruffle.js`);
 
   const network = process.env.SOLIDITY_COVERAGE ? "coverage" : "development";
@@ -284,6 +284,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   const resolverAddress = res.split("\n").slice(-2)[0].trim();
   deployedResolverAddresses[interfaceName] = deployedResolverAddresses[interfaceName] || {};
   deployedResolverAddresses[interfaceName][versionTag] = resolverAddress;
+  console.log("Deployed", interfaceName, "at version", versionTag, "with resolver", resolverAddress);
 
   return resolverAddress;
 };
