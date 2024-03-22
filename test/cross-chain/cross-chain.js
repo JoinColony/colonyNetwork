@@ -1,19 +1,30 @@
-/* globals artifacts */
-const fs = require("fs");
+/* globals artifacts, hre */
+
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers, BigNumber } = require("ethers");
 const path = require("path");
+const baseExec = require("child_process").exec;
 
-const Promise = require("bluebird");
-
-const exec = Promise.promisify(require("child_process").exec);
+const exec = function (command) {
+  return new Promise((resolve, reject) => {
+    const execCallback = (error, stdout) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(stdout);
+      }
+    };
+    baseExec(command, execCallback);
+  });
+};
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
+const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
@@ -28,7 +39,7 @@ const { TruffleLoader } = require("../../packages/package-utils");
 const UINT256_MAX_ETHERS = ethers.BigNumber.from(2).pow(256).sub(1);
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 contract("Cross-chain", (accounts) => {
@@ -61,13 +72,13 @@ contract("Cross-chain", (accounts) => {
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
-  const TRUFFLE_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-  const OTHER_RPC_PORT = 8546;
+  const RPC_PORT_1 = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+  const RPC_PORT_2 = 8546;
 
   const MINER_ADDRESS = accounts[5];
 
-  const HOME_PORT = process.env.TRUFFLE_FOREIGN === "true" ? OTHER_RPC_PORT : TRUFFLE_PORT;
-  const FOREIGN_PORT = process.env.TRUFFLE_FOREIGN === "true" ? TRUFFLE_PORT : OTHER_RPC_PORT;
+  const HOME_PORT = process.env.HARDHAT_FOREIGN === "true" ? RPC_PORT_2 : RPC_PORT_1;
+  const FOREIGN_PORT = process.env.HARDHAT_FOREIGN === "true" ? RPC_PORT_1 : RPC_PORT_2;
 
   const foreignRpcUrl = `http://127.0.0.1:${FOREIGN_PORT}`;
   const homeRpcUrl = `http://127.0.0.1:${HOME_PORT}`;
@@ -106,10 +117,10 @@ contract("Cross-chain", (accounts) => {
     tx = await homeMetacolony.setColonyBridgeAddress(homeColonyBridgeAddressForColony);
     await tx.wait();
   }
+  let newEtherRouterAddress;
 
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
-
     ({ bridgeMonitor, gnosisSafe, zodiacBridge, homeBridge, foreignBridge, foreignColonyBridge, homeColonyBridge } = await setupBridging(
       homeRpcUrl,
       foreignRpcUrl,
@@ -117,47 +128,58 @@ contract("Cross-chain", (accounts) => {
 
     // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
     try {
-      await exec(`SOLIDITY_COVERAGE="" npx truffle compile --all`);
-      await exec(`SOLIDITY_COVERAGE="" npm run provision:token:contracts`);
-      await exec(`SOLIDITY_COVERAGE="" npm run provision:safe:contracts`);
-      await exec(`npx truffle migrate --network development2`);
+      const output = await exec(`npx hardhat deploy --network development2`);
+      [, , , , , , , newEtherRouterAddress] = output
+        .split("\n")
+        .filter((x) => x.includes("Colony Network deployed at"))[0]
+        .split(" ");
     } catch (err) {
       console.log(err);
-
       process.exit(1);
     }
     // Add bridge to the foreign colony network
-    const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
+    // const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
     wormholeHomeChainId = BigNumber.from(homeChainId).mod(265669).mul(2);
 
-    const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
+    // const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
     wormholeForeignChainId = BigNumber.from(foreignChainId).mod(265669).mul(2);
 
-    let etherRouterInfo;
     // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
     // we see it in our tests that's the coverage chain, which builds the contract artifacts
     // in to a different location. If we see another chain id, we assume it's non-coverage
     // truffle and look for the build artifacts in the normal place.
-    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "false") {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
+
+    let homeEtherRouterAddress;
+    let foreignEtherRouterAddress;
+    if (process.env.HARDHAT_FOREIGN === "true") {
+      homeEtherRouterAddress = newEtherRouterAddress;
+      foreignEtherRouterAddress = (await EtherRouter.deployed()).address;
     } else {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build/contracts/EtherRouter.json"));
+      homeEtherRouterAddress = (await EtherRouter.deployed()).address;
+      foreignEtherRouterAddress = newEtherRouterAddress;
     }
-    const homeEtherRouterAddress = etherRouterInfo.networks[homeNetworkId.toString()].address;
+
+    console.log("foreign colony network", foreignEtherRouterAddress);
+    console.log("home colony network", homeEtherRouterAddress);
+
     homeColonyNetwork = await new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
-
-    if (process.env.SOLIDITY_COVERAGE && process.env.TRUFFLE_FOREIGN === "true") {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build-coverage/contracts/EtherRouter.json"));
-    } else {
-      etherRouterInfo = JSON.parse(fs.readFileSync("./build/contracts/EtherRouter.json"));
-    }
-    const foreignEtherRouterAddress = etherRouterInfo.networks[foreignNetworkId.toString()].address;
     foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, IColonyNetwork.abi, ethersForeignSigner);
+  });
 
-    console.log("foreign colony network", foreignColonyNetwork.address);
-    console.log("home colony network", homeColonyNetwork.address);
+  beforeEach(async () => {
+    web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
+    web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
+
+    homeSnapshotId = await snapshot(web3HomeProvider);
+    foreignSnapshotId = await snapshot(web3ForeignProvider);
+    bridgeMonitor.reset();
+
+    let tx = await foreignBridge.setBridgeEnabled(true);
+    await tx.wait();
+    tx = await homeBridge.setBridgeEnabled(true);
+    await tx.wait();
 
     const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
     foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
@@ -173,7 +195,7 @@ contract("Cross-chain", (accounts) => {
     const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      const tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
+      tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
       await tx.wait();
       await p;
       // process.exit(1);
@@ -188,8 +210,6 @@ contract("Cross-chain", (accounts) => {
     });
 
     await client.initialise(homeColonyNetwork.address);
-    web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
-    web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
@@ -200,6 +220,13 @@ contract("Cross-chain", (accounts) => {
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
+
+    // Set up a colony on the home chain. That may or may not be the truffle chain...
+    homeColony = await setupColony(homeColonyNetwork);
+
+    const p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
+    foreignColony = await setupColony(foreignColonyNetwork);
+    await p;
   });
 
   async function setupColony(colonyNetworkEthers) {
@@ -217,23 +244,6 @@ contract("Cross-chain", (accounts) => {
     const colony = await new ethers.Contract(colonyAddress, IColony.abi, colonyNetworkEthers.signer);
     return colony;
   }
-
-  beforeEach(async () => {
-    homeSnapshotId = await snapshot(web3HomeProvider);
-    foreignSnapshotId = await snapshot(web3ForeignProvider);
-    bridgeMonitor.reset();
-
-    let tx = await foreignBridge.setBridgeEnabled(true);
-    await tx.wait();
-    tx = await homeBridge.setBridgeEnabled(true);
-    await tx.wait();
-    // Set up a colony on the home chain. That may or may not be the truffle chain...
-    homeColony = await setupColony(homeColonyNetwork);
-
-    const p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
-    foreignColony = await setupColony(foreignColonyNetwork);
-    await p;
-  });
 
   afterEach(async () => {
     await revert(web3HomeProvider, homeSnapshotId);

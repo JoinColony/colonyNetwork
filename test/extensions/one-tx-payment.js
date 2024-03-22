@@ -260,7 +260,7 @@ contract("One transaction payments", (accounts) => {
       );
     });
 
-    it("should not allow an admin to specify a global skill (which is now removed functionality), either deprecated or undeprecated", async () => {
+    it("should not allow an admin to specify a global skill (removed functionality), either deprecated or undeprecated", async () => {
       const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
       await deployColonyVersionHMWSS(colonyNetwork);
       await downgradeColony(colonyNetwork, metaColony, "glwss4");

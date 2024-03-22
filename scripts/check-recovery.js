@@ -89,7 +89,12 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/TasksPayments.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/FunctionsNotAvailableOnColony.sol",
-      "contracts/testHelpers/TestExtensions.sol",
+      "contracts/testHelpers/testExtensions/TestExtensionBase.sol",
+      "contracts/testHelpers/testExtensions/TestExtension0.sol",
+      "contracts/testHelpers/testExtensions/TestExtension1.sol",
+      "contracts/testHelpers/testExtensions/TestExtension2.sol",
+      "contracts/testHelpers/testExtensions/TestExtension3.sol",
+      "contracts/testHelpers/testExtensions/TestVotingToken.sol",
       "contracts/testHelpers/TransferTest.sol",
       "contracts/testHelpers/RequireExecuteCall.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
@@ -119,6 +124,11 @@ walkSync("./contracts/").forEach((contractName) => {
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
+
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
+  if (!contract) {
+    return;
+  }
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes

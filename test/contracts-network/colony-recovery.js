@@ -110,7 +110,6 @@ contract("Colony Recovery", (accounts) => {
     it.skip("should not allow more than the maximum users allowed to have recovery role", async function maximumRecoveryUsersTest() {
       // Besides the fact it takes a long time, this test is also very expensive. It currently runs out of funds
       // half way through the for-loop below so come back to it if there's need in future
-      this.timeout(100000000);
       const uint64Max = 2 ** 64;
       for (let i = 0; i < uint64Max; i += 1) {
         const user = web3.utils.randomHex(20);
@@ -173,6 +172,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.transferExpenditure(0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.transferExpenditureViaArbitration(0, 0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.cancelExpenditure(0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.cancelExpenditureViaArbitration(0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.lockExpenditure(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.finalizeExpenditure(0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.finalizeExpenditureViaArbitration(0, 0, 0), "colony-in-recovery-mode");

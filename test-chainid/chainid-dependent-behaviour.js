@@ -49,6 +49,7 @@ contract("Contract Storage", (accounts) => {
 
   before(async () => {
     chainId = await getChainId();
+    console.log(`chainId: ${chainId}`); // eslint-disable-line no-console
   });
 
   beforeEach(async () => {

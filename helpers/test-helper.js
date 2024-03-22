@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 const ChainId = artifacts.require("ChainId");
 const shortid = require("shortid");
 const chai = require("chai");
@@ -6,6 +6,7 @@ const { asciiToHex, isBN } = require("web3-utils");
 const BN = require("bn.js");
 const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
+const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
 const {
   UINT256_MAX,
@@ -226,7 +227,7 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
   } catch (err) {
     const txid = err.transactionHash;
 
-    const TRUFFLE_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+    const TRUFFLE_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
     const OTHER_RPC_PORT = 8546;
 
     let provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
@@ -303,15 +304,7 @@ exports.getTokenArgs = function getTokenArgs() {
 };
 
 exports.currentBlockTime = async function currentBlockTime() {
-  const p = new Promise((resolve, reject) => {
-    web3.eth.getBlock("latest", (err, res) => {
-      if (err) {
-        return reject(err);
-      }
-      return resolve(res.timestamp);
-    });
-  });
-  return p;
+  return helpers.time.latest();
 };
 
 exports.currentBlock = async function currentBlock() {
@@ -448,11 +441,23 @@ exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
 };
 
 exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
-  const web3provider = _web3provider || web3.currentProvider;
   if (typeof seconds !== "number") {
     throw new Error("typeof seconds is not a number");
   }
+
+  if (!_web3provider) {
+    const client = await exports.web3GetClient();
+    if (client.indexOf("Hardhat") !== -1) {
+      return helpers.time.increase(seconds);
+    }
+  }
+
+  const web3provider = _web3provider || web3.currentProvider;
+  // eslint-disable-next-line no-warning-comments
+  // FIXME: not strictly correct, but it's late.
+  // Should really call the rpc node with web3provider.send
   const client = await exports.web3GetClient();
+
   const p = new Promise((resolve, reject) => {
     if (client.indexOf("TestRPC") === -1 && client.indexOf("Hardhat") === -1) {
       resolve(test.skip());
@@ -490,30 +495,12 @@ exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
   return p;
 };
 
-exports.forwardTimeTo = async function forwardTimeTo(timestamp, test) {
-  const lastBlockTime = await exports.getBlockTime("latest");
-  const amountToForward = new BN(timestamp).sub(new BN(lastBlockTime));
-  // Forward that much
-  await exports.forwardTime(amountToForward.toNumber(), test);
+exports.forwardTimeTo = async function forwardTimeTo(timestamp) {
+  return helpers.time.increaseTo(timestamp);
 };
 
-exports.mineBlock = async function mineBlock(timestamp) {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send(
-      {
-        jsonrpc: "2.0",
-        method: "evm_mine",
-        params: timestamp ? [timestamp] : [],
-        id: new Date().getTime(),
-      },
-      (err) => {
-        if (err) {
-          return reject(err);
-        }
-        return resolve();
-      },
-    );
-  });
+exports.mineBlock = async function mineBlock() {
+  return helpers.mine();
 };
 
 exports.getHardhatAutomine = async function checkHardhatAutomine() {
@@ -655,45 +642,9 @@ exports.startMining = async function startMining() {
   });
 };
 
-exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp, test) {
-  const client = await exports.web3GetClient();
-  if (client.indexOf("TestRPC") === -1) {
-    test.skip();
-  }
-  await exports.stopMining();
-  let mined;
-  // Send the transaction to the RPC endpoint. This might be a truffle contract object, which doesn't
-  // return until the transaction has been mined... but we've stopped mining. So we can't await it
-  // now. But if we `mineBlock` straight away, the transaction might not have pecolated all the way through
-  // to the pending transaction pool, especially on CI.
-
-  // I have tried lots of better ways to solve this problem. The problem is, while mining is stopped, the
-  // 'pending' block isn't updated and, even when mining, in some cases it is interpreted to mean 'latest' in
-  // ganache cli. The sender's nonce isn't updated, the number of pending transactions is not updated... I'm at a
-  // loss for how to do this better.
-  // This works for ethers and truffle
-  const promise = f(...args);
-  // Chaining these directly on the above declaration doesn't work in the case of being passed an ethers function
-  // (They don't seem to return the original promise, somehow?)
-  promise
-    .then(() => {
-      mined = true;
-    })
-    .catch(() => {
-      mined = true;
-    });
-  while (!mined) {
-    // eslint-disable-next-line no-await-in-loop
-    await exports.mineBlock(timestamp);
-  }
-  // Turn auto-mining back on
-  await exports.startMining();
-
-  // Tests are written assuming all future blocks will be from this time, which used to be
-  // how ganache operated. It's not any more, so explicitly forward time.
-  await exports.forwardTimeTo(timestamp, test);
-
-  return promise;
+exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp) {
+  await helpers.time.setNextBlockTimestamp(timestamp);
+  return f(...args);
 };
 
 exports.bnSqrt = function bnSqrt(bn, isGreater) {
@@ -1189,7 +1140,7 @@ exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePro
     // After 30s, we throw a timeout error
     setTimeout(() => {
       reject(new Error("ERROR: timeout while waiting for confirming hash"));
-    }, 30000);
+    }, 30 * 1000);
   });
 };
 

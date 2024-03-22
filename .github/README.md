@@ -55,12 +55,6 @@ Update submodule libraries:
 $ git submodule update --init
 ```
 
-Provision token contracts for testing:
-
-```
-$ npm run provision:token:contracts
-```
-
 ## Contracts
 The contract upgradability is using the EtherRouter pattern, see [the delegate proxy pattern](https://docs.colony.io/colonynetwork/docs-upgrade-design/) in the documentation for implementation details.
 

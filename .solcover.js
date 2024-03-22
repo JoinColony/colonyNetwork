@@ -4,21 +4,15 @@ const log = console.log;
 // Copies pre-built token artifacts to .coverage_artifacts/contracts
 function provisionTokenContracts(config){
   let output;
-  const provisionColonyToken = `BUILD_DIR="build-coverage" npm run provision:token:contracts`;
+  const provisionColonyToken = `BUILD_DIR="build-coverage" bash ./scripts/provision-token-contracts.sh`;
 
   log('Provisioning ColonyToken contracts...')
   output = execSync(provisionColonyToken);
   log(output.toString())
-
-  const provisionSafeContracts = `BUILD_DIR="build-coverage" npm run provision:safe:contracts`;
-
-  log('Provisioning Safe contracts...')
-  output = execSync(provisionSafeContracts);
-  log(output.toString())
-
 }
 
 module.exports = {
+    configureYulOptimizer: true,
     skipFiles: [
       'Migrations.sol',
       'common/EtherRouter.sol',

@@ -23,7 +23,7 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 
-async function addExtension(colonyNetwork, interfaceName, extensionName, implementations) {
+async function addExtension(colonyNetwork, contractDir, interfaceName, extensionName, implementations) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
 
@@ -41,7 +41,7 @@ async function addExtension(colonyNetwork, interfaceName, extensionName, impleme
   for (let idx = 0; idx < implementations.length; idx += 1) {
     deployedImplementations[implementations[idx].contractName] = deployments[idx].address;
   }
-  await setupEtherRouter(interfaceName, deployedImplementations, resolver);
+  await setupEtherRouter(contractDir, interfaceName, deployedImplementations, resolver);
   await metaColony.addExtensionToNetwork(NAME_HASH, resolver.address);
   console.log(`### ${extensionName} extension installed`);
 }
@@ -51,19 +51,19 @@ module.exports = async function (deployer, network, accounts) {
   const etherRouterDeployed = await EtherRouter.deployed();
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
-  await addExtension(colonyNetwork, "CoinMachine", "CoinMachine", [CoinMachine]);
-  await addExtension(colonyNetwork, "EvaluatedExpenditure", "EvaluatedExpenditure", [EvaluatedExpenditure]);
-  await addExtension(colonyNetwork, "FundingQueue", "FundingQueue", [FundingQueue]);
-  await addExtension(colonyNetwork, "OneTxPayment", "OneTxPayment", [OneTxPayment]);
-  await addExtension(colonyNetwork, "ReputationBootstrapper", "ReputationBootstrapper", [ReputationBootstrapper]);
-  await addExtension(colonyNetwork, "StakedExpenditure", "StakedExpenditure", [StakedExpenditure]);
-  await addExtension(colonyNetwork, "StreamingPayments", "StreamingPayments", [StreamingPayments]);
-  await addExtension(colonyNetwork, "TokenSupplier", "TokenSupplier", [TokenSupplier]);
-  await addExtension(colonyNetwork, "IVotingReputation", "VotingReputation", [
+  await addExtension(colonyNetwork, "extensions", "CoinMachine", "CoinMachine", [CoinMachine]);
+  await addExtension(colonyNetwork, "extensions", "EvaluatedExpenditure", "EvaluatedExpenditure", [EvaluatedExpenditure]);
+  await addExtension(colonyNetwork, "extensions", "FundingQueue", "FundingQueue", [FundingQueue]);
+  await addExtension(colonyNetwork, "extensions", "OneTxPayment", "OneTxPayment", [OneTxPayment]);
+  await addExtension(colonyNetwork, "extensions", "ReputationBootstrapper", "ReputationBootstrapper", [ReputationBootstrapper]);
+  await addExtension(colonyNetwork, "extensions", "StakedExpenditure", "StakedExpenditure", [StakedExpenditure]);
+  await addExtension(colonyNetwork, "extensions", "StreamingPayments", "StreamingPayments", [StreamingPayments]);
+  await addExtension(colonyNetwork, "extensions", "TokenSupplier", "TokenSupplier", [TokenSupplier]);
+  await addExtension(colonyNetwork, "extensions/votingReputation", "IVotingReputation", "VotingReputation", [
     VotingReputation,
     VotingReputationStaking,
     VotingReputationMisalignedRecovery,
   ]);
-  await addExtension(colonyNetwork, "Whitelist", "Whitelist", [Whitelist]);
-  await addExtension(colonyNetwork, "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
+  await addExtension(colonyNetwork, "extensions", "Whitelist", "Whitelist", [Whitelist]);
+  await addExtension(colonyNetwork, "extensions", "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
 };

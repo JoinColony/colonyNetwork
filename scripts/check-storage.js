@@ -48,7 +48,12 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/BridgeMock.sol",
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/ToggleableToken.sol",
-      "contracts/testHelpers/TestExtensions.sol",
+      "contracts/testHelpers/testExtensions/TestExtensionBase.sol",
+      "contracts/testHelpers/testExtensions/TestExtension0.sol",
+      "contracts/testHelpers/testExtensions/TestExtension1.sol",
+      "contracts/testHelpers/testExtensions/TestExtension2.sol",
+      "contracts/testHelpers/testExtensions/TestExtension3.sol",
+      "contracts/testHelpers/testExtensions/TestVotingToken.sol",
       "contracts/testHelpers/GasGuzzler.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
       "contracts/testHelpers/WormholeMock.sol",
@@ -74,8 +79,13 @@ walkSync("./contracts/").forEach((contractName) => {
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
-  // Check for non-constant storage variables
 
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
+  if (!contract) {
+    return;
+  }
+
+  // Check for non-constant storage variables
   if (contract.subNodes.filter((child) => child.type === "StateVariableDeclaration" && !child.variables[0].isDeclaredConst).length > 0) {
     console.log(
       "The contract ",

@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const BN = require("bn.js");
@@ -38,7 +38,7 @@ chai.use(bnChai(web3.utils.BN));
 const ITokenLocking = artifacts.require("ITokenLocking");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;
@@ -55,7 +55,7 @@ contract("End to end Colony network and Reputation mining testing", function (ac
   let tokenLocking;
   let clnyToken;
   let goodClient;
-  const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+  const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
   let colonies;
 
   before(async function () {
@@ -92,8 +92,6 @@ contract("End to end Colony network and Reputation mining testing", function (ac
   });
 
   describe("when working with larger volumes", function () {
-    this.timeout(0);
-
     it("can create 100 colonies", async function () {
       // Setup 100 random colonies, reward set to default 0%
       const a = Array.from(Array(100).keys());

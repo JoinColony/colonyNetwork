@@ -1,20 +1,23 @@
 /* globals artifacts */
+
 const BN = require("bn.js");
+const { signTypedData_v4: signTypedData } = require("eth-sig-util");
 
 const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, web3SignTypedData, isXdai, getChainId } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, isXdai, getChainId } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("./TokenAuthority");
 const BasicMetaTransaction = artifacts.require("BasicMetaTransaction");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 exports.makeExpenditure = async function makeExpenditure({ colonyNetwork, colony, domainId = 1, skillId, manager, evaluator, worker }) {
   if (colonyNetwork === undefined) {
@@ -223,20 +226,20 @@ exports.unlockCLNYToken = async function unlockCLNYToken(metaColony) {
 };
 
 exports.setupColonyNetwork = async function setupColonyNetwork() {
-  const resolverColonyNetworkDeployed = await Resolver.deployed();
-  const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
-
-  // Get the version resolver and version number from the metacolony deployed during migration
-  const deployedMetaColonyAddress = await deployedColonyNetwork.getMetaColony();
-  const deployedMetaColony = await IMetaColony.at(deployedMetaColonyAddress);
-  const deployedMetaColonyAsEtherRouter = await EtherRouter.at(deployedMetaColonyAddress);
-  const colonyVersionResolverAddress = await deployedMetaColonyAsEtherRouter.resolver();
-  const version = await deployedMetaColony.version();
-
   // Make a new ColonyNetwork
   const etherRouter = await EtherRouter.new();
-  await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+  const colonyNetworkResolver = await Resolver.deployed();
+  await etherRouter.setResolver(colonyNetworkResolver.address);
   const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+  // Get the version resolver and version number from the metacolony deployed during migration
+  const colonyNetworkRouter = await EtherRouter.deployed();
+  const deployedColonyNetwork = await IColonyNetwork.at(colonyNetworkRouter.address);
+  const metaColonyAddress = await deployedColonyNetwork.getMetaColony();
+  const metaColony = await IMetaColony.at(metaColonyAddress);
+  const metaColonyRouter = await EtherRouter.at(metaColonyAddress);
+  const colonyVersionResolverAddress = await metaColonyRouter.resolver();
+  const version = await metaColony.version();
 
   // Initialise with originally deployed version
   await colonyNetwork.initialise(colonyVersionResolverAddress, version);
@@ -315,15 +318,12 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
 
   const r = `0x${sig.substring(2, 66)}`;
   const s = `0x${sig.substring(66, 130)}`;
-
-  // Ganache has fixed this discrepancy with the real world, but the version used by solidity coverage is still old...
-  const vOffset = process.env.SOLIDITY_COVERAGE ? 27 : 0;
-  const v = parseInt(sig.substring(130), 16) + vOffset;
+  const v = parseInt(sig.substring(130), 16);
 
   return { r, s, v };
 };
 
-exports.getPermitParameters = async function getPermitParameters(owner, spender, amount, deadline, targetAddress) {
+exports.getPermitParameters = async function getPermitParameters(owner, privateKey, spender, amount, deadline, targetAddress) {
   const contract = await MetaTxToken.at(targetAddress);
   const nonce = await contract.nonces(owner);
   const chainId = await getChainId();
@@ -388,7 +388,8 @@ exports.getPermitParameters = async function getPermitParameters(owner, spender,
     },
   };
 
-  const sig = await web3SignTypedData(owner, sigObject);
+  const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), "hex"));
+  const sig = signTypedData(privateKeyArray, { data: sigObject });
 
   const r = `0x${sig.substring(2, 66)}`;
   const s = `0x${sig.substring(66, 130)}`;
