@@ -351,7 +351,7 @@ Finalizes the expenditure and allows for funds to be claimed. Can only be called
 
 ### ▸ `finalizeExpenditureViaArbitration(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id)`
 
-Finalizes the expenditure and allows for funds to be claimed. Can only be called by expenditure owner.
+Finalizes the expenditure and allows for funds to be claimed. Can only be called by Arbitration role.
 
 
 **Parameters**

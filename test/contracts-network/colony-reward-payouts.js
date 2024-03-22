@@ -1,4 +1,5 @@
-/* globals artifacts */
+/* globals artifacts, hre */
+
 const { BN } = require("bn.js");
 const { ethers } = require("ethers");
 const { sha3 } = require("web3-utils");
@@ -36,10 +37,10 @@ const Token = artifacts.require("Token");
 const DSRoles = artifacts.require("DSRoles");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const REAL_PROVIDER_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 contract("Colony Reward Payouts", (accounts) => {
   let colony;

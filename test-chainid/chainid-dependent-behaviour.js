@@ -59,6 +59,8 @@ contract("Contract Storage", (accounts) => {
     const multiChain = await MultiChain.new();
     chainId = await multiChain.getChainId();
     chainId = chainId.toNumber();
+
+    console.log(`chainId: ${chainId}`); // eslint-disable-line no-console
   });
 
   beforeEach(async () => {
