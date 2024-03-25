@@ -8,14 +8,7 @@ const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
-const {
-  currentBlock,
-  makeReputationKey,
-  advanceMiningCycleNoContest,
-  getActiveRepCycle,
-  TestAdapter,
-  getChainId,
-} = require("../../helpers/test-helper");
+const { makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter, getChainId } = require("../../helpers/test-helper");
 const {
   fundColonyWithTokens,
   setupColonyNetwork,
@@ -87,7 +80,6 @@ hre.__SOLIDITY_COVERAGE_RUNNING
         const adapter = new TestAdapter();
 
         client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
-        await client.initialise(colonyNetwork.address, 1);
       });
 
       afterEach(async () => {
@@ -96,6 +88,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
       describe("core functionality", () => {
         it("should correctly respond to a request for a reputation state in the current state", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const rootHash = await reputationMiner.getRootHash();
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${miningSkillId}/${MINER1}`;
           const res = await request(url);
@@ -119,8 +112,6 @@ hre.__SOLIDITY_COVERAGE_RUNNING
         });
 
         it("should correctly respond to a request for a reputation state in previous states", async () => {
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
           await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1, manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
@@ -141,7 +132,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const [branchMask3, siblings3] = await reputationMiner.getProof(key);
           const value3 = reputationMiner.reputations[key];
 
-          await client._miner.sync(startingBlockNumber, true); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
           let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${miningSkillId}/${MINER1}`;
           let res = await request(url);
@@ -195,8 +186,6 @@ hre.__SOLIDITY_COVERAGE_RUNNING
         });
 
         it("should correctly respond to a request for a reputation state in previous states with no proof", async () => {
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
           await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1, manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
@@ -214,7 +203,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const rootHash3 = await reputationMiner.getRootHash();
           const value3 = reputationMiner.reputations[key];
 
-          await client._miner.sync(startingBlockNumber, true); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
           let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${miningSkillId}/${MINER1}/noProof`;
           let res = await request(url);
@@ -252,6 +241,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
         });
 
         it("should correctly respond to a request for a valid key in a reputation state that never existed", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const rootHash = await reputationMiner.getRootHash();
           const url = `http://127.0.0.1:3000/0x${rootHash.slice(8)}000000/${metaColony.address}/${miningSkillId}/${MINER1}`;
           const res = await request(url);
@@ -261,11 +251,9 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
         it("should correctly respond to a request for a valid key that didn't exist in a valid past reputation state", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
-          await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
           const res = await request(url);
@@ -275,11 +263,9 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
         it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
-          await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/notAKey`;
           const res = await request(url);
@@ -296,6 +282,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
           let rootHash = await reputationMiner.getRootHash();
           await reputationMiner.saveCurrentState();
+          await client.initialise(colonyNetwork.address, 1);
 
           const domain1 = await metaColony.getDomain(1);
 
@@ -332,6 +319,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
         });
 
         it("should correctly respond to a request for users that have a particular reputation in a colony that has an invalid address", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const url = `http://127.0.0.1:3000/0x0000/NotAValidAddress/1`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
@@ -352,6 +340,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
           let rootHash = await reputationMiner.getRootHash();
           await reputationMiner.saveCurrentState();
+          await client.initialise(colonyNetwork.address, 1);
 
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINER1}/all`;
           let res = await request(url);
@@ -374,6 +363,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
         });
 
         it("should correctly respond to a request for all reputation a single user has in a colony that has an invalid address", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const url = `http://127.0.0.1:3000/0x0000/NotAValidAddress/1/all`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
