@@ -132,7 +132,7 @@
     "truffle": "^5.5.30",
     "truffle-contract-size": "^2.0.1",
     "truffle-hdwallet-provider": "^1.0.17",
-    "web3-utils": "^1.7.3"
+    "web3-utils": "^4.2.1"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.2"
