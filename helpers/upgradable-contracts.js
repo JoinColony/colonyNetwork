@@ -87,6 +87,7 @@ exports.setupEtherRouter = async function setupEtherRouter(contractDir, interfac
       try {
         await resolver.register(sig, address);
       } catch (err) {
+        console.log(err);
         throw new Error(`${sig} could not be registered. Is it defined?`);
       }
       const sigHash = soliditySha3(sig).substr(0, 10);
