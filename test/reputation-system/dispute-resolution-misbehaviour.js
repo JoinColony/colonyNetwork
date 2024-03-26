@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const BN = require("bn.js");
@@ -52,7 +52,7 @@ chai.use(bnChai(web3.utils.BN));
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;
@@ -63,7 +63,7 @@ let clnyToken;
 let localSkillId;
 let goodClient;
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -365,7 +365,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     }
 
     it("should prevent a hash from advancing if it might still get an opponent", async function advancingTest() {
-      this.timeout(10000000);
       const clients = await setUpNMiners(8);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -399,7 +398,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     });
 
     it("should allow a hash to be awarded multiple byes if appropriate", async function advancingTest() {
-      this.timeout(10000000);
       const clients = await setUpNMiners(9);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -435,8 +433,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     });
 
     it("should not mark a round as complete even if a bye was awarded in it", async function advancingTest() {
-      this.timeout(10000000);
-
       const clients = await setUpNMiners(9);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -483,8 +479,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
 
     it(`should prevent a hash from advancing if it might still get an opponent,
      even if that opponent is from more than one round ago`, async function advancingTest() {
-      this.timeout(10000000);
-
       const clients = await setUpNMiners(14);
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -523,7 +517,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", (accounts) => {
     });
 
     it("should not allow stages to be skipped even if the number of updates is a power of 2", async function powerOfTwoTest() {
-      this.timeout(600000);
       // Note that our jrhNLeaves can never be a power of two, because we always have an even number of updates (because every reputation change
       // has a user-specific an a colony-specific effect, and we always have one extra state in the Justification Tree because we include the last
       // accepted hash as the first leaf. jrhNLeaves is always odd, therefore, and can never be a power of two.

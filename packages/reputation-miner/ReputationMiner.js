@@ -73,10 +73,10 @@ class ReputationMiner {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
-    this.colonyNetworkContractDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
-    this.repCycleContractDef = await this.loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
-    this.tokenLockingContractDef = await this.loader.load({ contractName: "ITokenLocking" }, { abi: true, address: false });
-    this.colonyContractDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
+    this.colonyNetworkContractDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
+    this.repCycleContractDef = await this.loader.load({ contractDir: "reputationMiningCycle", contractName: "IReputationMiningCycle" });
+    this.tokenLockingContractDef = await this.loader.load({ contractDir: "tokenLocking", contractName: "ITokenLocking" });
+    this.colonyContractDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
 
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
     const tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
@@ -85,11 +85,13 @@ class ReputationMiner {
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
 
-
     if (!this.useJsTree) {
-      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+      this.patriciaTreeContractDef = await this.loader.load(
+        { contractDir: "patriciaTree", contractName: "PatriciaTree" },
+        { abi: true, address: false, bytecode: true }
+      );
       this.patriciaTreeNoHashContractDef = await this.loader.load(
-        { contractName: "PatriciaTreeNoHash" },
+        { contractDir: "patriciaTree", contractName: "PatriciaTreeNoHash" },
         { abi: true, address: false, bytecode: true }
       );
     }

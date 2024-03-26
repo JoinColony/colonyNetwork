@@ -53,30 +53,6 @@ npm ci # make sure you are using node version 14.x
 
 This will take some time. If you run into issues, see the Troubleshooting section below.
 
-### Provisioning the Token Contracts
-
-The ColonyNetwork uses some Token Artifacts that need to be built first. To do that issue the command
-
-<Tabs>
-<TabItem value="docker" label="Using Docker" default>
-
-When using docker the correct version of the `solc` compiler is automatically downloaded and it usually runs faster.
-
-```bash
-npm run provision:token:contracts
-```
-</TabItem>
-<TabItem value="nodocker" label="Without Docker">
-
-When not using Docker, we set the `DISABLE_DOCKER` environment variable to `true`.
-
-```bash
-DISABLE_DOCKER=true npm run provision:token:contracts
-```
-
-</TabItem>
-</Tabs>
-
 **Great!** Now you're ready to compile the contracts and run the tests.
 
 ### Where to go from here?

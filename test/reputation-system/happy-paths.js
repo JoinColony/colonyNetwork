@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const BN = require("bn.js");
@@ -53,7 +53,7 @@ chai.use(bnChai(web3.utils.BN));
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;
@@ -63,7 +63,7 @@ let metaColony;
 let clnyToken;
 let localSkillId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -147,8 +147,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope with many hashes being submitted and eliminated before a winner is assigned", async function manySubmissionTest() {
-      this.timeout(100000000);
-
       // TODO: This test probably needs to be written more carefully to make sure all possible edge cases are dealt with
       for (let i = 3; i < 11; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], DEFAULT_STAKE);
@@ -216,7 +214,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should be able to process a large reputation update log", async function largeReputationLogTest() {
-      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
@@ -236,7 +233,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
     // eslint-disable-next-line max-len
     it("should be able to process a large reputation update log even if it's using the solidity patricia tree", async function largeReputationLogTestSolidity() {
-      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
@@ -287,7 +283,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope if someone's existing reputation would go negative, setting it to zero instead", async function noNegativeRep() {
-      this.timeout(600000);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       // Create reputation
@@ -318,7 +313,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope if someone's new reputation would be negative, setting it to zero instead", async function newRepToZeroTest() {
-      this.timeout(600000);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));

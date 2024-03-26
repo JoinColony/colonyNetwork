@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const chai = require("chai");
@@ -23,13 +23,13 @@ const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 const useJsTree = true;
 
-process.env.SOLIDITY_COVERAGE
+hre.__SOLIDITY_COVERAGE_RUNNING
   ? contract.skip
   : contract("Reputation mining - client sync functionality", (accounts) => {
       const MINER1 = accounts[5];
