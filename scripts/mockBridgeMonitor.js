@@ -3,9 +3,9 @@ const ethers = require("ethers");
 const bridgeAbi = require("../build/contracts/WormholeMock.json").abi; // eslint-disable-line import/no-unresolved
 const wormholeBridgeForColonyAbi = require("../build/contracts/WormholeBridgeForColony.json").abi; // eslint-disable-line import/no-unresolved
 
-const ethereumAddressToWormholeAddress = (address) => {
+function ethereumAddressToWormholeAddress(address) {
   return ethers.utils.hexZeroPad(ethers.utils.hexStripZeros(ethers.utils.hexlify(address)), 32);
-};
+}
 
 class MockBridgeMonitor {
   /**

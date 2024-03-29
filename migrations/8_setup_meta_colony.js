@@ -2,7 +2,7 @@
 
 const assert = require("assert");
 const ethers = require("ethers");
-const { UINT256_MAX, FORKED_XDAI_CHAINID, XDAI_CHAINID } = require("../helpers/constants");
+const { UINT256_MAX, MINING_CHAINID } = require("../helpers/constants");
 
 const Token = artifacts.require("./Token");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
@@ -49,7 +49,7 @@ module.exports = async function (deployer, network, accounts) {
   const c = await ChainId.new();
   const chainId = await c.getChainId();
 
-  if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
+  if (chainId.toNumber() === MINING_CHAINID) {
     // These commands add MAIN_ACCOUNT as a reputation miner.
     // This is necessary because the first miner must have staked before the mining cycle begins.
     await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
@@ -112,14 +112,14 @@ module.exports = async function (deployer, network, accounts) {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
-  if (chainId.toNumber() === FORKED_XDAI_CHAINID || chainId.toNumber() === XDAI_CHAINID) {
+  if (chainId.toNumber() === MINING_CHAINID) {
     await metaColony.initialiseReputationMining(chainId.toString(), ethers.constants.HashZero, 0);
     // await colonyNetwork.startNextCycle();
     const skillCount = await colonyNetwork.getSkillCount();
     console.log(skillCount.toString(16));
     assert.equal(skillCount.toNumber(), 3);
   } else {
-    await metaColony.initialiseReputationMining(FORKED_XDAI_CHAINID.toString(), ethers.constants.HashZero, 0);
+    await metaColony.initialiseReputationMining(MINING_CHAINID, ethers.constants.HashZero, 0);
     const skillCount = await colonyNetwork.getSkillCount();
     assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
   }

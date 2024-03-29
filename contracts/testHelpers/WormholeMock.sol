@@ -80,6 +80,7 @@ contract WormholeMock is IWormhole {
   ) external payable returns (uint64 sequence) {
     require(bridgeEnabled, "bridge-disabled");
     cumulativeSequence += 1;
+
     emit LogMessagePublished(msg.sender, sequence, nonce, payload, consistencyLevel);
     return cumulativeSequence;
   }

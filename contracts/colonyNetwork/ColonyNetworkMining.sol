@@ -56,7 +56,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     }
   }
 
-  function getMiningDelegator(address _delegate) external view onlyMiningChain returns (address) {
+  function getMiningDelegator(address _delegate) external view returns (address) {
     return miningDelegators[_delegate];
   }
 
@@ -85,13 +85,13 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   function getReplacementReputationUpdateLogEntry(
     address _reputationMiningCycle,
     uint256 _id
-  ) public view onlyMiningChain returns (ReputationLogEntry memory reputationLogEntry) {
+  ) public view returns (ReputationLogEntry memory reputationLogEntry) {
     reputationLogEntry = replacementReputationUpdateLog[_reputationMiningCycle][_id];
   }
 
   function getReplacementReputationUpdateLogsExist(
     address _reputationMiningCycle
-  ) public view onlyMiningChain returns (bool) {
+  ) public view returns (bool) {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
@@ -153,6 +153,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     bytes32 _newHash,
     uint256 _newNLeaves
   ) public stoppable calledByMetaColony {
+    // NOTE: this function deliberately does not support moving away from the current chain.
     require(
       (reputationMiningChainId == 0) || // Either it's the first time setting it
         // Or we're moving from a chain that's not this chain to another chain that's not this one
@@ -209,7 +210,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNLeaves);
   }
 
-  function getReputationMiningCycle(bool _active) public view onlyMiningChain returns (address) {
+  function getReputationMiningCycle(bool _active) public view returns (address) {
     if (_active) {
       return activeReputationMiningCycle;
     } else {
@@ -226,7 +227,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   function calculateMinerWeight(
     uint256 timeStaked,
     uint256 submissonIndex
-  ) public view onlyMiningChain returns (uint256) {
+  ) public pure returns (uint256) {
     if (submissonIndex >= MAX_MINERS) {
       return 0;
     }
@@ -354,7 +355,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     miningStakes[msgSender()].amount -= _amount;
   }
 
-  function getMiningStake(address _user) public view onlyMiningChain returns (MiningStake memory) {
+  function getMiningStake(address _user) public view returns (MiningStake memory) {
     return miningStakes[_user];
   }
 
@@ -383,7 +384,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     emit ReputationMiningRewardSet(_amount);
   }
 
-  function getReputationMiningCycleReward() public view onlyMiningChain returns (uint256) {
+  function getReputationMiningCycleReward() public view returns (uint256) {
     return totalMinerRewardPerCycle;
   }
 

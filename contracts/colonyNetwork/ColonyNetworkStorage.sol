@@ -114,11 +114,11 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // A mapping that maps chain id -> skill count
   mapping(uint256 => uint256) networkSkillCounts; // Storage slot 45
   // A mapping that stores pending bridged skill additions that have been bridged out-of-order
-  // networkId -> skillCount -> parentSkillId
+  // chainId -> skillCount -> parentSkillId
   mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 46
 
   // A mapping that stores the latest reputation update received from a colony on a particular chain
-  // networkId -> colonyAddress -> updateCount
+  // chainId -> colonyAddress -> updateCount
   mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 47
 
   // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
