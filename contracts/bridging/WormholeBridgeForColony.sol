@@ -68,9 +68,9 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     return colonyNetwork;
   }
 
-  function setColonyBridgeAddress(uint256 evmChainId, address _bridgeAddress) public auth {
-    require(evmChainId <= type(uint128).max, "colony-bridge-chainid-too-large");
-    uint16 requestedWormholeChainId = evmChainIdToWormholeChainId[evmChainId];
+  function setColonyBridgeAddress(uint256 _evmChainId, address _bridgeAddress) public auth {
+    require(_evmChainId <= type(uint128).max, "colony-bridge-chainid-too-large");
+    uint16 requestedWormholeChainId = evmChainIdToWormholeChainId[_evmChainId];
     colonyBridges[requestedWormholeChainId] = _bridgeAddress;
   }
 
@@ -119,14 +119,14 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
   }
 
   function sendMessage(
-    uint256 evmChainId,
-    bytes memory payload
+    uint256 _evmChainId,
+    bytes memory _payload
   ) public onlyColonyNetwork returns (bool) {
-    require(supportedEvmChainId(evmChainId), "colony-bridge-not-known-chain");
+    require(supportedEvmChainId(_evmChainId), "colony-bridge-not-known-chain");
     // This returns a sequence, but we don't care about it
     // The first sequence ID is, I believe 0, so all return values are potentially valid
     // slither-disable-next-line unused-return
-    try wormhole.publishMessage(0, payload, 0) {
+    try wormhole.publishMessage(0, _payload, 0) {
       return true;
     } catch {
       return false;
