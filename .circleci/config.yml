@@ -127,6 +127,11 @@ jobs:
           version: docker23
       - <<: *step_setup_global_packages
       - run:
+          name: "Build contract artifacts"
+          command: |
+            npm ci
+            npx hardhat compile
+      - run:
           name: "Test miner docker build"
           command: docker build -f ./packages/reputation-miner/Dockerfile .
       - run:
