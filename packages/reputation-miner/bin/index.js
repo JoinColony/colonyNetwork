@@ -95,6 +95,12 @@ if (network) {
       user: decodeURI(username),
       password: decodeURI(password.replace(/%23/, '#')),
     }
+    if (connectionInfo.user === "") {
+      delete connectionInfo.user;
+    }
+    if (connectionInfo.password === "") {
+      delete connectionInfo.password;
+    }
     return new RetryProvider(connectionInfo, adapterObject);
   })
   // This is, at best, a huge hack...
