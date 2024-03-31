@@ -85,6 +85,40 @@ jobs:
       - run:
           name: "Running storage consistency smoke tests"
           command: npm run test:contracts:smoke
+  reputation-test-non-gnosis:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:1:anotherChain
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            npm run stop:blockchain:client && rm -rf ganache-chain-db*
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:2:anotherChain
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - run:
+          name: "Running storage consistency smoke tests"
+          command: npm run test:contracts:smoke
+
   lint-and-unit-test:
     <<: *job_common
     steps:
@@ -387,6 +421,8 @@ workflows:
       - security-analysis:
           context: dockerhub-credentials
       - reputation-test:
+          context: dockerhub-credentials
+      - reputation-test-non-gnosis:
           context: dockerhub-credentials
       - test-contracts-coverage:
           context: dockerhub-credentials
