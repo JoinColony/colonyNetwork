@@ -2,14 +2,13 @@
 
 const assert = require("assert");
 const ethers = require("ethers");
-const { UINT256_MAX, MINING_CHAINID } = require("../helpers/constants");
+const { UINT256_MAX, XDAI_CHAINID, FORKED_XDAI_CHAINID } = require("../helpers/constants");
 
 const Token = artifacts.require("./Token");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 const ITokenLocking = artifacts.require("./ITokenLocking");
 const TokenAuthority = artifacts.require("./TokenAuthority");
-const ChainId = artifacts.require("./ChainId");
 
 const Resolver = artifacts.require("./Resolver");
 const EtherRouter = artifacts.require("./EtherRouter");
@@ -17,6 +16,7 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const Version3 = artifacts.require("./Version3");
 const Version4 = artifacts.require("./Version4");
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
+const { getChainId } = require("../helpers/test-helper");
 
 const DEFAULT_STAKE = "2000000000000000000000000"; // DEFAULT_STAKE
 
@@ -46,10 +46,13 @@ module.exports = async function (deployer, network, accounts) {
 
   // Check chain id
   // If not a mining chain, then skip setting up mining
-  const c = await ChainId.new();
-  const chainId = await c.getChainId();
-
-  if (chainId.toNumber() === MINING_CHAINID) {
+  const chainId = await getChainId();
+  let miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10);
+  if (!miningChainId) {
+    miningChainId = chainId;
+  }
+  console.log(miningChainId, chainId);
+  if (miningChainId === chainId) {
     // These commands add MAIN_ACCOUNT as a reputation miner.
     // This is necessary because the first miner must have staked before the mining cycle begins.
     await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
@@ -112,14 +115,18 @@ module.exports = async function (deployer, network, accounts) {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
 
-  if (chainId.toNumber() === MINING_CHAINID) {
-    await metaColony.initialiseReputationMining(chainId.toString(), ethers.constants.HashZero, 0);
+  if (chainId === miningChainId) {
+    await metaColony.initialiseReputationMining(miningChainId, ethers.constants.HashZero, 0);
     // await colonyNetwork.startNextCycle();
     const skillCount = await colonyNetwork.getSkillCount();
     console.log(skillCount.toString(16));
-    assert.equal(skillCount.toNumber(), 3);
+    if (chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID) {
+      assert.equal(skillCount.toNumber(), 3);
+    } else {
+      assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 3);
+    }
   } else {
-    await metaColony.initialiseReputationMining(MINING_CHAINID, ethers.constants.HashZero, 0);
+    await metaColony.initialiseReputationMining(miningChainId, ethers.constants.HashZero, 0);
     const skillCount = await colonyNetwork.getSkillCount();
     assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
   }
