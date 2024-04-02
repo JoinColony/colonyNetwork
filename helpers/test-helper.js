@@ -577,6 +577,21 @@ exports.revert = async function revert(provider, snapshotId) {
   });
 };
 
+exports.hardhatSnapshot = async function hardhatSnapshot(provider) {
+  const res = await provider.request({
+    method: "evm_snapshot",
+    params: [],
+  });
+  return res;
+};
+
+exports.hardhatRevert = async function hardhatRevert(provider, snapshotId) {
+  await provider.request({
+    method: "evm_revert",
+    params: [snapshotId],
+  });
+};
+
 exports.stopMining = async function stopMining() {
   const client = await exports.web3GetClient();
   if (client.indexOf("Hardhat") !== -1) {

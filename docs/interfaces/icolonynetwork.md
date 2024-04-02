@@ -520,6 +520,18 @@ Get the number of colonies in the network.
 |---|---|---|
 |_count|uint256|The colony count
 
+### ▸ `getColonyCreationSalt():bytes32 salt`
+
+Pseudo-randomly generates a salt used for colony creation
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|salt|bytes32|The generated salt
+
 ### ▸ `getColonyVersionResolver(uint256 _version):address _resolverAddress`
 
 Get the `Resolver` address for Colony contract version `_version`.

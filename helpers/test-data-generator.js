@@ -226,7 +226,7 @@ exports.unlockCLNYToken = async function unlockCLNYToken(metaColony) {
 };
 
 exports.setupColonyNetwork = async function setupColonyNetwork() {
-  const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+  const cnAddress = (await EtherRouter.deployed()).address;
   const deployedColonyNetwork = await IColonyNetwork.at(cnAddress);
 
   // Make a new ColonyNetwork

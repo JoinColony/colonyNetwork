@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 const fs = require("fs");
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -67,6 +67,8 @@ const { soliditySha3 } = require("web3-utils");
 const truffleContract = require("@truffle/contract");
 const createXABI = require("../lib/createx/artifacts/src/ICreateX.sol/ICreateX.json");
 
+let postFixtureSnapshotId;
+
 const {
   setupUpgradableColonyNetwork,
   setupColonyVersionResolver,
@@ -75,10 +77,16 @@ const {
   setupENSRegistrar,
   setupEtherRouter,
 } = require("../helpers/upgradable-contracts");
-const { FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX } = require("../helpers/constants");
-const { getChainId } = require("../helpers/test-helper");
+const { FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX, CREATEX_ADDRESS } = require("../helpers/constants");
+const { getChainId, hardhatRevert, hardhatSnapshot } = require("../helpers/test-helper");
 
 module.exports = async () => {
+  if (postFixtureSnapshotId) {
+    await hardhatRevert(hre.network.provider, postFixtureSnapshotId);
+    postFixtureSnapshotId = await hardhatSnapshot(hre.network.provider);
+    return;
+  }
+
   await deployContracts();
   await setupColonyNetwork();
   await setupColony();
@@ -87,6 +95,8 @@ module.exports = async () => {
   await setupEnsRegistry();
   await setupMetaColony();
   await setupExtensions();
+
+  postFixtureSnapshotId = await hardhatSnapshot(hre.network.provider);
 };
 
 async function deployContracts() {
@@ -129,22 +139,25 @@ async function deployContracts() {
   const reputationMiningCycleBinarySearch = await ReputationMiningCycleBinarySearch.new();
   ReputationMiningCycleBinarySearch.setAsDeployed(reputationMiningCycleBinarySearch);
 
-  // Deploy CreateX
-  const accounts = await web3.eth.getAccounts();
-  await web3.eth.sendTransaction({
-    from: accounts[0],
-    to: "0xeD456e05CaAb11d66C4c797dD6c1D6f9A7F352b5",
-    value: web3.utils.toWei("0.3", "ether"),
-    gasPrice: web3.utils.toWei("1", "gwei"),
-    gas: 300000,
-  });
-  const rawTx = fs
-    .readFileSync("lib/createx/scripts/presigned-createx-deployment-transactions/signed_serialised_transaction_gaslimit_3000000_.json", {
-      encoding: "utf8",
-    })
-    .replace(/"/g, "")
-    .replace("\n", "");
-  await web3.eth.sendSignedTransaction(rawTx);
+  // Deploy CreateX if it's not already deployed
+  const createXCode = await web3.eth.getCode(CREATEX_ADDRESS);
+  if (createXCode === "0x") {
+    const accounts = await web3.eth.getAccounts();
+    await web3.eth.sendTransaction({
+      from: accounts[0],
+      to: "0xeD456e05CaAb11d66C4c797dD6c1D6f9A7F352b5",
+      value: web3.utils.toWei("0.3", "ether"),
+      gasPrice: web3.utils.toWei("1", "gwei"),
+      gas: 300000,
+    });
+    const rawTx = fs
+      .readFileSync("lib/createx/scripts/presigned-createx-deployment-transactions/signed_serialised_transaction_gaslimit_3000000_.json", {
+        encoding: "utf8",
+      })
+      .replace(/"/g, "")
+      .replace("\n", "");
+    await web3.eth.sendSignedTransaction(rawTx);
+  }
 }
 
 async function setupColonyNetwork() {
@@ -164,7 +177,7 @@ async function setupColonyNetwork() {
   // Deploy EtherRouter through CreateX
   const CreateX = truffleContract({ abi: createXABI.abi });
   CreateX.setProvider(web3.currentProvider);
-  const createX = await CreateX.at("0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed");
+  const createX = await CreateX.at(CREATEX_ADDRESS);
 
   // This is a fake instance of an etherRouter, just so we can call encodeABI
   const fakeEtherRouter = await EtherRouterCreate3.at(colonyNetwork.address);

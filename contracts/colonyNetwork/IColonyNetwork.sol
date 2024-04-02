@@ -216,6 +216,10 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     string memory _metadata
   ) external returns (address token, address colony);
 
+  /// @notice Pseudo-randomly generates a salt used for colony creation
+  /// @return salt The generated salt
+  function getColonyCreationSalt() external view returns (bytes32 salt);
+
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.
   /// @param _version The new Colony contract version

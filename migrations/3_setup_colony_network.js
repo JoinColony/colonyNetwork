@@ -1,6 +1,5 @@
 /* globals artifacts */
 const contract = require("@truffle/contract");
-const fs = require("fs");
 const { writeFileSync } = require("fs");
 const path = require("path");
 const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");

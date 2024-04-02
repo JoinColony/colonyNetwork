@@ -69,7 +69,7 @@ contract("Colony Expenditure", (accounts) => {
   let domain1;
 
   before(async () => {
-    const cnAddress = require("../../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+    const cnAddress = (await EtherRouter.deployed()).address;
     const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 

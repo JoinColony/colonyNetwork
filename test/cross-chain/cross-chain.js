@@ -23,14 +23,17 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
+const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
+const ICreateX = artifacts.require("ICreateX");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
 
-const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION } = require("../../helpers/constants");
+const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION, CREATEX_ADDRESS } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, snapshot, revert } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
@@ -82,7 +85,8 @@ contract("Cross-chain", (accounts) => {
   const foreignRpcUrl = `http://127.0.0.1:${FOREIGN_PORT}`;
   const homeRpcUrl = `http://127.0.0.1:${HOME_PORT}`;
 
-  const ethersForeignSigner = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner();
+  const ethersForeignProvider = new ethers.providers.JsonRpcProvider(foreignRpcUrl);
+  const ethersForeignSigner = ethersForeignProvider.getSigner();
   const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
   const ethersForeignSigner2 = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner(1);
   const ethersHomeSigner2 = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner(1);
@@ -148,7 +152,7 @@ contract("Cross-chain", (accounts) => {
     // in to a different location. If we see another chain id, we assume it's non-coverage
     // truffle and look for the build artifacts in the normal place.
 
-    const homeEtherRouterAddress = require("../../etherrouter-address.json").etherRouterAddress; // eslint-disable-line global-require
+    const homeEtherRouterAddress = (await EtherRouter.deployed()).address;
     homeColonyNetwork = await new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
 
     const foreignEtherRouterAddress = homeEtherRouterAddress;
@@ -156,28 +160,34 @@ contract("Cross-chain", (accounts) => {
   });
 
   beforeEach(async () => {
+    console.log("beforeEach");
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
     web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
+    console.log("beforeEach");
     homeSnapshotId = await snapshot(web3HomeProvider);
     foreignSnapshotId = await snapshot(web3ForeignProvider);
     bridgeMonitor.reset();
 
+    console.log("beforeEach");
     let tx = await foreignBridge.setBridgeEnabled(true);
     await tx.wait();
     tx = await homeBridge.setBridgeEnabled(true);
     await tx.wait();
 
+    console.log("beforeEach");
     const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
     foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
     const homeMCAddress = await homeColonyNetwork.getMetaColony();
     homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
 
+    console.log("beforeEach");
     await setForeignBridgeData(foreignColonyBridge.address);
     await setHomeBridgeData(homeColonyBridge.address);
 
     // Bridge over skills that have been created on the foreign chain
 
+    console.log("beforeEach");
     const latestSkillId = await foreignColonyNetwork.getSkillCount();
     const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
@@ -188,6 +198,7 @@ contract("Cross-chain", (accounts) => {
       // process.exit(1);
     }
 
+    console.log("beforeEach");
     // Set up mining client
     client = new ReputationMinerTestWrapper({
       loader: contractLoader,
@@ -198,22 +209,27 @@ contract("Cross-chain", (accounts) => {
 
     await client.initialise(homeColonyNetwork.address);
 
+    console.log("beforeEach");
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
 
+    console.log("beforeEach");
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
+    console.log("beforerEach");
 
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     homeColony = await setupColony(homeColonyNetwork);
 
+    console.log("beforerEach");
     const p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
     foreignColony = await setupColony(foreignColonyNetwork);
     await p;
+    console.log("beforerEach");
   });
 
   async function setupColony(colonyNetworkEthers) {
@@ -249,6 +265,62 @@ contract("Cross-chain", (accounts) => {
       const foreignVersionResolver = await foreignColonyNetwork.getColonyVersionResolver(CURR_VERSION);
       expect(homeVersionResolver).to.not.equal(ADDRESS_ZERO);
       expect(foreignVersionResolver).to.not.equal(ADDRESS_ZERO);
+    });
+
+    it("colonies deployed on different chains can have same address", async () => {
+      // Deploy a colony only on one chain, so that normal contract creations wouldn't have the same address
+      await setupColony(homeColonyNetwork);
+
+      let tx = await homeColonyNetwork.deployTokenViaNetwork("Test", "TST", 18);
+      let res = await tx.wait();
+      const { tokenAddress: homeTokenAddress } = res.events.filter((x) => x.event === "TokenDeployed")[0].args;
+
+      tx = await homeColonyNetwork["createColony(address,uint256,string)"](homeTokenAddress, 0, "");
+      res = await tx.wait();
+
+      const { colonyAddress } = res.events.filter((x) => x.event === "ColonyAdded")[0].args;
+
+      const coder = new ethers.utils.AbiCoder();
+      const createXDeployEvent = res.events.filter((x) => x.address === CREATEX_ADDRESS)[1];
+      const createdAddress = coder.decode(["address"], createXDeployEvent.topics[1])[0];
+
+      // Check that the colony address is the same as the address that CreateX emitted an event for
+      expect(createdAddress).to.equal(colonyAddress);
+
+      const colonyCreationSalt = await homeColonyNetwork.getColonyCreationSalt({ blockTag: createXDeployEvent.blockNumber });
+      console.log("colony creation salt", colonyCreationSalt);
+
+      // Query CreateX on other network to prove this salt being used in the Create3 pattern
+      // from colonyNetwork would result in a colony at the same address
+
+      // This test should be replaced by one that shows the colony on the home network can request
+      // a deployment on the other chain, and that the resulting address is the same. However, that
+      // functionality is not implemented yet, so we do a static call to CreateX, and get the address
+      // that would be created if colonyNetwork created a colony with that salt.
+      const createXForeign = new ethers.Contract(CREATEX_ADDRESS, ICreateX.abi, ethersForeignProvider);
+      const cnAsEr = await EtherRouterCreate3.at(homeColonyNetwork.address);
+
+      const setOwnerData = cnAsEr.contract.methods.setOwner(foreignColonyNetwork.address).encodeABI();
+
+      const colonyAddressWithSalt = await createXForeign.callStatic["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
+        colonyCreationSalt,
+        EtherRouterCreate3.bytecode,
+        setOwnerData,
+        [0, 0],
+        { from: foreignColonyNetwork.address },
+      );
+
+      expect(colonyAddressWithSalt).to.equal(colonyAddress);
+
+      // Demonstrate that another address using that salt would not get the same address
+      const otherAddress = await createXForeign.callStatic["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
+        colonyCreationSalt,
+        EtherRouterCreate3.bytecode,
+        setOwnerData,
+        [0, 0],
+      );
+
+      expect(otherAddress).to.not.equal(colonyAddress);
     });
 
     it("bridge data can be queried", async () => {

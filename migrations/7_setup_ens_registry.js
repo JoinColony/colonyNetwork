@@ -8,7 +8,7 @@ const ENSRegistry = artifacts.require("ENSRegistry");
 
 // eslint-disable-next-line no-unused-vars
 module.exports = async function (deployer, network, accounts) {
-  const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+  const cnAddress = (await EtherRouter.deployed()).address;
   const etherRouterDeployed = await EtherRouter.at(cnAddress);
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
   const ensRegistry = await ENSRegistry.new();

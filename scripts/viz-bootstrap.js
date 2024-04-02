@@ -48,7 +48,7 @@ module.exports = async function (callback) {
     console.log("*".repeat(20));
     console.log("SETTING UP NETWORK");
 
-    const cnAddress = require("../etherrouter-address.json").etherRouterAddress; // eslint-disable-line import/no-unresolved
+    const cnAddress = (await EtherRouter.deployed()).address;
     const etherRouter = await EtherRouter.at(cnAddress);
     const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 

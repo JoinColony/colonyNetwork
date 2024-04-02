@@ -40,6 +40,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/DomainRoles.sol",
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
+      "contracts/common/EtherRouterCreate3.sol",
       "contracts/common/IEtherRouter.sol",
       "contracts/common/IMulticall.sol",
       "contracts/common/IRecovery.sol",
