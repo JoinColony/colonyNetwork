@@ -1258,6 +1258,13 @@ exports.sleep = function sleep(ms) {
   });
 };
 
+exports.getMultichainSkillId = function multichainSkillId(chainId, skillId) {
+  if (chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID) {
+    return skillId;
+  }
+  return ethers.BigNumber.from(chainId).mul(ethers.BigNumber.from(2).pow(128)).add(ethers.BigNumber.from(skillId));
+};
+
 exports.upgradeColonyTo = async function (colony, _version) {
   const version = new BN(_version);
   let currentVersion = await colony.version();
