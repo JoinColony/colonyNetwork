@@ -131,9 +131,26 @@ exports.web3GetChainId = async function web3GetChainId() {
 };
 
 exports.getChainId = async function getChainId() {
-  const c = await ChainId.new();
-  const chainId = await c.getChainId();
-  return chainId.toNumber();
+  // Why do we do this? Because with the check-if-we-are-on-the-minign chain setup for
+  // tests, we've introduced a new transaction in the setup process. This causes the
+  // past-version-caching to fail, because we end up deploying different code to the same
+  // addresses. This is a workaround for that, but should be considered temporary.
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_accounts",
+    params: [],
+    id: new Date().getTime(),
+  };
+
+  return new Promise((resolve, reject) => {
+    ChainId.currentProvider.send(packet, async function (err, res) {
+      if (err !== null) return reject(err);
+      const accounts = res.result;
+      const c = await ChainId.new({ from: accounts.slice(-1)[0] });
+      const chainId = await c.getChainId();
+      return resolve(chainId.toNumber());
+    });
+  });
 };
 
 exports.web3SignTypedData = function web3SignTypedData(address, typedData) {

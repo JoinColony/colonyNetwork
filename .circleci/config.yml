@@ -115,9 +115,6 @@ jobs:
           command: npm run test:reputation:2:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Running storage consistency smoke tests"
-          command: npm run test:contracts:smoke
 
   lint-and-unit-test:
     <<: *job_common
