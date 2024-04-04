@@ -17,7 +17,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: FORKED_XDAI_CHAINID,
+      chainId: parseInt(process.env.CHAIN_ID, 10) || FORKED_XDAI_CHAINID,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       blockGasLimit: 6721975,

@@ -36,7 +36,7 @@
     "test:reputation:1": "npm run start:blockchain:client & truffle migrate --reset --compile-all && nyc truffle test ./test/reputation-system/* --network development",
     "test:reputation:2": "npm run start:blockchain:client hardhat & truffle migrate --reset --compile-all && nyc truffle test ./test/reputation-system/reputation-mining-client/* --network development",
     "test:reputation:1:anotherChain": "CHAIN_ID=101010101 npm run start:blockchain:client & truffle migrate --reset --compile-all && MINING_CHAIN_ID=101010101 nyc truffle test ./test/reputation-system/* --network development",
-    "test:reputation:2:anotherChain": "CHAIN_ID=101010101 npm run start:blockchain:client & truffle migrate --reset --compile-all && MINING_CHAIN_ID=101010101 nyc truffle test ./test/reputation-system/reputation-mining-client/* --network development",
+    "test:reputation:2:anotherChain": "CHAIN_ID=101010101 npm run start:blockchain:client hardhat & truffle migrate --reset --compile-all && MINING_CHAIN_ID=101010101 nyc truffle test ./test/reputation-system/reputation-mining-client/* --network development",
     "test:reputation:coverage": "SOLIDITY_COVERAGE=1 truffle run coverage --solcoverjs ./.solcover.reputation.js --network coverage --temp build-coverage --file='./test/reputation-system/**/*'",
     "test:contracts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test ./test/contracts-network/* ./test/packages/* --network development",
     "test:contracts:bridging:1": "CHAIN_ID_1=265669100 CHAIN_ID_2=265669101 npm run start:blockchain:client:both & truffle migrate --reset --compile-all && TRUFFLE_FOREIGN=false MINING_CHAIN_ID=265669100 truffle test ./test/cross-chain/* --network development",
@@ -132,7 +132,7 @@
     "solhint": "^3.3.7",
     "solidity-coverage": "0.8.0-beta.1",
     "solidity-steamroller": "^1.1.0",
-    "truffle": "5.5.30",
+    "truffle": "^5.5.30",
     "truffle-contract-size": "^2.0.1",
     "truffle-hdwallet-provider": "^1.0.17",
     "web3-utils": "^1.7.3"
