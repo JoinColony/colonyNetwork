@@ -220,7 +220,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
-      const miningSkillId = 3;
+      const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
 
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
 
@@ -703,7 +703,7 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {
-      const miningSkillId = 3;
+      const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
 
       // Need tokens to pay out rewards
       await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));

@@ -2,7 +2,6 @@
 
 const { setupReputationMiningCycleResolver } = require("../helpers/upgradable-contracts");
 const { getChainId } = require("../helpers/test-helper");
-const { XDAI_CHAINID, FORKED_XDAI_CHAINID } = require("../helpers/constants");
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
@@ -16,8 +15,13 @@ module.exports = async function (deployer) {
   // Check chain id
   // If not a mining chain, then skip
   const chainId = await getChainId();
+  let miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10);
+  console.log(chainId, miningChainId);
+  if (!miningChainId) {
+    miningChainId = chainId;
+  }
 
-  if (chainId !== FORKED_XDAI_CHAINID && chainId !== XDAI_CHAINID) {
+  if (chainId !== miningChainId) {
     console.log("Not mining chain, skipping setting up mining cycle resolver");
     return;
   }

@@ -85,7 +85,7 @@ contract("Contract Storage", (accounts) => {
       }
     });
 
-    it("Can only stake tokens for mining (and therefore can only mine) on the mining chain", async () => {
+    it("can only stake tokens for mining (and therefore can only mine) on the mining chain", async () => {
       await giveUserCLNYTokens(colonyNetwork, MINER1, DEFAULT_STAKE);
       const tokenLockingAddress = await colonyNetwork.getTokenLocking();
       const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
@@ -179,7 +179,7 @@ contract("Contract Storage", (accounts) => {
       }
     });
 
-    it("Reputation mining chain can be changed on non-mining chain", async function () {
+    it("reputation mining chain can be changed on non-mining chain", async function () {
       if (await isXdai()) {
         // Not appropriate test on xdai
         this.skip();
@@ -194,7 +194,7 @@ contract("Contract Storage", (accounts) => {
       expect(newChainId).to.eq.BN(oldChainId + 1);
     });
 
-    it.skip("Reputation mining chain can be changed on mining chain", async () => {
+    it.skip("reputation mining chain can be changed on mining chain", async () => {
       // Not a test, or contract code, that has been written yet
     });
   });

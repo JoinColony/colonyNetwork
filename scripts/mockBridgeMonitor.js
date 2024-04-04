@@ -5,9 +5,9 @@ const bridgeAbi = require("../artifacts/contracts/testHelpers/WormholeMock.sol/W
 // eslint-disable-next-line import/no-unresolved
 const wormholeBridgeForColonyAbi = require("../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json").abi;
 
-const ethereumAddressToWormholeAddress = (address) => {
+function ethereumAddressToWormholeAddress(address) {
   return ethers.utils.hexZeroPad(ethers.utils.hexStripZeros(ethers.utils.hexlify(address)), 32);
-};
+}
 
 class MockBridgeMonitor {
   /**
