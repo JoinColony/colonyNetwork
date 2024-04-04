@@ -320,21 +320,19 @@ async function setupMetaColony() {
   await resolver4.register("version()", v4responder.address);
   await metaColony.addNetworkColonyVersion(4, resolver4.address);
   const chainId = await getChainId();
-  let miningChainId;
-  if (chainId === FORKED_XDAI_CHAINID || chainId === XDAI_CHAINID) {
-    miningChainId = chainId;
-  } else {
-    miningChainId = FORKED_XDAI_CHAINID;
-  }
+  const miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10) || chainId;
+
   await metaColony.initialiseReputationMining(miningChainId, ethers.constants.HashZero, 0);
   // await colonyNetwork.startNextCycle();
 
   const skillCount = await colonyNetwork.getSkillCount();
-
-  if (chainId === FORKED_XDAI_CHAINID || chainId === XDAI_CHAINID) {
-    assert.equal(skillCount.toNumber(), 3); // Root domain, root local skill, mining skill
+  if (chainId === miningChainId) {
+    if (chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID) {
+      assert.equal(skillCount.toNumber(), 3); // Root domain, root local skill, mining skill
+    } else {
+      assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 3);
+    }
   } else {
-    await metaColony.initialiseReputationMining(FORKED_XDAI_CHAINID, ethers.constants.HashZero, 0);
     assert.equal(skillCount.shln(128).mod(UINT256_MAX).shrn(128).toNumber(), 2);
   }
 }

@@ -77,7 +77,7 @@ module.exports = {
   networks: {
     development: {
       url: "http://localhost:8545",
-      chainId: 265669100,
+      chainId: Number(process.env.CHAIN_ID) || 265669100,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -86,7 +86,7 @@ module.exports = {
     },
     development2: {
       url: "http://localhost:8546",
-      chainId: 265669101,
+      chainId: Number(process.env.CHAIN_ID) || 265669101,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,

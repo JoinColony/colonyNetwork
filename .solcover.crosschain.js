@@ -3,7 +3,8 @@ const ethers  = require("ethers");
 
 const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
 
-config.istanbulFolder = `./coverage-cross-chain-${process.env.HARDHAT_FOREIGN ? "foreign" : "home"}`
+config.istanbulFolder = `./coverage-cross-chain-${process.env.HARDHAT_FOREIGN === "true" ? "foreign" : "home"}`
+console.log(`Coverage folder: ${config.istanbulFolder}`)
 
 let chainId;
 // We configure the truffle coverage chain to have the same chainid as one of the

@@ -126,17 +126,6 @@ contract("Cross-chain", (accounts) => {
       foreignRpcUrl,
     ));
 
-    // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
-    try {
-      const output = await exec(`npx hardhat deploy --network development2`);
-      [, , , , , , , newEtherRouterAddress] = output
-        .split("\n")
-        .filter((x) => x.includes("Colony Network deployed at"))[0]
-        .split(" ");
-    } catch (err) {
-      console.log(err);
-      process.exit(1);
-    }
     // Add bridge to the foreign colony network
     // const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
@@ -145,6 +134,20 @@ contract("Cross-chain", (accounts) => {
     // const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
     wormholeForeignChainId = BigNumber.from(foreignChainId).mod(265669).mul(2);
+
+    // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
+    try {
+      const nonHardhatChainId = process.env.HARDHAT_FOREIGN === "true" ? homeChainId : foreignChainId;
+
+      const output = await exec(`CHAIN_ID=${parseInt(nonHardhatChainId, 16)} npx hardhat deploy --network development2`);
+      [, , , , , , , newEtherRouterAddress] = output
+        .split("\n")
+        .filter((x) => x.includes("Colony Network deployed at"))[0]
+        .split(" ");
+    } catch (err) {
+      console.log(err);
+      process.exit(1);
+    }
 
     // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
     // we see it in our tests that's the coverage chain, which builds the contract artifacts
