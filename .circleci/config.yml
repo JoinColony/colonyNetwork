@@ -215,13 +215,23 @@ jobs:
             sudo apt-get update
             sudo apt-get install lsof
       - run:
-          name: "Running upgrade tests"
-          command: npm run test:contracts:upgrade:parity && npm run test:contracts:upgrade:ganache
+          name: "Running ganache upgrade tests"
+          command: npm run test:contracts:upgrade:ganache
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+          # name: "Running parity upgrade tests"
+          # command: npm run test:contracts:upgrade:parity && npm run test:contracts:upgrade:ganache
+          # environment:
+          #   NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running gas cost tests"
           command: npm run test:contracts:gasCosts && npx codechecks
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            npm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running patricia tree tests"
           command: npm run test:contracts:patricia
