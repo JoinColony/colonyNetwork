@@ -5,6 +5,7 @@ const path = require("path");
 
 const express = require("express");
 const bodyParser = require("body-parser");
+const ethers = require("ethers");
 
 const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
 require("@nomiclabs/hardhat-truffle5");
@@ -25,6 +26,23 @@ task("compile", "Compile Colony contracts with pinned Token").setAction(async ()
     }
     fs.copyFileSync(`${artifactSrc}/Pinned${artifact}.json`, `${artifactDst}/${artifact}.json`);
   }
+});
+
+task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
+  console.log(config.networks.hardhat.accounts);
+  console.log(ethers);
+  const ganacheAccounts = { addresses: {}, private_keys: {} };
+  // eslint-disable-next-line no-restricted-syntax
+  for (const account of config.networks.hardhat.accounts) {
+    const { privateKey } = account;
+    const publicAddress = ethers.utils.computeAddress(privateKey);
+    ganacheAccounts.addresses[publicAddress] = publicAddress;
+    ganacheAccounts.private_keys[publicAddress] = privateKey;
+  }
+
+  fs.writeFileSync("ganache-accounts.json", JSON.stringify(ganacheAccounts, null, 2));
+
+  await runSuper();
 });
 
 task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(async () => {
