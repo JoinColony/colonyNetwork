@@ -1,5 +1,4 @@
 /* globals artifacts, hre */
-const ChainId = artifacts.require("ChainId");
 const shortid = require("shortid");
 const chai = require("chai");
 const { asciiToHex, isBN } = require("web3-utils");
@@ -31,6 +30,7 @@ const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 const ColonyDomains = artifacts.require("ColonyDomains");
 const EtherRouter = artifacts.require("EtherRouter");
+const ChainId = artifacts.require("ChainId");
 
 const { expect } = chai;
 
@@ -1226,7 +1226,7 @@ exports.sleep = function sleep(ms) {
   });
 };
 
-exports.getMultichainSkillId = function multichainSkillId(chainId, skillId) {
+exports.getMultichainSkillId = function getMultichainSkillId(chainId, skillId) {
   if (chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID) {
     return skillId;
   }

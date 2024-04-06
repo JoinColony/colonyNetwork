@@ -15,11 +15,7 @@ module.exports = async function (deployer) {
   // Check chain id
   // If not a mining chain, then skip
   const chainId = await getChainId();
-  let miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10);
-  console.log(chainId, miningChainId);
-  if (!miningChainId) {
-    miningChainId = chainId;
-  }
+  const miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10) || chainId;
 
   if (chainId !== miningChainId) {
     console.log("Not mining chain, skipping setting up mining cycle resolver");

@@ -25,7 +25,7 @@ import { CallWithGuards } from "../common/CallWithGuards.sol";
 import { DSAuth } from "../../lib/dappsys/auth.sol";
 
 contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
-  address colonyNetwork;
+  address public colonyNetwork;
   IWormhole public wormhole;
 
   // ChainId => colonyBridge
@@ -62,10 +62,6 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
 
   function setColonyNetworkAddress(address _colonyNetwork) public auth {
     colonyNetwork = _colonyNetwork;
-  }
-
-  function getColonyNetworkAddress() public view returns (address) {
-    return colonyNetwork;
   }
 
   function setColonyBridgeAddress(uint256 _evmChainId, address _bridgeAddress) public auth {

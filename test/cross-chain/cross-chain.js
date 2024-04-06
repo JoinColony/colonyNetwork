@@ -262,7 +262,7 @@ contract("Cross-chain", (accounts) => {
       const bridgeAddress = await homeColonyNetwork.getColonyBridgeAddress();
       expect(bridgeAddress).to.equal(homeColonyBridge.address);
 
-      const networkAddress = await homeColonyBridge.getColonyNetworkAddress();
+      const networkAddress = await homeColonyBridge.colonyNetwork();
       expect(networkAddress).to.equal(homeColonyNetwork.address);
 
       const foreignColonyBridgeAddress = await homeColonyBridge.getColonyBridgeAddress(foreignChainId);

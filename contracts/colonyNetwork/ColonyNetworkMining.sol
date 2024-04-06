@@ -174,7 +174,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
 
-    // Add the special mining skill
+    // Add the special mining skill. Note that if moving away from this chain,
+    // and then back, a new mining skill will be created. It is an open question
+    // whether this is desireable behaviour.
     ColonyDataTypes.Domain memory d = IMetaColony(metaColony).getDomain(1);
 
     reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(d.skillId);

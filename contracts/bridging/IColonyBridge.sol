@@ -31,7 +31,7 @@ interface IColonyBridge {
 
   /// @notice Function to get the colony network address that the bridge is interacting with
   /// @return address The address of the colony network
-  function getColonyNetworkAddress() external view returns (address);
+  function colonyNetwork() external view returns (address);
 
   /// @notice Function to set the address of the instance of this contract on other chains, that
   /// this contract will expect to receive messages from

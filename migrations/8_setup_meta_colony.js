@@ -47,11 +47,8 @@ module.exports = async function (deployer, network, accounts) {
   // Check chain id
   // If not a mining chain, then skip setting up mining
   const chainId = await getChainId();
-  let miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10);
-  if (!miningChainId) {
-    miningChainId = chainId;
-  }
-  console.log(miningChainId, chainId);
+  const miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10) || chainId;
+
   if (miningChainId === chainId) {
     // These commands add MAIN_ACCOUNT as a reputation miner.
     // This is necessary because the first miner must have staked before the mining cycle begins.
