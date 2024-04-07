@@ -160,34 +160,28 @@ contract("Cross-chain", (accounts) => {
   });
 
   beforeEach(async () => {
-    console.log("beforeEach");
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
     web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
-    console.log("beforeEach");
     homeSnapshotId = await snapshot(web3HomeProvider);
     foreignSnapshotId = await snapshot(web3ForeignProvider);
     bridgeMonitor.reset();
 
-    console.log("beforeEach");
     let tx = await foreignBridge.setBridgeEnabled(true);
     await tx.wait();
     tx = await homeBridge.setBridgeEnabled(true);
     await tx.wait();
 
-    console.log("beforeEach");
     const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
     foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
     const homeMCAddress = await homeColonyNetwork.getMetaColony();
     homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
 
-    console.log("beforeEach");
     await setForeignBridgeData(foreignColonyBridge.address);
     await setHomeBridgeData(homeColonyBridge.address);
 
     // Bridge over skills that have been created on the foreign chain
 
-    console.log("beforeEach");
     const latestSkillId = await foreignColonyNetwork.getSkillCount();
     const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
@@ -198,7 +192,6 @@ contract("Cross-chain", (accounts) => {
       // process.exit(1);
     }
 
-    console.log("beforeEach");
     // Set up mining client
     client = new ReputationMinerTestWrapper({
       loader: contractLoader,
@@ -209,27 +202,22 @@ contract("Cross-chain", (accounts) => {
 
     await client.initialise(homeColonyNetwork.address);
 
-    console.log("beforeEach");
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
 
-    console.log("beforeEach");
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
     await client.submitRootHash();
     await client.confirmNewHash();
-    console.log("beforerEach");
 
     // Set up a colony on the home chain. That may or may not be the truffle chain...
     homeColony = await setupColony(homeColonyNetwork);
 
-    console.log("beforerEach");
     const p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
     foreignColony = await setupColony(foreignColonyNetwork);
     await p;
-    console.log("beforerEach");
   });
 
   async function setupColony(colonyNetworkEthers) {

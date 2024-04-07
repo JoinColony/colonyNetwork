@@ -1,4 +1,5 @@
 /* globals artifacts, hre */
+const fs = require("fs");
 const shortid = require("shortid");
 const chai = require("chai");
 const { asciiToHex, isBN } = require("web3-utils");
@@ -17,6 +18,7 @@ const {
   MAINNET_CHAINID,
   XDAI_CHAINID,
   FORKED_XDAI_CHAINID,
+  CREATEX_ADDRESS,
 } = require("./constants");
 
 const IColony = artifacts.require("IColony");
@@ -1265,6 +1267,28 @@ exports.isMainnet = async function isMainnet() {
 exports.isXdai = async function isXdai() {
   const chainId = await exports.web3GetChainId();
   return chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID;
+};
+
+exports.deployCreateXIfNeeded = async function deployCreateXIfNeeded() {
+  // Deploy CreateX if it's not already deployed
+  const createXCode = await web3.eth.getCode(CREATEX_ADDRESS);
+  if (createXCode === "0x") {
+    const accounts = await web3.eth.getAccounts();
+    await web3.eth.sendTransaction({
+      from: accounts[0],
+      to: "0xeD456e05CaAb11d66C4c797dD6c1D6f9A7F352b5",
+      value: web3.utils.toWei("0.3", "ether"),
+      gasPrice: web3.utils.toWei("1", "gwei"),
+      gas: 300000,
+    });
+    const rawTx = fs
+      .readFileSync("lib/createx/scripts/presigned-createx-deployment-transactions/signed_serialised_transaction_gaslimit_3000000_.json", {
+        encoding: "utf8",
+      })
+      .replace(/"/g, "")
+      .replace("\n", "");
+    await web3.eth.sendSignedTransaction(rawTx);
+  }
 };
 
 class TestAdapter {

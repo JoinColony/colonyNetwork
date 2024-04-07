@@ -220,7 +220,7 @@ jobs:
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
           # name: "Running parity upgrade tests"
-          # command: npm run test:contracts:upgrade:parity && npm run test:contracts:upgrade:ganache
+          # command: npm run test:contracts:upgrade:parity
           # environment:
           #   NODE_OPTIONS: --max-old-space-size=6144
       - run:

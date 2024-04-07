@@ -1,6 +1,4 @@
 /* globals artifacts, hre */
-const fs = require("fs");
-
 const EtherRouter = artifacts.require("EtherRouter");
 const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
 const Resolver = artifacts.require("Resolver");
@@ -78,7 +76,7 @@ const {
   setupEtherRouter,
 } = require("../helpers/upgradable-contracts");
 const { FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX, CREATEX_ADDRESS } = require("../helpers/constants");
-const { getChainId, hardhatRevert, hardhatSnapshot } = require("../helpers/test-helper");
+const { getChainId, hardhatRevert, hardhatSnapshot, deployCreateXIfNeeded } = require("../helpers/test-helper");
 
 module.exports = async () => {
   if (postFixtureSnapshotId) {
@@ -139,25 +137,7 @@ async function deployContracts() {
   const reputationMiningCycleBinarySearch = await ReputationMiningCycleBinarySearch.new();
   ReputationMiningCycleBinarySearch.setAsDeployed(reputationMiningCycleBinarySearch);
 
-  // Deploy CreateX if it's not already deployed
-  const createXCode = await web3.eth.getCode(CREATEX_ADDRESS);
-  if (createXCode === "0x") {
-    const accounts = await web3.eth.getAccounts();
-    await web3.eth.sendTransaction({
-      from: accounts[0],
-      to: "0xeD456e05CaAb11d66C4c797dD6c1D6f9A7F352b5",
-      value: web3.utils.toWei("0.3", "ether"),
-      gasPrice: web3.utils.toWei("1", "gwei"),
-      gas: 300000,
-    });
-    const rawTx = fs
-      .readFileSync("lib/createx/scripts/presigned-createx-deployment-transactions/signed_serialised_transaction_gaslimit_3000000_.json", {
-        encoding: "utf8",
-      })
-      .replace(/"/g, "")
-      .replace("\n", "");
-    await web3.eth.sendSignedTransaction(rawTx);
-  }
+  await deployCreateXIfNeeded();
 }
 
 async function setupColonyNetwork() {
@@ -183,7 +163,6 @@ async function setupColonyNetwork() {
   const fakeEtherRouter = await EtherRouterCreate3.at(colonyNetwork.address);
   const setOwnerData = fakeEtherRouter.contract.methods.setOwner(accounts[0]).encodeABI();
   const tx = await createX.methods["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
-    // `${accounts[0]}001212121212121212121212`,
     `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e9`,
     EtherRouterCreate3.bytecode,
     setOwnerData,
