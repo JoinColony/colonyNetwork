@@ -115,6 +115,7 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, CallWithGuards 
     bool success = callThroughBridgeWithGuards(payload);
 
     if (!success) {
+      // Skill creation is implicitly stored by the fact that skillCount has been incremented
       emit SkillCreationStored(_skillId);
     }
   }
