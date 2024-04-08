@@ -860,7 +860,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           const reputationMinerClient2 = new ReputationMinerClient({
             loader,
@@ -875,7 +875,10 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           await goodClientConfirmedJRH;
 
           // Now cleanup
-
+          // I think there was an issue here on CI where sometimes, we would happen to be eligible to
+          // invalidate the bad hash immediately after confirming the JRH due to things being slow and
+          // using 'forwardTime'. That would cause this event to fire before the promise was set up, and
+          // the test to fail. I've replace the forwardTimes with forwardTimeTo to try and fix this.
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
@@ -890,7 +893,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             }, 30000);
           });
 
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;
