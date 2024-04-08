@@ -151,12 +151,9 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, CallWithGuards 
 
     bool success = callThroughBridgeWithGuards(payload);
 
-    if (success) {
-      emit ReputationUpdateSentToBridge(_colony, _updateNumber);
-      return;
-    }
+    require(success, "colony-network-bridging-tx-unsuccessful");
 
-    revert("colony-network-bridging-tx-unsuccessful");
+    emit ReputationUpdateSentToBridge(_colony, _updateNumber);
   }
 
   // Bridging (receiving)
