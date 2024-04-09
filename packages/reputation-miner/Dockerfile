@@ -3,7 +3,7 @@ RUN apt-get update || : && apt-get install python -y
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./package-lock.json ./
-COPY ./build ./build
+COPY ./artifacts ./artifacts
 RUN git config --global url."https://".insteadOf "ssh://git@"
 RUN npm ci
 RUN cd ./packages/reputation-miner/ && npm ci
