@@ -2,7 +2,7 @@ FROM node:14-bullseye
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./package-lock.json ./
-COPY ./build ./build
+COPY ./artifacts ./artifacts
 RUN git config --global url."https://".insteadOf "ssh://git@"
 RUN npm ci
 RUN cd ./packages/metatransaction-broadcaster/ && npm i
