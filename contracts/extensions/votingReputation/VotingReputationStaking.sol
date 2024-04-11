@@ -245,6 +245,98 @@ contract VotingReputationStaking is VotingReputationStorage {
     return (stakerReward, repPenalty);
   }
 
+  function submitVote(
+    uint256 _motionId,
+    bytes32 _voteSecret,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  ) public {
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
+    require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
+
+    uint256 userRep = checkReputation(
+      motion.rootHash,
+      motion.skillId,
+      msgSender(),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
+
+    // Count reputation if first submission
+    if (voteSecrets[_motionId][msgSender()] == bytes32(0)) {
+      motion.repSubmitted += userRep;
+    }
+
+    voteSecrets[_motionId][msgSender()] = _voteSecret;
+
+    emit MotionVoteSubmitted(_motionId, msgSender());
+
+    if (motion.repSubmitted >= wmul(motion.skillRep, maxVoteFraction)) {
+      motion.events[SUBMIT_END] = uint64(block.timestamp);
+      motion.events[REVEAL_END] = uint64(block.timestamp + revealPeriod);
+
+      emit MotionEventSet(_motionId, SUBMIT_END);
+    }
+  }
+
+  function revealVote(
+    uint256 _motionId,
+    bytes32 _salt,
+    uint256 _vote,
+    bytes memory _key,
+    bytes memory _value,
+    uint256 _branchMask,
+    bytes32[] memory _siblings
+  ) public {
+    Motion storage motion = motions[_motionId];
+    require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
+    require(_vote <= 1, "voting-rep-bad-vote");
+
+    uint256 userRep = checkReputation(
+      motion.rootHash,
+      motion.skillId,
+      msgSender(),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
+    motion.votes[_vote] += userRep;
+
+    bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
+    require(voteSecret == keccak256(abi.encodePacked(_salt, _vote)), "voting-rep-secret-no-match");
+    delete voteSecrets[_motionId][msgSender()];
+
+    uint256 voterReward = getVoterReward(_motionId, userRep);
+    motion.paidVoterComp += voterReward;
+
+    emit MotionVoteRevealed(_motionId, msgSender(), _vote);
+
+    // See if reputation revealed matches reputation submitted
+    if ((motion.votes[NAY] + motion.votes[YAY]) == motion.repSubmitted) {
+      motion.events[REVEAL_END] = uint64(block.timestamp);
+
+      emit MotionEventSet(_motionId, REVEAL_END);
+    }
+
+    tokenLocking.transfer(token, voterReward, msgSender(), true);
+  }
+
+  function getVoterReward(
+    uint256 _motionId,
+    uint256 _voterRep
+  ) public view returns (uint256 _reward) {
+    Motion storage motion = motions[_motionId];
+    uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
+    uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
+    return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
+  }
+
   // Internal
 
   function lockExpenditure(uint256 _motionId) internal returns (bool finalized) {
