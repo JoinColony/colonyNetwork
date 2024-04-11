@@ -6,7 +6,15 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, SECONDS_PER_DAY, ADDRESS_ZERO } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode, makeTxAtTimestamp, getBlockTime, getTokenArgs, forwardTime } = require("../../helpers/test-helper");
+const {
+  checkErrorRevert,
+  web3GetCode,
+  makeTxAtTimestamp,
+  getBlockTime,
+  getTokenArgs,
+  forwardTime,
+  expectEvent,
+} = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -174,9 +182,11 @@ contract("Streaming Payments", (accounts) => {
       expect(streamingPayment.startTime).to.eq.BN(startTime);
 
       // Now make it two days into the future
-      await streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, newStartTime);
+      const tx = await streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, newStartTime);
       streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.startTime).to.eq.BN(newStartTime);
+
+      await expectEvent(tx, "StartTimeSet", [accounts[0], streamingPaymentId, newStartTime]);
     });
 
     it("cannot update the start time after the start time has passed", async () => {
@@ -227,9 +237,11 @@ contract("Streaming Payments", (accounts) => {
       streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(endTime);
 
-      await streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, newEndTime);
+      const tx = await streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, newEndTime);
       streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(newEndTime);
+
+      await expectEvent(tx, "EndTimeSet", [accounts[0], streamingPaymentId, newEndTime]);
     });
 
     it("cannot update the end time to a time past", async () => {
@@ -429,6 +441,8 @@ contract("Streaming Payments", (accounts) => {
 
       const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(blockTime);
+
+      expectEvent(tx, "EndTimeSet", [accounts[0], streamingPaymentId, blockTime]);
     });
 
     it("can cancel a streaming payment before the start time", async () => {
@@ -473,12 +487,12 @@ contract("Streaming Payments", (accounts) => {
     });
 
     it("receipient can cancel and waive a streaming payment", async () => {
-      const tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
+      let tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, [token.address], [WAD]);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       const blockTime = await getBlockTime(tx.receipt.blockNumber);
 
-      await makeTxAtTimestamp(
+      tx = await makeTxAtTimestamp(
         streamingPayments.cancelAndWaive,
         [streamingPaymentId, [token.address], { from: USER1 }],
         blockTime + SECONDS_PER_DAY * 2,
@@ -490,6 +504,8 @@ contract("Streaming Payments", (accounts) => {
 
       const paymentToken = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
       expect(paymentToken.pseudoAmountClaimedFromStart).to.equal((WAD * 2).toString());
+
+      expectEvent(tx, "ClaimWaived", [USER1, streamingPaymentId, token.address]);
     });
 
     it("multiple cancel-and-waives of a streaming payments do not change the end time", async () => {
