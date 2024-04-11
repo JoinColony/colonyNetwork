@@ -21,7 +21,7 @@ import { GetActionDomainSkillId } from "./GetActionDomainSkillId.sol";
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 
-pragma solidity 0.8.23;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
 struct ActionSummary {
