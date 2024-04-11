@@ -40,6 +40,9 @@ contract StreamingPayments is ColonyExtensionMeta {
     address token,
     uint256 amount
   );
+  event StartTimeSet(address agent, uint256 indexed streamingPaymentId, uint256 startTime);
+  event EndTimeSet(address agent, uint256 indexed streamingPaymentId, uint256 endTime);
+  event ClaimWaived(address agent, uint256 indexed streamingPaymentId, address token);
 
   // Constants
 
@@ -358,6 +361,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     require(_startTime <= streamingPayment.endTime, "streaming-payments-invalid-start-time");
 
     streamingPayment.startTime = _startTime;
+
+    emit StartTimeSet(msgSender(), _id, _startTime);
   }
 
   /// @notice Update the endTime, only if the new endTime is in the future
@@ -384,6 +389,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     require(streamingPayment.startTime <= _endTime, "streaming-payments-invalid-end-time");
 
     streamingPayment.endTime = _endTime;
+
+    emit EndTimeSet(msgSender(), _id, _endTime);
   }
 
   /// @notice Cancel the streaming payment, specifically by setting endTime to block.timestamp
@@ -427,6 +434,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     for (uint256 i; i < _tokens.length; i++) {
       PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
       paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
+      emit ClaimWaived(msgSender(), _id, _tokens[i]);
     }
   }
 
