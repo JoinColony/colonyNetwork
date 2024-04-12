@@ -101,6 +101,7 @@ module.exports = {
       allowBlocksWithSameTimestamp: true,
       gas: 6721975,
       blockGasLimit: 6721975,
+      timeout: 100000,
     },
     development2: {
       url: "http://localhost:8546",
@@ -110,6 +111,7 @@ module.exports = {
       allowBlocksWithSameTimestamp: true,
       gas: 6721975 * 2,
       blockGasLimit: 6721975,
+      timeout: 100000,
     },
     integration: {
       url: "http://localhost:8545",
@@ -119,6 +121,7 @@ module.exports = {
       allowBlocksWithSameTimestamp: true,
       gas: 6721975,
       blockGasLimit: 6721975,
+      timeout: 100000,
     },
     hardhat: {
       chainId: Number(process.env.CHAIN_ID) || FORKED_XDAI_CHAINID, // Supports chainId tests
