@@ -29,6 +29,8 @@ import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouterCreate3 } from "./../common/EtherRouterCreate3.sol";
 
 contract ColonyNetworkDeployer is ColonyNetworkStorage {
+  address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
+
   function createMetaColony(address _tokenAddress) public stoppable auth {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
@@ -177,11 +179,14 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
 
+    // This is a psuedo-random salt value used when a user creates a colony themselves. When a colony wants
+    // to deploy to the same address on another chain, it will provide the same salt value as was generated
+    // when it was created via a cross-chain call (to an as-yet unwritten function).
     bytes32 salt = getColonyCreationSalt();
     // EtherRouter etherRouter = new EtherRouter();
     EtherRouter etherRouter = EtherRouter(
       payable(
-        ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed).deployCreate3AndInit(
+        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
           salt,
           type(EtherRouterCreate3).creationCode,
           abi.encodeWithSignature("setOwner(address)", (address(this))),
