@@ -1,6 +1,9 @@
 const ethers = require("ethers");
 const axios = require("axios");
 
+const ARBITRUM_ONE_CHAIN_ID = 42161;
+const ARBITRUM_SEPOLIA_CHAIN_ID = 421614;
+
 /**
  * Update the gas estimate
  * @param  {string}  Transaction speed (fastest, fast, safeLow)
@@ -42,6 +45,11 @@ const getFeeData = async function (_type, chainId, adapter, provider) {
     if (feeData.maxFeePerGas) {
       delete feeData.gasPrice;
       // feeData.maxFeePerGas = feeData.maxFeePerGas.mul(5).add(feeData.maxPriorityFeePerGas);
+    }
+
+    if (chainId === ARBITRUM_ONE_CHAIN_ID || chainId === ARBITRUM_SEPOLIA_CHAIN_ID) {
+      // https://docs.arbitrum.io/learn-more/faq#do-i-need-to-pay-a-tip-or-priority-fee-for-my-arbitrum-transactions
+      feeData.maxPriorityFeePerGas = 0;
     }
 
     return feeData;
