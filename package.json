@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Contracts for Colony Network",
   "engines": {
-    "node": "v14.18.2",
-    "npm": "8.1.4"
+    "node": "v18.17.0",
+    "npm": "9.6.7"
   },
   "scripts": {
     "solhint-staged": "bash ./scripts/solhint.sh",
