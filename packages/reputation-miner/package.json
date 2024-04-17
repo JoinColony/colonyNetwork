@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "apicache": "^1.6.3",
-    "better-sqlite3": "^7.6.2",
+    "better-sqlite3": "^9.5.0",
     "bn.js": "^5.2.1",
     "ethers": "^5.6.9",
     "exponential-backoff": "^3.1.0",
