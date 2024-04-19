@@ -10,7 +10,7 @@ job_common: &job_common
   run:
 job_python: &job_python
   docker:
-    - image: cimg/python:3.8.13-node
+    - image: cimg/python:3.12-node
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
