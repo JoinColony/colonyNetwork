@@ -247,6 +247,9 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
     await exec(`cd colonyNetwork-${versionTag} && sed -ie 's/parseInt(process.env.CHAIN_ID, 10) || 1999/"*"/g' ./truffle.js`); // Handle hardhat coverage
     await exec(`cd colonyNetwork-${versionTag} && git submodule update --init --recursive`);
 
+    const nodeVersion = fs.readFileSync(`colonyNetwork-${versionTag}/.nvmrc`);
+    await exec(`cd colonyNetwork-${versionTag} && npm install node@${nodeVersion}`);
+
     console.log("Installing the network...");
     await exec(`cd colonyNetwork-${versionTag} && npm install`);
     await exec(`cd colonyNetwork-${versionTag} && npm run provision:token:contracts`);
