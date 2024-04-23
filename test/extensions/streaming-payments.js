@@ -4,6 +4,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
+const BN = require("bn.js");
 
 const { UINT256_MAX, WAD, SECONDS_PER_DAY, ADDRESS_ZERO, ADDRESS_FULL } = require("../../helpers/constants");
 const { checkErrorRevert, expectEvent, makeTxAtTimestamp, getBlockTime, forwardTime } = require("../../helpers/test-helper");
@@ -637,6 +638,68 @@ contract("Streaming Payments", (accounts) => {
         streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, WAD.muln(2)),
         "streaming-payments-insufficient-funds",
       );
+    });
+
+    it("Edge-case, but valid values for streaming payments do not break the contract unexpectedly", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+      await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        0,
+        UINT256_MAX,
+        SECONDS_PER_DAY,
+        USER1,
+        [token.address],
+        [UINT256_MAX.div(WAD).addn(1)],
+      );
+      await forwardTime(SECONDS_PER_DAY, this);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      // Can still claim
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]);
+      let p = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      expect(p.pseudoAmountClaimedFromStart).to.eq.BN(WAD.muln(10)); // We took everything the colony had
+
+      // Can still waive
+      await streamingPayments.cancelAndWaive(streamingPaymentId, [token.address], { from: USER1 });
+      p = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      expect(p.pseudoAmountClaimedFromStart).to.eq.BN(UINT256_MAX);
+    });
+
+    // This test is (I think) valid as written, but breaks (EDR-using version of) hardhat
+    // https://github.com/NomicFoundation/hardhat/issues/5161
+    it.skip("Edge-case, but less-valid values for streaming payments do not break the contract unexpectedly", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+      await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        0,
+        UINT256_MAX,
+        SECONDS_PER_DAY,
+        USER1,
+        [token.address],
+        [UINT256_MAX.div(WAD).addn(1)],
+      );
+
+      // This is what breaks hardhat
+      await forwardTime(`0x${UINT256_MAX.div(new BN(1000000000)).toString(16)}`, this);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      // Can still claim
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]);
+      let p = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      expect(p.pseudoAmountClaimedFromStart).to.eq.BN(WAD.muln(10)); // We took everything the colony had
+
+      // Can still waive
+      await streamingPayments.cancelAndWaive(streamingPaymentId, [token.address], { from: USER1 });
+      p = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      expect(p.pseudoAmountClaimedFromStart).to.eq.BN(UINT256_MAX);
     });
   });
 });

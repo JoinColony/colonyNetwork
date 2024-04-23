@@ -389,7 +389,20 @@ contract StreamingPayments is ColonyExtensionMeta {
     if (durationToClaim == 0) {
       return 0;
     }
-    return wmul(streamingPayment.amount, wdiv(durationToClaim, streamingPayment.interval));
+
+    // Guard against overflow in wdiv
+    if (durationToClaim > type(uint256).max / WAD) {
+      durationToClaim = type(uint256).max / WAD;
+    }
+
+    uint256 intervalsToClaimAsWad = wdiv(durationToClaim, streamingPayment.interval);
+
+    // Guard against overflow in wmul
+    if (streamingPayment.amount > type(uint256).max / intervalsToClaimAsWad) {
+      return type(uint256).max;
+    }
+
+    return wmul(streamingPayment.amount, intervalsToClaimAsWad);
   }
 
   // Internal
