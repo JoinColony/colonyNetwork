@@ -41,7 +41,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 6;
+    return 7;
   }
 
   /// @notice Configures the extension
@@ -63,6 +63,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 

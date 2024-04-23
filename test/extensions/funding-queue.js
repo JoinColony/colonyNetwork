@@ -17,7 +17,6 @@ const {
 
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -191,19 +190,22 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.finishUpgrade();
       await fundingQueue.deprecate(true);
       await fundingQueue.uninstall();
-
-      const code = await web3GetCode(fundingQueue.address);
-      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(FUNDING_QUEUE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

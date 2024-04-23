@@ -7,7 +7,6 @@ const bnChai = require("bn-chai");
 const {
   getTokenArgs,
   web3GetTransactionReceipt,
-  web3GetCode,
   checkErrorRevert,
   forwardTime,
   getBlockTime,
@@ -942,12 +941,17 @@ contract("Colony Network Auction", (accounts) => {
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
     });
 
-    it("should be able to destruct the auction and kill the auction contract", async () => {
+    it("should be able to destruct the auction", async () => {
       await tokenAuction.finalize();
       await tokenAuction.claim(BIDDER_1);
+
+      const colonyNetworkBalanceBefore = await token.balanceOf(colonyNetwork.address);
+      await token.mint(tokenAuction.address, WAD);
+
       await tokenAuction.destruct();
-      const code = await web3GetCode(tokenAuction.address);
-      expect(code).to.equal("0x");
+
+      const colonyNetworkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      expect(colonyNetworkBalanceAfter.sub(colonyNetworkBalanceBefore)).to.eq.BN(WAD);
     });
 
     it("should fail if auction not finalized", async () => {

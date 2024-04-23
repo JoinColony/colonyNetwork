@@ -17,7 +17,7 @@ const {
   CURR_VERSION,
 } = require("../../helpers/constants");
 
-const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent, upgradeColonyTo } = require("../../helpers/test-helper");
+const { checkErrorRevert, rolesToBytes32, expectEvent, upgradeColonyTo } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -96,19 +96,22 @@ contract("One transaction payments", (accounts) => {
       await oneTxPayment.finishUpgrade();
       await oneTxPayment.deprecate(true);
       await oneTxPayment.uninstall();
-
-      const code = await web3GetCode(oneTxPayment.address);
-      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(ONE_TX_PAYMENT, version);
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, version), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(ONE_TX_PAYMENT);
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

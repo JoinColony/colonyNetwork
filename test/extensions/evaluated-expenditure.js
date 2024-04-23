@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, ADDRESS_ZERO, SLOT0 } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode } = require("../../helpers/test-helper");
+const { checkErrorRevert } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -64,19 +64,22 @@ contract("EvaluatedExpenditure", (accounts) => {
       await evaluatedExpenditure.finishUpgrade();
       await evaluatedExpenditure.deprecate(true);
       await evaluatedExpenditure.uninstall();
-
-      const code = await web3GetCode(evaluatedExpenditure.address);
-      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(EVALUATED_EXPENDITURE, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER0 });
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

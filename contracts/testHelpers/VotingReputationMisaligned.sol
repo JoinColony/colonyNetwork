@@ -214,6 +214,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 

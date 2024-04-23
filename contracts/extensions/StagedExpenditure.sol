@@ -45,7 +45,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
@@ -66,6 +66,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 

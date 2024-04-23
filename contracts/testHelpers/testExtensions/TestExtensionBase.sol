@@ -36,6 +36,7 @@ abstract contract TestExtensionBase is ColonyExtensionMeta {
   }
 
   function uninstall() public override auth {
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 }

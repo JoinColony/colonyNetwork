@@ -24,7 +24,6 @@ const {
 
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -292,19 +291,22 @@ contract("Voting Reputation", (accounts) => {
       await voting.finishUpgrade();
       await voting.deprecate(true);
       await voting.uninstall();
-
-      const code = await web3GetCode(voting.address);
-      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(VOTING_REPUTATION, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
 
     it("can deprecate the extension if root", async () => {

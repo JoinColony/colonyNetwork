@@ -9,7 +9,6 @@ const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURAT
 const { setupRandomColony } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -130,9 +129,6 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.finishUpgrade();
       await stakedExpenditure.deprecate(true);
       await stakedExpenditure.uninstall();
-
-      const code = await web3GetCode(stakedExpenditure.address);
-      expect(code).to.equal("0x");
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
@@ -146,10 +142,16 @@ contract("StakedExpenditure", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER0 });
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
 
     it("setStakeFraction will emit the correct event if stakeFraction == 0", async () => {

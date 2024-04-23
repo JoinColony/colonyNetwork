@@ -18,7 +18,6 @@ const {
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
-  web3GetCode,
   expectEvent,
   expectNoEvent,
   makeReputationKey,
@@ -90,9 +89,6 @@ contract("Staged Expenditure", (accounts) => {
       await stagedExpenditure.finishUpgrade();
       await stagedExpenditure.deprecate(true);
       await stagedExpenditure.uninstall();
-
-      const code = await web3GetCode(stagedExpenditure.address);
-      expect(code).to.equal("0x");
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
@@ -106,10 +102,16 @@ contract("Staged Expenditure", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(STAGED_EXPENDITURE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(STAGED_EXPENDITURE, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(STAGED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(STAGED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(STAGED_EXPENDITURE, { from: USER0 });
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
   });
 

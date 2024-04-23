@@ -10,7 +10,6 @@ const { UINT256_MAX, UINT128_MAX, WAD } = require("../../helpers/constants");
 
 const {
   checkErrorRevert,
-  web3GetCode,
   forwardTime,
   web3GetBalance,
   makeTxAtTimestamp,
@@ -50,9 +49,7 @@ contract("Coin Machine", (accounts) => {
 
   before(async () => {
     const cnAddress = (await EtherRouter.deployed()).address;
-
-    const etherRouter = await EtherRouter.at(cnAddress);
-    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(cnAddress);
 
     const extension = await CoinMachine.new();
     version = await extension.version();
@@ -89,19 +86,22 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.finishUpgrade();
       await coinMachine.deprecate(true);
       await coinMachine.uninstall();
-
-      const code = await web3GetCode(coinMachine.address);
-      expect(code).to.equal("0x");
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(COIN_MACHINE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(COIN_MACHINE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
 
     it("can send unsold tokens back to the colony", async () => {

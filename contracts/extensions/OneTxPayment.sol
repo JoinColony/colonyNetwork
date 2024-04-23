@@ -56,7 +56,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 7;
+    return 8;
   }
 
   /// @notice Configures the extension
@@ -68,10 +68,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {
-    // Check colony has been upgraded first
-    require(colony.version() >= 14, "voting-rep-upgrade-colony-first");
-  } // solhint-disable-line no-empty-blocks
+  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
 
   /// @notice Called when deprecating (or undeprecating) the extension
   /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
@@ -79,6 +76,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 

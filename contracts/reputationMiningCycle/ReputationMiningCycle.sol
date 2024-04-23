@@ -300,6 +300,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
       submittedHashes[submission.proposedNewRootHash][submission.nLeaves][submission.jrh]
     );
 
+    resolver = address(0x0);
     selfdestruct(colonyNetworkAddress);
   }
 

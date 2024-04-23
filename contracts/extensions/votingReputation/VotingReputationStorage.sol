@@ -135,7 +135,7 @@ contract VotingReputationStorage is
   }
 
   function version() public pure override returns (uint256 _version) {
-    return 11;
+    return 12;
   }
 
   function install(address _colony) public override {
@@ -147,17 +147,14 @@ contract VotingReputationStorage is
     token = colony.getToken();
   }
 
-  function finishUpgrade() public override auth {
-    if (motionCountV10 == 0) {
-      motionCountV10 = motionCount;
-    }
-  }
+  function finishUpgrade() public override auth {}
 
   function deprecate(bool _deprecated) public override auth {
     deprecated = _deprecated;
   }
 
   function uninstall() public override auth {
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 

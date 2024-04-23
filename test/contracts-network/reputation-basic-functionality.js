@@ -6,7 +6,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
 const { giveUserCLNYTokens, giveUserCLNYTokensAndStake } = require("../../helpers/test-data-generator");
-const { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } = require("../../helpers/test-helper");
 
 const { expect } = chai;
@@ -196,6 +196,10 @@ contract("Reputation mining - basic functionality", (accounts) => {
       // Cleanup
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.confirmNewHash(0, { from: MINER1 });
+
+      const etherRouter = await EtherRouter.at(repCycle.address);
+      const resolver = await etherRouter.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
   });
 

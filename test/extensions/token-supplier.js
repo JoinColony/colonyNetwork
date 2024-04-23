@@ -74,10 +74,16 @@ contract("Token Supplier", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(TOKEN_SUPPLIER, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TOKEN_SUPPLIER, colony.address);
+      const extension = await EtherRouter.at(extensionAddress);
+
       await checkErrorRevert(colony.installExtension(TOKEN_SUPPLIER, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER0 });
+
+      const resolver = await extension.resolver();
+      expect(resolver).to.equal(ADDRESS_ZERO);
     });
 
     it("can initialise", async () => {

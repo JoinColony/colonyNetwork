@@ -68,7 +68,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 5;
+    return 6;
   }
 
   /// @notice Configures the extension
@@ -90,6 +90,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
 
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 

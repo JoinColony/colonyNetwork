@@ -6,6 +6,8 @@ const { asciiToHex, isBN } = require("web3-utils");
 const BN = require("bn.js");
 const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
+const { personalSign } = require("eth-sig-util");
+
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
 const {
@@ -1289,6 +1291,12 @@ exports.deployCreateXIfNeeded = async function deployCreateXIfNeeded() {
       .replace("\n", "");
     await web3.eth.sendSignedTransaction(rawTx);
   }
+};
+
+exports.ethSign = async function ethSign(userAddress, msg) {
+  const { privateKey } = hre.config.networks.hardhat.accounts.find((account) => ethers.utils.computeAddress(account.privateKey) === userAddress);
+  const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), "hex"));
+  return personalSign(privateKeyArray, { data: msg });
 };
 
 class TestAdapter {

@@ -102,7 +102,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 10;
+    return 11;
   }
 
   /// @notice Configures the extension
@@ -143,6 +143,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       }
     }
 
+    resolver = address(0x0);
     selfdestruct(payable(address(colony)));
   }
 
