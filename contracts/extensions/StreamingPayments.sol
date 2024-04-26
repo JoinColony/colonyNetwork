@@ -34,15 +34,10 @@ contract StreamingPayments is ColonyExtensionMeta {
     address token,
     uint256 amount
   );
-  event PaymentTokenUpdated(
-    address agent,
-    uint256 indexed streamingPaymentId,
-    address token,
-    uint256 amount
-  );
+  event PaymentTokenUpdated(address agent, uint256 indexed streamingPaymentId, uint256 amount);
   event StartTimeSet(address agent, uint256 indexed streamingPaymentId, uint256 startTime);
   event EndTimeSet(address agent, uint256 indexed streamingPaymentId, uint256 endTime);
-  event ClaimWaived(address agent, uint256 indexed streamingPaymentId, address token);
+  event ClaimWaived(address agent, uint256 indexed streamingPaymentId);
 
   // Constants
 
@@ -58,18 +53,13 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 startTime;
     uint256 endTime;
     uint256 interval;
-  }
-
-  struct PaymentToken {
+    address token;
     uint256 amount;
-    // DEV: Note that this might not necessarily be the amount claimed from the start if amount has
-    // been changed in the lifecycle of the payment.
     uint256 pseudoAmountClaimedFromStart;
   }
 
   uint256 numStreamingPayments;
   mapping(uint256 => StreamingPayment) streamingPayments;
-  mapping(uint256 => mapping(address => PaymentToken)) paymentTokens;
 
   // Modifiers
 
@@ -120,7 +110,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 4;
+    return 5;
   }
 
   /// @notice Configures the extension
@@ -132,7 +122,9 @@ contract StreamingPayments is ColonyExtensionMeta {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
+  function finishUpgrade() public override auth {
+    revert("streaming-payments-not-upgradeable-from-v4");
+  }
 
   /// @notice Called when deprecating (or undeprecating) the extension
   /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
@@ -155,8 +147,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _endTime The time at which the payment ends paying out
   /// @param _interval The period of time over which _amounts are paid out
   /// @param _recipient The recipient of the streaming payment
-  /// @param _tokens The tokens to be paid out
-  /// @param _amounts The amounts to be paid out (per _interval of time)
+  /// @param _token The token to be paid out
+  /// @param _amount The amount to be paid out (per _interval of time)
   function create(
     uint256 _fundingPermissionDomainId,
     uint256 _fundingChildSkillIndex,
@@ -167,8 +159,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _endTime,
     uint256 _interval,
     address payable _recipient,
-    address[] memory _tokens,
-    uint256[] memory _amounts
+    address _token,
+    uint256 _amount
   )
     public
     notDeprecated
@@ -177,7 +169,6 @@ contract StreamingPayments is ColonyExtensionMeta {
   {
     uint256 startTime = (_startTime == 0) ? block.timestamp : _startTime;
 
-    require(_tokens.length == _amounts.length, "streaming-payments-bad-input");
     require(startTime <= _endTime, "streaming-payments-bad-end-time");
     require(_interval > 0, "streaming-payments-bad-interval");
 
@@ -187,16 +178,13 @@ contract StreamingPayments is ColonyExtensionMeta {
       _domainId,
       startTime,
       _endTime,
-      _interval
+      _interval,
+      _token,
+      _amount,
+      0
     );
 
     emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
-
-    for (uint256 i; i < _tokens.length; i++) {
-      paymentTokens[numStreamingPayments][_tokens[i]] = PaymentToken(_amounts[i], 0);
-
-      emit PaymentTokenUpdated(msgSender(), numStreamingPayments, _tokens[i], _amounts[i]);
-    }
   }
 
   /// @notice Claim a streaming payment
@@ -205,38 +193,31 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
   /// @param _toChildSkillIndex The linking the domainId to the toPot domain
   /// @param _id The id of the streaming payment
-  /// @param _tokens The tokens to be paid out
   function claim(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
-    uint256 _id,
-    address[] memory _tokens
+    uint256 _id
   ) public {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
 
     require(streamingPayment.startTime < block.timestamp, "streaming-payments-too-soon-to-claim");
 
     uint256 domainFundingPotId = colony.getDomain(streamingPayment.domainId).fundingPotId;
-    uint256[] memory amountsToClaim = new uint256[](_tokens.length);
-    bool anythingToClaim;
 
-    for (uint256 i; i < _tokens.length; i++) {
-      PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
-
-      uint256 amountEntitledFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
-      uint256 amountSinceLastClaim = amountEntitledFromStart -
-        paymentToken.pseudoAmountClaimedFromStart;
-      amountsToClaim[i] = getAmountClaimable(domainFundingPotId, _tokens[i], amountSinceLastClaim);
-      paymentToken.pseudoAmountClaimedFromStart =
-        paymentToken.pseudoAmountClaimedFromStart +
-        amountsToClaim[i];
-      anythingToClaim = anythingToClaim || amountsToClaim[i] > 0;
-    }
+    uint256 amountEntitledFromStart = getAmountEntitledFromStart(_id);
+    uint256 amountSinceLastClaim = amountEntitledFromStart -
+      streamingPayment.pseudoAmountClaimedFromStart;
+    uint256 amountToClaim = getAmountClaimable(
+      domainFundingPotId,
+      streamingPayment.token,
+      amountSinceLastClaim
+    );
+    streamingPayment.pseudoAmountClaimedFromStart += amountToClaim;
 
     // Skip expenditure setup if there's nothing to claim
-    if (!anythingToClaim) {
+    if (amountToClaim == 0) {
       return;
     }
 
@@ -247,44 +228,13 @@ contract StreamingPayments is ColonyExtensionMeta {
       _toChildSkillIndex,
       _id,
       domainFundingPotId,
-      _tokens,
-      amountsToClaim
+      toAddressArray(streamingPayment.token),
+      toUint256Array(amountToClaim)
     );
 
-    for (uint256 i; i < _tokens.length; i++) {
-      if (amountsToClaim[i] > 0) {
-        colony.claimExpenditurePayout(expenditureId, SLOT, _tokens[i]);
+    colony.claimExpenditurePayout(expenditureId, SLOT, streamingPayment.token);
 
-        emit StreamingPaymentClaimed(msgSender(), _id, _tokens[i], amountsToClaim[i]);
-      }
-    }
-  }
-
-  /// @notice Add a new token/amount pair
-  /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission
-  /// @param _fundingChildSkillIndex The index linking the fundingPermissionDomainId to the domainId
-  /// @param _id The id of the streaming payment
-  /// @param _token The address of the token
-  /// @param _amount The amount to pay out
-  function addToken(
-    uint256 _fundingPermissionDomainId,
-    uint256 _fundingChildSkillIndex,
-    uint256 _id,
-    address _token,
-    uint256 _amount
-  )
-    public
-    validateFundingPermission(
-      _fundingPermissionDomainId,
-      _fundingChildSkillIndex,
-      streamingPayments[_id].domainId
-    )
-  {
-    require(paymentTokens[_id][_token].amount == 0, "streaming-payments-token-exists");
-
-    paymentTokens[_id][_token] = PaymentToken(_amount, 0);
-
-    emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
+    emit StreamingPaymentClaimed(msgSender(), _id, streamingPayment.token, amountToClaim);
   }
 
   /// @notice Update the token amount to be paid out. Claims existing payout prior to the change
@@ -295,7 +245,6 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _fromChildSkillIndex The linking the domainId to the fromPot domain
   /// @param _toChildSkillIndex The linking the domainId to the toPot domain
   /// @param _id The id of the streaming payment
-  /// @param _token The address of the token
   /// @param _amount The new amount to pay out
   // slither-disable-next-line reentrancy-no-eth
   function setTokenAmount(
@@ -306,7 +255,6 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
     uint256 _id,
-    address _token,
     uint256 _amount
   )
     public
@@ -316,26 +264,18 @@ contract StreamingPayments is ColonyExtensionMeta {
       streamingPayments[_id].domainId
     )
   {
-    claim(
-      _permissionDomainId,
-      _childSkillIndex,
-      _fromChildSkillIndex,
-      _toChildSkillIndex,
-      _id,
-      toArray(_token)
-    );
-
-    PaymentToken storage paymentToken = paymentTokens[_id][_token];
+    claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
     require(
-      paymentToken.pseudoAmountClaimedFromStart >= getAmountEntitledFromStart(_id, _token),
+      streamingPayment.pseudoAmountClaimedFromStart >= getAmountEntitledFromStart(_id),
       "streaming-payments-insufficient-funds"
     );
-    paymentToken.amount = _amount;
+    streamingPayment.amount = _amount;
 
     // Update 'claimed' as if we've had this rate since the beginning
-    paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id, _token);
+    streamingPayment.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id);
 
-    emit PaymentTokenUpdated(msgSender(), _id, _token, _amount);
+    emit PaymentTokenUpdated(msgSender(), _id, _amount);
   }
 
   /// @notice Update the startTime, only if the current startTime is in the future
@@ -419,8 +359,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @notice Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim
   /// to specified tokens already earned. Only callable by the recipient.
   /// @param _id The id of the streaming payment
-  /// @param _tokens The tokens to waive any claims to.
-  function cancelAndWaive(uint256 _id, address[] memory _tokens) public {
+  function cancelAndWaive(uint256 _id) public {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
     // slither-disable-next-line incorrect-equality
     require(streamingPayment.recipient == msgSender(), "streaming-payments-not-recipient");
@@ -431,11 +370,8 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     streamingPayment.endTime = min(streamingPayment.endTime, block.timestamp);
 
-    for (uint256 i; i < _tokens.length; i++) {
-      PaymentToken storage paymentToken = paymentTokens[_id][_tokens[i]];
-      paymentToken.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id, _tokens[i]);
-      emit ClaimWaived(msgSender(), _id, _tokens[i]);
-    }
+    streamingPayment.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id);
+    emit ClaimWaived(msgSender(), _id);
   }
 
   // View
@@ -449,17 +385,6 @@ contract StreamingPayments is ColonyExtensionMeta {
     streamingPayment = streamingPayments[_id];
   }
 
-  /// @notice Get the payment token struct by Id and token
-  /// @param _id The id of the streaming payment
-  /// @param _token The address of the token
-  /// @return paymentToken The payment token struct
-  function getPaymentToken(
-    uint256 _id,
-    address _token
-  ) public view returns (PaymentToken memory paymentToken) {
-    paymentToken = paymentTokens[_id][_token];
-  }
-
   /// @notice Get the total number of streaming payments
   /// @return numPayments The total number of streaming payments
   function getNumStreamingPayments() public view returns (uint256 numPayments) {
@@ -468,14 +393,9 @@ contract StreamingPayments is ColonyExtensionMeta {
 
   /// @notice Get the amount entitled to claim from the start of the stream
   /// @param _id The id of the streaming payment
-  /// @param _token The address of the token
   /// @return amount The amount entitled
-  function getAmountEntitledFromStart(
-    uint256 _id,
-    address _token
-  ) public view returns (uint256 amount) {
+  function getAmountEntitledFromStart(uint256 _id) public view returns (uint256 amount) {
     StreamingPayment storage streamingPayment = streamingPayments[_id];
-    PaymentToken storage paymentToken = paymentTokens[_id][_token];
     if (streamingPayment.startTime >= block.timestamp) {
       return 0;
     }
@@ -486,7 +406,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     if (durationToClaim == 0) {
       return 0;
     }
-    return wmul(paymentToken.amount, wdiv(durationToClaim, streamingPayment.interval));
+    return wmul(streamingPayment.amount, wdiv(durationToClaim, streamingPayment.interval));
   }
 
   // Internal
@@ -539,8 +459,13 @@ contract StreamingPayments is ColonyExtensionMeta {
     return expenditureId;
   }
 
-  function toArray(address _token) internal pure returns (address[] memory tokens) {
+  function toAddressArray(address _token) internal pure returns (address[] memory tokens) {
     tokens = new address[](1);
     tokens[0] = _token;
+  }
+
+  function toUint256Array(uint256 _value) internal pure returns (uint256[] memory values) {
+    values = new uint256[](1);
+    values[0] = _value;
   }
 }
