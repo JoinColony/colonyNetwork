@@ -27,7 +27,7 @@ Cancel the streaming payment, specifically by setting endTime to block.timestamp
 
 ### ▸ `cancelAndWaive(uint256 _id)`
 
-Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim to specified tokens already earned. Only callable by the recipient.
+Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim to tokens already earned. Only callable by the recipient.
 
 
 **Parameters**
@@ -82,6 +82,23 @@ Called when upgrading the extension
 
 
 
+### ▸ `getAmountClaimableLifetime(uint256 _id):uint256 amount`
+
+Get the amount claimable in the lifetime of the stream
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|The id of the streaming payment
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|The amount claimable
+
 ### ▸ `getAmountEntitledFromStart(uint256 _id):uint256 amount`
 
 Get the amount entitled to claim from the start of the stream
@@ -98,6 +115,18 @@ Get the amount entitled to claim from the start of the stream
 |Name|Type|Description|
 |---|---|---|
 |amount|uint256|The amount entitled
+
+### ▸ `getNUnresolvedStreamingPayments():uint256 nUnresolvedPayments`
+
+Get the number of unresolved streaming payments
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nUnresolvedPayments|uint256|The number of unresolved streaming payments
 
 ### ▸ `getNumStreamingPayments():uint256 numPayments`
 

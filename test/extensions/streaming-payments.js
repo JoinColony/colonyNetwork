@@ -652,20 +652,20 @@ contract("Streaming Payments", (accounts) => {
         UINT256_MAX,
         SECONDS_PER_DAY,
         USER1,
-        [token.address],
-        [UINT256_MAX.div(WAD).addn(1)],
+        token.address,
+        UINT256_MAX.div(WAD).addn(1),
       );
       await forwardTime(SECONDS_PER_DAY, this);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       // Can still claim
-      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, [token.address]);
-      let p = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId);
+      let p = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(p.pseudoAmountClaimedFromStart).to.eq.BN(WAD.muln(10)); // We took everything the colony had
 
       // Can still waive
-      await streamingPayments.cancelAndWaive(streamingPaymentId, [token.address], { from: USER1 });
-      p = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
+      await streamingPayments.cancelAndWaive(streamingPaymentId, { from: USER1 });
+      p = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(p.pseudoAmountClaimedFromStart).to.eq.BN(UINT256_MAX);
     });
 
@@ -700,6 +700,115 @@ contract("Streaming Payments", (accounts) => {
       await streamingPayments.cancelAndWaive(streamingPaymentId, [token.address], { from: USER1 });
       p = await streamingPayments.getPaymentToken(streamingPaymentId, token.address);
       expect(p.pseudoAmountClaimedFromStart).to.eq.BN(UINT256_MAX);
+    });
+
+    it("cannot uninstall if there are active streaming payments, but can once it's claimed", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      const blockTime = await getBlockTime();
+
+      await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        blockTime,
+        blockTime + SECONDS_PER_DAY,
+        SECONDS_PER_DAY,
+        USER1,
+        token.address,
+        WAD,
+      );
+
+      await checkErrorRevert(colony.uninstallExtension(STREAMING_PAYMENTS), "streaming-payments-unresolved-payments");
+
+      await forwardTime(SECONDS_PER_DAY / 2, this);
+
+      // Claim, but still going, so can't uninstall
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId);
+      await checkErrorRevert(colony.uninstallExtension(STREAMING_PAYMENTS), "streaming-payments-unresolved-payments");
+
+      // Stream has finished, but unclaimed, so can't uninstall
+      await forwardTime(SECONDS_PER_DAY / 2, this);
+      await checkErrorRevert(colony.uninstallExtension(STREAMING_PAYMENTS), "streaming-payments-unresolved-payments");
+
+      // If the streaming payment is claimed, the extension can be uninstalled
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId);
+      await colony.uninstallExtension(STREAMING_PAYMENTS);
+    });
+
+    it("cannot uninstall if there are active streaming payments, but can once they're resolved", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, token.address, WAD);
+      await checkErrorRevert(colony.uninstallExtension(STREAMING_PAYMENTS), "streaming-payments-unresolved-payments");
+      await forwardTime(SECONDS_PER_DAY, this);
+
+      // If the streaming payment is cancelled, the extension still cannot be uninstalled, because there are pending payments
+      await streamingPayments.cancel(1, UINT256_MAX, 1);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+      await checkErrorRevert(colony.uninstallExtension(STREAMING_PAYMENTS), "streaming-payments-unresolved-payments");
+
+      // If the cancelled treaming payment is claimed, the extension can be uninstalled
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId);
+      await colony.uninstallExtension(STREAMING_PAYMENTS);
+    });
+
+    it("repeated cancelling and waiving doesn't cause nUnresolvedTokenPayments to keep decreasing", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+      const blockTime = await getBlockTime();
+
+      await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        blockTime,
+        blockTime + SECONDS_PER_DAY,
+        SECONDS_PER_DAY,
+        USER1,
+        token.address,
+        WAD,
+      );
+
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        blockTime,
+        blockTime + SECONDS_PER_DAY,
+        SECONDS_PER_DAY,
+        USER1,
+        token.address,
+        WAD,
+      );
+
+      let n = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(n).to.eq.BN(2);
+
+      await streamingPayments.cancelAndWaive(streamingPaymentId, { from: USER1 });
+      n = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(n).to.eq.BN(1);
+
+      await forwardTime(SECONDS_PER_DAY * 2, this);
+
+      await streamingPayments.cancelAndWaive(streamingPaymentId, { from: USER1 });
+      n = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(n).to.eq.BN(1);
+
+      await streamingPayments.cancelAndWaive(streamingPaymentId, { from: USER1 });
+      n = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(n).to.eq.BN(1);
+
+      await streamingPayments.cancelAndWaive(streamingPaymentId.addn(1), { from: USER1 });
+      n = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(n).to.eq.BN(0);
     });
   });
 });
