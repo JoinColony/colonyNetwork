@@ -612,7 +612,7 @@ contract("Streaming Payments", (accounts) => {
 
       // Claim one wad
       balancePre = await token.balanceOf(USER1);
-      const updateArgs = [1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, WAD.muln(2)];
+      const updateArgs = [1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, WAD.muln(2), SECONDS_PER_DAY];
       await makeTxAtTimestamp(streamingPayments.setTokenAmount, updateArgs, blockTime + SECONDS_PER_DAY, this);
       balancePost = await token.balanceOf(USER1);
       expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(1).subn(1)); // -1 for network fee
@@ -635,7 +635,7 @@ contract("Streaming Payments", (accounts) => {
       await forwardTime(SECONDS_PER_DAY, this);
 
       await checkErrorRevert(
-        streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, WAD.muln(2)),
+        streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId, WAD.muln(2), SECONDS_PER_DAY),
         "streaming-payments-insufficient-funds",
       );
     });
@@ -809,6 +809,106 @@ contract("Streaming Payments", (accounts) => {
       await streamingPayments.cancelAndWaive(streamingPaymentId.addn(1), { from: USER1 });
       n = await streamingPayments.getNUnresolvedStreamingPayments();
       expect(n).to.eq.BN(0);
+    });
+
+    it("various edge cases for nUnresolvedPayments are treated correctly when setting token amounts", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      const blockTime = await getBlockTime();
+
+      await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        blockTime + SECONDS_PER_DAY,
+        blockTime + SECONDS_PER_DAY + 2,
+        SECONDS_PER_DAY,
+        USER1,
+        token.address,
+        1,
+      );
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      let nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+
+      await streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, streamingPaymentId, SECONDS_PER_DAY, SECONDS_PER_DAY);
+      // Should now pay out 1 token
+
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(1);
+
+      // No change expected
+      await streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, streamingPaymentId, SECONDS_PER_DAY, SECONDS_PER_DAY);
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(1);
+
+      // Reduce payout
+      await streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, streamingPaymentId, 1, SECONDS_PER_DAY);
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+
+      // Set payout again
+      await streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, streamingPaymentId, SECONDS_PER_DAY, SECONDS_PER_DAY);
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(1);
+
+      // Forward to way past the end of the payment
+      await forwardTime(SECONDS_PER_DAY * 2, this);
+
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId);
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+
+      await streamingPayments.claim(1, UINT256_MAX, UINT256_MAX, UINT256_MAX, streamingPaymentId);
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+
+      await streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, streamingPaymentId, SECONDS_PER_DAY, SECONDS_PER_DAY);
+      // Still only pays out one token, but already claimed, so should be resolved
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+
+      await streamingPayments.setTokenAmount(1, UINT256_MAX, 1, UINT256_MAX, 1, UINT256_MAX, streamingPaymentId, WAD, SECONDS_PER_DAY);
+      // Would have paid out more, but updating claims only affects future payouts, and this payment was already finished
+      // and resolved, so no change expected
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+    });
+
+    it("various edge cases for nUnresolvedPayments are treated correctly when setting start and end times", async () => {
+      await fundColonyWithTokens(colony, token, WAD.muln(10));
+
+      const blockTime = await getBlockTime();
+
+      await streamingPayments.create(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        1,
+        blockTime + SECONDS_PER_DAY,
+        blockTime + SECONDS_PER_DAY + 1,
+        SECONDS_PER_DAY,
+        USER1,
+        token.address,
+        1,
+      );
+
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+
+      let nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+
+      await streamingPayments.setStartTime(1, UINT256_MAX, streamingPaymentId, blockTime + SECONDS_PER_DAY);
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
+
+      await streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, blockTime + SECONDS_PER_DAY + 1);
+      nUnresolvedPayments = await streamingPayments.getNUnresolvedStreamingPayments();
+      expect(nUnresolvedPayments).to.eq.BN(0);
     });
   });
 });
