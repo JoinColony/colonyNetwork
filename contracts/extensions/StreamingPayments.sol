@@ -34,7 +34,12 @@ contract StreamingPayments is ColonyExtensionMeta {
     address token,
     uint256 amount
   );
-  event PaymentTokenUpdated(address agent, uint256 indexed streamingPaymentId, uint256 amount);
+  event PaymentTokenUpdated(
+    address agent,
+    uint256 indexed streamingPaymentId,
+    uint256 amount,
+    uint256 interval
+  );
   event StartTimeSet(address agent, uint256 indexed streamingPaymentId, uint256 startTime);
   event EndTimeSet(address agent, uint256 indexed streamingPaymentId, uint256 endTime);
   event ClaimWaived(address agent, uint256 indexed streamingPaymentId);
@@ -244,6 +249,7 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _toChildSkillIndex The linking the domainId to the toPot domain
   /// @param _id The id of the streaming payment
   /// @param _amount The new amount to pay out
+  /// @param _interval The new interval over which _amount is paid out
   // slither-disable-next-line reentrancy-no-eth
   function setTokenAmount(
     uint256 _fundingPermissionDomainId,
@@ -253,7 +259,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
     uint256 _id,
-    uint256 _amount
+    uint256 _amount,
+    uint256 _interval
   )
     public
     validateFundingPermission(
@@ -262,28 +269,36 @@ contract StreamingPayments is ColonyExtensionMeta {
       streamingPayments[_id].domainId
     )
   {
-    claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
     StreamingPayment storage streamingPayment = streamingPayments[_id];
+    if (streamingPayment.startTime < block.timestamp) {
+      claim(_permissionDomainId, _childSkillIndex, _fromChildSkillIndex, _toChildSkillIndex, _id);
+      // This require checks that the above claim paid out the full amount the recipient is entitled to
+      // before any changes are made.
+      require(
+        streamingPayment.pseudoAmountClaimedFromStart >= getAmountEntitledFromStart(_id),
+        "streaming-payments-insufficient-funds"
+      );
+    }
 
-    // This require checks that the above claim paid out the full amount the recipient is entitled to
-    // before any changes are made.
-    require(
-      streamingPayment.pseudoAmountClaimedFromStart >= getAmountEntitledFromStart(_id),
-      "streaming-payments-insufficient-funds"
-    );
+    bool wasResolved = streamingPayment.pseudoAmountClaimedFromStart >=
+      getAmountClaimableLifetime(_id);
+
     streamingPayment.amount = _amount;
+    streamingPayment.interval = _interval;
 
     // Update 'claimed' as if we've had this rate since the beginning
     streamingPayment.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id);
 
-    // Note that if we're at this point, the payment prior to our editing _must_ have been resolved
-    // So there's no way we're going from an unresolved payment to a still-unresolved payment and accidentally
-    // incrementing this when we shouldn't.
-    if (getAmountClaimableLifetime(_id) >= streamingPayment.pseudoAmountClaimedFromStart) {
+    bool isResolved = streamingPayment.pseudoAmountClaimedFromStart >=
+      getAmountClaimableLifetime(_id);
+
+    if (wasResolved && !isResolved) {
       nUnresolvedStreamingPayments += 1;
+    } else if (!wasResolved && isResolved) {
+      nUnresolvedStreamingPayments -= 1;
     }
 
-    emit PaymentTokenUpdated(msgSender(), _id, _amount);
+    emit PaymentTokenUpdated(msgSender(), _id, _amount, _interval);
   }
 
   /// @notice Update the startTime, only if the current startTime is in the future
@@ -357,7 +372,8 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     uint256 newLifetimeClaimable = getAmountClaimableLifetime(_id);
 
-    // Unlike when we're setting start time, we need to check if the payment is unresolved here.
+    // Unlike when we're setting start time, we need to compare to pseudoAmountClaimedFromStart
+    // in order to determine if the payment is resolved or not.
     bool wasResolved = streamingPayment.pseudoAmountClaimedFromStart >= oldLifetimeClaimable;
     bool isResolved = streamingPayment.pseudoAmountClaimedFromStart >= newLifetimeClaimable;
 

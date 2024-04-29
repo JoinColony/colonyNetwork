@@ -199,7 +199,7 @@ Update the startTime, only if the current startTime is in the future
 |_startTime|uint256|The new startTime to set
 
 
-### ▸ `setTokenAmount(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id, uint256 _amount)`
+### ▸ `setTokenAmount(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id, uint256 _amount, uint256 _interval)`
 
 Update the token amount to be paid out. Claims existing payout prior to the change
 
@@ -216,6 +216,7 @@ Update the token amount to be paid out. Claims existing payout prior to the chan
 |_toChildSkillIndex|uint256|The linking the domainId to the toPot domain
 |_id|uint256|The id of the streaming payment
 |_amount|uint256|The new amount to pay out
+|_interval|uint256|The new interval over which _amount is paid out
 
 
 ### ▸ `version():uint256 _version`
