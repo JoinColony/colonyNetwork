@@ -8,7 +8,7 @@
   },
   "scripts": {
     "solhint-staged": "bash ./scripts/solhint.sh",
-    "prepare": "husky install",
+    "prepare": "husky install && sed -i.bak 's|emitter.on(\"confirmation|//emitter.on(\"confirmation|g' node_modules/@nomiclabs/truffle-contract/lib/handlers.js",
     "eslint-staged": "bash ./scripts/eslint.sh",
     "prettier-contracts-staged": "bash ./scripts/prettier-contracts.sh",
     "eslint": "eslint .",
