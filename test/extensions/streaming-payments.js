@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, SECONDS_PER_DAY, ADDRESS_ZERO } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode, makeTxAtTimestamp, getBlockTime, getTokenArgs, forwardTime } = require("../../helpers/test-helper");
+const { checkErrorRevert, makeTxAtTimestamp, getBlockTime, getTokenArgs, forwardTime } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -76,8 +76,7 @@ contract("Streaming Payments", (accounts) => {
       await streamingPayments.deprecate(true);
       await streamingPayments.uninstall();
 
-      const code = await web3GetCode(streamingPayments.address);
-      expect(code).to.equal("0x");
+      // TODO: update uninstall behavior post-Dencun
     });
 
     it("can install the extension with the extension manager", async () => {

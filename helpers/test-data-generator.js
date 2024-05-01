@@ -5,7 +5,7 @@ const { signTypedData_v4: signTypedData } = require("eth-sig-util");
 
 const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
-const { getTokenArgs, web3GetAccounts, getChildSkillIndex, getChainId } = require("./test-helper");
+const { getTokenArgs, web3GetAccounts, getChildSkillIndex, getChainId, ethSign } = require("./test-helper");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -317,7 +317,8 @@ exports.getMetaTransactionParameters = async function getMetaTransactionParamete
     { t: "uint256", v: chainId },
     { t: "bytes", v: txData },
   );
-  const sig = await web3.eth.sign(msg, userAddress);
+
+  const sig = await ethSign(userAddress, msg);
 
   const r = `0x${sig.substring(2, 66)}`;
   const s = `0x${sig.substring(66, 130)}`;

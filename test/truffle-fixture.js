@@ -163,7 +163,7 @@ async function setupColonyNetwork() {
   const fakeEtherRouter = await EtherRouterCreate3.at(colonyNetwork.address);
   const setOwnerData = fakeEtherRouter.contract.methods.setOwner(accounts[0]).encodeABI();
   const tx = await createX.methods["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
-    `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e9`,
+    `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e9`, // Creation salt
     EtherRouterCreate3.bytecode,
     setOwnerData,
     [0, 0],

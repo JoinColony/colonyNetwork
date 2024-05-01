@@ -372,6 +372,7 @@ jobs:
             - coverage-chainid-100
             - coverage-chainid-777
   coverage-test-bridging:
+    resource_class: large
     <<: *job_common
     steps:
       - checkout

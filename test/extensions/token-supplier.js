@@ -68,6 +68,8 @@ contract("Token Supplier", (accounts) => {
       await tokenSupplier.finishUpgrade();
       await tokenSupplier.deprecate(true);
       await tokenSupplier.uninstall();
+
+      // TODO: update uninstall behavior post-Dencun
     });
 
     it("can install the extension with the extension manager", async () => {

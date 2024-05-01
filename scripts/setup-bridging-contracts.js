@@ -9,6 +9,7 @@ const path = require("path");
 const ethers = require("ethers");
 const { TruffleLoader } = require("../packages/package-utils");
 const { WAD } = require("../helpers/constants");
+const { ethSign } = require("../helpers/test-helper");
 
 const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", `artifacts${process.env.SOLIDITY_COVERAGE ? "-coverage" : ""}`, "contracts"),
@@ -104,7 +105,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   const safeData = await gnosisSafe.encodeTransactionData(...safeTxArgs);
   const safeDataHash = await gnosisSafe.getTransactionHash(...safeTxArgs);
 
-  const sig = await getSig(ethersForeignProvider, accounts[0], safeDataHash);
+  const sig = await getSig(accounts[0], safeDataHash);
 
   await gnosisSafe.checkNSignatures(safeDataHash, safeData, sig, 1);
 
@@ -145,8 +146,8 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   return { gnosisSafe, bridgeMonitor, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
 }
 
-async function getSig(provider, account, dataHash) {
-  const sig = await provider.send("eth_sign", [account, dataHash]);
+async function getSig(account, dataHash) {
+  const sig = await ethSign(account, dataHash);
   const r = `${sig.substring(2, 66)}`;
   const s = `${sig.substring(66, 130)}`;
 
