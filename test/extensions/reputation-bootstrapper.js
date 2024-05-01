@@ -34,7 +34,9 @@ contract("Reputation Bootstrapper", (accounts) => {
   const PIN2 = 2;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const extension = await ReputationBootstrapper.new();

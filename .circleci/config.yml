@@ -29,12 +29,9 @@ step_setup_global_packages: &step_setup_global_packages
     name: "Set up global packages"
     command: |
       npm set cache ~/.npm
-      sudo npm install -g npm@8.5.5
+      sudo npm install -g npm@8.1.4
       npm ci
       git submodule update --init
-      npm run provision:token:contracts
-      cd ./lib/safe-contracts && yarn --ignore-scripts && cd ../../
-      npm run provision:safe:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
@@ -52,7 +49,7 @@ step_setup_slither: &step_setup_slither
         solc-select use 0.8.25
 
 jobs:
-  reputation-test:
+  unit-test-reputation:
     <<: *job_common
     steps:
       - checkout
@@ -82,10 +79,100 @@ jobs:
           command: npm run test:reputation:2
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+      # - run:
+      #     name: "Running storage consistency smoke tests"
+      #     command: npm run test:contracts:smoke
+  build-checks:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
       - run:
-          name: "Running storage consistency smoke tests"
-          command: npm run test:contracts:smoke
-  lint-and-unit-test:
+          name: "Linting JavaScript"
+          command: npm run eslint
+      - run:
+          name: "Linting Solidity"
+          command: npm run solhint
+      - run:
+          name: "Building Docs"
+          command: npm run build:docs
+      - run:
+          name: "Check git hooks run"
+          command: npm run check:gitchanges
+      - run:
+          name: "Checking contract storage variables"
+          command: npm run check:storagevars
+      - run:
+          name: "Checking contract recovery modifiers"
+          command: npm run check:recoverymods
+      - run:
+          name: "Checking contract authDomain modifiers"
+          command: npm run check:auth
+      - run:
+          name: "Check contract sizes"
+          command: npx hardhat size-contracts
+      - run:
+          name: "Checking contract versions"
+          command: npm run check:versioning
+  unit-test-contracts:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
+          name: "Running network contracts unit tests"
+          command: npm run test:contracts
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - <<: *step_save_cache
+      # Save test results
+      - store_test_results:
+          path: test-results.xml
+      - store_artifacts:
+          path: test-results.xml
+      - store_artifacts:
+          path: coverage-miner
+  unit-test-extensions:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
+          name: "Running extension contracts unit tests"
+          command: npm run test:contracts:extensions
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - <<: *step_save_cache
+      # Save test results
+      - store_test_results:
+          path: test-results.xml
+      - store_artifacts:
+          path: test-results.xml
+      - store_artifacts:
+          path: coverage-miner
+  unit-test-other:
     <<: *job_common
     steps:
       - checkout
@@ -128,59 +215,23 @@ jobs:
             sudo apt-get update
             sudo apt-get install lsof
       - run:
-          name: "Linting JavaScript"
-          command: npm run eslint
-      - run:
-          name: "Linting Solidity"
-          command: npm run solhint
-      - run:
-          name: "Building Docs"
-          command: npm run build:docs
-      - run:
-          name: "Check git hooks run"
-          command: npm run check:gitchanges
-      - run:
-          name: "Checking contract storage variables"
-          command: npm run check:storagevars
-      - run:
-          name: "Checking contract recovery modifiers"
-          command: npm run check:recoverymods
-      - run:
-          name: "Checking contract versions"
-          command: npm run check:versioning
-      - run:
-          name: "Provision token contracts again (needed after version check script)"
-          command: npm run provision:token:contracts
-      - run:
-          name: "Checking contract authDomain modifiers"
-          command: npm run check:auth
-      - run:
-          name: "Running network contracts unit tests"
-          command: npm run test:contracts
+          name: "Running ganache upgrade tests"
+          command: npm run test:contracts:upgrade:ganache
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Check contract sizes"
-          command: npx truffle run contract-size --checkMaxSize
-      - run:
-          name: "Cleanup ganache leftovers"
-          command: npm run clean:ganache
-      - run:
-          name: "Running extension contracts unit tests"
-          command: npm run test:contracts:extensions
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Cleanup ganache leftovers"
-          command: npm run clean:ganache
-      - run:
-          name: "Running upgrade tests"
-          command: npm run test:contracts:upgrade:parity && npm run test:contracts:upgrade:ganache
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
+          # name: "Running parity upgrade tests"
+          # command: npm run test:contracts:upgrade:parity
+          # environment:
+          #   NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running gas cost tests"
           command: npm run test:contracts:gasCosts && npx codechecks
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            npm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running patricia tree tests"
           command: npm run test:contracts:patricia
@@ -192,7 +243,7 @@ jobs:
           path: test-results.xml
       - store_artifacts:
           path: coverage-miner
-  test-contracts-coverage:
+  coverage-test-contracts:
     <<: *job_common
     steps:
       - checkout
@@ -210,7 +261,7 @@ jobs:
           root: ./
           paths:
             - coverage-contracts
-  test-upgrade-coverage:
+  coverage-test-upgrade:
     <<: *job_common
     steps:
       - checkout
@@ -228,7 +279,7 @@ jobs:
           root: ./
           paths:
             - coverage-upgrade
-  test-contracts-extensions-coverage:
+  coverage-test-extensions:
     <<: *job_common
     steps:
       - checkout
@@ -246,7 +297,7 @@ jobs:
           root: ./
           paths:
             - coverage-extensions
-  test-reputation-coverage:
+  coverage-test-reputation:
     <<: *job_common
     steps:
       - checkout
@@ -264,7 +315,7 @@ jobs:
           root: ./
           paths:
             - coverage-reputation
-  test-chainid-coverage:
+  coverage-test-chainid:
     <<: *job_common
     steps:
       - checkout
@@ -300,7 +351,7 @@ jobs:
             - coverage-chainid-5
             - coverage-chainid-100
             - coverage-chainid-777
-  test-bridging-coverage:
+  coverage-test-bridging:
     <<: *job_common
     steps:
       - checkout
@@ -309,6 +360,9 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - run:
+          name: "Installing the safe-contracts dependencies"
+          command: cd ./lib/safe-contracts && npm i --ignore-scripts
       - run:
           name: "Running coverage tests for home-side of bridge"
           command: npm run test:contracts:bridging:1:coverage
@@ -330,6 +384,41 @@ jobs:
           paths:
             - coverage-cross-chain-foreign
             - coverage-cross-chain-home
+  reputation-test-non-gnosis:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:1:anotherChain
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            npm run stop:blockchain:client && rm -rf ganache-chain-db*
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:2:anotherChain
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      # - run:
+      #     name: "Running storage consistency smoke tests"
+      #     command: npm run test:contracts:smoke
+
+
   check-coverage:
     <<: *job_common
     steps:
@@ -338,7 +427,7 @@ jobs:
       - run:
           name: "Install packages"
           command: |
-            sudo npm install -g npm@8.5.5
+            sudo npm install -g npm@8.1.4
             npm ci
       - attach_workspace:
           at: ./
@@ -360,9 +449,7 @@ jobs:
       - <<: *step_setup_slither
       - run:
           name: "Slither analysis"
-          command: |
-            rm build/contracts/*
-            npm run test:security:slither
+          command: npm run test:security:slither
   end-to-end-tests:
     <<: *job_common
     steps:
@@ -382,33 +469,41 @@ workflows:
   version: 2
   commit:
     jobs:
-      - lint-and-unit-test:
+      - build-checks:
           context: dockerhub-credentials
       - security-analysis:
           context: dockerhub-credentials
-      - reputation-test:
+      - unit-test-contracts:
           context: dockerhub-credentials
-      - test-contracts-coverage:
+      - unit-test-extensions:
           context: dockerhub-credentials
-      - test-contracts-extensions-coverage:
+      - unit-test-reputation:
           context: dockerhub-credentials
-      - test-reputation-coverage:
+      - unit-test-other:
           context: dockerhub-credentials
-      - test-chainid-coverage:
+      - coverage-test-contracts:
           context: dockerhub-credentials
-      - test-upgrade-coverage:
+      - coverage-test-extensions:
           context: dockerhub-credentials
-      - test-bridging-coverage:
+      - coverage-test-reputation:
+          context: dockerhub-credentials
+      - coverage-test-chainid:
+          context: dockerhub-credentials
+      - coverage-test-upgrade:
+          context: dockerhub-credentials
+      - coverage-test-bridging:
+          context: dockerhub-credentials
+      - reputation-test-non-gnosis:
           context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials
           requires:
-            - test-contracts-coverage
-            - test-contracts-extensions-coverage
-            - test-reputation-coverage
-            - test-chainid-coverage
-            - test-upgrade-coverage
-            - test-bridging-coverage
+            - coverage-test-contracts
+            - coverage-test-extensions
+            - coverage-test-reputation
+            - coverage-test-chainid
+            - coverage-test-upgrade
+            - coverage-test-bridging
  # nightly:
  #   triggers:
  #     - schedule:

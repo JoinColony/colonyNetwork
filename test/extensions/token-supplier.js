@@ -35,7 +35,9 @@ contract("Token Supplier", (accounts) => {
   const SUPPLY_CEILING = WAD.muln(10);
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const extension = await TokenSupplier.new();

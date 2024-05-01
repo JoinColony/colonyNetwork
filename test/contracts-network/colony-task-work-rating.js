@@ -37,7 +37,9 @@ contract.skip("Colony Task Work Rating", (accounts) => {
   let token;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 

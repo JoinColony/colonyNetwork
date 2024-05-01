@@ -166,23 +166,6 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit TokensMinted(msgSender(), _guy, _wad);
   }
 
-  function mintTokensForColonyNetwork(uint _wad) public stoppable {
-    // Only the colony Network can call this function
-    require(msgSender() == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
-    // Function only valid on the Meta Colony
-    require(
-      address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(),
-      "colony-access-denied-only-meta-colony-allowed"
-    );
-    // Not callable on Xdai
-    require(!isXdai(), "colony-network-forbidden-on-xdai");
-
-    ERC20Extended(token).mint(_wad);
-    assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
-
-    emit TokensMinted(msgSender(), colonyNetworkAddress, _wad);
-  }
-
   function registerColonyLabel(
     string memory colonyName,
     string memory orbitdb
@@ -208,6 +191,22 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function addNetworkColonyVersion(uint256 _version, address _resolver) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
+  }
+
+  function setColonyBridgeAddress(address _bridgeAddress) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).setColonyBridgeAddress(_bridgeAddress);
+  }
+
+  function initialiseReputationMining(
+    uint256 miningChainId,
+    bytes32 newHash,
+    uint256 newNLeaves
+  ) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).initialiseReputationMining(
+      miningChainId,
+      newHash,
+      newNLeaves
+    );
   }
 
   function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public stoppable auth {
@@ -312,6 +311,12 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     sig = bytes4(keccak256("finalizeExpenditureViaArbitration(uint256,uint256,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    sig = bytes4(keccak256("setColonyBridgeAddress(address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("initialiseReputationMining(uint256,bytes32,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

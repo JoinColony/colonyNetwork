@@ -27,9 +27,10 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
 const CoinMachine = artifacts.require("CoinMachine");
 const Whitelist = artifacts.require("Whitelist");
+
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const COIN_MACHINE = soliditySha3("CoinMachine");
 
@@ -48,7 +49,9 @@ contract("Coin Machine", (accounts) => {
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const extension = await CoinMachine.new();

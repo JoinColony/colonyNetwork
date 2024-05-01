@@ -1,8 +1,9 @@
-/* eslint-disable no-underscore-dangle */
+/* globals hre */
 
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../../packages/package-utils");
 
@@ -26,6 +27,7 @@ const {
   sleep,
   stopMining,
   startMining,
+  getChainId,
 } = require("../../../helpers/test-helper");
 const {
   setupColonyNetwork,
@@ -43,12 +45,12 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
-process.env.SOLIDITY_COVERAGE
+hre.__SOLIDITY_COVERAGE_RUNNING
   ? contract.skip
   : contract("Reputation miner client auto enabled functionality", (accounts) => {
       const MINER1 = accounts[5];
@@ -70,8 +72,8 @@ process.env.SOLIDITY_COVERAGE
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER1, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER2, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER3, DEFAULT_STAKE);
-        await colonyNetwork.initialiseReputationMining();
-        await colonyNetwork.startNextCycle();
+        const chainId = await getChainId();
+        await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
         await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
@@ -858,7 +860,7 @@ process.env.SOLIDITY_COVERAGE
           await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
 
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           const reputationMinerClient2 = new ReputationMinerClient({
             loader,
@@ -873,7 +875,10 @@ process.env.SOLIDITY_COVERAGE
           await goodClientConfirmedJRH;
 
           // Now cleanup
-
+          // I think there was an issue here on CI where sometimes, we would happen to be eligible to
+          // invalidate the bad hash immediately after confirming the JRH due to things being slow and
+          // using 'forwardTime'. That would cause this event to fire before the promise was set up, and
+          // the test to fail. I've replace the forwardTimes with forwardTimeTo to try and fix this.
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
@@ -888,7 +893,7 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;

@@ -13,9 +13,10 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
 const ContractEditing = artifacts.require("ContractEditing");
 const Resolver = artifacts.require("Resolver");
+
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 contract("Contract Storage", (accounts) => {
   const SLOT0 = 0;
@@ -36,7 +37,8 @@ contract("Contract Storage", (accounts) => {
   before(async () => {
     // We use our own providers for these test(s) so we can really get in to it...
 
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
@@ -155,11 +157,11 @@ contract("Contract Storage", (accounts) => {
       console.log("miningCycleStateHash:", miningCycleStateHash);
       console.log("tokenLockingStateHash:", tokenLockingStateHash);
 
-      expect(colonyNetworkStateHash).to.equal("0x7b43f3e7e6cda0d4828db085a635f3bfa5513595d3048b835eac558070b8980f");
-      expect(colonyStateHash).to.equal("0x3fd9f27a6b7e09500e5ec9314027a47477d03d01b4a2f5c305cd98c74205c647");
-      expect(metaColonyStateHash).to.equal("0x87a14b838f1db5f0bd5a883cfad2f1ef124cc822ea4c9a124531b54676843864");
-      expect(miningCycleStateHash).to.equal("0xd59299ca385c8d9795a56de6dcaea40048712832669421091e132db492ee84bc");
-      expect(tokenLockingStateHash).to.equal("0x871a5dedede31530886db450e3aaec934d643989910a7c225ded0127cecd65e9");
+      expect(colonyNetworkStateHash).to.equal("0x66b279547b6eab5c688ac6b6a6bd7dedc0849a9e9d2218e5a1dcf0eeac8847f8");
+      expect(colonyStateHash).to.equal("0x156061470e5ed4c0f091adb726dbb819692d23bc8338bd06a660a9a4cc48eea6");
+      expect(metaColonyStateHash).to.equal("0x4c2b0dba6abe7feee2c052e3a5f07ccb71adb5d0bd5c32d21b16559b313ecf82");
+      expect(miningCycleStateHash).to.equal("0x179caec9074f4db8b06afcb6dad20c8091b31d7b483bd1c6cb469d79d1bc3649");
+      expect(tokenLockingStateHash).to.equal("0xd128da36044b6c399c522f379a78591a572394423814b8aeb511cf2a3a07701f");
     });
   });
 });

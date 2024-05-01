@@ -18,7 +18,6 @@
 
 pragma solidity 0.8.25;
 pragma experimental "ABIEncoderV2";
-
 import { EtherRouter } from "./../common/EtherRouter.sol";
 import { ColonyAuthority } from "./../colony/ColonyAuthority.sol";
 import { IColony } from "./../colony/IColony.sol";
@@ -26,6 +25,8 @@ import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { IColonyNetwork } from "./IColonyNetwork.sol";
 import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";
 import { DSAuth, DSAuthority } from "./../../lib/dappsys/auth.sol";
+import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
+import { EtherRouterCreate3 } from "./../common/EtherRouterCreate3.sol";
 
 contract ColonyNetworkDeployer is ColonyNetworkStorage {
   function createMetaColony(address _tokenAddress) public stoppable auth {
@@ -33,8 +34,8 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     metaColony = createColony(_tokenAddress, currentColonyVersion, "", "");
 
-    // Add the special mining skill, parent is the root domain
-    reputationMiningSkillId = IColonyNetwork(address(this)).addSkill(skillCount - 1);
+    // The mining skill used to be created here, but with the move to
+    // multi-chain, it now happens in initialiseReputationMining
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
@@ -126,11 +127,69 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
+  /**
+   * @dev Generates pseudo-randomly a salt value using a diverse selection of block and
+   * transaction properties.
+   * @return salt The 32-byte pseudo-random salt value.
+   */
+  function getColonyCreationSalt() public view returns (bytes32 salt) {
+    // We only want Colony Networks to be able to deploy to the same address,
+    // so we use the permissioned deploy protection feature of CreateX, and set
+    // the first 160 bits of the salt to the address of this contract.
+
+    salt = bytes32(uint256(uint160(address(this)))) << 96;
+    bytes32 additionalSalt;
+    // This portion of the function has been adapted from the CreateX library licensed under AGPL-3.0-only
+    // NB it is only pseudo-random but that is sufficient for our purposes
+    // The fact we are doing this means that a caller cannot make two colonies in the same transaction
+    unchecked {
+      additionalSalt = keccak256(
+        abi.encode(
+          // We don't use `block.number - 256` (the maximum value on the EVM) to accommodate
+          // any chains that may try to reduce the amount of available historical block hashes.
+          // We also don't subtract 1 to mitigate any risks arising from consecutive block
+          // producers on a PoS chain. Therefore, we use `block.number - 32` as a reasonable
+          // compromise, one we expect should work on most chains, which is 1 epoch on Ethereum
+          // mainnet. Please note that if you use this function between the genesis block and block
+          // number 31, the block property `blockhash` will return zero, but the returned salt value
+          // `salt` will still have a non-zero value due to the hashing characteristic and the other
+          // remaining properties.
+          blockhash(block.number - 32),
+          block.coinbase,
+          block.number,
+          block.timestamp,
+          block.prevrandao,
+          block.chainid,
+          msgSender()
+        )
+      );
+    }
+
+    // We use the first 88 bits of the additional salt to add entropy in the last 88 bits of the salt
+    salt = salt | (additionalSalt >> 168);
+    // We have set the first 160 bits, and the last 88 bits of the salt
+    // Note that this leaves byte 21 of the salt as zero (0x00), which disables cross-chain
+    // redeployment protection in createX.
+    // This is intentional, as we want to allow the same Colony to be deployed on different chains
+  }
+
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
 
-    EtherRouter etherRouter = new EtherRouter();
+    bytes32 salt = getColonyCreationSalt();
+    // EtherRouter etherRouter = new EtherRouter();
+    EtherRouter etherRouter = EtherRouter(
+      payable(
+        ICreateX(0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed).deployCreate3AndInit(
+          salt,
+          type(EtherRouterCreate3).creationCode,
+          abi.encodeWithSignature("setOwner(address)", (address(this))),
+          ICreateX.Values(0, 0)
+        )
+      )
+    );
+
     IColony colony = IColony(address(etherRouter));
 
     address resolverForColonyVersion = colonyVersionResolver[_version]; // ignore-swc-107
@@ -141,14 +200,17 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(colonyAuthority);
-
     colonyAuthority.setOwner(address(etherRouter));
 
-    // Initialise the domain tree with defaults by just incrementing the skillCount
-    skillCount += 1;
     colonyCount += 1;
     colonies[colonyCount] = address(colony);
     _isColony[address(colony)] = true;
+
+    // Initialise the domain tree with defaults by just incrementing the skillCount
+    skillCount += 1;
+
+    // If we're not mining chain, then bridge the skill
+    IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
 
     colony.initialiseColony(address(this), _tokenAddress);
 

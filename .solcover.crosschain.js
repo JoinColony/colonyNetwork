@@ -1,23 +1,24 @@
 const config = require("./.solcover.js")
-const log = console.log;
-const { execSync } = require("child_process");
+const ethers  = require("ethers");
 
-const existingCompileComplete = config.onCompileComplete;
+const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
 
-config.istanbulFolder = `./coverage-cross-chain-${process.env.TRUFFLE_HOME ? "home" : "foreign"}`
+config.istanbulFolder = `./coverage-cross-chain-${process.env.HARDHAT_FOREIGN === "true" ? "foreign" : "home"}`
+console.log(`Coverage folder: ${config.istanbulFolder}`)
 
-
-function provisionSafeContracts(){
-  let output;
-  const provisionSafeContracts = `yarn run provision:safe:contracts`;
-
-  log('Provisioning Safe contracts...')
-  execSync(provisionSafeContracts);
+let chainId;
+// We configure the truffle coverage chain to have the same chainid as one of the
+// nodes we've started up, but on a different port
+// TODO: Actually query nodes, don't hard-code here, or work out how to get environment
+// variables in package.json to work here as I want.
+if (JSON.parse(process.env.HARDHAT_FOREIGN)){
+  chainId = FORKED_XDAI_CHAINID + 1;
+} else {
+  chainId = FORKED_XDAI_CHAINID;
 }
 
-config.onCompileComplete = function() {
-	existingCompileComplete();
-	provisionSafeContracts();
-}
+config.providerOptions.network_id = chainId;
+config.providerOptions._chainId = chainId;
+config.providerOptions._chainIdRpc = chainId;
 
 module.exports = config

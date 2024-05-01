@@ -73,10 +73,10 @@ class ReputationMiner {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
-    this.colonyNetworkContractDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
-    this.repCycleContractDef = await this.loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
-    this.tokenLockingContractDef = await this.loader.load({ contractName: "ITokenLocking" }, { abi: true, address: false });
-    this.colonyContractDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
+    this.colonyNetworkContractDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
+    this.repCycleContractDef = await this.loader.load({ contractDir: "reputationMiningCycle", contractName: "IReputationMiningCycle" });
+    this.tokenLockingContractDef = await this.loader.load({ contractDir: "tokenLocking", contractName: "ITokenLocking" });
+    this.colonyContractDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
 
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
     const tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
@@ -85,11 +85,13 @@ class ReputationMiner {
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
 
-
     if (!this.useJsTree) {
-      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+      this.patriciaTreeContractDef = await this.loader.load(
+        { contractDir: "patriciaTree", contractName: "PatriciaTree" },
+        { abi: true, address: false, bytecode: true }
+      );
       this.patriciaTreeNoHashContractDef = await this.loader.load(
-        { contractName: "PatriciaTreeNoHash" },
+        { contractDir: "patriciaTree", contractName: "PatriciaTreeNoHash" },
         { abi: true, address: false, bytecode: true }
       );
     }
@@ -145,28 +147,31 @@ class ReputationMiner {
       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
       INNER JOIN users ON users.rowid=reputations.user_rowid
       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      INNER JOIN skills ON skills.rowid=reputations.skill_rowid
       WHERE reputation_states.root_hash=?
       AND colonies.address=?
-      AND reputations.skill_id=?
+      AND skills.skill_id=?
       AND users.address=?`
     );
 
     this.queries.insertReputation = this.db.prepare(
-      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
       SELECT
       (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
       (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
-      ?,
+      (SELECT skills.rowid FROM skills WHERE skills.skill_id=?),
       (SELECT users.rowid FROM users WHERE users.address=?),
       ?`
     );
 
     this.queries.getAllReputationsInHash = this.db.prepare(
-      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+      // eslint-disable-next-line max-len
+      `SELECT skills.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
        FROM reputations
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
        WHERE reputation_states.root_hash=?
        ORDER BY substr(reputations.value, 67) ASC`
     );
@@ -177,9 +182,10 @@ class ReputationMiner {
       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
       INNER JOIN users ON users.rowid=reputations.user_rowid
       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      INNER JOIN skills ON skills.rowid=reputations.skill_rowid
       WHERE reputation_states.root_hash=?
       AND users.address=?
-      AND reputations.skill_id=?
+      AND skills.skill_id=?
       AND colonies.address=?`
     );
 
@@ -189,19 +195,21 @@ class ReputationMiner {
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
        WHERE reputation_states.root_hash=?
        AND colonies.address=?
-       AND reputations.skill_id=?
+       AND skills.skill_id=?
        AND users.address!='0x0000000000000000000000000000000000000000'
        ORDER BY reputations.value DESC`
     );
 
     this.queries.getReputationsForAddress = this.db.prepare(
-      `SELECT DISTINCT reputations.skill_id as skill_id, reputations.value as value
+      `SELECT DISTINCT skills.skill_id as skill_id, reputations.value as value
        FROM reputations
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
        WHERE reputation_states.root_hash=?
        AND colonies.address=?
        AND users.address=?
@@ -919,7 +927,8 @@ class ReputationMiner {
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
-    const skillId = parseInt(keyElements[1], 16);
+    // const skillId = parseInt(keyElements[1], 16);
+    const skillId = ethers.BigNumber.from(keyElements[1]).toString();
     const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
 
     if (reputationValue.length === 0) {
@@ -975,7 +984,8 @@ class ReputationMiner {
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
-    const skillId = parseInt(keyElements[1], 16);
+    // const skillId = parseInt(keyElements[1], 16);
+    const skillId = ethers.BigNumber.from(keyElements[1]).toString();
 
     res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
 
@@ -1484,7 +1494,7 @@ class ReputationMiner {
       const decimalValue = new BN(this.reputations[key].slice(2, 66), 16);
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
-      const skillId = parseInt(keyElements[1], 16);
+      const skillId = ethers.BigNumber.from(keyElements[1]);
 
       console.log("colonyAddress", colonyAddress);
       console.log("userAddress", userAddress);
@@ -1506,7 +1516,7 @@ class ReputationMiner {
       const value = this.reputations[key];
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
-      const skillId = parseInt(keyElements[1], 16);
+      const skillId = ethers.BigNumber.from(keyElements[1]).toString();
       this.queries.saveColony.run(colonyAddress);
       this.queries.saveUser.run(userAddress);
       this.queries.saveSkill.run(skillId);
@@ -1689,11 +1699,11 @@ class ReputationMiner {
     const saveSkill = db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`);
 
     const insertReputation = db.prepare(
-      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
       SELECT
       (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
       (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
-      ?,
+      (SELECT skills.rowid FROM skills WHERE skills.skill_id=?),
       (SELECT users.rowid FROM users WHERE users.address=?),
       ?`
     );
@@ -1718,15 +1728,15 @@ class ReputationMiner {
       "CREATE TABLE IF NOT EXISTS reputation_states ( rowid INTEGER PRIMARY KEY, root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)"
     ).run();
     await db.prepare("CREATE TABLE IF NOT EXISTS colonies ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
-    await db.prepare("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )").run();
+    await db.prepare("CREATE TABLE IF NOT EXISTS skills ( rowid INTEGER PRIMARY KEY, skill_id text NOT NULL UNIQUE )").run();
     await db.prepare(
       `CREATE TABLE IF NOT EXISTS reputations (
         reputation_rowid INTEGER NOT NULL,
         colony_rowid INTEGER NOT NULL,
-        skill_id INTEGER NOT NULL,
+        skill_rowid INTEGER NOT NULL,
         user_rowid INTEGER NOT NULL,
         value text NOT NULL,
-        PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
+        PRIMARY KEY("reputation_rowid","colony_rowid","skill_rowid","user_rowid")
       )`
     ).run();
 
@@ -1745,7 +1755,7 @@ class ReputationMiner {
     await db.pragma('journal_mode = WAL');
     await db.prepare('CREATE INDEX IF NOT EXISTS reputation_states_root_hash ON reputation_states (root_hash)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS users_address ON users (address)').run();
-    await db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_id)').run();
+    await db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_rowid)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS colonies_address ON colonies (address)').run();
 
     // We added a composite key to reputations - do we need to port it over?
@@ -1822,6 +1832,54 @@ class ReputationMiner {
       await db.prepare(`ALTER TABLE colonies2 RENAME TO colonies`).run()
 
       console.log('Explicit primary keys added to secondary tables');
+    }
+    // TODO: Migration from when we moved skillid from integer to text
+    res = await db.prepare("SELECT type FROM PRAGMA_TABLE_INFO('reputations') WHERE name='skill_id'").all();
+    if (res.length === 1) {
+      console.log("reputations.skill_id exists, so need to migrate to skill_rowid");
+      await db.prepare(
+        `CREATE TABLE reputations2 (
+          reputation_rowid INTEGER NOT NULL,
+          colony_rowid INTEGER NOT NULL,
+          skill_rowid INTEGER NOT NULL,
+          user_rowid INTEGER NOT NULL,
+          value text NOT NULL,
+          PRIMARY KEY("reputation_rowid","colony_rowid","skill_rowid","user_rowid")
+        )`
+      ).run();
+
+      await db.prepare(
+        `CREATE TABLE skills2 (
+          rowid INTEGER PRIMARY KEY,
+          skill_id text NOT NULL UNIQUE
+        )`
+      ).run()
+
+      await db.prepare(`INSERT INTO skills2 (rowid, skill_id) SELECT rowid, skill_id FROM skills;`).run()
+      await db.prepare(`DROP TABLE skills`).run()
+      await db.prepare(`ALTER TABLE skills2 RENAME TO skills`).run()
+
+
+      // Open another connection to write in to reputations2 while iterating over reputations
+      // This is generally prevented to avoid race conditions etc but is safe here - we are exclusively
+      // reading from a table we are not writing to.
+      const db2 = new Database(db.name, { });
+      const statementToIterate = db2.prepare('SELECT * FROM reputations');
+      // eslint-disable-next-line no-restricted-syntax
+      for (const row of statementToIterate.iterate()) {
+        const skill = await db.prepare(`SELECT rowid FROM skills WHERE skill_id = ?`).get(row.skill_id.toString());
+        await db.prepare(
+          `INSERT INTO reputations2 (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
+          VALUES (?, ?, ?, ?, ?)`).run(row.reputation_rowid, row.colony_rowid, skill.rowid, row.user_rowid, row.value);
+      }
+
+      db2.close()
+
+      await db.prepare(`DROP TABLE reputations`).run()
+      await db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
+
+      await db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_rowid)').run();
+      console.log("skill_id -> skill_rowid migration complete");
     }
   }
 

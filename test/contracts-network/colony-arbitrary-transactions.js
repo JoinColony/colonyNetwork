@@ -27,7 +27,8 @@ contract("Colony Arbitrary Transactions", (accounts) => {
   const USER1 = accounts[1];
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
@@ -212,14 +213,9 @@ contract("Colony Arbitrary Transactions", (accounts) => {
   it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
     const COIN_MACHINE = soliditySha3("CoinMachine");
 
-    const ethersProvider = new ethers.providers.JsonRpcProvider(web3.currentProvider.host);
-    const ethersColonyNetwork = new ethers.Contract(colonyNetwork.address, colonyNetwork.abi, ethersProvider);
-
-    const eventFilter = ethersColonyNetwork.filters.ExtensionAddedToNetwork(COIN_MACHINE);
-    const events = await ethersColonyNetwork.queryFilter(eventFilter, 0);
-    const log = await ethersColonyNetwork.interface.parseLog(events[0]);
-
-    await colony.installExtension(COIN_MACHINE, log.args.version);
+    const extension = await CoinMachine.new();
+    const version = await extension.version();
+    await colony.installExtension(COIN_MACHINE, version);
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     const coinMachine = await CoinMachine.at(coinMachineAddress);

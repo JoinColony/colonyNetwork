@@ -372,6 +372,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
       logEntry.skillId,
       relativeUpdateNumber
     );
+
     bytes memory childReputationKey = abi.encodePacked(
       logEntry.colony,
       expectedSkillId,

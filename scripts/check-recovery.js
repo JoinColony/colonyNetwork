@@ -25,6 +25,8 @@ walkSync("./contracts/").forEach((contractName) => {
   // ColonyNetwork, ColonyNetworkAuction, ColonyNetworkENS, ColonyNetworkMining
   if (
     [
+      "contracts/bridging/IColonyBridge.sol",
+      "contracts/bridging/WormholeBridgeForColony.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colony/IColony.sol",
@@ -38,6 +40,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/DomainRoles.sol",
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
+      "contracts/common/EtherRouterCreate3.sol",
       "contracts/common/IEtherRouter.sol",
       "contracts/common/IMulticall.sol",
       "contracts/common/IRecovery.sol",
@@ -87,10 +90,16 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/TasksPayments.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/FunctionsNotAvailableOnColony.sol",
-      "contracts/testHelpers/TestExtensions.sol",
+      "contracts/testHelpers/testExtensions/TestExtensionBase.sol",
+      "contracts/testHelpers/testExtensions/TestExtension0.sol",
+      "contracts/testHelpers/testExtensions/TestExtension1.sol",
+      "contracts/testHelpers/testExtensions/TestExtension2.sol",
+      "contracts/testHelpers/testExtensions/TestExtension3.sol",
+      "contracts/testHelpers/testExtensions/TestVotingToken.sol",
       "contracts/testHelpers/TransferTest.sol",
       "contracts/testHelpers/RequireExecuteCall.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
+      "contracts/testHelpers/WormholeMock.sol",
       "contracts/testHelpers/ZodiacBridgeModuleMock.sol",
       "contracts/tokenLocking/ITokenLocking.sol",
       "contracts/tokenLocking/TokenLocking.sol",
@@ -116,6 +125,11 @@ walkSync("./contracts/").forEach((contractName) => {
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
+
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
+  if (!contract) {
+    return;
+  }
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes

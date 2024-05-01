@@ -28,8 +28,9 @@ module.exports = async function (deployer) {
   const version = await colony.version();
   const resolver = await Resolver.new();
 
-  const etherRouterDeployed = await EtherRouter.deployed();
-  const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
+  const cnAddress = (await EtherRouter.deployed()).address;
+  const etherRouter = await EtherRouter.at(cnAddress);
+  const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
   // Register the new Colony contract version with the newly setup Resolver
   await setupColonyVersionResolver(

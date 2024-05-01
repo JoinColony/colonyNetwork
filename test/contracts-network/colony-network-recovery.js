@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const { padLeft, soliditySha3 } = require("web3-utils");
 const BN = require("bn.js");
@@ -46,10 +46,10 @@ const Resolver = artifacts.require("Resolver");
 const ContractEditing = artifacts.require("ContractEditing");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const REAL_PROVIDER_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 contract("Colony Network Recovery", (accounts) => {
   let colonyNetwork;
@@ -59,7 +59,8 @@ contract("Colony Network Recovery", (accounts) => {
   let clny;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -136,6 +137,7 @@ contract("Colony Network Recovery", (accounts) => {
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
       await checkErrorRevert(colonyNetwork.createColony(clny.address), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColonyForFrontend(ADDRESS_ZERO, "", "", 18, 0, "", ""), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.createMetaColony(clny.address), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setTokenLocking(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.initialiseRootLocalSkill(), "colony-in-recovery-mode");
@@ -175,7 +177,7 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.deployTokenAuthority(ADDRESS_ZERO, ADDRESS_ZERO, []), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setMiningDelegate(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setReputationRootHash(HASHZERO, 0, []), "colony-in-recovery-mode");
-      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(1, HASHZERO, 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.punishStakers([], 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.reward(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
@@ -192,6 +194,12 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.setPayoutWhitelist(ADDRESS_ZERO, true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.claimMiningReward(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.startTokenAuction(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.bridgeSkillIfNotMiningChain(1), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.bridgePendingReputationUpdate(ADDRESS_ZERO, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.bridgeCurrentRootHash(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.addReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.addPendingReputationUpdate(0, ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.setReputationRootHashFromBridge(HASHZERO, 0, 0), "colony-in-recovery-mode");
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
@@ -383,7 +391,7 @@ contract("Colony Network Recovery", (accounts) => {
   });
 
   describe("when using recovery mode, miners should work correctly", async () => {
-    process.env.SOLIDITY_COVERAGE
+    hre.__SOLIDITY_COVERAGE_RUNNING
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
@@ -459,7 +467,7 @@ contract("Colony Network Recovery", (accounts) => {
           expect(new BN(newValue, 16)).to.be.zero;
         });
 
-    process.env.SOLIDITY_COVERAGE
+    hre.__SOLIDITY_COVERAGE_RUNNING
       ? it.skip
       : it("the ReputationMiningCycle being replaced mid-cycle should be able to be managed okay by miners (new and old)", async () => {
           await client.saveCurrentState();
@@ -496,10 +504,10 @@ contract("Colony Network Recovery", (accounts) => {
 
           // We use the existing deployments for the majority of the functions
           const deployedImplementations = {};
-          deployedImplementations.ReputationMiningCycle = ReputationMiningCycle.address;
-          deployedImplementations.ReputationMiningCycleRespond = ReputationMiningCycleRespond.address;
-          deployedImplementations.ReputationMiningCycleBinarySearch = ReputationMiningCycleBinarySearch.address;
-          await setupEtherRouter("IReputationMiningCycle", deployedImplementations, newResolver);
+          deployedImplementations.ReputationMiningCycle = (await ReputationMiningCycle.deployed()).address;
+          deployedImplementations.ReputationMiningCycleRespond = (await ReputationMiningCycleRespond.deployed()).address;
+          deployedImplementations.ReputationMiningCycleBinarySearch = (await ReputationMiningCycleBinarySearch.deployed()).address;
+          await setupEtherRouter("reputationMiningCycle", "IReputationMiningCycle", deployedImplementations, newResolver);
 
           // Now add our extra functions.
           // Add ReputationMiningCycleEditing to the resolver

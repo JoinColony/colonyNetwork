@@ -82,7 +82,9 @@ contract("Funding Queues", (accounts) => {
   const STATE_CANCELLED = 3;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     metaColonyAddress = await colonyNetwork.getMetaColony();
 

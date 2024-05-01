@@ -1,13 +1,14 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const request = require("async-request");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
-const { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } = require("../../helpers/test-helper");
+const { makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter, getChainId } = require("../../helpers/test-helper");
 const {
   fundColonyWithTokens,
   setupColonyNetwork,
@@ -24,16 +25,17 @@ chai.use(bnChai(web3.utils.BN));
 const ITokenLocking = artifacts.require("ITokenLocking");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
-process.env.SOLIDITY_COVERAGE
+hre.__SOLIDITY_COVERAGE_RUNNING
   ? contract.skip
   : contract("Reputation mining - client core functionality", (accounts) => {
       const MINER1 = accounts[5];
-      const MINING_SKILL_ID = 3;
+
+      let miningSkillId;
 
       let colonyNetwork;
       let metaColony;
@@ -49,13 +51,15 @@ process.env.SOLIDITY_COVERAGE
         ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-        await colonyNetwork.initialiseReputationMining();
-        await colonyNetwork.startNextCycle();
+        const chainId = await getChainId();
+        await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
         expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
         reputationMiner = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree: true });
+
+        miningSkillId = await colonyNetwork.getReputationMiningSkillId();
       });
 
       beforeEach(async () => {
@@ -76,7 +80,6 @@ process.env.SOLIDITY_COVERAGE
         const adapter = new TestAdapter();
 
         client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false, adapter });
-        await client.initialise(colonyNetwork.address, 1);
       });
 
       afterEach(async () => {
@@ -85,13 +88,14 @@ process.env.SOLIDITY_COVERAGE
 
       describe("core functionality", () => {
         it("should correctly respond to a request for a reputation state in the current state", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const rootHash = await reputationMiner.getRootHash();
-          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${miningSkillId}/${MINER1}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(200);
 
           const oracleProofObject = JSON.parse(res.body);
-          const key = makeReputationKey(metaColony.address, MINING_SKILL_ID, MINER1);
+          const key = makeReputationKey(metaColony.address, miningSkillId, MINER1);
 
           const [branchMask, siblings] = await reputationMiner.getProof(key);
           const value = reputationMiner.reputations[key];
@@ -108,15 +112,13 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly respond to a request for a reputation state in previous states", async () => {
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
           await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1, manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
 
           const rootHash = await reputationMiner.getRootHash();
-          const key = makeReputationKey(metaColony.address, MINING_SKILL_ID, MINER1);
+          const key = makeReputationKey(metaColony.address, miningSkillId, MINER1);
           const [branchMask, siblings] = await reputationMiner.getProof(key);
           const value = reputationMiner.reputations[key];
 
@@ -130,9 +132,9 @@ process.env.SOLIDITY_COVERAGE
           const [branchMask3, siblings3] = await reputationMiner.getProof(key);
           const value3 = reputationMiner.reputations[key];
 
-          await client._miner.sync(startingBlockNumber, true); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
-          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
+          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${miningSkillId}/${MINER1}`;
           let res = await request(url);
 
           expect(res.statusCode).to.equal(200);
@@ -151,7 +153,7 @@ process.env.SOLIDITY_COVERAGE
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
 
           // Different URL so we don't hit the cache.
-          url = `http://127.0.0.1:3000/${rootHash2}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
+          url = `http://127.0.0.1:3000/${rootHash2}/${metaColony.address}/${miningSkillId}/${MINER1}`;
           res = await request(url);
           expect(res.statusCode).to.equal(200);
 
@@ -167,7 +169,7 @@ process.env.SOLIDITY_COVERAGE
           expect(value2).to.equal(oracleProofObject.value);
 
           // Different URL so we don't hit the cache.
-          url = `http://127.0.0.1:3000/${rootHash3}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
+          url = `http://127.0.0.1:3000/${rootHash3}/${metaColony.address}/${miningSkillId}/${MINER1}`;
           res = await request(url);
           expect(res.statusCode).to.equal(200);
 
@@ -184,15 +186,13 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly respond to a request for a reputation state in previous states with no proof", async () => {
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
           await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(100));
           await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, worker: MINER1, manager: accounts[6] });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
 
           const rootHash = await reputationMiner.getRootHash();
-          const key = makeReputationKey(metaColony.address, MINING_SKILL_ID, MINER1);
+          const key = makeReputationKey(metaColony.address, miningSkillId, MINER1);
           const value = reputationMiner.reputations[key];
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
@@ -203,9 +203,9 @@ process.env.SOLIDITY_COVERAGE
           const rootHash3 = await reputationMiner.getRootHash();
           const value3 = reputationMiner.reputations[key];
 
-          await client._miner.sync(startingBlockNumber, true); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
-          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}/noProof`;
+          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${miningSkillId}/${MINER1}/noProof`;
           let res = await request(url);
           expect(res.statusCode).to.equal(200);
 
@@ -217,7 +217,7 @@ process.env.SOLIDITY_COVERAGE
           expect(value).to.equal(oracleProofObject.value);
 
           // Different URL so we don't hit the cache.
-          url = `http://127.0.0.1:3000/${rootHash2}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}/noProof`;
+          url = `http://127.0.0.1:3000/${rootHash2}/${metaColony.address}/${miningSkillId}/${MINER1}/noProof`;
           res = await request(url);
           expect(res.statusCode).to.equal(200);
 
@@ -228,7 +228,7 @@ process.env.SOLIDITY_COVERAGE
           expect(key).to.equal(oracleProofObject.key);
           expect(value2).to.equal(oracleProofObject.value);
 
-          url = `http://127.0.0.1:3000/${rootHash3}/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}/noProof`;
+          url = `http://127.0.0.1:3000/${rootHash3}/${metaColony.address}/${miningSkillId}/${MINER1}/noProof`;
           res = await request(url);
           expect(res.statusCode).to.equal(200);
 
@@ -241,8 +241,9 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly respond to a request for a valid key in a reputation state that never existed", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const rootHash = await reputationMiner.getRootHash();
-          const url = `http://127.0.0.1:3000/0x${rootHash.slice(8)}000000/${metaColony.address}/${MINING_SKILL_ID}/${MINER1}`;
+          const url = `http://127.0.0.1:3000/0x${rootHash.slice(8)}000000/${metaColony.address}/${miningSkillId}/${MINER1}`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
           expect(JSON.parse(res.body).message).to.equal("No such reputation state");
@@ -250,11 +251,9 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for a valid key that didn't exist in a valid past reputation state", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
-          await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
           const res = await request(url);
@@ -264,11 +263,9 @@ process.env.SOLIDITY_COVERAGE
 
         it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
           const rootHash = await reputationMiner.getRootHash();
-          const startingBlock = await currentBlock();
-          const startingBlockNumber = startingBlock.number;
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
-          await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
+          await client.initialise(colonyNetwork.address, 1);
 
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/notAKey`;
           const res = await request(url);
@@ -285,10 +282,13 @@ process.env.SOLIDITY_COVERAGE
 
           let rootHash = await reputationMiner.getRootHash();
           await reputationMiner.saveCurrentState();
+          await client.initialise(colonyNetwork.address, 1);
+
+          const domain1 = await metaColony.getDomain(1);
 
           // Note that we're testing here with one URL with a trailing slash and one without.
           // Both should work
-          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1`;
+          let url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${domain1.skillId}`;
           let res = await request(url);
           expect(res.statusCode).to.equal(200);
           let { addresses, reputations } = JSON.parse(res.body);
@@ -305,7 +305,7 @@ process.env.SOLIDITY_COVERAGE
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
           rootHash = await reputationMiner.reputationTree.getRootHash();
           await reputationMiner.saveCurrentState();
-          url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/1/`;
+          url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${domain1.skillId}/`;
 
           res = await request(url);
           expect(res.statusCode).to.equal(200);
@@ -319,6 +319,7 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly respond to a request for users that have a particular reputation in a colony that has an invalid address", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const url = `http://127.0.0.1:3000/0x0000/NotAValidAddress/1`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
@@ -339,6 +340,7 @@ process.env.SOLIDITY_COVERAGE
 
           let rootHash = await reputationMiner.getRootHash();
           await reputationMiner.saveCurrentState();
+          await client.initialise(colonyNetwork.address, 1);
 
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/${MINER1}/all`;
           let res = await request(url);
@@ -361,6 +363,7 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should correctly respond to a request for all reputation a single user has in a colony that has an invalid address", async () => {
+          await client.initialise(colonyNetwork.address, 1);
           const url = `http://127.0.0.1:3000/0x0000/NotAValidAddress/1/all`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);

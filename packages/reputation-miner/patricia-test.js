@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const path = require("path");
 const { fromAscii } = require("web3-utils");
@@ -11,13 +11,13 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const PatriciaTree = artifacts.require("PatriciaTree");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 contract("Javascript Patricia Tree", accounts => {
   const MAIN_ACCOUNT = accounts[5];
   const OTHER_ACCOUNT = accounts[6];
-  const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+  const REAL_PROVIDER_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
   let colonyNetwork;
   let jsClient;
@@ -25,7 +25,8 @@ contract("Javascript Patricia Tree", accounts => {
   let realPatriciaTree;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 

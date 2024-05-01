@@ -1,4 +1,5 @@
-/* globals artifacts */
+/* globals artifacts, hre */
+
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
@@ -27,16 +28,17 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
 const ToggleableToken = artifacts.require("ToggleableToken");
 const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
 
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const REAL_PROVIDER_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 contract("Token Locking", (addresses) => {
   const usersTokens = 10;
@@ -52,7 +54,9 @@ contract("Token Locking", (addresses) => {
   let colonyWideReputationProof;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
@@ -342,7 +346,7 @@ contract("Token Locking", (addresses) => {
       // Make an extension available on the network that is able to lock tokens.
       const testVotingTokenResolver = await Resolver.new();
       const testVotingToken = await TestVotingToken.new();
-      await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
+      await setupEtherRouter("testHelpers/testExtensions", "TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
       TEST_VOTING_TOKEN = soliditySha3("VotingToken");
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IMetaColony.at(metaColonyAddress);

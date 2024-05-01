@@ -3,17 +3,17 @@
 # Exit script as soon as a command fails.
 set -o errexit
 
-CHAIN_ID=${CHAIN_ID:-2656691}
+CHAIN_ID=${CHAIN_ID:-265669100}
 PORT=${PORT:-8545}
 DBPATH=${DBPATH:-./ganache-chain-db/}
 
 # Get the choice of client: ganache is default
 if [ "$1" == "parity" ]; then
   bc_client=$1
-elif [ "$1" == "hardhat" ]; then
+elif [ "$1" == "ganache" ]; then
   bc_client=$1
 else
-  bc_client="ganache"
+  bc_client="hardhat"
 fi
 
 echo "Chosen client $bc_client"
@@ -48,7 +48,7 @@ start_ganache() {
 }
 
 start_hardhat() {
-  npx hardhat node >/dev/null 2>&1
+  CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1 & bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 $PORT
 }
 
 start_parity() {
@@ -72,9 +72,11 @@ else
   echo "Starting our own $bc_client client instance at port $bc_client_port"
   if [ "$bc_client" == "parity" ]; then
     start_parity
-  elif [ "$bc_client" == "hardhat" ]; then
-    start_hardhat
-  else
+  elif [ "$bc_client" == "ganache" ]; then
     start_ganache
+  else
+    start_hardhat
   fi
 fi
+
+echo "Client initialised!"

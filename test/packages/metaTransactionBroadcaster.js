@@ -1,5 +1,4 @@
-/* eslint-disable no-underscore-dangle */
-/* global artifacts */
+/* global artifacts, hre */
 
 const path = require("path");
 const chai = require("chai");
@@ -10,13 +9,12 @@ const axios = require("axios");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
-const { web3GetTransaction } = require("../../helpers/test-helper");
+const { web3GetTransaction, currentBlockTime } = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
-const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -29,11 +27,11 @@ const GasGuzzler = artifacts.require("GasGuzzler");
 
 chai.use(bnChai(web3.utils.BN));
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 contract("Metatransaction broadcaster", (accounts) => {
@@ -47,8 +45,12 @@ contract("Metatransaction broadcaster", (accounts) => {
   let broadcaster;
   let metaTxToken;
 
+  let privateKey;
+
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
@@ -56,11 +58,8 @@ contract("Metatransaction broadcaster", (accounts) => {
     metaTxToken = await MetaTxToken.new("Test", "TEST", 18);
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
-    broadcaster = new MetatransactionBroadcaster({
-      privateKey: `${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
-      loader,
-      provider,
-    });
+    privateKey = hre.config.networks.hardhat.accounts[0].privateKey;
+    broadcaster = new MetatransactionBroadcaster({ privateKey, loader, provider });
     await broadcaster.initialise(colonyNetwork.address);
   });
 
@@ -91,7 +90,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const coinMachineImplementation = await CoinMachine.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
+      await setupEtherRouter("extensions", "CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
 
       const versionSig = await resolver.stringToSig("version()");
       const target = await resolver.lookup(versionSig);
@@ -489,9 +488,8 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("a valid EIP712 transaction is broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
-
-      const { r, s, v } = await getPermitParameters(USER0, colony.address, 1, deadline, metaTxToken.address);
+      const deadline = (await currentBlockTime()) + 3600;
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, colony.address, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 
@@ -531,9 +529,8 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("an EIP712 transaction with an invalid spender is not broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
-
-      const { r, s, v } = await getPermitParameters(USER0, USER1, 1, deadline, metaTxToken.address);
+      const deadline = (await currentBlockTime()) + 3600;
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, USER1, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 
@@ -764,7 +761,7 @@ contract("Metatransaction broadcaster", (accounts) => {
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
-            reason: "VM Exception while processing transaction: revert colony-metatx-function-call-unsuccessful",
+            reason: "Error: VM Exception while processing transaction: reverted with reason string 'colony-metatx-function-call-unsuccessful'",
           },
         });
       }
@@ -784,7 +781,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("a transaction that would be valid but is too expensive is rejected and not mined", async function () {
       const extensionImplementation = await GasGuzzler.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
+      await setupEtherRouter("testHelpers", "GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
       const TEST_EXTENSION = soliditySha3("GasGuzzler");
 
       const mcAddress = await colonyNetwork.getMetaColony();
@@ -825,7 +822,7 @@ contract("Metatransaction broadcaster", (accounts) => {
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
-            reason: "VM Exception while processing transaction: revert colony-metatx-function-call-unsuccessful",
+            reason: "Error: VM Exception while processing transaction: reverted with reason string 'colony-metatx-function-call-unsuccessful'",
           },
         });
       }

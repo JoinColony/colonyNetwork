@@ -1,6 +1,9 @@
+/* globals hre */
+
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const {
@@ -13,6 +16,7 @@ const {
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
   removeSubdomainLimit,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const {
@@ -38,7 +42,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;
@@ -48,11 +52,16 @@ let metaColony;
 let clnyToken;
 let localSkillId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
   await metaColony.addLocalSkill();
   localSkillId = await colonyNetwork.getSkillCount();
@@ -63,11 +72,6 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   //                                                      \-> 2
   await metaColony.addDomain(1, UINT256_MAX, 1);
   await metaColony.addDomain(1, 1, 2);
-
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };

@@ -1,3 +1,5 @@
+/* globals hre */
+
 const path = require("path");
 const BN = require("bn.js");
 const chai = require("chai");
@@ -6,7 +8,13 @@ const { ethers } = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
-const { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle, removeSubdomainLimit } = require("../../helpers/test-helper");
+const {
+  advanceMiningCycleNoContest,
+  getActiveRepCycle,
+  finishReputationMiningCycle,
+  removeSubdomainLimit,
+  getChainId,
+} = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 
 const {
@@ -22,18 +30,26 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 let colonyNetwork;
 let metaColony;
 let clnyToken;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const domainSkills = {};
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+  // await colonyNetwork.startNextCycle();
 
   await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
@@ -45,15 +61,14 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   // 1 -> M
   //   -> 2 -> 3
 
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
-
+  for (let i = 1; i <= 3; i += 1) {
+    const d = await metaColony.getDomain(i);
+    domainSkills[i] = d.skillId;
+  }
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
 
-process.env.SOLIDITY_COVERAGE
+hre.__SOLIDITY_COVERAGE_RUNNING
   ? contract.skip
   : contract("Reputation mining - client reputation calculations", (accounts) => {
       const MINER1 = accounts[5];
@@ -114,22 +129,52 @@ process.env.SOLIDITY_COVERAGE
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, OTHER)].slice(2, 66), 16)).to.eq.BN(0);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, OTHER)].slice(2, 66), 16)).to.eq.BN(900);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, OTHER)].slice(2, 66), 16)).to.eq.BN(1900);
-
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], WORKER)].slice(2, 66), 16),
           ).to.eq.BN(100);
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], WORKER)].slice(2, 66), 16),
+          ).to.eq.BN(100);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], WORKER)].slice(2, 66), 16),
+          ).to.eq.BN(100);
+
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(0);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(900);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(1900);
+
+          expect(
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
+          ).to.eq.BN(100);
+          expect(
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
           ).to.eq.BN(1000);
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
           ).to.eq.BN(2000);
         });
 
@@ -154,22 +199,52 @@ process.env.SOLIDITY_COVERAGE
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, OTHER)].slice(2, 66), 16)).to.eq.BN(80);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, OTHER)].slice(2, 66), 16)).to.eq.BN(800);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, OTHER)].slice(2, 66), 16)).to.eq.BN(800);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], WORKER)].slice(2, 66), 16),
+          ).to.eq.BN(100);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], WORKER)].slice(2, 66), 16),
+          ).to.eq.BN(100);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], WORKER)].slice(2, 66), 16),
+          ).to.eq.BN(100);
 
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(80);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(800);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(800);
+
+          expect(
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
           ).to.eq.BN(180);
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
           ).to.eq.BN(900);
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
           ).to.eq.BN(900);
         });
 
@@ -198,22 +273,52 @@ process.env.SOLIDITY_COVERAGE
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, WORKER)].slice(2, 66), 16)).to.eq.BN(100);
-
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, OTHER)].slice(2, 66), 16)).to.eq.BN(0);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, OTHER)].slice(2, 66), 16)).to.eq.BN(0);
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, OTHER)].slice(2, 66), 16)).to.eq.BN(500);
-
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 6, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], WORKER)].slice(2, 66), 16),
           ).to.eq.BN(100);
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], WORKER)].slice(2, 66), 16),
           ).to.eq.BN(100);
           expect(
-            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ethers.constants.AddressZero)].slice(2, 66), 16),
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], WORKER)].slice(2, 66), 16),
+          ).to.eq.BN(100);
+
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(0);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(0);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], OTHER)].slice(2, 66), 16),
+          ).to.eq.BN(500);
+
+          expect(
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[3], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
+          ).to.eq.BN(100);
+          expect(
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[2], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
+          ).to.eq.BN(100);
+          expect(
+            new BN(
+              goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, domainSkills[1], ethers.constants.AddressZero)].slice(
+                2,
+                66,
+              ),
+              16,
+            ),
           ).to.eq.BN(600);
         });
       });

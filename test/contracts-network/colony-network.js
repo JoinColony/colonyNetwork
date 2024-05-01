@@ -22,6 +22,8 @@ const {
   expectEvent,
   expectNoEvent,
   getColonyEditable,
+  isXdai,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const { CURR_VERSION, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
@@ -37,10 +39,12 @@ const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
 const TokenLocking = artifacts.require("TokenLocking");
 const MetaTxToken = artifacts.require("MetaTxToken");
+const IMetaColony = artifacts.require("IMetaColony");
 const FunctionsNotAvailableOnColony = artifacts.require("FunctionsNotAvailableOnColony");
+
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const copyWiring = async function (resolverFrom, resolverTo, functionSig) {
   const sig = await resolverFrom.stringToSig(functionSig);
@@ -54,6 +58,7 @@ contract("Colony Network", (accounts) => {
   const OTHER_ACCOUNT = accounts[1];
   let colonyNetwork;
   let metaColony;
+  let clnyToken;
   let createColonyGas;
   let version;
 
@@ -65,7 +70,7 @@ contract("Colony Network", (accounts) => {
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
     version = await colonyNetwork.getCurrentColonyVersion();
-    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
     // For upgrade tests, we need a resolver...
     const r = await Resolver.new();
     newResolverAddress = r.address.toLowerCase();
@@ -144,12 +149,23 @@ contract("Colony Network", (accounts) => {
       const currentColonyVersion = await colonyNetworkNew.getCurrentColonyVersion();
       expect(currentColonyVersion).to.eq.BN(79);
     });
+
+    it("does not allow other colonies to add a new colony version", async () => {
+      const colony = await setupColony(colonyNetwork, clnyToken.address);
+      const fakeMetaColony = await IMetaColony.at(colony.address);
+
+      await checkErrorRevert(fakeMetaColony.addNetworkColonyVersion(1, ADDRESS_ZERO), "colony-caller-must-be-meta-colony");
+    });
   });
 
   describe("when managing the mining process", () => {
-    it("should not allow reinitialisation of reputation mining process", async () => {
-      await colonyNetwork.initialiseReputationMining();
-      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
+    it("should not allow reinitialisation of reputation mining process (if we're on the mining chain)", async () => {
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+      await checkErrorRevert(
+        metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0),
+        "colony-reputation-mining-already-initialised",
+      );
     });
 
     it("should not allow setting the mining resolver to null", async () => {
@@ -160,10 +176,22 @@ contract("Colony Network", (accounts) => {
       await checkErrorRevert(colonyNetwork.setMiningResolver(ethers.constants.AddressZero, { from: accounts[1] }), "ds-auth-unauthorized");
     });
 
-    it("should not allow initialisation if the clny token is 0", async () => {
+    it("should not allow initialisation of mining on this chain if the clny token is 0", async () => {
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
-      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-clny-token-invalid-address");
+      const chainId = await getChainId();
+      await checkErrorRevert(
+        metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0),
+        "colony-reputation-mining-clny-token-invalid-address",
+      );
+    });
+
+    it("should allow initialisation of mining on another chain if the clny token is 0", async () => {
+      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
+      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      let chainId = await getChainId();
+      chainId += 1;
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
     });
 
     it("should not allow another mining cycle to start if the process isn't initialised", async () => {
@@ -171,7 +199,8 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not allow another mining cycle to start if the clny token is 0", async () => {
-      await colonyNetwork.initialiseReputationMining();
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
       const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
       await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
 
@@ -179,6 +208,9 @@ contract("Colony Network", (accounts) => {
     });
 
     it('should not allow "punishStakers" to be called from an account that is not the mining cycle', async () => {
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+
       await checkErrorRevert(
         colonyNetwork.punishStakers([accounts[0], accounts[1]], MIN_STAKE),
         "colony-reputation-mining-sender-not-active-reputation-cycle",
@@ -314,7 +346,11 @@ contract("Colony Network", (accounts) => {
       expect(colonyCount).to.eq.BN(8);
     });
 
-    it("when meta colony is created, should have the root domain and local skills initialised, plus the local mining skill", async () => {
+    it(`when meta colony is created, after initialising mining,
+        should have the root domain and local skills initialised, plus the local mining skill`, async () => {
+      const chainId = await getChainId();
+      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
+
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
 
@@ -498,15 +534,24 @@ contract("Colony Network", (accounts) => {
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1), "colony-caller-must-be-colony");
     });
+
+    it("should not be able to initialise root local skill for an address that's not a colony", async () => {
+      await checkErrorRevert(colonyNetwork.initialiseRootLocalSkill(), "colony-caller-must-be-colony");
+    });
   });
 
   describe("when managing ENS names", () => {
     const orbitDBAddress = "QmPFtHi3cmfZerxtH9ySLdzpg1yFhocYDZgEZywdUXHxFU/my-db-name";
     let ensRegistry;
+    let suffix;
+
+    before(async () => {
+      suffix = (await isXdai()) ? "colonyxdai" : "eth";
+    });
 
     beforeEach(async () => {
       ensRegistry = await ENSRegistry.new();
-      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
+      await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0], suffix);
     });
 
     it("should not be able to set the ENS reigstrar to null", async () => {
@@ -524,27 +569,28 @@ contract("Colony Network", (accounts) => {
       const { colonyAddress } = logs.filter((x) => x.event === "ColonyAdded")[0].args;
 
       const name = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
-      expect(name).to.equal("test.colony.joincolony.eth");
+      expect(name).to.equal(`test.colony.joincolony.${suffix}`);
     });
 
     it("should own the root domains", async () => {
-      const rootNode = namehash.hash("joincolony.eth");
+      const rootNode = namehash.hash(`joincolony.${suffix}`);
 
       let owner;
       owner = await ensRegistry.owner(rootNode);
       expect(owner).to.equal(accounts[0]);
 
-      owner = await ensRegistry.owner(namehash.hash("user.joincolony.eth"));
+      owner = await ensRegistry.owner(namehash.hash(`user.joincolony.${suffix}`));
       expect(owner).to.equal(colonyNetwork.address);
 
-      owner = await ensRegistry.owner(namehash.hash("colony.joincolony.eth"));
+      owner = await ensRegistry.owner(namehash.hash(`colony.joincolony.${suffix}`));
       expect(owner).to.equal(colonyNetwork.address);
     });
 
     it("should be able to register one unique label per user", async () => {
       const username = "test";
       const username2 = "test2";
-      const hash = namehash.hash("test.user.joincolony.eth");
+
+      const hash = namehash.hash(`test.user.joincolony.${suffix}`);
 
       // User cannot register blank label
       await checkErrorRevert(colonyNetwork.registerUserLabel("", orbitDBAddress, { from: accounts[1] }), "colony-user-label-invalid");
@@ -564,7 +610,7 @@ contract("Colony Network", (accounts) => {
 
       // Check reverse lookup
       const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
-      expect(lookedUpENSDomain).to.equal("test.user.joincolony.eth");
+      expect(lookedUpENSDomain).to.equal(`test.user.joincolony.${suffix}`);
 
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
@@ -590,13 +636,13 @@ contract("Colony Network", (accounts) => {
       await checkErrorRevert(fakeColony.registerUserLabel("test", orbitDBAddress), "colony-caller-must-not-be-colony");
 
       const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
-      expect(lookedUpENSDomain).to.not.equal("test.user.joincolony.eth");
+      expect(lookedUpENSDomain).to.not.equal(`test.user.joincolony.${suffix}`);
     });
 
     it("should be able to register one unique label per colony, with root permission", async () => {
       const colonyName = "test";
       const colonyName2 = "test2";
-      const hash = namehash.hash("test.colony.joincolony.eth");
+      const hash = namehash.hash(`test.colony.joincolony.${suffix}`);
 
       const { colony } = await setupRandomColony(colonyNetwork);
 
@@ -621,7 +667,7 @@ contract("Colony Network", (accounts) => {
 
       // Check reverse lookup
       const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
-      expect(lookedUpENSDomain).to.equal("test.colony.joincolony.eth");
+      expect(lookedUpENSDomain).to.equal(`test.colony.joincolony.${suffix}`);
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
       expect(retrievedOrbitDB).to.equal(orbitDBAddress);
@@ -643,11 +689,11 @@ contract("Colony Network", (accounts) => {
 
       // Check reverse lookup for colony
       const lookedUpENSDomainColony = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
-      expect(lookedUpENSDomainColony).to.equal("test.colony.joincolony.eth");
+      expect(lookedUpENSDomainColony).to.equal(`test.colony.joincolony.${suffix}`);
 
       // Check reverse lookup
       const lookedUpENSDomainUser = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
-      expect(lookedUpENSDomainUser).to.equal("test.user.joincolony.eth");
+      expect(lookedUpENSDomainUser).to.equal(`test.user.joincolony.${suffix}`);
     });
 
     it("should return a blank address if looking up an address with no Colony-based ENS name", async () => {
@@ -664,7 +710,7 @@ contract("Colony Network", (accounts) => {
 
     it("owner should be able to set and get the ttl of their node", async () => {
       ensRegistry = await ENSRegistry.new();
-      const hash = namehash.hash("jane.user.joincolony.eth");
+      const hash = namehash.hash(`jane.user.joincolony.${suffix}`);
 
       await ensRegistry.setTTL(hash, 123);
       const ttl = await ensRegistry.ttl(hash);
@@ -672,20 +718,20 @@ contract("Colony Network", (accounts) => {
     });
 
     it("use should NOT be able to set and get the ttl of a node they don't own", async () => {
-      const hash = namehash.hash("jane.user.joincolony.eth");
+      const hash = namehash.hash(`jane.user.joincolony.${suffix}`);
       await colonyNetwork.registerUserLabel("jane", orbitDBAddress);
       await checkErrorRevert(ensRegistry.setTTL(hash, 123), "colony-ens-non-owner-access");
     });
 
     it("setting owner on a subnode should fail for a non existent subnode", async () => {
       ensRegistry = await ENSRegistry.new();
-      const hash = namehash.hash("jane.user.joincolony.eth");
+      const hash = namehash.hash(`jane.user.joincolony.${suffix}`);
 
       await checkErrorRevert(ensRegistry.setSubnodeOwner(hash, hash, accounts[0]), "unowned-node");
     });
 
     it("should allow a user to update their orbitDBAddress", async () => {
-      const hash = namehash.hash("test.user.joincolony.eth");
+      const hash = namehash.hash(`test.user.joincolony.${suffix}`);
       await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
       await colonyNetwork.updateUserOrbitDB("anotherstring", { from: accounts[1] });
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
@@ -698,7 +744,7 @@ contract("Colony Network", (accounts) => {
 
     it("should allow a colony to change its orbitDBAddress with root permissions", async () => {
       const colonyName = "test";
-      const hash = namehash.hash("test.colony.joincolony.eth");
+      const hash = namehash.hash(`test.colony.joincolony.${suffix}`);
       const { colony } = await setupRandomColony(colonyNetwork);
       await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
       await colony.updateColonyOrbitDB("anotherstring", { from: accounts[0] });

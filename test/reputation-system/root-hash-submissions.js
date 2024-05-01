@@ -1,4 +1,5 @@
-/* globals artifacts */
+/* globals artifacts, hre */
+
 const BN = require("bn.js");
 const { ethers } = require("ethers");
 const path = require("path");
@@ -6,7 +7,12 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } = require("../../helpers/test-data-generator");
+const {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  giveUserCLNYTokensAndStake,
+  giveUserCLNYTokens,
+} = require("../../helpers/test-data-generator");
 
 const {
   MINING_CYCLE_DURATION,
@@ -33,6 +39,7 @@ const {
   currentBlock,
   currentBlockTime,
   makeReputationKey,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -45,10 +52,10 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 const useJsTree = true;
 
 let colonyNetwork;
@@ -70,8 +77,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2, MINER3, MINER4) => {
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER4, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
   goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
   // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
@@ -213,9 +220,13 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
-      const miningSkillId = 3;
+      const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
 
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
+
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
@@ -692,7 +703,10 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {
-      const miningSkillId = 3;
+      const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
+
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
 
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -768,6 +782,9 @@ contract("Reputation mining - root hash submissions", (accounts) => {
     });
 
     it("should be able to complete a cycle and claim rewards even if CLNY has been locked", async () => {
+      // Need tokens to pay out rewards
+      await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD.muln(100));
+
       await metaColony.setReputationMiningCycleReward(WAD.muln(10));
       await metaColony.mintTokens(WAD);
       await metaColony.claimColonyFunds(clnyToken.address);
@@ -793,7 +810,6 @@ contract("Reputation mining - root hash submissions", (accounts) => {
       const colonyWideReputationKey = makeReputationKey(metaColony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await goodClient.getReputationProofObject(colonyWideReputationKey);
       const colonyWideReputationProof = [key, value, branchMask, siblings];
-
       await metaColony.startNextRewardPayout(clnyToken.address, ...colonyWideReputationProof);
 
       await goodClient.saveCurrentState();

@@ -14,7 +14,8 @@ contract("ReputationMiningCycle contract upgrade", function () {
   let reputationMiningResolverBefore;
 
   before(async function () {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     reputationMiningResolverBefore = await colonyNetwork.getMiningResolver();
 

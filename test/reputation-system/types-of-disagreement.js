@@ -1,8 +1,11 @@
+/* globals hre */
+
 const path = require("path");
 const BN = require("bn.js");
 const { toBN } = require("web3-utils");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const {
@@ -15,6 +18,7 @@ const {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const {
@@ -42,7 +46,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;
@@ -52,7 +56,7 @@ let metaColony;
 let clnyToken;
 let localSkillId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
@@ -63,8 +67,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };

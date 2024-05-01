@@ -84,6 +84,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/CommonAuthority.sol",
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
+      "contracts/common/EtherRouterCreate3.sol",
       "contracts/common/IRecovery.sol",
       "contracts/common/Resolver.sol",
       "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
@@ -128,6 +129,11 @@ walkSync("./contracts/").forEach((contractName) => {
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
+
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
+  if (!contract) {
+    return;
+  }
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes

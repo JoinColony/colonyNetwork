@@ -5,8 +5,18 @@ const { BN } = require("bn.js");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, INT128_MAX, WAD, SECONDS_PER_DAY, MAX_PAYOUT, IPFS_HASH, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
-const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32 } = require("../../helpers/test-helper");
+const {
+  UINT256_MAX,
+  INT128_MAX,
+  WAD,
+  SECONDS_PER_DAY,
+  MAX_PAYOUT,
+  IPFS_HASH,
+  ADDRESS_ZERO,
+  HASHZERO,
+  CURR_VERSION,
+} = require("../../helpers/constants");
+const { checkErrorRevert, expectEvent, getTokenArgs, forwardTime, getBlockTime, bn2bytes32, upgradeColonyTo } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const {
@@ -59,7 +69,8 @@ contract("Colony Expenditure", (accounts) => {
   let domain1;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -338,8 +349,7 @@ contract("Colony Expenditure", (accounts) => {
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await metaColony.upgrade(14);
-      await metaColony.upgrade(15);
+      await upgradeColonyTo(metaColony, CURR_VERSION);
 
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId, { from: ADMIN }), "colony-not-valid-local-skill");
       await checkErrorRevert(colony.setExpenditureSkill(expenditureId, SLOT0, globalSkillId2, { from: ADMIN }), "colony-not-valid-local-skill");
@@ -1147,7 +1157,7 @@ contract("Colony Expenditure", (accounts) => {
     before(async () => {
       const extensionImplementation = await TestExtension0.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
+      await setupEtherRouter("testHelpers/testExtensions", "TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
 
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, resolver.address);
     });

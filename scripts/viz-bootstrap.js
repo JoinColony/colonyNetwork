@@ -48,7 +48,8 @@ module.exports = async function (callback) {
     console.log("*".repeat(20));
     console.log("SETTING UP NETWORK");
 
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();

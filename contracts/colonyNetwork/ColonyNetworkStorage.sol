@@ -21,13 +21,14 @@ pragma solidity 0.8.25;
 import { DSMath } from "./../../lib/dappsys/math.sol";
 import { IMetaColony } from "./../colony/IMetaColony.sol";
 import { CommonStorage } from "./../common/CommonStorage.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -106,6 +107,30 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Mining delegation mapping
   mapping(address => address) miningDelegators; // Storage slot 42
 
+  uint256 reputationMiningChainId; // Storage slot 43
+
+  address colonyBridgeAddress; // Storage slot 44
+
+  mapping(uint256 => uint256) bridgeCurrentRootHashNonces; // Storage slot 45
+
+  // A mapping that maps chain id -> skill count
+  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 46
+
+  // A mapping that stores pending bridged skill additions that have been bridged out-of-order
+  // chainId -> skillCount -> parentSkillId
+  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 47
+
+  // A mapping that stores the latest reputation update received from a colony on a particular chain
+  // chainId -> colonyAddress -> updateCount
+  mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 48
+
+  // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
+  // received out of order, or because the skill in question hasn't been bridged yet.
+  // networkId -> colonyAddress -> updateCount -> update
+  mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 49
+
+  // Modifiers
+
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
     assert(msgSender() == msg.sender);
@@ -128,8 +153,67 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
     _;
   }
 
-  modifier skillExists(uint skillId) {
+  modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
+    require(toChainId(skillId) == block.chainid || isXdai(), "colony-invalid-skill-id");
     _;
+  }
+
+  modifier onlyColonyBridge() {
+    require(msgSender() == colonyBridgeAddress, "colony-network-caller-must-be-colony-bridge");
+    _;
+  }
+
+  modifier onlyMiningChain() {
+    if (getMiningChainId() == block.chainid) {
+      require(
+        inactiveReputationMiningCycle != address(0x0),
+        "colony-reputation-mining-not-initialised"
+      );
+    }
+    require(isMiningChain(), "colony-only-valid-on-mining-chain");
+    _;
+  }
+
+  modifier onlyMiningChainOrDuringSetup() {
+    require(
+      isMiningChain() || getMiningChainId() == 0,
+      "colony-only-valid-on-mining-chain-or-during-setup"
+    );
+    _;
+  }
+
+  modifier onlyNotMiningChain() {
+    require(!isMiningChain(), "colony-only-valid-not-on-mining-chain");
+    _;
+  }
+
+  // Internal functions
+
+  function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
+    require(_chainId <= type(uint128).max, "colony-chain-id-too-large");
+    return _chainId << 128;
+  }
+
+  function toChainId(uint256 _skillId) internal pure returns (uint256) {
+    return _skillId >> 128;
+  }
+
+  function isMiningChain() internal view returns (bool) {
+    return block.chainid == getMiningChainId();
+  }
+
+  function getMiningChainId() public view returns (uint256) {
+    if (reputationMiningChainId == 0 && isXdai()) {
+      return block.chainid;
+    }
+    return reputationMiningChainId;
+  }
+
+  function getAndCacheReputationMiningChainId() internal returns (uint256) {
+    if (reputationMiningChainId == 0 && isXdai()) {
+      reputationMiningChainId = block.chainid;
+    }
+    return reputationMiningChainId;
   }
 }

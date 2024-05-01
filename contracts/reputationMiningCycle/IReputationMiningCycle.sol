@@ -144,7 +144,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 24. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// * 25. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 26. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-  /// @param _b32 A `bytes32[8]` array. The elements of this array, in order are:
+  /// @param _b32 A `bytes32[7]` array. The elements of this array, in order are:
   /// * 1. The colony address in the key of the reputation being changed that the disagreement is over.
   /// * 2. The skillid in the key of the reputation being changed that the disagreement is over.
   /// * 3. The user address in the key of the reputation being changed that the disagreement is over.

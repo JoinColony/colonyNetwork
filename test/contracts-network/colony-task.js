@@ -83,7 +83,9 @@ contract.skip("ColonyTask", (accounts) => {
   let colonyNetwork;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -1985,7 +1987,7 @@ contract.skip("ColonyTask", (accounts) => {
 
       const extensionImplementation = await TestExtension0.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
+      await setupEtherRouter("testHelpers/testExtensions", "TestExtension0", { TestExtension0: extensionImplementation.address }, resolver);
 
       await metaColony.addExtensionToNetwork(TEST_EXTENSION, resolver.address);
 

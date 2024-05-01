@@ -13,7 +13,8 @@ contract("ColonyNetwork contract upgrade", function () {
   let updatedColonyNetwork;
 
   before(async function () {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     // Setup 2 test colonies
