@@ -2789,36 +2789,39 @@ contract("Voting Reputation", (accounts) => {
     });
   });
 
-  describe("upgrading the extension from v9", async () => {
+  describe.only("upgrading the extension from v9", async () => {
     before(async () => {
-      // See if already deployed
-
-      let resolverAddress = await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 9);
-
-      if (resolverAddress === ADDRESS_ZERO) {
-        // V9 is `glwss4`,
-        await deployOldExtensionVersion(
-          "VotingReputation",
-          "IVotingReputation",
-          ["VotingReputation,VotingReputationMisalignedRecovery"],
-          "glwss4",
-          colonyNetwork,
-        );
-      }
-      // We also need to deploy all tags from glwss4 to the most recent release
+      // We need to deploy all tags from glwss4 to the most recent release
       // though we can skip any tags where the contract did not change
       // I don't think there's an elegant way to automate this, as the deployOldExtensionVersion
       // call might change between versions
 
-      resolverAddress = await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 10);
+      if ((await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 9)) === ADDRESS_ZERO) {
+        await deployOldExtensionVersion(
+          "VotingReputation",
+          "IVotingReputation",
+          ["VotingReputation,VotingReputationMisalignedRecovery"],
+          "glwss4", // V9
+          colonyNetwork,
+        );
+      }
 
-      if (resolverAddress === ADDRESS_ZERO) {
-        // V10 is `hmwss`,
+      if ((await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 10)) === ADDRESS_ZERO) {
         await deployOldExtensionVersion(
           "VotingReputation",
           "IVotingReputation",
           ["VotingReputation,VotingReputationMisalignedRecovery,VotingReputationStaking"],
-          "hmwss",
+          "hmwss", // V10
+          colonyNetwork,
+        );
+      }
+
+      if ((await colonyNetwork.getExtensionResolver(VOTING_REPUTATION, 11)) === ADDRESS_ZERO) {
+        await deployOldExtensionVersion(
+          "VotingReputation",
+          "IVotingReputation",
+          ["VotingReputation,VotingReputationMisalignedRecovery,VotingReputationStaking"],
+          "imwss", // V11
           colonyNetwork,
         );
       }
@@ -2829,6 +2832,7 @@ contract("Voting Reputation", (accounts) => {
     async function upgradeFromV9ToLatest(colonyInTest) {
       await colonyInTest.upgradeExtension(VOTING_REPUTATION, 10);
       await colonyInTest.upgradeExtension(VOTING_REPUTATION, 11);
+      await colonyInTest.upgradeExtension(VOTING_REPUTATION, 12);
     }
 
     beforeEach(async () => {

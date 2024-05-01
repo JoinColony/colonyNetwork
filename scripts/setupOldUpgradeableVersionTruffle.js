@@ -5,8 +5,10 @@ const Resolver = artifacts.require("./Resolver");
 const { setupEtherRouter } = require("../helpers/upgradable-contracts");
 
 module.exports = async (callback) => {
-  const interfaceName = process.env.INTERFACE_NAME;
-  const implementationNames = process.env.IMPLEMENTATION_NAMES.split(",");
+  const interfaceArgPos = process.argv.indexOf("--interfaceName");
+  const interfaceName = process.argv[interfaceArgPos + 1];
+  const implementationNameArgPost = process.argv.indexOf("--implementationNames");
+  const implementationNames = process.argv[implementationNameArgPost + 1].split(",");
 
   const implementations = implementationNames.map((x) => artifacts.require(x));
 

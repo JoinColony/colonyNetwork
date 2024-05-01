@@ -244,11 +244,11 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
     console.log("Cloning the network...");
     await exec(`rm -rf colonyNetwork-${versionTag}`);
     await exec(`git clone --depth 1 --branch ${versionTag} https://github.com/JoinColony/colonyNetwork.git colonyNetwork-${versionTag}`);
-    await exec(`cd colonyNetwork-${versionTag} && sed -ie 's/parseInt(process.env.CHAIN_ID, 10) || 1999/"*"/g' ./truffle.js`); // Handle hardhat coverage
     await exec(`cd colonyNetwork-${versionTag} && git submodule update --init --recursive`);
 
-    const nodeVersion = fs.readFileSync(`colonyNetwork-${versionTag}/.nvmrc`);
-    await exec(`cd colonyNetwork-${versionTag} && npm install node@${nodeVersion}`);
+    const nodeVersion = fs.readFileSync(`colonyNetwork-${versionTag}/.nvmrc`, "utf8").trim();
+    await exec(`cd colonyNetwork-${versionTag} && npm install n`);
+    await exec(`cd colonyNetwork-${versionTag} && n ${nodeVersion}`);
 
     console.log("Installing the network...");
     await exec(`cd colonyNetwork-${versionTag} && npm install`);
@@ -269,16 +269,29 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   //   const extensionResolverAddress = await otherColonyNetwork.getExtensionResolver(web3.utils.soliditySha3(contractName), extensionVersion);
 
   console.log("Deploying upgradable version...");
-  await exec(`cp ./scripts/setupOldUpgradeableVersion.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersion.js`);
 
   const network = hre.__SOLIDITY_COVERAGE_RUNNING ? "coverage" : "development";
+  let res;
 
-  const res = await exec(
-    `cd colonyNetwork-${versionTag} ` +
-      "&& npx truffle exec ./scripts/setupOldUpgradeableVersion.js " +
-      `--network ${network} --interfaceName ${interfaceName} --implementationNames ${implementationNames.join(",")}`,
-    { maxBuffer: 1024 * 5000 },
-  );
+  // Versions before imwss are truffle-based
+  if (versionTag[0] < "i") {
+    await exec(`cd colonyNetwork-${versionTag} && sed -ie 's/parseInt(process.env.CHAIN_ID, 10) || 1999/"*"/g' ./truffle.js`); // Handle hardhat coverage
+    await exec(`cp ./scripts/setupOldUpgradeableVersionTruffle.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersionTruffle.js`);
+    res = await exec(
+      `cd colonyNetwork-${versionTag} ` +
+        "&& npx truffle exec ./scripts/setupOldUpgradeableVersionTruffle.js " +
+        `--network ${network} --interfaceName ${interfaceName} --implementationNames ${implementationNames.join(",")}`,
+      { maxBuffer: 1024 * 5000 },
+    );
+  } else {
+    await exec(`cp ./scripts/setupOldUpgradeableVersion.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersion.js`);
+    res = await exec(
+      `cd colonyNetwork-${versionTag} ` +
+        `&& HARDHAT_NETWORK=${network} INTERFACE_NAME=${interfaceName} IMPLEMENTATION_NAMES=${implementationNames.join(",")} ` +
+        "npx hardhat run ./scripts/setupOldUpgradeableVersion.js ",
+      { maxBuffer: 1024 * 5000 },
+    );
+  }
 
   const resolverAddress = res.split("\n").slice(-2)[0].trim();
   deployedResolverAddresses[interfaceName] = deployedResolverAddresses[interfaceName] || {};
