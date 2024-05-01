@@ -16,7 +16,7 @@ const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
 
 const DAY_IN_SECONDS = 60 * 60 * 24;
 
-const BLOCK_PAGING_SIZE = 25000;
+const BLOCK_PAGING_SIZE = 10000;
 
 class ReputationMiner {
   /**
@@ -1458,13 +1458,12 @@ class ReputationMiner {
     }
 
     // Some more cycles might have completed since we started syncing
-    const lastEventBlock = events[0].blockNumber
-    filter.fromBlock = lastEventBlock;
+    filter.fromBlock = latestBlockNumber;
     filter.toBlock = "latest";
     const sinceEvents = await this.realProvider.getLogs(filter);
     if (sinceEvents.length > 1){
       console.log("Some more cycles have completed during the sync process. Continuing to sync...")
-      await this.sync(lastEventBlock, saveHistoricalStates);
+      await this.sync(sinceEvents[1].blockNumber - 1, saveHistoricalStates);
     }
 
     // Check final state

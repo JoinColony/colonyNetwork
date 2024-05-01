@@ -76,7 +76,7 @@ const {
   setupEtherRouter,
 } = require("../helpers/upgradable-contracts");
 const { FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX, CREATEX_ADDRESS } = require("../helpers/constants");
-const { getChainId, hardhatRevert, hardhatSnapshot, deployCreateXIfNeeded } = require("../helpers/test-helper");
+const { getChainId, hardhatRevert, hardhatSnapshot, deployCreateXIfNeeded, isXdai } = require("../helpers/test-helper");
 
 module.exports = async () => {
   if (postFixtureSnapshotId) {
@@ -268,7 +268,9 @@ async function setupEnsRegistry() {
   const colonyNetwork = await IColonyNetwork.at(colonyNetworkRouter.address);
 
   const ensRegistry = await ENSRegistry.new();
-  await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0]);
+  const suffix = (await isXdai()) ? "colonyxdai" : "eth";
+
+  await setupENSRegistrar(colonyNetwork, ensRegistry, accounts[0], suffix);
 }
 
 async function setupMetaColony() {
