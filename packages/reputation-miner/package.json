@@ -23,5 +23,8 @@
     "ganache": "^7.9.2",
     "web3-utils": "^1.7.5",
     "yargs": "^17.5.1"
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.2"
   }
 }
