@@ -7,8 +7,9 @@
     "npm": "10.2.4"
   },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "solhint-staged": "bash ./scripts/solhint.sh",
-    "prepare": "husky install && sed -i.bak 's|emitter.on(\"confirmation|//emitter.on(\"confirmation|g' node_modules/@nomiclabs/truffle-contract/lib/handlers.js",
+    "prepare": "husky install",
     "eslint-staged": "bash ./scripts/eslint.sh",
     "prettier-contracts-staged": "bash ./scripts/prettier-contracts.sh",
     "eslint": "eslint .",
@@ -138,13 +139,12 @@
     "web3-utils": "^1.7.3"
   },
   "optionalDependencies": {
-    "fsevents": "^2.3.2"
+    "fsevents": "2.3.2"
   },
   "private": true,
-  "workspaces": [
-    "packages/kyc-oracle",
-    "packages/metatransaction-broadcaster",
-    "packages/package-utils",
-    "packages/reputation-miner"
-  ]
+  "pnpm": {
+    "patchedDependencies": {
+      "@nomiclabs/truffle-contract@4.5.10": "patches/@nomiclabs__truffle-contract@4.5.10.patch"
+    }
+  }
 }

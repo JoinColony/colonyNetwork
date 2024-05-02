@@ -1,0 +1,13 @@
+diff --git a/lib/handlers.js b/lib/handlers.js
+index 019e34c4600d34255a6cb1dd56e83774dc147472..58e36aeaf40b82f5f7f61bd714e868b0f18dfbe9 100644
+--- a/lib/handlers.js
++++ b/lib/handlers.js
+@@ -47,7 +47,7 @@ const handlers = {
+     // web3 block polls if the confirmation listener is enabled so we want to
+     // give users a way of opting out of this behavior - it causes problems in testing
+     if (!context.contract.disableConfirmationListener) {
+-      emitter.on("confirmation", handlers.confirmation.bind(emitter, context));
++      // emitter.on("confirmation", handlers.confirmation.bind(emitter, context));
+     }
+     emitter.on("receipt", handlers.receipt.bind(emitter, context));
+   },
