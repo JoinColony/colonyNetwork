@@ -31,9 +31,9 @@ if (network) {
   }
   provider = new ethers.providers.InfuraProvider(network);
 } else if (providerAddress.length === 0) {
-  provider = new ethers.providers.JsonRpcProvider(`http://${localProviderAddress || "localhost"}:${localProviderPort || "8545"}`);
+  provider = new ethers.providers.StaticJsonRpcProvider(`http://${localProviderAddress || "localhost"}:${localProviderPort || "8545"}`);
 } else {
-  provider = new ethers.providers.JsonRpcProvider(providerAddress[0]);
+  provider = new ethers.providers.StaticJsonRpcProvider(providerAddress[0]);
 }
 
 const client = new KycOracle({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port });

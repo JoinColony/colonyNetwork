@@ -249,10 +249,10 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
     const TRUFFLE_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
     const OTHER_RPC_PORT = 8546;
 
-    let provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
+    let provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
     receipt = await provider.getTransactionReceipt(txid);
     if (!receipt) {
-      provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${OTHER_RPC_PORT}`);
+      provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${OTHER_RPC_PORT}`);
       receipt = await provider.getTransactionReceipt(txid);
     }
 

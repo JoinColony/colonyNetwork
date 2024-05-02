@@ -85,11 +85,11 @@ contract("Cross-chain", (accounts) => {
   const foreignRpcUrl = `http://127.0.0.1:${FOREIGN_PORT}`;
   const homeRpcUrl = `http://127.0.0.1:${HOME_PORT}`;
 
-  const ethersForeignProvider = new ethers.providers.JsonRpcProvider(foreignRpcUrl);
+  const ethersForeignProvider = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl);
   const ethersForeignSigner = ethersForeignProvider.getSigner();
-  const ethersHomeSigner = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner();
-  const ethersForeignSigner2 = new ethers.providers.JsonRpcProvider(foreignRpcUrl).getSigner(1);
-  const ethersHomeSigner2 = new ethers.providers.JsonRpcProvider(homeRpcUrl).getSigner(1);
+  const ethersHomeSigner = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner();
+  const ethersForeignSigner2 = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl).getSigner(1);
+  const ethersHomeSigner2 = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner(1);
 
   async function setForeignBridgeData(foreignColonyBridgeForColony) {
     const bridge = new ethers.Contract(foreignColonyBridge.address, WormholeBridgeForColony.abi, ethersForeignSigner);

@@ -56,7 +56,7 @@ class ReputationMiner {
     if (provider) {
       this.realProvider = provider;
     } else {
-      this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
+      this.realProvider = new ethers.providers.StaticJsonRpcProvider(`http://localhost:${realProviderPort}`);
     }
 
     if (minerAddress) {

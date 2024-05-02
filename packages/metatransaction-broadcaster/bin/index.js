@@ -13,7 +13,7 @@ const loader = new TruffleLoader({
 
 const MetatransactionBroadcaster = require("../MetatransactionBroadcaster");
 
-const provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
+const provider = new ethers.providers.StaticJsonRpcProvider(rpcEndpoint);
 
 const client = new MetatransactionBroadcaster({ gasPrice, privateKey, loader, provider, port, dbPath, gasLimit });
 client.initialise(colonyNetworkAddress);

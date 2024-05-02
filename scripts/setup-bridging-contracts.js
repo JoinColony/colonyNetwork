@@ -23,9 +23,9 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
     process.exit(1);
   }
 
-  const ethersForeignProvider = new ethers.providers.JsonRpcProvider(foreignRpcUrl);
+  const ethersForeignProvider = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl);
   const ethersForeignSigner = ethersForeignProvider.getSigner();
-  const ethersHomeProvider = new ethers.providers.JsonRpcProvider(homeRpcUrl);
+  const ethersHomeProvider = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl);
   const ethersHomeSigner = ethersHomeProvider.getSigner();
 
   const accounts = await ethersForeignProvider.listAccounts();

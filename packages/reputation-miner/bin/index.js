@@ -86,7 +86,7 @@ if (network) {
   provider = new ethers.providers.InfuraProvider(network);
 } else if (providerAddress.length === 0){
   const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
-  provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
+  provider = new ethers.providers.StaticJsonRpcProvider(rpcEndpoint);
 } else {
   const providers = providerAddress.map(endpoint => {
     const {protocol, username, password, host, pathname} = new URL(endpoint);
