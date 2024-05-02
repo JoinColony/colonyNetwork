@@ -461,8 +461,8 @@ jobs:
       - run:
           name: "Install packages"
           command: |
-            sudo pnpm install -g pnpm@10.2.4
-            pnpm ci
+            pnpm config set store-dir .pnpm-store
+            pnpm i --frozen-lockfile
       - attach_workspace:
           at: ./
       - run:
