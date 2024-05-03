@@ -281,7 +281,6 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           });
           await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
           await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
-          await mineBlock();
 
           let differentAddresses = false;
           const completionAddresses = [];
@@ -965,7 +964,6 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
           reputationMinerClient.blocksSinceCycleCompleted = 10;
-          await mineBlock();
 
           receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
 
@@ -987,7 +985,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           // wrong, and resync.
           delayedReputationMinerClient.blocksSinceCycleCompleted = 10;
           reputationMinerClient.blocksSinceCycleCompleted = 10;
-          await mineBlock();
+
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
           receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
