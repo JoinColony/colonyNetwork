@@ -139,7 +139,7 @@
     "web3-utils": "^1.7.3"
   },
   "optionalDependencies": {
-    "fsevents": "2.3.2"
+    "fsevents": "^2.3.2"
   },
   "private": true,
   "pnpm": {
