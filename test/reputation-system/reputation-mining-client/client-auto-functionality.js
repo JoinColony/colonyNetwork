@@ -828,10 +828,28 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
           const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const openingTimestamp = await repCycleEthers.getReputationMiningWindowOpenTimestamp();
 
           // Forward through most of the cycle duration
-          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION / 2), this);
           await receive12Submissions;
+
+          await reputationMinerClient.close();
+
+          await badClient.submitRootHash();
+
+          // Forward time again so clients can start responding to challenges
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION));
+          await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
+
+          const reputationMinerClient2 = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER1,
+            useJsTree: true,
+            auto: true,
+          });
+          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
 
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
@@ -847,37 +865,10 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             }, 60000);
           });
 
-          await reputationMinerClient.close();
-
-          await badClient.submitRootHash();
-          const disputeRound = await repCycle.getDisputeRound(0);
-          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
-          const goodIndex = badIndex.add(1).mod(2);
-
-          const goodEntry = disputeRound[goodIndex];
-          // Forward time again so clients can start responding to challenges
-          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
-          await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
-
-          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
-
-          const reputationMinerClient2 = new ReputationMinerClient({
-            loader,
-            realProviderPort,
-            minerAddress: MINER1,
-            useJsTree: true,
-            auto: true,
-          });
-          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
-          await mineBlock();
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1), this);
 
           await goodClientConfirmedJRH;
 
-          // Now cleanup
-          // I think there was an issue here on CI where sometimes, we would happen to be eligible to
-          // invalidate the bad hash immediately after confirming the JRH due to things being slow and
-          // using 'forwardTime'. That would cause this event to fire before the promise was set up, and
-          // the test to fail. I've replace the forwardTimes with forwardTimeTo to try and fix this.
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
@@ -892,11 +883,19 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             }, 30000);
           });
 
-          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
+          const disputeRound = await repCycle.getDisputeRound(0);
+          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
+
+          const badEntry = disputeRound[badIndex];
+
+          // Bad entry timestamp + CHALLENGE_RESPONSE_WINDOW_DURATION is the earliest time we can invalidate
+          // the bad entry. After an additional CHALLENGE_RESPONSE_WINDOW_DURATION, we are guaranteed to be able to invalidate.
+
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION * 2, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;
-          await mineBlock();
+
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
           const newCycleStart = new Promise(function (resolve, reject) {
