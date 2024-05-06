@@ -1144,8 +1144,6 @@ exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPro
       if (nSubmissions.toNumber() >= n) {
         event.removeListener();
         resolve();
-      } else {
-        await exports.mineBlock();
       }
     });
 
