@@ -898,17 +898,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
-          const newCycleStart = new Promise(function (resolve, reject) {
-            reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-              event.removeListener();
-              resolve();
-            });
-
-            // After 60s, we throw a timeout error
-            setTimeout(() => {
-              reject(new Error("ERROR: timeout while waiting for new cycle to happen"));
-            }, 60000);
-          });
+          const newCycleStart = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork);
 
           await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -924,6 +914,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
         it(`should continue to mine successfully even if the submission hash takes a long time to be mined
           (e.g. because it ran out of funds)`, async function () {
           let repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          let openingTimestamp = await repCycleEthers.getReputationMiningWindowOpenTimestamp();
           // Advance through a reputation cycle
           let rootHash = await reputationMinerClient._miner.getRootHash();
 
@@ -948,7 +939,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           await delayedReputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
 
           // Forward through most of the cycle duration and wait for the clients to submit all 12 allowed entries
-          await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
+          await forwardTimeTo(parseInt(openingTimestamp, 10) + MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
           let oldHash = await colonyNetwork.getReputationRootHash();
@@ -956,24 +947,25 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           let miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.1 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(parseInt(openingTimestamp, 10) + MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, this);
           await miningCycleComplete;
 
           // Advance through another - the client should still be waiting for the first transaction to return.
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          openingTimestamp = parseInt(await repCycleEthers.getReputationMiningWindowOpenTimestamp(), 10);
 
           reputationMinerClient.blocksSinceCycleCompleted = 10;
 
           receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
 
-          await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
           rootHash = await reputationMinerClient._miner.getRootHash();
           oldHash = await colonyNetwork.getReputationRootHash();
           miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
 
-          await forwardTime(MINING_CYCLE_DURATION * 0.1 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, this);
           await miningCycleComplete;
 
           // We now resolve the original
@@ -986,10 +978,11 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           reputationMinerClient.blocksSinceCycleCompleted = 10;
 
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          openingTimestamp = parseInt(await repCycleEthers.getReputationMiningWindowOpenTimestamp(), 10);
 
           receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
 
-          await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
           // check delayed miner and good miner have ended up in the same state.
