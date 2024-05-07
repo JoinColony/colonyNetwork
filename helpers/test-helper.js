@@ -1130,7 +1130,9 @@ exports.getColonyNetworkEditable = async function getColonyNetworkEditable(colon
 };
 
 exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
-  return new Promise(function (resolve, reject) {
+  const listenerCount = repCycleEthers.listenerCount("ReputationRootHashSubmitted");
+
+  const p = new Promise(function (resolve, reject) {
     repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
       let nSubmissions;
       // We want to see when our hash hits N submissions
@@ -1152,10 +1154,19 @@ exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPro
       reject(new Error("Timeout while waiting for 12 hash submissions"));
     }, 60 * 1000);
   });
+
+  // Only return the promise once the handler has been set up
+  while (listenerCount === repCycleEthers.listenerCount("ReputationRootHashSubmitted")) {
+    await exports.sleep(1000);
+  }
+
+  return p;
 };
 
 exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePromise(colonyNetworkEthers, oldHash, expectedHash) {
-  return new Promise(function (resolve, reject) {
+  const listenerCount = colonyNetworkEthers.listenerCount("ReputationMiningCycleComplete");
+
+  const p = new Promise(function (resolve, reject) {
     colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
       const colonyNetwork = await IColonyNetwork.at(colonyNetworkEthers.address);
       const newHash = await colonyNetwork.getReputationRootHash();
@@ -1174,6 +1185,13 @@ exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePro
       reject(new Error("ERROR: timeout while waiting for confirming hash"));
     }, 30 * 1000);
   });
+
+  // Only return the promise once the handler has been set up
+  while (listenerCount === colonyNetworkEthers.listenerCount("ReputationMiningCycleComplete")) {
+    await exports.sleep(1000);
+  }
+
+  return p;
 };
 
 exports.encodeTxData = async function encodeTxData(colony, functionName, args) {
