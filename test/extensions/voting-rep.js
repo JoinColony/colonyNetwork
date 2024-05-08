@@ -2073,7 +2073,7 @@ contract("Voting Reputation", (accounts) => {
 
     beforeEach(async () => {
       const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
-      const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+      const provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
       const loader = new TruffleLoader({
         contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
