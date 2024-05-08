@@ -23,7 +23,6 @@ const {
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
@@ -1129,69 +1128,75 @@ exports.getColonyNetworkEditable = async function getColonyNetworkEditable(colon
   return colonyNetworkEditable;
 };
 
-exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
-  const listenerCount = repCycleEthers.listenerCount("ReputationRootHashSubmitted");
+exports.getWaitForNSubmissionsPromise = function getWaitForNSubmissionsPromise(repCycleEthers, fromBlock, rootHash, nLeaves, jrh, n) {
+  if (!repCycleEthers || !fromBlock) {
+    throw new Error("repCycleEthers and fromBlock must be defined when calling getWaitForNSubmissionsPromise");
+  }
 
-  const p = new Promise(function (resolve, reject) {
-    repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
-      let nSubmissions;
-      // We want to see when our hash hits N submissions
-      // If we've passed in our hash, we check how many submissions that hash has
-      // If not, we're waiting for N submissions from any hash
-      if (rootHash) {
-        nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
-      } else {
-        nSubmissions = await repCycleEthers.getNSubmissionsForHash(_hash, _nLeaves, _jrh);
-      }
-      if (nSubmissions.toNumber() >= n) {
-        event.removeListener();
-        resolve();
-      }
-    });
+  return new Promise(function (resolve, reject) {
+    const intervalId = setInterval(async () => {
+      const filter = repCycleEthers.filters.ReputationRootHashSubmitted();
+      const events = await repCycleEthers.queryFilter(filter, fromBlock);
 
-    // After 60s, we throw a timeout error
+      if (events.length > 0) {
+        if (rootHash) {
+          const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
+          if (nSubmissions.toNumber() >= n) {
+            clearInterval(intervalId);
+            resolve();
+          }
+        } else {
+          // Check all events
+          await Promise.all(
+            events.map(async (event) => {
+              const nSubmissions = await repCycleEthers.getNSubmissionsForHash(event.args._newHash, event.args._nLeaves, event.args._jrh);
+              if (nSubmissions.toNumber() >= n) {
+                clearInterval(intervalId);
+                resolve();
+              }
+            }),
+          );
+        }
+      }
+    }, 1000);
+
+    // After 60s, throw a timeout error
     setTimeout(() => {
+      clearInterval(intervalId);
       reject(new Error("Timeout while waiting for 12 hash submissions"));
     }, 60 * 1000);
   });
-
-  // Only return the promise once the handler has been set up
-  while (listenerCount === repCycleEthers.listenerCount("ReputationRootHashSubmitted")) {
-    await exports.sleep(1000);
-  }
-
-  return p;
 };
 
-exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePromise(colonyNetworkEthers, oldHash, expectedHash) {
-  const listenerCount = colonyNetworkEthers.listenerCount("ReputationMiningCycleComplete");
+exports.getMiningCycleCompletePromise = function getMiningCycleCompletePromise(colonyNetworkEthers, fromBlock, oldHash, expectedHash) {
+  if (!colonyNetworkEthers || !fromBlock) {
+    throw new Error("colonyNetworkEthers and fromBlock must be defined when calling getMiningCycleCompletePromise");
+  }
 
-  const p = new Promise(function (resolve, reject) {
-    colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-      const colonyNetwork = await IColonyNetwork.at(colonyNetworkEthers.address);
-      const newHash = await colonyNetwork.getReputationRootHash();
-      if (oldHash) {
-        expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+  return new Promise(function (resolve, reject) {
+    const intervalId = setInterval(async () => {
+      const filter = colonyNetworkEthers.filters.ReputationMiningCycleComplete();
+      const events = await colonyNetworkEthers.queryFilter(filter, fromBlock);
+      if (events.length > 0) {
+        const event = events[events.length - 1];
+        const newHash = event.args[0];
+        if (oldHash) {
+          expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+        }
+        if (expectedHash) {
+          expect(newHash).to.equal(expectedHash, "The network root hash doesn't match the one submitted");
+        }
+        clearInterval(intervalId);
+        resolve();
       }
-      if (expectedHash) {
-        expect(newHash).to.equal(expectedHash, "The network root hash doesn't match the one submitted");
-      }
-      event.removeListener();
-      resolve();
-    });
+    }, 1000);
 
     // After 30s, we throw a timeout error
     setTimeout(() => {
+      clearInterval(intervalId);
       reject(new Error("ERROR: timeout while waiting for confirming hash"));
     }, 30 * 1000);
   });
-
-  // Only return the promise once the handler has been set up
-  while (listenerCount === colonyNetworkEthers.listenerCount("ReputationMiningCycleComplete")) {
-    await exports.sleep(1000);
-  }
-
-  return p;
 };
 
 exports.encodeTxData = async function encodeTxData(colony, functionName, args) {
