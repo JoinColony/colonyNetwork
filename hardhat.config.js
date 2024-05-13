@@ -10,6 +10,7 @@ const ethers = require("ethers");
 const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
 require("@nomiclabs/hardhat-truffle5");
 require("hardhat-contract-sizer");
+require("@nomiclabs/hardhat-ethers");
 require("solidity-coverage");
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
