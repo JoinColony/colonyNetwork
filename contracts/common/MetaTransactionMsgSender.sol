@@ -25,4 +25,17 @@ abstract contract MetaTransactionMsgSender is DSMath {
       return payable(msg.sender);
     }
   }
+
+  function isMetatransaction() internal view returns (bool) {
+    uint256 index = msg.data.length;
+    if (msg.sender == address(this) && index >= 52) {
+      bytes memory array = msg.data;
+      bytes32 flag;
+      assembly {
+        flag := mload(add(array, sub(index, 20)))
+      }
+      return flag == METATRANSACTION_FLAG;
+    }
+    return false;
+  }
 }

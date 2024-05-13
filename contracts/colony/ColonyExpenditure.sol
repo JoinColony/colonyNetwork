@@ -384,14 +384,21 @@ contract ColonyExpenditure is ColonyStorage {
     uint256[][] memory _slots,
     uint256[][] memory _values
   ) internal {
+    bytes memory metatransactionAffix;
+    if (isMetatransaction()) {
+      metatransactionAffix = abi.encodePacked(METATRANSACTION_FLAG, msgSender());
+    }
     for (uint256 i; i < _tokens.length; i++) {
       (bool success, bytes memory returndata) = address(this).delegatecall(
-        abi.encodeWithSignature(
-          "setExpenditurePayouts(uint256,uint256[],address,uint256[])",
-          _id,
-          _slots[i],
-          _tokens[i],
-          _values[i]
+        abi.encodePacked(
+          abi.encodeWithSignature(
+            "setExpenditurePayouts(uint256,uint256[],address,uint256[])",
+            _id,
+            _slots[i],
+            _tokens[i],
+            _values[i]
+          ),
+          metatransactionAffix
         )
       );
       if (!success) {
