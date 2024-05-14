@@ -389,6 +389,9 @@ contract ColonyExpenditure is ColonyStorage {
       metatransactionAffix = abi.encodePacked(METATRANSACTION_FLAG, msgSender());
     }
     for (uint256 i; i < _tokens.length; i++) {
+      // Slither is technically right, but as with multicall (see comment there),
+      // I don't think this is exploitable here.
+      // slither-disable-next-line encode-packed-collision
       (bool success, bytes memory returndata) = address(this).delegatecall(
         abi.encodePacked(
           abi.encodeWithSignature(
