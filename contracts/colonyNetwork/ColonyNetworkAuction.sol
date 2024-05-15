@@ -298,6 +298,8 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     assert(clnyToken.balanceOf(address(this)) == 0);
     // slither-disable-next-line incorrect-equality
     assert(token.balanceOf(address(this)) == 0);
-    selfdestruct(colonyNetwork);
+    // Send ether to the metaColony
+    // slither-disable-next-line arbitrary-send-eth
+    payable(metaColonyAddress).transfer(address(this).balance);
   }
 }

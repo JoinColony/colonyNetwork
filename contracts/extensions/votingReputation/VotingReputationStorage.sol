@@ -128,20 +128,23 @@ contract VotingReputationStorage is
     _;
   }
 
-  // Extension Interface
+  // Interface overrides
 
+  /// @notice Returns the identifier of the extension
+  /// @return _identifier The extension's identifier
   function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("VotingReputation");
   }
 
+  /// @notice Returns the version of the extension
+  /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
     return 11;
   }
 
   function install(address _colony) public override {
-    require(address(colony) == address(0x0), "extension-already-installed");
+    super.install(_colony);
 
-    colony = IColony(_colony);
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
     tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
     token = colony.getToken();
@@ -151,14 +154,6 @@ contract VotingReputationStorage is
     if (motionCountV10 == 0) {
       motionCountV10 = motionCount;
     }
-  }
-
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
   }
 
   // View functions

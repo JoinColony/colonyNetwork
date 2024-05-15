@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
 
 contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   uint256 constant ISSUANCE_PERIOD = 1 days;
@@ -63,7 +63,7 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
     _;
   }
 
-  // Public
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -80,23 +80,12 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
+    super.install(_colony);
 
-    colony = IColony(_colony);
     token = colony.getToken();
   }
 
-  /// @notice Called when upgrading the extension (currently a no-op)
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {}
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
+  // Public
 
   /// @notice Initialise the extension, must be called before any tokens can be issued
   /// @param _tokenSupplyCeiling Total amount of tokens to issue

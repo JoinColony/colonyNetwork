@@ -10,7 +10,6 @@ const { UINT256_MAX, UINT128_MAX, WAD } = require("../../helpers/constants");
 
 const {
   checkErrorRevert,
-  web3GetCode,
   forwardTime,
   web3GetBalance,
   makeTxAtTimestamp,
@@ -90,8 +89,8 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.deprecate(true);
       await coinMachine.uninstall();
 
-      const code = await web3GetCode(coinMachine.address);
-      expect(code).to.equal("0x");
+      const resolver = await coinMachine.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {

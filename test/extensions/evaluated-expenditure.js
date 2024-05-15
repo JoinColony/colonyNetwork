@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, ADDRESS_ZERO, SLOT0 } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode } = require("../../helpers/test-helper");
+const { checkErrorRevert } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -65,8 +65,8 @@ contract("EvaluatedExpenditure", (accounts) => {
       await evaluatedExpenditure.deprecate(true);
       await evaluatedExpenditure.uninstall();
 
-      const code = await web3GetCode(evaluatedExpenditure.address);
-      expect(code).to.equal("0x");
+      const resolver = await evaluatedExpenditure.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {

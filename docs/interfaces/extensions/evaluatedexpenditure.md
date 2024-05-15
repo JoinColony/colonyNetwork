@@ -9,26 +9,7 @@ once the expenditure is locked, making it tedious to implement evaluation workfl
   
 ## Interface Methods
 
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
-
-
-### ▸ `getMetatransactionNonce(address _userAddress):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -37,7 +18,7 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|_userAddress|address|The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
@@ -57,18 +38,6 @@ Returns the identifier of the extension
 |---|---|---|
 |_identifier|bytes32|The extension's identifier
 
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
-
 ### ▸ `setExpenditurePayoutModifiers(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)`
 
 Sets the payout modifiers in given expenditure slots, using the arbitration permission
@@ -83,13 +52,6 @@ Sets the payout modifiers in given expenditure slots, using the arbitration perm
 |_id|uint256|Expenditure identifier
 |_slots|uint256[]|Array of slots to set payout modifiers
 |_payoutModifiers|int256[]|Values (between +/- WAD) to modify the payout & reputation bonus
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

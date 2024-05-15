@@ -23,7 +23,7 @@ import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { Whitelist } from "./Whitelist.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
@@ -91,7 +91,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     _;
   }
 
-  // Public
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -103,14 +103,6 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
     return 10;
-  }
-
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
   }
 
   /// @notice Called when upgrading the extension
@@ -143,8 +135,10 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       }
     }
 
-    selfdestruct(payable(address(colony)));
+    super.uninstall();
   }
+
+  // Public
 
   /// @notice Must be called before any sales can be made
   /// @param _token The token we are selling. Cannot be ether

@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, IPFS_HASH, ADDRESS_ZERO } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode } = require("../../helpers/test-helper");
+const { checkErrorRevert } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -65,8 +65,8 @@ contract("Whitelist", (accounts) => {
       await whitelist.deprecate(true);
       await whitelist.uninstall();
 
-      const code = await web3GetCode(whitelist.address);
-      expect(code).to.equal("0x");
+      const resolver = await whitelist.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {

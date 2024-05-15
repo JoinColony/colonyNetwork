@@ -24,7 +24,6 @@ const {
 
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -293,8 +292,8 @@ contract("Voting Reputation", (accounts) => {
       await voting.deprecate(true);
       await voting.uninstall();
 
-      const code = await web3GetCode(voting.address);
-      expect(code).to.equal("0x");
+      const resolver = await voting.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {

@@ -22,10 +22,8 @@ pragma experimental ABIEncoderV2;
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
-import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { IColony } from "./../colony/IColony.sol";
 
 contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   // Events
@@ -104,7 +102,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
     metatransactionNonces[user]++;
   }
 
-  // Public functions
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -121,28 +119,13 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
+    super.install(_colony);
 
-    colony = IColony(_colony);
     colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
     tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
     token = colony.getToken();
 
     proposals[HEAD].totalSupport = UINT256_MAX; // Initialize queue
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
   }
 
   // Public

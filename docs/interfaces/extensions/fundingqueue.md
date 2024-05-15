@@ -61,25 +61,6 @@ Create a new funding proposal
 |_token|address|The token being transferred
 
 
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
-
-
 ### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
 
 Gets the next nonce for a meta-transaction
@@ -223,13 +204,6 @@ Stake a funding proposal
 |_value|bytes|Reputation value indicating the total reputation in _domainId
 |_branchMask|uint256|The branchmask of the proof
 |_siblings|bytes32[]|The siblings of the proof
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

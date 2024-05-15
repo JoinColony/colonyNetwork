@@ -16,7 +16,7 @@ const {
   SECONDS_PER_DAY,
 } = require("../../helpers/constants");
 
-const { checkErrorRevert, web3GetCode, rolesToBytes32, expectEvent, upgradeColonyOnceThenToLatest } = require("../../helpers/test-helper");
+const { checkErrorRevert, rolesToBytes32, expectEvent, upgradeColonyOnceThenToLatest } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -96,8 +96,8 @@ contract("One transaction payments", (accounts) => {
       await oneTxPayment.deprecate(true);
       await oneTxPayment.uninstall();
 
-      const code = await web3GetCode(oneTxPayment.address);
-      expect(code).to.equal("0x");
+      const resolver = await oneTxPayment.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {

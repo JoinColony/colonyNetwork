@@ -68,6 +68,9 @@ contract("Token Supplier", (accounts) => {
       await tokenSupplier.finishUpgrade();
       await tokenSupplier.deprecate(true);
       await tokenSupplier.uninstall();
+
+      const resolver = await tokenSupplier.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {

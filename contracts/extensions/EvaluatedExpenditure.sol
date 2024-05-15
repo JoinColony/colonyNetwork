@@ -21,7 +21,6 @@ pragma experimental ABIEncoderV2;
 
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
-import { IColony } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
@@ -31,6 +30,8 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   bool constant MAPPING = false;
   bool constant ARRAY = true;
   mapping(address => uint256) metatransactionNonces;
+
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -44,40 +45,20 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
     return 6;
   }
 
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
-
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param _userAddress The user's address
+  /// @param _user The user's address
   /// @return nonce The nonce
   function getMetatransactionNonce(
-    address _userAddress
+    address _user
   ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[_userAddress];
+    return metatransactionNonces[_user];
   }
 
   function incrementMetatransactionNonce(address _user) internal override {
     metatransactionNonces[_user] += 1;
   }
+
+  // Public
 
   /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission
   /// @param _permissionDomainId The domainId in which the extension has the arbitration permission

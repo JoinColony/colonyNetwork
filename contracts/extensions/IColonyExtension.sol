@@ -21,16 +21,26 @@ pragma experimental ABIEncoderV2;
 import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
 
 interface IColonyExtension is IBasicMetaTransaction {
+  /// @notice Returns the identifier of the extension
+  /// @return _identifier The extension's identifier
   function identifier() external pure returns (bytes32);
 
+  /// @notice Returns the version of the extension
+  /// @return _version The extension's version number
   function version() external pure virtual returns (uint256);
 
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) external virtual;
 
+  /// @notice Called when upgrading the extension (can be a no-op)
   function finishUpgrade() external virtual;
 
+  /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) external virtual;
 
+  /// @notice Called when uninstalling the extension
   function uninstall() external virtual;
 
   function getCapabilityRoles(bytes4 _sig) external view virtual returns (bytes32);

@@ -40,25 +40,6 @@ Can only be called by expenditure owner while expenditure is in draft state
 |_expenditureId|uint256|The id of the expenditure
 
 
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
-
-
 ### ▸ `getStake(uint256 _expenditureId):Stake stake`
 
 Get the stake for an expenditure
@@ -112,18 +93,6 @@ Initialise the extension
 |_stakeFraction|uint256|WAD-denominated fraction, used to determine stake as fraction of rep in domain
 
 
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
-
 ### ▸ `makeExpenditureWithStake(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
 Make an expenditure by putting up a stake
@@ -164,13 +133,6 @@ Sets the stake fraction
 |Name|Type|Description|
 |---|---|---|
 |_stakeFraction|uint256|WAD-denominated fraction, used to determine stake as fraction of rep in domain
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

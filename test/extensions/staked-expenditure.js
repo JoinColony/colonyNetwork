@@ -9,7 +9,6 @@ const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURAT
 const { setupRandomColony } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -131,8 +130,8 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.deprecate(true);
       await stakedExpenditure.uninstall();
 
-      const code = await web3GetCode(stakedExpenditure.address);
-      expect(code).to.equal("0x");
+      const resolver = await stakedExpenditure.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

@@ -17,7 +17,6 @@ const {
 
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -192,8 +191,8 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.deprecate(true);
       await fundingQueue.uninstall();
 
-      const code = await web3GetCode(fundingQueue.address);
-      expect(code).to.equal("0x");
+      const resolver = await fundingQueue.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {

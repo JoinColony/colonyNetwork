@@ -301,18 +301,6 @@ Must be called before any sales can be made
 |_whitelist|address|Optionally an address of a whitelist contract to use can be provided. Pass 0x0 if no whitelist being used
 
 
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
-
 ### ▸ `setWhitelist(address _whitelist)`
 
 Set the address for an (optional) whitelist

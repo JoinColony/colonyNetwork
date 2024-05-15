@@ -20,25 +20,6 @@ Sets user statuses in the whitelist
 |_status|bool|The whitelist status to set
 
 
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
-
-
 ### ▸ `getAgreementHash():string _hash`
 
 Get the agreementHash
@@ -139,18 +120,6 @@ Initialise the extension
 |_agreementHash|string|An agreement hash (such as an IPFS URI)
 
 
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
-
 ### ▸ `isApproved(address _user):bool _approved`
 
 Get the user's overall whitelist status
@@ -178,13 +147,6 @@ The user's signature on the agreement
 |Name|Type|Description|
 |---|---|---|
 |_agreementHash|string|The agreement hash being signed
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

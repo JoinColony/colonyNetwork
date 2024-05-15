@@ -19,7 +19,7 @@
 pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 
@@ -57,7 +57,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
     _;
   }
 
-  // Overrides
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -71,29 +71,8 @@ contract StakedExpenditure is ColonyExtensionMeta {
     return 5;
   }
 
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
-
   // Public
+
   /// @notice Initialise the extension
   /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
   function initialise(uint256 _stakeFraction) public onlyRoot {

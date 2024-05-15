@@ -18,7 +18,6 @@ const {
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const {
   checkErrorRevert,
-  web3GetCode,
   expectEvent,
   expectNoEvent,
   makeReputationKey,
@@ -91,8 +90,8 @@ contract("Staged Expenditure", (accounts) => {
       await stagedExpenditure.deprecate(true);
       await stagedExpenditure.uninstall();
 
-      const code = await web3GetCode(stagedExpenditure.address);
-      expect(code).to.equal("0x");
+      const resolver = await stagedExpenditure.resolver();
+      expect(resolver).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
