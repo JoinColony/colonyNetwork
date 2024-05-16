@@ -62,6 +62,7 @@
     "test:contracts:smoke": "npm run start:blockchain:client && npx hardhat test ./test-smoke/colony-storage-consistent.js --network development",
     "test:security:slither": "slither . --solc-disable-warnings --exclude-low --exclude-informational --exclude-optimization --filter-paths 'lib|contracts/testHelpers|@openzeppelin'",
     "pretest:contracts": "npm run stop:blockchain:client",
+    "pretest:contracts:extensions": "npm run stop:blockchain:client",
     "posttest:contracts": "npm run stop:blockchain:client",
     "posttest:contracts:extensions": "npm run stop:blockchain:client",
     "posttest:contracts:upgrade:parity": "npm run clean:test:contracts | npm run stop:blockchain:client",

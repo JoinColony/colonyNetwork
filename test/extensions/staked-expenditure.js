@@ -202,6 +202,9 @@ contract("StakedExpenditure", (accounts) => {
 
       // Also not greater than WAD!
       await checkErrorRevert(stakedExpenditure.setStakeFraction(WAD.addn(1), { from: USER0 }), "staked-expenditure-value-too-large");
+
+      // Also not zero!
+      await checkErrorRevert(stakedExpenditure.setStakeFraction(0, { from: USER0 }), "staked-expenditure-value-too-small");
     });
 
     it("can create an expenditure by submitting a stake", async () => {
@@ -398,6 +401,15 @@ contract("StakedExpenditure", (accounts) => {
         stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId, { from: USER1 }),
         "staked-expenditure-must-be-owner",
       );
+    });
+
+    it("cannot cancel and reclaim the stake in one transaction if finalized", async () => {
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      await checkErrorRevert(stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId), "staked-expenditure-expenditure-not-draft");
     });
 
     it("can reclaim the stake by finalizing the expenditure", async () => {
