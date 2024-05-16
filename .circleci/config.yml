@@ -118,6 +118,12 @@ jobs:
       - run:
           name: "Checking contract versions"
           command: npm run check:versioning
+      - run: 
+          name: "Checking contract storage layout hasn't broken existing slots"
+          command: npx hardhat storage-layout --check
+      - run:
+          name: "Checking contract storage layout hasn't had additions made"
+          command: npx hardhat storage-layout --update && git diff --exit-code
   check-docker-files-build:
     <<: *job_common
     steps:
