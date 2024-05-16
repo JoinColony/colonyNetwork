@@ -124,6 +124,9 @@ jobs:
       - run:
           name: "Checking contract storage layout hasn't had additions made"
           command: npx hardhat storage-layout --update && git diff --exit-code
+      - run:
+          name: "Upload function selectors to 4byte.directory"
+          command: npx hardhat upload-selectors
   check-docker-files-build:
     <<: *job_common
     steps:
