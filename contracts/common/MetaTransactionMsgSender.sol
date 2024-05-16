@@ -5,7 +5,9 @@ import { DSMath } from "../../lib/dappsys/math.sol";
 
 abstract contract MetaTransactionMsgSender is DSMath {
   bytes32 constant METATRANSACTION_FLAG = keccak256("METATRANSACTION");
-  uint256 METATRANSACTION_DATA_MIN_LENGTH = METATRANSACTION_FLAG.length + 20; // Where 20 is the length of an address in bytes
+  uint256 constant METATRANSACTION_DATA_MIN_LENGTH = 32 + 20;
+  // Where 32 is the length of METATRANSACTION_FLAG in bytes
+  // Where 20 is the length of an address in bytes
 
   function msgSender() internal view returns (address payable sender) {
     if (isMetatransaction()) {
