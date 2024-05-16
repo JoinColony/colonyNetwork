@@ -1,0 +1,102 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 20460,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 20462,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "recoveryMode",
+      "offset": 20,
+      "slot": "2",
+      "type": "t_bool"
+    },
+    {
+      "astId": 20464,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "recoveryRolesCount",
+      "offset": 21,
+      "slot": "2",
+      "type": "t_uint64"
+    },
+    {
+      "astId": 20466,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "recoveryApprovalCount",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_uint64"
+    },
+    {
+      "astId": 20468,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "recoveryEditedTimestamp",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20472,
+      "contract": "contracts/common/CommonStorage.sol:CommonStorage",
+      "label": "recoveryApprovalTimestamps",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_address,t_uint256)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    }
+  }
+}

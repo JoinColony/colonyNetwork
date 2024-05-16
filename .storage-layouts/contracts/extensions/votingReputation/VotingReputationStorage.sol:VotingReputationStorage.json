@@ -1,0 +1,477 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 23397,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 23400,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_contract(IColony)12697"
+    },
+    {
+      "astId": 23402,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": "t_bool"
+    },
+    {
+      "astId": 34326,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "state",
+      "offset": 21,
+      "slot": "3",
+      "type": "t_enum(ExtensionState)32574"
+    },
+    {
+      "astId": 34329,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_contract(IColonyNetwork)20072"
+    },
+    {
+      "astId": 34332,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "tokenLocking",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_contract(ITokenLocking)49117"
+    },
+    {
+      "astId": 34334,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "token",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_address"
+    },
+    {
+      "astId": 34336,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "totalStakeFraction",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34338,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "voterRewardFraction",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34340,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "userMinStakeFraction",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34342,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "maxVoteFraction",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34344,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "stakePeriod",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34346,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "submitPeriod",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34348,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "revealPeriod",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34350,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "escalationPeriod",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34352,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "motionCount",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 34357,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "motions",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_mapping(t_uint256,t_struct(Motion)32622_storage)"
+    },
+    {
+      "astId": 34365,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "stakes",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))"
+    },
+    {
+      "astId": 34371,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "voteSecrets",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_mapping(t_uint256,t_mapping(t_address,t_bytes32))"
+    },
+    {
+      "astId": 34375,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "expenditurePastVotes_DEPRECATED",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_mapping(t_bytes32,t_uint256)"
+    },
+    {
+      "astId": 34379,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "expenditureMotionCounts_DEPRECATED",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_mapping(t_bytes32,t_uint256)"
+    },
+    {
+      "astId": 34383,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 34387,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "expenditurePastVotes",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 34391,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "expenditureMotionLocks",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 34393,
+      "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+      "label": "motionCountV10",
+      "offset": 0,
+      "slot": "24",
+      "type": "t_uint256"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)2_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[2]",
+      "numberOfBytes": "64"
+    },
+    "t_array(t_uint64)3_storage": {
+      "base": "t_uint64",
+      "encoding": "inplace",
+      "label": "uint64[3]",
+      "numberOfBytes": "32"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_bytes4": {
+      "encoding": "inplace",
+      "label": "bytes4",
+      "numberOfBytes": "4"
+    },
+    "t_bytes_storage": {
+      "encoding": "bytes",
+      "label": "bytes",
+      "numberOfBytes": "32"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IColony)12697": {
+      "encoding": "inplace",
+      "label": "contract IColony",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IColonyNetwork)20072": {
+      "encoding": "inplace",
+      "label": "contract IColonyNetwork",
+      "numberOfBytes": "20"
+    },
+    "t_contract(ITokenLocking)49117": {
+      "encoding": "inplace",
+      "label": "contract ITokenLocking",
+      "numberOfBytes": "20"
+    },
+    "t_enum(ExtensionState)32574": {
+      "encoding": "inplace",
+      "label": "enum VotingReputationDataTypes.ExtensionState",
+      "numberOfBytes": "1"
+    },
+    "t_mapping(t_address,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint256)"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_bytes32,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_bytes32))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => bytes32))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_bytes32)"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => mapping(uint256 => uint256)))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
+    },
+    "t_mapping(t_uint256,t_struct(Motion)32622_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct VotingReputationDataTypes.Motion)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Motion)32622_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_struct(Motion)32622_storage": {
+      "encoding": "inplace",
+      "label": "struct VotingReputationDataTypes.Motion",
+      "members": [
+        {
+          "astId": 32587,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "events",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_array(t_uint64)3_storage"
+        },
+        {
+          "astId": 32589,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "rootHash",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 32591,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "domainId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 32593,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "skillId",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 32595,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "skillRep",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 32597,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "repSubmitted",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 32599,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "paidVoterComp",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 32603,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "pastVoterComp",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_array(t_uint256)2_storage"
+        },
+        {
+          "astId": 32607,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "stakes",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_array(t_uint256)2_storage"
+        },
+        {
+          "astId": 32611,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "votes",
+          "offset": 0,
+          "slot": "11",
+          "type": "t_array(t_uint256)2_storage"
+        },
+        {
+          "astId": 32613,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "escalated",
+          "offset": 0,
+          "slot": "13",
+          "type": "t_bool"
+        },
+        {
+          "astId": 32615,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "finalized",
+          "offset": 1,
+          "slot": "13",
+          "type": "t_bool"
+        },
+        {
+          "astId": 32617,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "altTarget",
+          "offset": 2,
+          "slot": "13",
+          "type": "t_address"
+        },
+        {
+          "astId": 32619,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "sig",
+          "offset": 22,
+          "slot": "13",
+          "type": "t_bytes4"
+        },
+        {
+          "astId": 32621,
+          "contract": "contracts/extensions/votingReputation/VotingReputationStorage.sol:VotingReputationStorage",
+          "label": "action",
+          "offset": 0,
+          "slot": "14",
+          "type": "t_bytes_storage"
+        }
+      ],
+      "numberOfBytes": "480"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    }
+  }
+}

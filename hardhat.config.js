@@ -10,6 +10,7 @@ const ethers = require("ethers");
 const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
 require("@nomiclabs/hardhat-truffle5");
 require("hardhat-contract-sizer");
+require("hardhat-storage-layout-changes");
 require("@nomiclabs/hardhat-ethers");
 require("solidity-coverage");
 
@@ -30,8 +31,6 @@ task("compile", "Compile Colony contracts with pinned Token").setAction(async ()
 });
 
 task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
-  console.log(config.networks.hardhat.accounts);
-  console.log(ethers);
   const ganacheAccounts = { addresses: {}, private_keys: {} };
   // eslint-disable-next-line no-restricted-syntax
   for (const account of config.networks.hardhat.accounts) {
@@ -83,6 +82,11 @@ module.exports = {
             enabled: true,
             runs: 200,
           },
+          outputSelection: {
+            "*": {
+              "*": ["storageLayout"],
+            },
+          },
         },
       },
     ],
@@ -92,6 +96,19 @@ module.exports = {
   },
   contractSizer: {
     strict: true,
+  },
+  paths: {
+    storageLayouts: ".storage-layouts",
+  },
+  storageLayoutChanges: {
+    contracts: [
+      "ColonyStorage",
+      "ColonyNetworkStorage",
+      "ReputationMiningCycleStorage",
+      "VotingReputationStorage",
+      "CommonStorage",
+      "TokenLockingStorage",
+    ],
   },
   networks: {
     development: {
