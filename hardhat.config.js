@@ -134,6 +134,7 @@ module.exports = {
       blockGasLimit: 6721975,
     },
     hardhat: {
+      hardfork: "cancun",
       chainId: Number(process.env.CHAIN_ID) || FORKED_XDAI_CHAINID, // Supports chainId tests
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
