@@ -1,0 +1,124 @@
+{
+  "storage": [
+    {
+      "astId": 13332,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "quantity",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13334,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "started",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_bool"
+    },
+    {
+      "astId": 13336,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "startTime",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13338,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "endTime",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13340,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "minPrice",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13347,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "receivedTotal",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13349,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "bidCount",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13351,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "claimCount",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13353,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "finalPrice",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 13355,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "finalized",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_bool"
+    },
+    {
+      "astId": 13359,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 13363,
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:DutchAuction",
+      "label": "bids",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_mapping(t_address,t_uint256)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

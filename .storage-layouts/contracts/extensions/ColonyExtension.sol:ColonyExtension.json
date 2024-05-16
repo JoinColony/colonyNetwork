@@ -1,0 +1,66 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/extensions/ColonyExtension.sol:ColonyExtension",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/extensions/ColonyExtension.sol:ColonyExtension",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 23397,
+      "contract": "contracts/extensions/ColonyExtension.sol:ColonyExtension",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 23400,
+      "contract": "contracts/extensions/ColonyExtension.sol:ColonyExtension",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_contract(IColony)12697"
+    },
+    {
+      "astId": 23402,
+      "contract": "contracts/extensions/ColonyExtension.sol:ColonyExtension",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": "t_bool"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IColony)12697": {
+      "encoding": "inplace",
+      "label": "contract IColony",
+      "numberOfBytes": "20"
+    }
+  }
+}

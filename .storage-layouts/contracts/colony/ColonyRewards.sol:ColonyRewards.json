@@ -1,0 +1,1005 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 20460,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 20462,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "recoveryMode",
+      "offset": 20,
+      "slot": "2",
+      "type": "t_bool"
+    },
+    {
+      "astId": 20464,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "recoveryRolesCount",
+      "offset": 21,
+      "slot": "2",
+      "type": "t_uint64"
+    },
+    {
+      "astId": 20466,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "recoveryApprovalCount",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_uint64"
+    },
+    {
+      "astId": 20468,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "recoveryEditedTimestamp",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20472,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "recoveryApprovalTimestamps",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 10724,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "colonyNetworkAddress",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_address"
+    },
+    {
+      "astId": 10726,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "token",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_address"
+    },
+    {
+      "astId": 10728,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "rewardInverse",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10730,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_taskCount",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10732,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "fundingPotCount",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10734,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "domainCount",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10741,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_reviewers",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_mapping(t_bytes4,t_array(t_enum(TaskRole)6049)2_storage)"
+    },
+    {
+      "astId": 10745,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_roleAssignmentSigs",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_mapping(t_bytes4,t_bool)"
+    },
+    {
+      "astId": 10750,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_tasks",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_mapping(t_uint256,t_struct(Task)6083_storage)"
+    },
+    {
+      "astId": 10755,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "fundingPots",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_mapping(t_uint256,t_struct(FundingPot)5893_storage)"
+    },
+    {
+      "astId": 10760,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "rewardPayoutCycles",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_mapping(t_uint256,t_struct(RewardPayoutCycle)5833_storage)"
+    },
+    {
+      "astId": 10764,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "pendingRewardPayments",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 10768,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "nonRewardPotsTotal",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 10773,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_taskWorkRatings",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_mapping(t_uint256,t_struct(RatingSecrets)6100_storage)"
+    },
+    {
+      "astId": 10778,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "domains",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_mapping(t_uint256,t_struct(Domain)5898_storage)"
+    },
+    {
+      "astId": 10782,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_taskChangeNonces",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 10784,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_paymentCount",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10789,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "DEPRECATED_payments",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_mapping(t_uint256,t_struct(Payment)6112_storage)"
+    },
+    {
+      "astId": 10791,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "expenditureCount",
+      "offset": 0,
+      "slot": "24",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10796,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "expenditures",
+      "offset": 0,
+      "slot": "25",
+      "type": "t_mapping(t_uint256,t_struct(Expenditure)5847_storage)"
+    },
+    {
+      "astId": 10803,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "expenditureSlots",
+      "offset": 0,
+      "slot": "26",
+      "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_struct(ExpenditureSlot)5857_storage))"
+    },
+    {
+      "astId": 10811,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "expenditureSlotPayouts",
+      "offset": 0,
+      "slot": "27",
+      "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_mapping(t_address,t_uint256)))"
+    },
+    {
+      "astId": 10819,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "approvals",
+      "offset": 0,
+      "slot": "28",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))"
+    },
+    {
+      "astId": 10827,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "obligations",
+      "offset": 0,
+      "slot": "29",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))"
+    },
+    {
+      "astId": 10829,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "tokenLockingAddress",
+      "offset": 0,
+      "slot": "30",
+      "type": "t_address"
+    },
+    {
+      "astId": 10835,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "tokenLocks",
+      "offset": 0,
+      "slot": "31",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_bool))"
+    },
+    {
+      "astId": 10841,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "tokenApprovals",
+      "offset": 0,
+      "slot": "32",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+    },
+    {
+      "astId": 10845,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "tokenApprovalTotals",
+      "offset": 0,
+      "slot": "33",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 10847,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "defaultGlobalClaimDelay",
+      "offset": 0,
+      "slot": "34",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10854,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "35",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 10856,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "rootLocalSkill",
+      "offset": 0,
+      "slot": "36",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 10860,
+      "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+      "label": "localSkills",
+      "offset": 0,
+      "slot": "37",
+      "type": "t_mapping(t_uint256,t_bool)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_address_payable": {
+      "encoding": "inplace",
+      "label": "address payable",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_enum(TaskRole)6049)2_storage": {
+      "base": "t_enum(TaskRole)6049",
+      "encoding": "inplace",
+      "label": "enum ColonyDataTypes.TaskRole[2]",
+      "numberOfBytes": "32"
+    },
+    "t_array(t_uint256)dyn_storage": {
+      "base": "t_uint256",
+      "encoding": "dynamic_array",
+      "label": "uint256[]",
+      "numberOfBytes": "32"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_bytes4": {
+      "encoding": "inplace",
+      "label": "bytes4",
+      "numberOfBytes": "4"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_enum(ExpenditureStatus)5862": {
+      "encoding": "inplace",
+      "label": "enum ColonyDataTypes.ExpenditureStatus",
+      "numberOfBytes": "1"
+    },
+    "t_enum(FundingPotAssociatedType)5877": {
+      "encoding": "inplace",
+      "label": "enum ColonyDataTypes.FundingPotAssociatedType",
+      "numberOfBytes": "1"
+    },
+    "t_enum(TaskRatings)6045": {
+      "encoding": "inplace",
+      "label": "enum ColonyDataTypes.TaskRatings",
+      "numberOfBytes": "1"
+    },
+    "t_enum(TaskRole)6049": {
+      "encoding": "inplace",
+      "label": "enum ColonyDataTypes.TaskRole",
+      "numberOfBytes": "1"
+    },
+    "t_enum(TaskStatus)6053": {
+      "encoding": "inplace",
+      "label": "enum ColonyDataTypes.TaskStatus",
+      "numberOfBytes": "1"
+    },
+    "t_int256": {
+      "encoding": "inplace",
+      "label": "int256",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => mapping(uint256 => uint256)))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_bool))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => bool))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bool)"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint256)"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_bytes4,t_array(t_enum(TaskRole)6049)2_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes4",
+      "label": "mapping(bytes4 => enum ColonyDataTypes.TaskRole[2])",
+      "numberOfBytes": "32",
+      "value": "t_array(t_enum(TaskRole)6049)2_storage"
+    },
+    "t_mapping(t_bytes4,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_bytes4",
+      "label": "mapping(bytes4 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_uint256,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_uint256,t_mapping(t_uint256,t_mapping(t_address,t_uint256)))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(uint256 => mapping(address => uint256)))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))"
+    },
+    "t_mapping(t_uint256,t_mapping(t_uint256,t_struct(ExpenditureSlot)5857_storage))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(uint256 => struct ColonyDataTypes.ExpenditureSlot))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_struct(ExpenditureSlot)5857_storage)"
+    },
+    "t_mapping(t_uint256,t_struct(Domain)5898_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.Domain)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Domain)5898_storage"
+    },
+    "t_mapping(t_uint256,t_struct(Expenditure)5847_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.Expenditure)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Expenditure)5847_storage"
+    },
+    "t_mapping(t_uint256,t_struct(ExpenditureSlot)5857_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.ExpenditureSlot)",
+      "numberOfBytes": "32",
+      "value": "t_struct(ExpenditureSlot)5857_storage"
+    },
+    "t_mapping(t_uint256,t_struct(FundingPot)5893_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.FundingPot)",
+      "numberOfBytes": "32",
+      "value": "t_struct(FundingPot)5893_storage"
+    },
+    "t_mapping(t_uint256,t_struct(Payment)6112_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.Payment)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Payment)6112_storage"
+    },
+    "t_mapping(t_uint256,t_struct(RatingSecrets)6100_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.RatingSecrets)",
+      "numberOfBytes": "32",
+      "value": "t_struct(RatingSecrets)6100_storage"
+    },
+    "t_mapping(t_uint256,t_struct(RewardPayoutCycle)5833_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.RewardPayoutCycle)",
+      "numberOfBytes": "32",
+      "value": "t_struct(RewardPayoutCycle)5833_storage"
+    },
+    "t_mapping(t_uint256,t_struct(Task)6083_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyDataTypes.Task)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Task)6083_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint8,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_uint8",
+      "label": "mapping(uint8 => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_mapping(t_uint8,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_uint8",
+      "label": "mapping(uint8 => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_uint8,t_struct(Role)6091_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint8",
+      "label": "mapping(uint8 => struct ColonyDataTypes.Role)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Role)6091_storage"
+    },
+    "t_struct(Domain)5898_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.Domain",
+      "members": [
+        {
+          "astId": 5895,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "skillId",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5897,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "fundingPotId",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_struct(Expenditure)5847_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.Expenditure",
+      "members": [
+        {
+          "astId": 5836,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "status",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_enum(ExpenditureStatus)5862"
+        },
+        {
+          "astId": 5838,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "owner",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 5840,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "fundingPotId",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5842,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "domainId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5844,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "finalizedTimestamp",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5846,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "globalClaimDelay",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_struct(ExpenditureSlot)5857_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.ExpenditureSlot",
+      "members": [
+        {
+          "astId": 5849,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "recipient",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address_payable"
+        },
+        {
+          "astId": 5851,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "claimDelay",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5853,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "payoutModifier",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_int256"
+        },
+        {
+          "astId": 5856,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "skills",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_array(t_uint256)dyn_storage"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_struct(FundingPot)5893_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.FundingPot",
+      "members": [
+        {
+          "astId": 5881,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "balance",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_address,t_uint256)"
+        },
+        {
+          "astId": 5884,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "associatedType",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_enum(FundingPotAssociatedType)5877"
+        },
+        {
+          "astId": 5886,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "associatedTypeId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5890,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "payouts",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_mapping(t_address,t_uint256)"
+        },
+        {
+          "astId": 5892,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "payoutsWeCannotMake",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_struct(Payment)6112_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.Payment",
+      "members": [
+        {
+          "astId": 6102,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "recipient",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address_payable"
+        },
+        {
+          "astId": 6104,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "finalized",
+          "offset": 20,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 6106,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "fundingPotId",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6108,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "domainId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6111,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "skills",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_array(t_uint256)dyn_storage"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_struct(RatingSecrets)6100_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.RatingSecrets",
+      "members": [
+        {
+          "astId": 6093,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "count",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6095,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "timestamp",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6099,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "secret",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_mapping(t_uint8,t_bytes32)"
+        }
+      ],
+      "numberOfBytes": "96"
+    },
+    "t_struct(RewardPayoutCycle)5833_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.RewardPayoutCycle",
+      "members": [
+        {
+          "astId": 5818,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "reputationState",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 5820,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "colonyWideReputation",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5822,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "totalTokens",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5824,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "amount",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5826,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "tokenAddress",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_address"
+        },
+        {
+          "astId": 5828,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "blockTimestamp",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5830,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "amountRemaining",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 5832,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "finalized",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_bool"
+        }
+      ],
+      "numberOfBytes": "256"
+    },
+    "t_struct(Role)6091_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.Role",
+      "members": [
+        {
+          "astId": 6085,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "user",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address_payable"
+        },
+        {
+          "astId": 6087,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "rateFail",
+          "offset": 20,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 6090,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "rating",
+          "offset": 21,
+          "slot": "0",
+          "type": "t_enum(TaskRatings)6045"
+        }
+      ],
+      "numberOfBytes": "32"
+    },
+    "t_struct(Task)6083_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyDataTypes.Task",
+      "members": [
+        {
+          "astId": 6055,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "specificationHash",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 6057,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "deliverableHash",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 6060,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "status",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_enum(TaskStatus)6053"
+        },
+        {
+          "astId": 6062,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "dueDate",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6064,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "fundingPotId",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6066,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "completionTimestamp",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6068,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "domainId",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 6071,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "skills",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_array(t_uint256)dyn_storage"
+        },
+        {
+          "astId": 6076,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "roles",
+          "offset": 0,
+          "slot": "8",
+          "type": "t_mapping(t_uint8,t_struct(Role)6091_storage)"
+        },
+        {
+          "astId": 6082,
+          "contract": "contracts/colony/ColonyRewards.sol:ColonyRewards",
+          "label": "payouts",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_mapping(t_uint8,t_mapping(t_address,t_uint256))"
+        }
+      ],
+      "numberOfBytes": "320"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "storage": [
+    {
+      "astId": 22039,
+      "contract": "contracts/ens/ENSRegistry.sol:ENSRegistry",
+      "label": "records",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_mapping(t_bytes32,t_struct(Record)22034_storage)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_bytes32,t_struct(Record)22034_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct ENSRegistry.Record)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Record)22034_storage"
+    },
+    "t_struct(Record)22034_storage": {
+      "encoding": "inplace",
+      "label": "struct ENSRegistry.Record",
+      "members": [
+        {
+          "astId": 22029,
+          "contract": "contracts/ens/ENSRegistry.sol:ENSRegistry",
+          "label": "owner",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 22031,
+          "contract": "contracts/ens/ENSRegistry.sol:ENSRegistry",
+          "label": "resolver",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_address"
+        },
+        {
+          "astId": 22033,
+          "contract": "contracts/ens/ENSRegistry.sol:ENSRegistry",
+          "label": "ttl",
+          "offset": 20,
+          "slot": "1",
+          "type": "t_uint64"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    }
+  }
+}

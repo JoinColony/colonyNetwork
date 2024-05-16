@@ -1,0 +1,148 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/common/CommonAuthority.sol:CommonAuthority",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/common/CommonAuthority.sol:CommonAuthority",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 51037,
+      "contract": "contracts/common/CommonAuthority.sol:CommonAuthority",
+      "label": "_root_users",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 51041,
+      "contract": "contracts/common/CommonAuthority.sol:CommonAuthority",
+      "label": "_user_roles",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_mapping(t_address,t_bytes32)"
+    },
+    {
+      "astId": 51047,
+      "contract": "contracts/common/CommonAuthority.sol:CommonAuthority",
+      "label": "_capability_roles",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_mapping(t_address,t_mapping(t_bytes4,t_bytes32))"
+    },
+    {
+      "astId": 51053,
+      "contract": "contracts/common/CommonAuthority.sol:CommonAuthority",
+      "label": "_public_capabilities",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_address,t_mapping(t_bytes4,t_bool))"
+    },
+    {
+      "astId": 20916,
+      "contract": "contracts/common/CommonAuthority.sol:CommonAuthority",
+      "label": "userDomainRoles",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_bytes32))"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_bytes4": {
+      "encoding": "inplace",
+      "label": "bytes4",
+      "numberOfBytes": "4"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_address,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_mapping(t_address,t_mapping(t_bytes4,t_bool))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(bytes4 => bool))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_bytes4,t_bool)"
+    },
+    "t_mapping(t_address,t_mapping(t_bytes4,t_bytes32))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(bytes4 => bytes32))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_bytes4,t_bytes32)"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_bytes32))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => bytes32))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bytes32)"
+    },
+    "t_mapping(t_bytes4,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_bytes4",
+      "label": "mapping(bytes4 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_bytes4,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_bytes4",
+      "label": "mapping(bytes4 => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_mapping(t_uint256,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

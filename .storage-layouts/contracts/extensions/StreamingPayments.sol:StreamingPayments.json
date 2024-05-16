@@ -1,0 +1,462 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 23397,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 23400,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_contract(IColony)12697"
+    },
+    {
+      "astId": 23402,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": "t_bool"
+    },
+    {
+      "astId": 23562,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 23590,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder00",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23592,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder01",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23594,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder02",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23596,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder03",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23598,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder04",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23600,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder05",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23602,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder06",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23604,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder07",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23606,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder08",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23608,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder09",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23610,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder10",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23612,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder11",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23614,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder12",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23616,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder13",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23618,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder14",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23620,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder15",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23622,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder16",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23624,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder17",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23626,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder18",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23628,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder19",
+      "offset": 0,
+      "slot": "24",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23630,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder20",
+      "offset": 0,
+      "slot": "25",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23632,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder21",
+      "offset": 0,
+      "slot": "26",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23634,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder22",
+      "offset": 0,
+      "slot": "27",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23636,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder23",
+      "offset": 0,
+      "slot": "28",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23638,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder24",
+      "offset": 0,
+      "slot": "29",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23640,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder25",
+      "offset": 0,
+      "slot": "30",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23642,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder26",
+      "offset": 0,
+      "slot": "31",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23644,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder27",
+      "offset": 0,
+      "slot": "32",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23646,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder28",
+      "offset": 0,
+      "slot": "33",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23648,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder29",
+      "offset": 0,
+      "slot": "34",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23650,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder30",
+      "offset": 0,
+      "slot": "35",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 23652,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "placeholder31",
+      "offset": 0,
+      "slot": "36",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 28309,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "numStreamingPayments",
+      "offset": 0,
+      "slot": "37",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 28314,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "streamingPayments",
+      "offset": 0,
+      "slot": "38",
+      "type": "t_mapping(t_uint256,t_struct(StreamingPayment)28302_storage)"
+    },
+    {
+      "astId": 28321,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "paymentTokens",
+      "offset": 0,
+      "slot": "39",
+      "type": "t_mapping(t_uint256,t_mapping(t_address,t_struct(PaymentToken)28307_storage))"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_address_payable": {
+      "encoding": "inplace",
+      "label": "address payable",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IColony)12697": {
+      "encoding": "inplace",
+      "label": "contract IColony",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_struct(PaymentToken)28307_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => struct StreamingPayments.PaymentToken)",
+      "numberOfBytes": "32",
+      "value": "t_struct(PaymentToken)28307_storage"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_struct(PaymentToken)28307_storage))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => struct StreamingPayments.PaymentToken))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_struct(PaymentToken)28307_storage)"
+    },
+    "t_mapping(t_uint256,t_struct(StreamingPayment)28302_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct StreamingPayments.StreamingPayment)",
+      "numberOfBytes": "32",
+      "value": "t_struct(StreamingPayment)28302_storage"
+    },
+    "t_struct(PaymentToken)28307_storage": {
+      "encoding": "inplace",
+      "label": "struct StreamingPayments.PaymentToken",
+      "members": [
+        {
+          "astId": 28304,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "amount",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 28306,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "pseudoAmountClaimedFromStart",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_struct(StreamingPayment)28302_storage": {
+      "encoding": "inplace",
+      "label": "struct StreamingPayments.StreamingPayment",
+      "members": [
+        {
+          "astId": 28293,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "recipient",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address_payable"
+        },
+        {
+          "astId": 28295,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "domainId",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 28297,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "startTime",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 28299,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "endTime",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 28301,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "interval",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

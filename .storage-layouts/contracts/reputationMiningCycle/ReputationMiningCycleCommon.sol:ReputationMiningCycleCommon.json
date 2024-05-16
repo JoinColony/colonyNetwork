@@ -1,0 +1,468 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 43844,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 43846,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "colonyNetworkAddress",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_address_payable"
+    },
+    {
+      "astId": 43848,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "tokenLockingAddress",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_address"
+    },
+    {
+      "astId": 43850,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "clnyTokenAddress",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_address"
+    },
+    {
+      "astId": 43854,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "reputationUpdateLog",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_array(t_struct(ReputationLogEntry)41361_storage)dyn_storage"
+    },
+    {
+      "astId": 43863,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "submittedHashes",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_mapping(t_bytes32,t_array(t_address)dyn_storage)))"
+    },
+    {
+      "astId": 43868,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "reputationHashSubmissions",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_mapping(t_address,t_struct(Submission)41370_storage)"
+    },
+    {
+      "astId": 43870,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "reputationMiningWindowOpenTimestamp",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 43876,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "disputeRounds",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_mapping(t_uint256,t_array(t_struct(DisputedEntry)41391_storage)dyn_storage)"
+    },
+    {
+      "astId": 43880,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "nHashesCompletedChallengeRound",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 43883,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "nUniqueSubmittedHashes",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 43886,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "nInvalidatedHashes",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 43892,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "submittedEntries",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_bool))"
+    },
+    {
+      "astId": 43911,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "firstIncompleteRound",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 43915,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "respondedToChallenge",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 43917,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "stakeLost",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 43919,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "rewardsPaidOut",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 43921,
+      "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+      "label": "cachedDisputeRewardSize",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_uint256"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_address_payable": {
+      "encoding": "inplace",
+      "label": "address payable",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_address)dyn_storage": {
+      "base": "t_address",
+      "encoding": "dynamic_array",
+      "label": "address[]",
+      "numberOfBytes": "32"
+    },
+    "t_array(t_struct(DisputedEntry)41391_storage)dyn_storage": {
+      "base": "t_struct(DisputedEntry)41391_storage",
+      "encoding": "dynamic_array",
+      "label": "struct ReputationMiningCycleDataTypes.DisputedEntry[]",
+      "numberOfBytes": "32"
+    },
+    "t_array(t_struct(ReputationLogEntry)41361_storage)dyn_storage": {
+      "base": "t_struct(ReputationLogEntry)41361_storage",
+      "encoding": "dynamic_array",
+      "label": "struct ReputationMiningCycleDataTypes.ReputationLogEntry[]",
+      "numberOfBytes": "32"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_int256": {
+      "encoding": "inplace",
+      "label": "int256",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_bool))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => bool))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bool)"
+    },
+    "t_mapping(t_address,t_struct(Submission)41370_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => struct ReputationMiningCycleDataTypes.Submission)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Submission)41370_storage"
+    },
+    "t_mapping(t_bytes32,t_array(t_address)dyn_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => address[])",
+      "numberOfBytes": "32",
+      "value": "t_array(t_address)dyn_storage"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_mapping(t_bytes32,t_array(t_address)dyn_storage)))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(uint256 => mapping(bytes32 => address[])))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_mapping(t_bytes32,t_array(t_address)dyn_storage))"
+    },
+    "t_mapping(t_uint256,t_array(t_struct(DisputedEntry)41391_storage)dyn_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ReputationMiningCycleDataTypes.DisputedEntry[])",
+      "numberOfBytes": "32",
+      "value": "t_array(t_struct(DisputedEntry)41391_storage)dyn_storage"
+    },
+    "t_mapping(t_uint256,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_uint256,t_mapping(t_bytes32,t_array(t_address)dyn_storage))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(bytes32 => address[]))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_bytes32,t_array(t_address)dyn_storage)"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_struct(DisputedEntry)41391_storage": {
+      "encoding": "inplace",
+      "label": "struct ReputationMiningCycleDataTypes.DisputedEntry",
+      "members": [
+        {
+          "astId": 41372,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "firstSubmitter",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 41374,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "lastResponseTimestamp",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 41376,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "challengeStepCompleted",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 41378,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "intermediateReputationHash",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 41380,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "intermediateReputationNLeaves",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 41382,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "lowerBound",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 41384,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "upperBound",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 41386,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "targetHashDuringSearch",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 41388,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "hash1",
+          "offset": 0,
+          "slot": "8",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 41390,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "hash2",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_bytes32"
+        }
+      ],
+      "numberOfBytes": "320"
+    },
+    "t_struct(ReputationLogEntry)41361_storage": {
+      "encoding": "inplace",
+      "label": "struct ReputationMiningCycleDataTypes.ReputationLogEntry",
+      "members": [
+        {
+          "astId": 41350,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "user",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 41352,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "amount",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_int256"
+        },
+        {
+          "astId": 41354,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "skillId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 41356,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "colony",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_address"
+        },
+        {
+          "astId": 41358,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "nUpdates",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint128"
+        },
+        {
+          "astId": 41360,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "nPreviousUpdates",
+          "offset": 16,
+          "slot": "4",
+          "type": "t_uint128"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_struct(Submission)41370_storage": {
+      "encoding": "inplace",
+      "label": "struct ReputationMiningCycleDataTypes.Submission",
+      "members": [
+        {
+          "astId": 41363,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "proposedNewRootHash",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 41365,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "nLeaves",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 41367,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "jrh",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 41369,
+          "contract": "contracts/reputationMiningCycle/ReputationMiningCycleCommon.sol:ReputationMiningCycleCommon",
+          "label": "jrhNLeaves",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_uint128": {
+      "encoding": "inplace",
+      "label": "uint128",
+      "numberOfBytes": "16"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}
