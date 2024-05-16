@@ -11,6 +11,7 @@ const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
 require("@nomiclabs/hardhat-truffle5");
 require("hardhat-contract-sizer");
 require("hardhat-storage-layout-changes");
+require("@solidstate/hardhat-4byte-uploader");
 require("@nomiclabs/hardhat-ethers");
 require("solidity-coverage");
 
