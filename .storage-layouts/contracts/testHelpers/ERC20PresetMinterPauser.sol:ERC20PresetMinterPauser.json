@@ -1,0 +1,138 @@
+{
+  "storage": [
+    {
+      "astId": 512,
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_balances",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 518,
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_allowances",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+    },
+    {
+      "astId": 520,
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_totalSupply",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 522,
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_name",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_string_storage"
+    },
+    {
+      "astId": 524,
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_symbol",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_string_storage"
+    },
+    {
+      "astId": 406,
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_paused",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_bool"
+    },
+    {
+      "astId": 24,
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_roles",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_mapping(t_bytes32,t_struct(RoleData)19_storage)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_bytes32,t_struct(RoleData)19_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct AccessControl.RoleData)",
+      "numberOfBytes": "32",
+      "value": "t_struct(RoleData)19_storage"
+    },
+    "t_string_storage": {
+      "encoding": "bytes",
+      "label": "string",
+      "numberOfBytes": "32"
+    },
+    "t_struct(RoleData)19_storage": {
+      "encoding": "inplace",
+      "label": "struct AccessControl.RoleData",
+      "members": [
+        {
+          "astId": 16,
+          "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+          "label": "members",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_mapping(t_address,t_bool)"
+        },
+        {
+          "astId": 18,
+          "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+          "label": "adminRole",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

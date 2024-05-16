@@ -1,0 +1,19 @@
+{
+  "storage": [
+    {
+      "astId": 48610,
+      "contract": "contracts/testHelpers/ZodiacBridgeModuleMock.sol:ZodiacBridgeModuleMock",
+      "label": "avatar",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_address"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    }
+  }
+}

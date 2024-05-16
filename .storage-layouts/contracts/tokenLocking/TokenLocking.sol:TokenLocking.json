@@ -1,0 +1,197 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 50172,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 50174,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_address"
+    },
+    {
+      "astId": 50181,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "userLocks",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_struct(Lock)50158_storage))"
+    },
+    {
+      "astId": 50185,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "totalLockCount",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 50193,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "approvals",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_mapping(t_address,t_uint256)))"
+    },
+    {
+      "astId": 50201,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "obligations",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_mapping(t_address,t_uint256)))"
+    },
+    {
+      "astId": 50207,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "totalObligations",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+    },
+    {
+      "astId": 50213,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "lockers",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_address))"
+    },
+    {
+      "astId": 50217,
+      "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_mapping(t_address,t_uint256)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_mapping(t_address,t_uint256)))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => mapping(address => uint256)))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_mapping(t_address,t_uint256))"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_struct(Lock)50158_storage))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => struct TokenLockingDataTypes.Lock))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_struct(Lock)50158_storage)"
+    },
+    "t_mapping(t_address,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_address))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => address))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_address)"
+    },
+    "t_mapping(t_address,t_struct(Lock)50158_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => struct TokenLockingDataTypes.Lock)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Lock)50158_storage"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_address)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => address)",
+      "numberOfBytes": "32",
+      "value": "t_address"
+    },
+    "t_struct(Lock)50158_storage": {
+      "encoding": "inplace",
+      "label": "struct TokenLockingDataTypes.Lock",
+      "members": [
+        {
+          "astId": 50151,
+          "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+          "label": "lockCount",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 50153,
+          "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+          "label": "balance",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 50155,
+          "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+          "label": "DEPRECATED_timestamp",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 50157,
+          "contract": "contracts/tokenLocking/TokenLocking.sol:TokenLocking",
+          "label": "pendingBalance",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

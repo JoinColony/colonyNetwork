@@ -1,0 +1,440 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 23397,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 23400,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_contract(IColony)12697"
+    },
+    {
+      "astId": 23402,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": "t_bool"
+    },
+    {
+      "astId": 45147,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "state",
+      "offset": 21,
+      "slot": "3",
+      "type": "t_enum(ExtensionState)45144"
+    },
+    {
+      "astId": 45150,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_contract(IColonyNetwork)20072"
+    },
+    {
+      "astId": 45153,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "tokenLocking",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_contract(ITokenLocking)49117"
+    },
+    {
+      "astId": 45155,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "token",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_address"
+    },
+    {
+      "astId": 45157,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "totalStakeFraction",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45159,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "voterRewardFraction",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45161,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "userMinStakeFraction",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45163,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "maxVoteFraction",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45165,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "stakePeriod",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45167,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "submitPeriod",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45169,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "revealPeriod",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45171,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "escalationPeriod",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45175,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 45507,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "motionCount",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 45512,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "motions",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_mapping(t_uint256,t_struct(Motion)45505_storage)"
+    },
+    {
+      "astId": 45520,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "stakes",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))"
+    },
+    {
+      "astId": 45526,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "voteSecrets",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_mapping(t_uint256,t_mapping(t_address,t_bytes32))"
+    },
+    {
+      "astId": 45530,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "expenditurePastVotes",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_mapping(t_bytes32,t_uint256)"
+    },
+    {
+      "astId": 45534,
+      "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+      "label": "expenditureMotionCounts",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_mapping(t_bytes32,t_uint256)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)2_storage": {
+      "base": "t_uint256",
+      "encoding": "inplace",
+      "label": "uint256[2]",
+      "numberOfBytes": "64"
+    },
+    "t_array(t_uint64)3_storage": {
+      "base": "t_uint64",
+      "encoding": "inplace",
+      "label": "uint64[3]",
+      "numberOfBytes": "32"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_bytes_storage": {
+      "encoding": "bytes",
+      "label": "bytes",
+      "numberOfBytes": "32"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IColony)12697": {
+      "encoding": "inplace",
+      "label": "contract IColony",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IColonyNetwork)20072": {
+      "encoding": "inplace",
+      "label": "contract IColonyNetwork",
+      "numberOfBytes": "20"
+    },
+    "t_contract(ITokenLocking)49117": {
+      "encoding": "inplace",
+      "label": "contract ITokenLocking",
+      "numberOfBytes": "20"
+    },
+    "t_enum(ExtensionState)45144": {
+      "encoding": "inplace",
+      "label": "enum VotingReputationMisaligned.ExtensionState",
+      "numberOfBytes": "1"
+    },
+    "t_mapping(t_address,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint256)"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_bytes32,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_bytes32))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => bytes32))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_bytes32)"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => mapping(uint256 => uint256)))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
+    },
+    "t_mapping(t_uint256,t_struct(Motion)45505_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct VotingReputationMisaligned.Motion)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Motion)45505_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_struct(Motion)45505_storage": {
+      "encoding": "inplace",
+      "label": "struct VotingReputationMisaligned.Motion",
+      "members": [
+        {
+          "astId": 45472,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "events",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_array(t_uint64)3_storage"
+        },
+        {
+          "astId": 45474,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "rootHash",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 45476,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "domainId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 45478,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "skillId",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 45480,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "skillRep",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 45482,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "repSubmitted",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 45484,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "paidVoterComp",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 45488,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "pastVoterComp",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_array(t_uint256)2_storage"
+        },
+        {
+          "astId": 45492,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "stakes",
+          "offset": 0,
+          "slot": "9",
+          "type": "t_array(t_uint256)2_storage"
+        },
+        {
+          "astId": 45496,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "votes",
+          "offset": 0,
+          "slot": "11",
+          "type": "t_array(t_uint256)2_storage"
+        },
+        {
+          "astId": 45498,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "escalated",
+          "offset": 0,
+          "slot": "13",
+          "type": "t_bool"
+        },
+        {
+          "astId": 45500,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "finalized",
+          "offset": 1,
+          "slot": "13",
+          "type": "t_bool"
+        },
+        {
+          "astId": 45502,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "altTarget",
+          "offset": 2,
+          "slot": "13",
+          "type": "t_address"
+        },
+        {
+          "astId": 45504,
+          "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
+          "label": "action",
+          "offset": 0,
+          "slot": "14",
+          "type": "t_bytes_storage"
+        }
+      ],
+      "numberOfBytes": "480"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    }
+  }
+}

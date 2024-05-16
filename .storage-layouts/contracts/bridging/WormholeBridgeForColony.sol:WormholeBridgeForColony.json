@@ -1,0 +1,93 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 2581,
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 2584,
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "wormhole",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_contract(IWormhole)54429"
+    },
+    {
+      "astId": 2588,
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "colonyBridges",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_mapping(t_uint256,t_address)"
+    },
+    {
+      "astId": 2592,
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "evmChainIdToWormholeChainId",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_uint256,t_uint16)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IWormhole)54429": {
+      "encoding": "inplace",
+      "label": "contract IWormhole",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_uint256,t_address)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => address)",
+      "numberOfBytes": "32",
+      "value": "t_address"
+    },
+    "t_mapping(t_uint256,t_uint16)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint16)",
+      "numberOfBytes": "32",
+      "value": "t_uint16"
+    },
+    "t_uint16": {
+      "encoding": "inplace",
+      "label": "uint16",
+      "numberOfBytes": "2"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

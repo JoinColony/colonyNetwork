@@ -1,0 +1,52 @@
+{
+  "storage": [
+    {
+      "astId": 50553,
+      "contract": "contracts/common/Resolver.sol:Resolver",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)50539"
+    },
+    {
+      "astId": 50555,
+      "contract": "contracts/common/Resolver.sol:Resolver",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 21715,
+      "contract": "contracts/common/Resolver.sol:Resolver",
+      "label": "pointers",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_mapping(t_bytes4,t_address)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bytes4": {
+      "encoding": "inplace",
+      "label": "bytes4",
+      "numberOfBytes": "4"
+    },
+    "t_contract(DSAuthority)50539": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_bytes4,t_address)": {
+      "encoding": "mapping",
+      "key": "t_bytes4",
+      "label": "mapping(bytes4 => address)",
+      "numberOfBytes": "32",
+      "value": "t_address"
+    }
+  }
+}

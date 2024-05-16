@@ -1,0 +1,32 @@
+{
+  "storage": [
+    {
+      "astId": 43933,
+      "contract": "contracts/testHelpers/BridgeMock.sol:BridgeMock",
+      "label": "bridgeEnabled",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_bool"
+    },
+    {
+      "astId": 43935,
+      "contract": "contracts/testHelpers/BridgeMock.sol:BridgeMock",
+      "label": "messageSender",
+      "offset": 1,
+      "slot": "0",
+      "type": "t_address"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    }
+  }
+}

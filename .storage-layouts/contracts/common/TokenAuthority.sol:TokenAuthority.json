@@ -1,0 +1,43 @@
+{
+  "storage": [
+    {
+      "astId": 21779,
+      "contract": "contracts/common/TokenAuthority.sol:TokenAuthority",
+      "label": "authorizations",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_mapping(t_address,t_mapping(t_bytes4,t_bool))"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes4": {
+      "encoding": "inplace",
+      "label": "bytes4",
+      "numberOfBytes": "4"
+    },
+    "t_mapping(t_address,t_mapping(t_bytes4,t_bool))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(bytes4 => bool))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_bytes4,t_bool)"
+    },
+    "t_mapping(t_bytes4,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_bytes4",
+      "label": "mapping(bytes4 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    }
+  }
+}

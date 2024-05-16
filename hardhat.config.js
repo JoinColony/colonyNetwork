@@ -102,14 +102,7 @@ module.exports = {
     storageLayouts: ".storage-layouts",
   },
   storageLayoutChanges: {
-    contracts: [
-      "ColonyStorage",
-      "ColonyNetworkStorage",
-      "ReputationMiningCycleStorage",
-      "VotingReputationStorage",
-      "CommonStorage",
-      "TokenLockingStorage",
-    ],
+    contracts: [],
   },
   networks: {
     development: {
