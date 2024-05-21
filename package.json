@@ -88,6 +88,7 @@
     "@solidstate/hardhat-4byte-uploader": "^1.2.2",
     "@truffle/contract": "^4.6.31",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
+    "@wormhole-foundation/relayer-engine": "^0.3.2",
     "async-request": "^1.2.0",
     "axios": "^0.28.1",
     "bignumber.js": "^9.1.2",
@@ -132,7 +133,9 @@
     "solhint": "^3.6.2",
     "solidity-coverage": "^0.8.12",
     "solidity-steamroller": "^1.1.0",
-    "web3-utils": "^1.10.4"
+    "web3-utils": "^1.10.4",
+    "tsx": "^4.10.4",
+    "typescript": "^5.4.5"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
@@ -145,5 +148,20 @@
     "overrides": {
       "git@github.com+ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0": "git+https://github.com/ethereumjs/ethereumjs-abi.git+ee3994657fa7a427238e6ba92a84d0b529bbcde0"
     }
+  },
+  "workspaces": [
+    "packages/kyc-oracle",
+    "packages/metatransaction-broadcaster",
+    "packages/package-utils",
+    "packages/reputation-miner"
+  ],
+  "dependencies": {
+    "@certusone/wormhole-sdk": "^0.10.15",
+    "@grpc/grpc-js": "^1.10.8",
+    "@grpc/proto-loader": "^0.7.13",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
+    "@types/node": "^20.11.0",
+    "express-ws": "^5.0.2",
+    "ws": "^8.17.0"
   }
 }

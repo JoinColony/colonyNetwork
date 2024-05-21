@@ -2,7 +2,7 @@
 
 const chai = require("chai");
 const bnChai = require("bn-chai");
-const { ethers, BigNumber } = require("ethers");
+const { ethers } = require("ethers");
 const path = require("path");
 const baseExec = require("child_process").exec;
 
@@ -34,7 +34,7 @@ const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
 
 const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION, CREATEX_ADDRESS } = require("../../helpers/constants");
-const { forwardTime, checkErrorRevertEthers, snapshot, revert } = require("../../helpers/test-helper");
+const { forwardTime, checkErrorRevertEthers } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
 
@@ -69,8 +69,8 @@ contract("Cross-chain", (accounts) => {
 
   let client;
 
-  let homeSnapshotId;
-  let foreignSnapshotId;
+  // let homeSnapshotId;
+  // let foreignSnapshotId;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
@@ -130,12 +130,24 @@ contract("Cross-chain", (accounts) => {
 
     // Add bridge to the foreign colony network
     // const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
+    // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
+    // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
+    // and for chainId 256669101, we use 10002 (which is really sepolia).
+    // This isn't ideal, but it's the best solution I have for now
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
-    wormholeHomeChainId = BigNumber.from(homeChainId).mod(265669).mul(2);
+    if (homeChainId === "0xfd5c9ec") {
+      wormholeHomeChainId = 10003;
+    } else {
+      wormholeHomeChainId = 10002;
+    }
 
     // const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
-    wormholeForeignChainId = BigNumber.from(foreignChainId).mod(265669).mul(2);
+    if (foreignChainId === "0xfd5c9ec") {
+      wormholeForeignChainId = 10003;
+    } else {
+      wormholeForeignChainId = 10002;
+    }
 
     // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
     try {
@@ -163,8 +175,8 @@ contract("Cross-chain", (accounts) => {
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
     web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
-    homeSnapshotId = await snapshot(web3HomeProvider);
-    foreignSnapshotId = await snapshot(web3ForeignProvider);
+    // homeSnapshotId = await snapshot(web3HomeProvider);
+    // foreignSnapshotId = await snapshot(web3ForeignProvider);
     bridgeMonitor.reset();
 
     let tx = await foreignBridge.setBridgeEnabled(true);
@@ -183,8 +195,10 @@ contract("Cross-chain", (accounts) => {
     // Bridge over skills that have been created on the foreign chain
 
     const latestSkillId = await foreignColonyNetwork.getSkillCount();
-    const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
-    for (let i = skillId; i <= latestSkillId; i = i.add(1)) {
+    const alreadyBridged = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
+    console.log(latestSkillId, alreadyBridged);
+    // const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
+    for (let i = alreadyBridged.add(1); i <= latestSkillId; i = i.add(1)) {
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
       tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
       await tx.wait();
@@ -237,8 +251,8 @@ contract("Cross-chain", (accounts) => {
   }
 
   afterEach(async () => {
-    await revert(web3HomeProvider, homeSnapshotId);
-    await revert(web3ForeignProvider, foreignSnapshotId);
+    // await revert(web3HomeProvider, homeSnapshotId);
+    // await revert(web3ForeignProvider, foreignSnapshotId);
   });
 
   after(async () => {

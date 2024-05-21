@@ -19,8 +19,10 @@
 pragma solidity 0.8.25;
 
 import { IWormhole } from "../../lib/wormhole/ethereum/contracts/interfaces/IWormhole.sol";
+import { BytesLib } from "../../lib/wormhole/ethereum/contracts/libraries/external/BytesLib.sol";
 
 contract WormholeMock is IWormhole {
+  using BytesLib for bytes;
   bool public bridgeEnabled = true;
   uint64 cumulativeSequence = 0;
 
@@ -32,34 +34,24 @@ contract WormholeMock is IWormhole {
     invalidVMReason = _reason;
   }
 
-  function buildVM(
-    uint8 version,
+  function buildVAABody(
     uint32 timestamp,
     uint32 nonce,
     uint16 emitterChainId,
     bytes32 emitterAddress,
     uint64 sequence,
     uint8 consistencyLevel,
-    bytes memory payload,
-    uint32 guardianSetIndex,
-    Signature[] memory signatures,
-    bytes32 hash
-  ) external pure returns (bytes memory encodedVm) {
+    bytes memory payload
+  ) external pure returns (bytes memory) {
     return
-      abi.encode(
-        VM(
-          version,
-          timestamp,
-          nonce,
-          emitterChainId,
-          emitterAddress,
-          sequence,
-          consistencyLevel,
-          payload,
-          guardianSetIndex,
-          signatures,
-          hash
-        )
+      abi.encodePacked(
+        timestamp,
+        nonce,
+        emitterChainId,
+        bytes32(emitterAddress),
+        sequence,
+        consistencyLevel,
+        payload
       );
   }
 
@@ -68,7 +60,7 @@ contract WormholeMock is IWormhole {
   ) external view returns (VM memory vm, bool valid, string memory reason) {
     // For our mock wormhole contract, the encodedVM isn't a VAA, it's just appropriately packed data
 
-    (vm) = abi.decode(encodedVM, (VM));
+    vm = parseVM(encodedVM);
 
     return (vm, vmResult, invalidVMReason);
   }
@@ -95,7 +87,68 @@ contract WormholeMock is IWormhole {
     GuardianSet memory guardianSet
   ) external pure returns (bool valid, string memory reason) {}
 
-  function parseVM(bytes memory encodedVM) external pure returns (VM memory vm) {}
+  function parseVM(bytes memory encodedVM) public pure virtual returns (VM memory vm) {
+    uint index = 0;
+
+    vm.version = encodedVM.toUint8(index);
+    index += 1;
+    // SECURITY: Note that currently the VM.version is not part of the hash
+    // and for reasons described below it cannot be made part of the hash.
+    // This means that this field's integrity is not protected and cannot be trusted.
+    // This is not a problem today since there is only one accepted version, but it
+    // could be a problem if we wanted to allow other versions in the future.
+    require(vm.version == 1, "VM version incompatible");
+
+    vm.guardianSetIndex = encodedVM.toUint32(index);
+    index += 4;
+
+    // Parse Signatures
+    uint256 signersLen = encodedVM.toUint8(index);
+    index += 1;
+    vm.signatures = new Signature[](signersLen);
+    for (uint i = 0; i < signersLen; i++) {
+      vm.signatures[i].guardianIndex = encodedVM.toUint8(index);
+      index += 1;
+
+      vm.signatures[i].r = encodedVM.toBytes32(index);
+      index += 32;
+      vm.signatures[i].s = encodedVM.toBytes32(index);
+      index += 32;
+      vm.signatures[i].v = encodedVM.toUint8(index) + 27;
+      index += 1;
+    }
+
+    /*
+        Hash the body
+
+        SECURITY: Do not change the way the hash of a VM is computed!
+        Changing it could result into two different hashes for the same observation.
+        But xDapps rely on the hash of an observation for replay protection.
+        */
+    bytes memory body = encodedVM.slice(index, encodedVM.length - index);
+    vm.hash = keccak256(abi.encodePacked(keccak256(body)));
+
+    // Parse the body
+    vm.timestamp = encodedVM.toUint32(index);
+    index += 4;
+
+    vm.nonce = encodedVM.toUint32(index);
+    index += 4;
+
+    vm.emitterChainId = encodedVM.toUint16(index);
+    index += 2;
+
+    vm.emitterAddress = encodedVM.toBytes32(index);
+    index += 32;
+
+    vm.sequence = encodedVM.toUint64(index);
+    index += 8;
+
+    vm.consistencyLevel = encodedVM.toUint8(index);
+    index += 1;
+
+    vm.payload = encodedVM.slice(index, encodedVM.length - index);
+  }
 
   function quorum(uint numGuardians) external pure returns (uint numSignaturesRequiredForQuorum) {}
 
