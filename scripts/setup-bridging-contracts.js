@@ -7,6 +7,7 @@
 
 const path = require("path");
 const ethers = require("ethers");
+const { spawn } = require("child_process");
 const { TruffleLoader } = require("../packages/package-utils");
 const { WAD } = require("../helpers/constants");
 
@@ -15,7 +16,7 @@ const loader = new TruffleLoader({
 });
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;
-const MockBridgeMonitor = require("./mockBridgeMonitor");
+const MockGuardianSpy = require("./mockGuardianSpy");
 
 async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   console.log("setup-bridging-contracts: Not to be used in production");
@@ -126,7 +127,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   // Start the bridge service
   console.log(`Home RPC Url: ${homeRpcUrl}`);
   console.log(`Foreign RPC Url: ${foreignRpcUrl}`);
-  const bridgeMonitor = new MockBridgeMonitor(
+  const guardianSpy = new MockGuardianSpy(
     homeRpcUrl,
     foreignRpcUrl,
     homeBridge.address,
@@ -134,6 +135,33 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
     homeColonyBridge.address,
     foreignColonyBridge.address,
   ); // eslint-disable-line no-unused-vars
+
+  // TODO: Start the bridge monitor
+  console.log(path.resolve(__dirname, "..", "packages", "wormhole-relayer"));
+  const relayerProcess = spawn("npx", ["tsx", "./index.ts"], {
+    cwd: path.resolve(__dirname, "..", "packages", "wormhole-relayer"),
+  });
+
+  relayerProcess.stdout.on("data", (d) => {
+    console.log(`stdout: ${d}`);
+  });
+
+  relayerProcess.stderr.on("data", (d) => {
+    console.error(`stderr: ${d}`);
+    process.exit(1);
+  });
+
+  relayerProcess.on("close", (code) => {
+    console.log(`child process exited with code ${code}`);
+  });
+
+  // Wait until the bridge monitor has connected to the spy
+  while (!guardianSpy.subscription) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 1000);
+    });
+  }
+
   console.log(`Home bridge address: ${homeBridge.address}`);
   console.log(`Foreign bridge address: ${foreignBridge.address}`);
   console.log(`Home colony bridge address: ${homeColonyBridge.address}`);
@@ -142,7 +170,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
   console.log(`Token address: ${token.address}`);
-  return { gnosisSafe, bridgeMonitor, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
+  return { gnosisSafe, bridgeMonitor: guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
 }
 
 async function getSig(provider, account, dataHash) {
@@ -174,7 +202,7 @@ async function deployBridge(signer) {
 
   let tx = await bridge.setWormholeAddress(wormhole.address);
   await tx.wait();
-  tx = await bridge.setChainIdMapping([100, 265669100, 265669101], [200, 200, 202]);
+  tx = await bridge.setChainIdMapping([265669100, 265669101], [10003, 10002]);
   await tx.wait();
 
   return [wormhole, bridge];

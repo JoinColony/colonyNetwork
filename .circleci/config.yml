@@ -50,6 +50,14 @@ step_install_lsof: &step_install_lsof
       command: |
         sudo apt-get update
         sudo apt-get install lsof
+step_compile_mock_spy: &step_compile_mock_spy
+    run:
+      name: "Compile mock spy"
+      command: |
+        cd ./lib/wormhole/sdk/js-proto-node && npm i
+        cd ./../.. && DOCKER_BUILDKIT=1 docker build --target node-export -f Dockerfile.proto -o type=local,dest=. .
+        cd ./../.. && npx tsc --esModuleInterop --downlevelIteration ./scripts/mockGuardianSpy.ts
+
 jobs:
   build-checks:
     <<: *job_common
@@ -60,18 +68,27 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - run:
-          name: "Linting JavaScript"
-          command: pnpm run eslint
-      - run:
-          name: "Linting Solidity"
-          command: pnpm run solhint
+      # Do this before compile_mock_spy as that step makes ./lib/wormhole dirty, causing git
+      # checks to fail
       - run:
           name: "Building Docs"
           command: pnpm run build:docs
       - run:
           name: "Check git hooks run"
           command: pnpm run check:gitchanges
+      - run:
+          name: "Checking contract storage layout hasn't broken existing slots"
+          command: npx hardhat storage-layout --check
+      - run:
+          name: "Checking contract storage layout hasn't had additions made"
+          command: npx hardhat storage-layout --update && npm run normalize:storageSlots && git checkout ./.storage-layouts && git diff --exit-code
+      - <<: *step_compile_mock_spy
+      - run:
+          name: "Linting JavaScript"
+          command: pnpm run eslint
+      - run:
+          name: "Linting Solidity"
+          command: pnpm run solhint
       - run:
           name: "Checking contract storage variables"
           command: pnpm run check:storagevars
@@ -103,9 +120,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Build contract artifacts"
-          command: |
-            pnpm i --frozen-lockfile
-            npx hardhat compile
+          command: npx hardhat compile
       - run:
           name: "Test Reputation Miner docker build"
           command: docker build -f ./packages/reputation-miner/Dockerfile .
@@ -333,6 +348,7 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - <<: *step_install_lsof
+      - <<: *step_compile_mock_spy
       - run:
           name: "Installing the safe-contracts dependencies"
           command: cd ./lib/safe-contracts && pnpm i --ignore-scripts

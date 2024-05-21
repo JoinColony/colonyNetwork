@@ -35,3 +35,4 @@ build-coverage/
 coverage-extensions/
 .pnpm-store
 .storage-layouts
+scripts/mockGuardianSpy.js

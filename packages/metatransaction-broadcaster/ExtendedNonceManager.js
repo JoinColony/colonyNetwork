@@ -4,6 +4,7 @@ class ExtendedNonceManager extends NonceManager {
   constructor(signer) {
     super(signer);
     this.signedTransactions = {};
+    this.nonce = 0;
     this.signer.provider.on("block", async () => {
       Object.keys(this.signedTransactions).map(async (txHash) => {
         const nodeTx = await this.signer.provider.getTransaction(txHash);
@@ -23,17 +24,22 @@ class ExtendedNonceManager extends NonceManager {
   async sendTransaction(transactionRequest) {
     // What nonce are we going to attach to this?
     // Definitely not any we've sent and are pending
-    const pendingNonces = Object.keys(this.signedTransactions).map((txhash) => this.signedTransactions[txhash].nonce);
-    // At least whatever the endpoint says
-    let nonce = await this.signer.getTransactionCount();
+    // const pendingNonces = Object.keys(this.signedTransactions).map((txhash) => this.signedTransactions[txhash].nonce);
+    // At least whatever the endpoint says, or whatever we've already sent if higher
+    const endpointNonce = await this.signer.getTransactionCount();
+    let nonce = Math.max(endpointNonce);
     // Note the order we did the above two lines in - if a tx is mined between these two lines,
     // and got removed by the `on block` handler above, by doing it in this order we won't be tripped up
     // And we'll skip any nonces we've already used
-    while (pendingNonces.includes(nonce)) {
+    while (
+      Object.keys(this.signedTransactions)
+        .map((txhash) => this.signedTransactions[txhash].nonce)
+        .includes(nonce)
+    ) {
       nonce += 1;
     }
     transactionRequest.nonce = nonce; // eslint-disable-line no-param-reassign
-
+    this.nonce = nonce + 1;
     const response = super.sendTransaction(transactionRequest);
     const tx = await response;
     this.signedTransactions[tx.hash] = transactionRequest;
