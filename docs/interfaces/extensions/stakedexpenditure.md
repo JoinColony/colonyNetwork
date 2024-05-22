@@ -6,6 +6,8 @@ finalized without issue, then the stake is returned. If for whatever reason
 the creator is found to have acted inapproriately, they run the risk of losing
 their stake.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
 

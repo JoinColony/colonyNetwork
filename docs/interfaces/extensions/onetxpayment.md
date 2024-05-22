@@ -10,6 +10,8 @@ Extension therefore requires `Administration` and `Funding` roles to function.
 
 _Note: if you deployed your Colony using the Dapp, the `OneTxPayment` extension is already installed for you_
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
 

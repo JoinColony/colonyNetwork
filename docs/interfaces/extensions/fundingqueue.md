@@ -8,6 +8,8 @@ quickly the proposal is fulfilled, up to a maximum of half of the source domain'
 assets per week. By creating and bacing funding proposals throughout the colony,
 a steady flow of resources from the root through the domains can be achieved.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
 
