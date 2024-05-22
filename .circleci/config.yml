@@ -120,9 +120,6 @@ jobs:
       - run:
           name: "Check contract sizes"
           command: npx hardhat size-contracts
-      - run:
-          name: "Checking contract versions"
-          command: pnpm run check:versioning
       - run: 
           name: "Checking contract storage layout hasn't broken existing slots"
           command: npx hardhat storage-layout --check
@@ -132,6 +129,9 @@ jobs:
       - run:
           name: "Upload function selectors to 4byte.directory"
           command: npx hardhat upload-selectors
+      - run:
+          name: "Checking contract versions"
+          command: pnpm run check:versioning
   check-docker-files-build:
     <<: *job_common
     steps:
