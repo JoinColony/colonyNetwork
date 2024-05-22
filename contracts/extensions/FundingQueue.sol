@@ -90,16 +90,14 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(
-    address userAddress
-  ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[userAddress];
+  /// @param _user The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Interface overrides

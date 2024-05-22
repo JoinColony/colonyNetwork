@@ -37,7 +37,7 @@ Return the permissions required for each function
 |---|---|---|
 |_roles|bytes32|The byte32 of permissions required
 
-### ▸ `getMetatransactionNonce(address _user):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 _nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -52,7 +52,7 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|The nonce
+|_nonce|uint256|The nonce
 
 ### ▸ `identifier():bytes32 _identifier`
 

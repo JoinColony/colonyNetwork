@@ -49,7 +49,7 @@ Get the user's approval status
 |---|---|---|
 |_status|bool|The user's approval status
 
-### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 _nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -58,13 +58,13 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|The nonce
+|_nonce|uint256|The nonce
 
 ### ▸ `getSignature(address _user):bool _status`
 

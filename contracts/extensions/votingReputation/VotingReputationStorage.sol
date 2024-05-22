@@ -105,17 +105,15 @@ contract VotingReputationStorage is
 
   uint256 motionCountV10; // Motion count during the v9 -> v10 upgrade
 
-  function getMetatransactionNonce(
-    address _userAddress
-  ) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
     // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
     // account at 1 million nonce by then.
-    return metatransactionNonces[_userAddress] + 1000000;
+    return metatransactionNonces[_user] + 1000000;
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers

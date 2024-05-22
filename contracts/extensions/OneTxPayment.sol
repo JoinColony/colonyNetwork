@@ -38,10 +38,8 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _user The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(
-    address _user
-  ) public view override returns (uint256 nonce) {
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
     return metatransactionNonces[_user];
   }
 

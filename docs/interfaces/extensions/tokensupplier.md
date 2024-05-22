@@ -8,6 +8,25 @@ to the colony.
   
 ## Interface Methods
 
+### ▸ `deprecate(bool _deprecated)`
+
+Called when deprecating (or undeprecating) the extension
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
+
+
+### ▸ `finishUpgrade()`
+
+Called when upgrading the extension (currently a no-op)
+
+
+
+
 ### ▸ `getLastPinged():uint256 lastPinged`
 
 Get the time of the last token minting event
@@ -32,7 +51,7 @@ Get the time of the last change in issuance rate
 |---|---|---|
 |lastUpdate|uint256|The timestamp of the last update
 
-### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 _nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -41,13 +60,13 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|The nonce
+|_nonce|uint256|The nonce
 
 ### ▸ `getTokenIssuanceRate():uint256 issuanceRate`
 
@@ -139,6 +158,13 @@ Update the tokenSupplyCeiling, cannot set below current tokenSupply
 |Name|Type|Description|
 |---|---|---|
 |_tokenSupplyCeiling|uint256|Total amount of tokens to issue
+
+
+### ▸ `uninstall()`
+
+Called when uninstalling the extension
+
+
 
 
 ### ▸ `version():uint256 _version`

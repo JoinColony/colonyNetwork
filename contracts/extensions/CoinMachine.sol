@@ -71,14 +71,12 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _userAddress The user's address
   /// @return _nonce The nonce
-  function getMetatransactionNonce(
-    address _userAddress
-  ) public view override returns (uint256 _nonce) {
-    return metatransactionNonces[_userAddress];
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers

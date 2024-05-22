@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { ColonyDataTypes } from "./../colony/IColony.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
 
 contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   uint256 constant ISSUANCE_PERIOD = 1 days;
@@ -44,16 +44,14 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(
-    address userAddress
-  ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[userAddress];
+  /// @param _user The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers
@@ -63,7 +61,7 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
     _;
   }
 
-  // Interface overrides
+  // Public
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -80,12 +78,23 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
-    super.install(_colony);
+    require(address(colony) == address(0x0), "extension-already-installed");
 
+    colony = IColony(_colony);
     token = colony.getToken();
   }
 
-  // Public
+  /// @notice Called when upgrading the extension (currently a no-op)
+  function finishUpgrade() public override auth {}
+
+  /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
+  function deprecate(bool _deprecated) public override auth {}
+
+  /// @notice Called when uninstalling the extension
+  function uninstall() public override auth {
+    selfdestruct(payable(address(colony)));
+  }
 
   /// @notice Initialise the extension, must be called before any tokens can be issued
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
