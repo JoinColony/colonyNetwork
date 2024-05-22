@@ -6,15 +6,34 @@ CURRENT_BRANCH=`git branch --show-current`
 
 git checkout $LATEST_RELEASE
 
+
+if (command -v nvm &> /dev/null)
+then
+  NODE_MANAGER="nvm"
+elif (command -v n &> /dev/null)
+then
+  NODE_MANAGER="n"
+elif (command -v fnm &> /dev/null)
+then
+  NODE_MANAGER="fnm"
+else
+  echo "No node manager found"
+  exit 1
+fi
+
 # Compile release
-npm ci --force && npx truffle compile
-rm -rf build-$LATEST_RELEASE || true
-mv build build-$LATEST_RELEASE
+$NODE_MANAGER install
+$NODE_MANAGER use
+npm ci --force && npx hardhat compile
+rm -rf artifacts-$LATEST_RELEASE || true
+mv artifacts artifacts-$LATEST_RELEASE
 
 # Compile current commit
 git checkout $CURRENT_BRANCH
+$NODE_MANAGER install
+$NODE_MANAGER use
 find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
-npm ci && npx hardhat compile
+pnpm install --frozen-lockfile && npx hardhat compile
 
 version_from_commit() {
 	COMMIT=$1;
@@ -64,7 +83,7 @@ compare_bytecodes_check_extension_version() {
 	CONTRACT_NAME=`basename $1 .sol`
 	FILE_WITH_VERSION=$2
 
-	LAST_RELEASE_FILE="build-$LATEST_RELEASE/contracts/$CONTRACT_NAME.json"
+	LAST_RELEASE_FILE="artifacts-$LATEST_RELEASE/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json"
 	THIS_COMMIT_FILE="artifacts/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json"
 
 	if [ ! -f "$LAST_RELEASE_FILE" ]; then
@@ -72,7 +91,7 @@ compare_bytecodes_check_extension_version() {
 	    return
 	fi
 
-	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./build-$LATEST_RELEASE/contracts/$CONTRACT_NAME.json)
+	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./artifacts-$LATEST_RELEASE/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
 	NEW_BYTECODE=$(relevant_bytecode ./artifacts/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
 
 	# If the bytecode is different, check the version in the appropriate file
@@ -107,7 +126,7 @@ extension_check_and_dependencies() {
 for file in contracts/colony/*
 do
 	CONTRACT_NAME=`basename $file .sol`
-	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./build-$LATEST_RELEASE/contracts/$CONTRACT_NAME.json)
+	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./artifacts-$LATEST_RELEASE/contracts/colony/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
 	NEW_BYTECODE=$(relevant_bytecode ./artifacts/contracts/colony/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
 
 	# If the bytecode is different, check the version in colony
