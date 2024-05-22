@@ -130,6 +130,10 @@ jobs:
           name: "Upload function selectors to 4byte.directory"
           command: npx hardhat upload-selectors
       - run:
+          name: "Install nvm"
+          command: |
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      - run:
           name: "Checking contract versions"
           command: pnpm run check:versioning
   check-docker-files-build:
