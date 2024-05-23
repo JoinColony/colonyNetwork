@@ -141,7 +141,7 @@ Get the maximum amount of tokens a user can purchase in a period
 |---|---|---|
 |_max|uint256|Maximum amount of tokens
 
-### ▸ `getMetatransactionNonce(address _user):uint256 _nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -150,13 +150,13 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|_user|address|ddress The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_nonce|uint256|The nonce
+|nonce|uint256|The nonce
 
 ### ▸ `getPeriodLength():uint256 _length`
 

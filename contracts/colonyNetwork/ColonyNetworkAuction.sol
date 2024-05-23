@@ -283,7 +283,6 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     return true;
   }
 
-  // slither-disable-next-line suicidal
   function destruct() public auctionFinalized allBidsClaimed {
     // Transfer token remainder to the network
     uint auctionTokenBalance = token.balanceOf(address(this));
@@ -291,13 +290,5 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
     uint auctionClnyBalance = clnyToken.balanceOf(address(this));
     assert(clnyToken.transfer(metaColonyAddress, auctionClnyBalance));
-    // Check this contract balances in the working tokens is 0 before we kill it
-    // slither-disable-next-line incorrect-equality
-    assert(clnyToken.balanceOf(address(this)) == 0);
-    // slither-disable-next-line incorrect-equality
-    assert(token.balanceOf(address(this)) == 0);
-    // Send ether to the metaColony
-    // slither-disable-next-line arbitrary-send-eth
-    payable(metaColonyAddress).transfer(address(this).balance);
   }
 }

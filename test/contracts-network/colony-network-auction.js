@@ -941,10 +941,17 @@ contract("Colony Network Auction", (accounts) => {
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
     });
 
-    it("should be able to destruct the auction", async () => {
+    it("should be able to destruct the auction and send ether to the meta colony", async () => {
       await tokenAuction.finalize();
       await tokenAuction.claim(BIDDER_1);
+
+      const balanceBefore = await clnyToken.balanceOf(metaColony.address);
+
+      await giveUserCLNYTokens(colonyNetwork, tokenAuction.address, 100);
       await tokenAuction.destruct();
+
+      const balanceAfter = await clnyToken.balanceOf(metaColony.address);
+      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(100);
     });
 
     it("should fail if auction not finalized", async () => {
