@@ -33,3 +33,4 @@ ganache-chain-db-2/
 *Updated*.sol*
 build-coverage/
 coverage-extensions/
+.pnpm-store

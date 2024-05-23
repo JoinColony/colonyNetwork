@@ -15,22 +15,27 @@ job_python: &job_python
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
+step_setup_pnpm: &step_setup_pnpm #Only used in python image, as node image comes with it
+  run:
+    name: "Install pnpm"
+    command: npm i -g pnpm@8.14.1 #Same version as in cimg/node:20.11.0
 step_save_cache: &step_save_cache
   save_cache:
+    name: Save pnpm Package Cache
+    key: pnpm-packages-{{ checksum "pnpm-lock.yaml" }}
     paths:
-      - ~/.npm
-    key: node-modules-{{ checksum "package-lock.json" }}
+      - .pnpm-store
 step_restore_cache: &step_restore_cache
   restore_cache:
+    name: Restore pnpm Package Cache
     keys:
-      - node-modules-{{ checksum "package-lock.json" }}
+      - pnpm-packages-{{ checksum "pnpm-lock.yaml" }}
 step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
     command: |
-      npm set cache ~/.npm
-      sudo npm install -g npm@10.2.4
-      npm ci
+      pnpm config set store-dir .pnpm-store
+      pnpm install --frozen-lockfile
       git submodule update --init
 step_pull_solc_docker: &step_pull_solc_docker
     run:
@@ -81,7 +86,7 @@ jobs:
             NODE_OPTIONS: --max-old-space-size=6144
       # - run:
       #     name: "Running storage consistency smoke tests"
-      #     command: npm run test:contracts:smoke
+      #     command: pnpm run test:contracts:smoke
   build-checks:
     <<: *job_common
     steps:
@@ -93,31 +98,28 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Linting JavaScript"
-          command: npm run eslint
+          command: pnpm run eslint
       - run:
           name: "Linting Solidity"
-          command: npm run solhint
+          command: pnpm run solhint
       - run:
           name: "Building Docs"
-          command: npm run build:docs
+          command: pnpm run build:docs
       - run:
           name: "Check git hooks run"
-          command: npm run check:gitchanges
+          command: pnpm run check:gitchanges
       - run:
           name: "Checking contract storage variables"
-          command: npm run check:storagevars
+          command: pnpm run check:storagevars
       - run:
           name: "Checking contract recovery modifiers"
-          command: npm run check:recoverymods
+          command: pnpm run check:recoverymods
       - run:
           name: "Checking contract authDomain modifiers"
-          command: npm run check:auth
+          command: pnpm run check:auth
       - run:
           name: "Check contract sizes"
           command: npx hardhat size-contracts
-      - run:
-          name: "Checking contract versions"
-          command: npm run check:versioning
       - run: 
           name: "Checking contract storage layout hasn't broken existing slots"
           command: npx hardhat storage-layout --check
@@ -127,6 +129,9 @@ jobs:
       - run:
           name: "Upload function selectors to 4byte.directory"
           command: npx hardhat upload-selectors
+      - run:
+          name: "Checking contract versions"
+          command: pnpm run check:versioning
   check-docker-files-build:
     <<: *job_common
     steps:
@@ -138,7 +143,7 @@ jobs:
       - run:
           name: "Build contract artifacts"
           command: |
-            npm ci
+            pnpm i --frozen-lockfile
             npx hardhat compile
       - run:
           name: "Test miner docker build"
@@ -163,7 +168,7 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Running network contracts unit tests"
-          command: npm run test:contracts
+          command: pnpm run test:contracts
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - <<: *step_save_cache
@@ -190,7 +195,7 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Running extension contracts unit tests"
-          command: npm run test:contracts:extensions
+          command: pnpm run test:contracts:extensions
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - <<: *step_save_cache
@@ -245,25 +250,25 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Running ganache upgrade tests"
-          command: npm run test:contracts:upgrade:ganache
+          command: pnpm run test:contracts:upgrade:ganache
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
           # name: "Running parity upgrade tests"
-          # command: npm run test:contracts:upgrade:parity
+          # command: pnpm run test:contracts:upgrade:parity
           # environment:
           #   NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running gas cost tests"
-          command: npm run test:contracts:gasCosts && npx codechecks
+          command: pnpm run test:contracts:gasCosts && npx codechecks
       - run:
           name: "Reset chains"
           command: |
             sudo apt-get update
             sudo apt-get install lsof
-            npm run stop:blockchain:client && rm -rf ganache-chain-db*
+            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running patricia tree tests"
-          command: npm run test:contracts:patricia
+          command: pnpm run test:contracts:patricia
       - <<: *step_save_cache
       # Save test results
       - store_test_results:
@@ -283,7 +288,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running core contract unit tests with coverage"
-          command: npm run test:contracts:coverage
+          command: pnpm run test:contracts:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
@@ -301,7 +306,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running upgrade tests with coverage"
-          command: npm run test:contracts:upgrade:coverage
+          command: pnpm run test:contracts:upgrade:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
@@ -319,7 +324,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running extension contract unit tests with coverage"
-          command: npm run test:contracts:extensions:coverage
+          command: pnpm run test:contracts:extensions:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
@@ -337,7 +342,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running reputation tests with coverage"
-          command: npm run test:reputation:coverage
+          command: pnpm run test:reputation:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
@@ -355,22 +360,22 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running chainid tests with coverage for mainnet"
-          command: CHAIN_ID=1 npm run test:contracts:chainid:coverage
+          command: CHAIN_ID=1 pnpm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running chainid tests with coverage for goerli"
-          command: CHAIN_ID=5 npm run test:contracts:chainid:coverage
+          command: CHAIN_ID=5 pnpm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running chainid tests with coverage for xDai"
-          command: CHAIN_ID=100 npm run test:contracts:chainid:coverage
+          command: CHAIN_ID=100 pnpm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
           name: "Running chainid tests with coverage for an unsupported network"
-          command: CHAIN_ID=777 npm run test:contracts:chainid:coverage
+          command: CHAIN_ID=777 pnpm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
@@ -391,10 +396,10 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Installing the safe-contracts dependencies"
-          command: cd ./lib/safe-contracts && npm i --ignore-scripts
+          command: cd ./lib/safe-contracts && pnpm i --ignore-scripts
       - run:
           name: "Running coverage tests for home-side of bridge"
-          command: npm run test:contracts:bridging:1:coverage
+          command: pnpm run test:contracts:bridging:1:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
@@ -402,10 +407,10 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install lsof
-            npm run stop:blockchain:client && rm -rf ganache-chain-db*
+            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running coverage tests for foreign-side of bridge"
-          command: npm run test:contracts:bridging:2:coverage
+          command: pnpm run test:contracts:bridging:2:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
@@ -429,7 +434,7 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Running reputation system unit tests"
-          command: npm run test:reputation:1:anotherChain
+          command: pnpm run test:reputation:1:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
@@ -437,15 +442,15 @@ jobs:
           command: |
             sudo apt-get update
             sudo apt-get install lsof
-            npm run stop:blockchain:client && rm -rf ganache-chain-db*
+            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running reputation system unit tests"
-          command: npm run test:reputation:2:anotherChain
+          command: pnpm run test:reputation:2:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       # - run:
       #     name: "Running storage consistency smoke tests"
-      #     command: npm run test:contracts:smoke
+      #     command: pnpm run test:contracts:smoke
 
 
   check-coverage:
@@ -456,13 +461,13 @@ jobs:
       - run:
           name: "Install packages"
           command: |
-            sudo npm install -g npm@10.2.4
-            npm ci
+            pnpm config set store-dir .pnpm-store
+            pnpm i --frozen-lockfile
       - attach_workspace:
           at: ./
       - run:
           name: "Merge coverage runs and check coverage thresholds"
-          command: npm run check:coverage
+          command: pnpm run check:coverage
       # Save coverage artifacts
       - store_artifacts:
           path: coverage-merged
@@ -470,6 +475,7 @@ jobs:
     <<: *job_python
     steps:
       - checkout
+      - <<: *step_setup_pnpm
       - <<: *step_restore_cache
       - setup_remote_docker:
           version: docker23
@@ -478,7 +484,7 @@ jobs:
       - <<: *step_setup_slither
       - run:
           name: "Slither analysis"
-          command: npm run test:security:slither
+          command: pnpm run test:security:slither
   end-to-end-tests:
     <<: *job_common
     steps:
@@ -490,7 +496,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running end-to-end tests"
-          command: npm run test:contracts:e2e
+          command: pnpm run test:contracts:e2e
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
 
