@@ -1,0 +1,342 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColony",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColonyNetwork",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "tokenLocking",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract ITokenLocking",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "token",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "proposalCount",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "proposals",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct FundingQueue.Proposal)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct FundingQueue.Proposal",
+          "members": [
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "state",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "enum FundingQueue.ProposalState",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "creator",
+              "offset": 1,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "token",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "domainId",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "domainTotalRep",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "fromPot",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "toPot",
+              "offset": 0,
+              "slot": "5",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "fromChildSkillIndex",
+              "offset": 0,
+              "slot": "6",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "toChildSkillIndex",
+              "offset": 0,
+              "slot": "7",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "totalRequested",
+              "offset": 0,
+              "slot": "8",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "totalPaid",
+              "offset": 0,
+              "slot": "9",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "lastUpdated",
+              "offset": 0,
+              "slot": "10",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+              "label": "totalSupport",
+              "offset": 0,
+              "slot": "11",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "384"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "supporters",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "queue",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "11",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    }
+  ]
+}

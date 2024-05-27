@@ -1,0 +1,48 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/testHelpers/WormholeMock.sol:WormholeMock",
+      "label": "bridgeEnabled",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/WormholeMock.sol:WormholeMock",
+      "label": "cumulativeSequence",
+      "offset": 1,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/WormholeMock.sol:WormholeMock",
+      "label": "vmResult",
+      "offset": 9,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/WormholeMock.sol:WormholeMock",
+      "label": "invalidVMReason",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      }
+    }
+  ]
+}

@@ -1,0 +1,563 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColony",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder00",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder01",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder02",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder03",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder04",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder05",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder06",
+      "offset": 0,
+      "slot": "11",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder07",
+      "offset": 0,
+      "slot": "12",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder08",
+      "offset": 0,
+      "slot": "13",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder09",
+      "offset": 0,
+      "slot": "14",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder10",
+      "offset": 0,
+      "slot": "15",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder11",
+      "offset": 0,
+      "slot": "16",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder12",
+      "offset": 0,
+      "slot": "17",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder13",
+      "offset": 0,
+      "slot": "18",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder14",
+      "offset": 0,
+      "slot": "19",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder15",
+      "offset": 0,
+      "slot": "20",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder16",
+      "offset": 0,
+      "slot": "21",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder17",
+      "offset": 0,
+      "slot": "22",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder18",
+      "offset": 0,
+      "slot": "23",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder19",
+      "offset": 0,
+      "slot": "24",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder20",
+      "offset": 0,
+      "slot": "25",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder21",
+      "offset": 0,
+      "slot": "26",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder22",
+      "offset": 0,
+      "slot": "27",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder23",
+      "offset": 0,
+      "slot": "28",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder24",
+      "offset": 0,
+      "slot": "29",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder25",
+      "offset": 0,
+      "slot": "30",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder26",
+      "offset": 0,
+      "slot": "31",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder27",
+      "offset": 0,
+      "slot": "32",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder28",
+      "offset": 0,
+      "slot": "33",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder29",
+      "offset": 0,
+      "slot": "34",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder30",
+      "offset": 0,
+      "slot": "35",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "placeholder31",
+      "offset": 0,
+      "slot": "36",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "token",
+      "offset": 0,
+      "slot": "37",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "decayPeriod",
+      "offset": 0,
+      "slot": "38",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "decayNumerator",
+      "offset": 0,
+      "slot": "39",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "decayDenominator",
+      "offset": 0,
+      "slot": "40",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "totalPayableGrants",
+      "offset": 0,
+      "slot": "41",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "grants",
+      "offset": 0,
+      "slot": "42",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        },
+        "label": "mapping(bool => mapping(bytes32 => struct ReputationBootstrapper.Grant))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(bytes32 => struct ReputationBootstrapper.Grant)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "struct ReputationBootstrapper.Grant",
+            "members": [
+              {
+                "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+                "label": "amount",
+                "offset": 0,
+                "slot": "0",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+                "label": "timestamp",
+                "offset": 0,
+                "slot": "1",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              }
+            ],
+            "numberOfBytes": "64"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/ReputationBootstrapper.sol:ReputationBootstrapper",
+      "label": "committedSecrets",
+      "offset": 0,
+      "slot": "43",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(bytes32 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    }
+  ]
+}

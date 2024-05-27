@@ -18,6 +18,7 @@
     "ping:osx": "osascript -e 'display notification \"Ping!\"'",
     "check:gitchanges": "./scripts/no-git-changes.sh",
     "check:storagevars": "./scripts/check-storage.js",
+    "normalize:storageSlots": "./scripts/normalize-storage-slots.js",
     "check:recoverymods": "./scripts/check-recovery.js",
     "check:coverage": "istanbul-combine -d coverage-merged -p detail -r html -r json coverage-*/coverage-final.json && istanbul check-coverage ./coverage-merged/coverage-final.json --statements 99 --branches 94 --functions 99 --lines 99",
     "check:auth": "./scripts/check-auth.js",

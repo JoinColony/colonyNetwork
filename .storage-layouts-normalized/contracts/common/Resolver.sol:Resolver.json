@@ -1,0 +1,47 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/common/Resolver.sol:Resolver",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/common/Resolver.sol:Resolver",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/common/Resolver.sol:Resolver",
+      "label": "pointers",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes4",
+          "numberOfBytes": "4"
+        },
+        "label": "mapping(bytes4 => address)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        }
+      }
+    }
+  ]
+}
