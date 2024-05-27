@@ -1422,29 +1422,6 @@ Set arbitrary state on an expenditure slot. Can only be called by Arbitration ro
 |_value|bytes32|Value to set at location
 
 
-### ▸ `setExpenditureValues(uint256 _id, uint256[] memory _recipientSlots, address[] memory _recipients, uint256[] memory _skillIdSlots, uint256[] memory _skillIds, uint256[] memory _claimDelaySlots, uint256[] memory _claimDelays, uint256[] memory _payoutModifierSlots, int256[] memory _payoutModifiers, address[] memory _payoutTokens, undefined[] memory _payoutSlots, undefined[] memory _payoutValues)`
-
-Set many values of an expenditure simultaneously. Can only be called by expenditure owner.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|Expenditure identifier
-|_recipientSlots|uint256[]|Array of slots to set recipients
-|_recipients|address[]|Addresses of the recipients
-|_skillIdSlots|uint256[]|Array of slots to set skills
-|_skillIds|uint256[]|Ids of the new skills to set
-|_claimDelaySlots|uint256[]|Array of slots to set claim delays
-|_claimDelays|uint256[]|Durations of time (in seconds) to delay
-|_payoutModifierSlots|uint256[]|Array of slots to set payout modifiers
-|_payoutModifiers|int256[]|Values (between +/- WAD) to modify the payout & reputation bonus
-|_payoutTokens|address[]|Addresses of the tokens, `0x0` value indicates Ether
-|_payoutSlots|undefined[]|2-dimensional array of slots to set payouts
-|_payoutValues|undefined[]|2-dimensional array of the payout amounts
-
-
 ### ▸ `setFundingRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
 
 Set new colony funding role. Can be called by root role or architecture role.
