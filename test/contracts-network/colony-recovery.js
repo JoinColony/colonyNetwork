@@ -187,7 +187,6 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.setExpenditureRecipient(0, 0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditureClaimDelay(0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setExpenditureState(0, 0, 0, 0, [], [], HASHZERO), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.setExpenditureValues(0, [], [], [], [], [], [], [], [], [], [[]], [[]]), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setArbitrationRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setArchitectureRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.setFundingRole(0, 0, ADDRESS_ZERO, 0, true), "colony-in-recovery-mode");

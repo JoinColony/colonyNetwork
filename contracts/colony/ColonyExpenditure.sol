@@ -236,37 +236,6 @@ contract ColonyExpenditure is ColonyStorage {
     }
   }
 
-  function setExpenditureValues(
-    uint256 _id,
-    uint256[] memory _recipientSlots,
-    address payable[] memory _recipients,
-    uint256[] memory _skillIdSlots,
-    uint256[] memory _skillIds,
-    uint256[] memory _claimDelaySlots,
-    uint256[] memory _claimDelays,
-    uint256[] memory _payoutModifierSlots,
-    int256[] memory _payoutModifiers,
-    address[] memory _payoutTokens,
-    uint256[][] memory _payoutSlots,
-    uint256[][] memory _payoutValues
-  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
-    if (_recipients.length > 0) {
-      setExpenditureRecipients(_id, _recipientSlots, _recipients);
-    }
-    if (_skillIds.length > 0) {
-      setExpenditureSkills(_id, _skillIdSlots, _skillIds);
-    }
-    if (_claimDelays.length > 0) {
-      setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays);
-    }
-    if (_payoutModifiers.length > 0) {
-      setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers);
-    }
-    if (_payoutTokens.length > 0) {
-      setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues);
-    }
-  }
-
   // Deprecated
   function setExpenditureRecipient(
     uint256 _id,
@@ -376,32 +345,6 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Internal functions
-
-  // Used to avoid stack error in setExpenditureValues
-  function setExpenditurePayouts(
-    uint256 _id,
-    address[] memory _tokens,
-    uint256[][] memory _slots,
-    uint256[][] memory _values
-  ) internal {
-    for (uint256 i; i < _tokens.length; i++) {
-      (bool success, bytes memory returndata) = address(this).delegatecall(
-        abi.encodeWithSignature(
-          "setExpenditurePayouts(uint256,uint256[],address,uint256[])",
-          _id,
-          _slots[i],
-          _tokens[i],
-          _values[i]
-        )
-      );
-      if (!success) {
-        if (returndata.length == 0) revert();
-        assembly {
-          revert(add(32, returndata), mload(returndata))
-        }
-      }
-    }
-  }
 
   bool constant MAPPING = false;
   bool constant ARRAY = true;
