@@ -1,0 +1,1358 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "recoveryMode",
+      "offset": 20,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "recoveryRolesCount",
+      "offset": 21,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "recoveryApprovalCount",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "recoveryEditedTimestamp",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "recoveryApprovalTimestamps",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "colonyNetworkAddress",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "token",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "rewardInverse",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_taskCount",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "fundingPotCount",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "domainCount",
+      "offset": 0,
+      "slot": "11",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_reviewers",
+      "offset": 0,
+      "slot": "12",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes4",
+          "numberOfBytes": "4"
+        },
+        "label": "mapping(bytes4 => enum ColonyDataTypes.TaskRole[2])",
+        "numberOfBytes": "32",
+        "value": {
+          "base": {
+            "encoding": "inplace",
+            "label": "enum ColonyDataTypes.TaskRole",
+            "numberOfBytes": "1"
+          },
+          "encoding": "inplace",
+          "label": "enum ColonyDataTypes.TaskRole[2]",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_roleAssignmentSigs",
+      "offset": 0,
+      "slot": "13",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes4",
+          "numberOfBytes": "4"
+        },
+        "label": "mapping(bytes4 => bool)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_tasks",
+      "offset": 0,
+      "slot": "14",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.Task)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.Task",
+          "members": [
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "specificationHash",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes32",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "deliverableHash",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes32",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "status",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "enum ColonyDataTypes.TaskStatus",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "dueDate",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "fundingPotId",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "completionTimestamp",
+              "offset": 0,
+              "slot": "5",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "domainId",
+              "offset": 0,
+              "slot": "6",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "skills",
+              "offset": 0,
+              "slot": "7",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "dynamic_array",
+                "label": "uint256[]",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "roles",
+              "offset": 0,
+              "slot": "8",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "uint8",
+                  "numberOfBytes": "1"
+                },
+                "label": "mapping(uint8 => struct ColonyDataTypes.Role)",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "inplace",
+                  "label": "struct ColonyDataTypes.Role",
+                  "members": [
+                    {
+                      "contract": "contracts/colony/Colony.sol:Colony",
+                      "label": "user",
+                      "offset": 0,
+                      "slot": "0",
+                      "type": {
+                        "encoding": "inplace",
+                        "label": "address payable",
+                        "numberOfBytes": "20"
+                      }
+                    },
+                    {
+                      "contract": "contracts/colony/Colony.sol:Colony",
+                      "label": "rateFail",
+                      "offset": 20,
+                      "slot": "0",
+                      "type": {
+                        "encoding": "inplace",
+                        "label": "bool",
+                        "numberOfBytes": "1"
+                      }
+                    },
+                    {
+                      "contract": "contracts/colony/Colony.sol:Colony",
+                      "label": "rating",
+                      "offset": 21,
+                      "slot": "0",
+                      "type": {
+                        "encoding": "inplace",
+                        "label": "enum ColonyDataTypes.TaskRatings",
+                        "numberOfBytes": "1"
+                      }
+                    }
+                  ],
+                  "numberOfBytes": "32"
+                }
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "payouts",
+              "offset": 0,
+              "slot": "9",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "uint8",
+                  "numberOfBytes": "1"
+                },
+                "label": "mapping(uint8 => mapping(address => uint256))",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "mapping",
+                  "key": {
+                    "encoding": "inplace",
+                    "label": "address",
+                    "numberOfBytes": "20"
+                  },
+                  "label": "mapping(address => uint256)",
+                  "numberOfBytes": "32",
+                  "value": {
+                    "encoding": "inplace",
+                    "label": "uint256",
+                    "numberOfBytes": "32"
+                  }
+                }
+              }
+            }
+          ],
+          "numberOfBytes": "320"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "fundingPots",
+      "offset": 0,
+      "slot": "15",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.FundingPot)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.FundingPot",
+          "members": [
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "balance",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "address",
+                  "numberOfBytes": "20"
+                },
+                "label": "mapping(address => uint256)",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "associatedType",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "enum ColonyDataTypes.FundingPotAssociatedType",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "associatedTypeId",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "payouts",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "address",
+                  "numberOfBytes": "20"
+                },
+                "label": "mapping(address => uint256)",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "payoutsWeCannotMake",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "160"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "rewardPayoutCycles",
+      "offset": 0,
+      "slot": "16",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.RewardPayoutCycle)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.RewardPayoutCycle",
+          "members": [
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "reputationState",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes32",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "colonyWideReputation",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "totalTokens",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "amount",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "tokenAddress",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "blockTimestamp",
+              "offset": 0,
+              "slot": "5",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "amountRemaining",
+              "offset": 0,
+              "slot": "6",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "finalized",
+              "offset": 0,
+              "slot": "7",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            }
+          ],
+          "numberOfBytes": "256"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "pendingRewardPayments",
+      "offset": 0,
+      "slot": "17",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "nonRewardPotsTotal",
+      "offset": 0,
+      "slot": "18",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_taskWorkRatings",
+      "offset": 0,
+      "slot": "19",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.RatingSecrets)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.RatingSecrets",
+          "members": [
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "count",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "timestamp",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "secret",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "uint8",
+                  "numberOfBytes": "1"
+                },
+                "label": "mapping(uint8 => bytes32)",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "inplace",
+                  "label": "bytes32",
+                  "numberOfBytes": "32"
+                }
+              }
+            }
+          ],
+          "numberOfBytes": "96"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "domains",
+      "offset": 0,
+      "slot": "20",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.Domain)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.Domain",
+          "members": [
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "skillId",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "fundingPotId",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "64"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_taskChangeNonces",
+      "offset": 0,
+      "slot": "21",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_paymentCount",
+      "offset": 0,
+      "slot": "22",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "DEPRECATED_payments",
+      "offset": 0,
+      "slot": "23",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.Payment)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.Payment",
+          "members": [
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "recipient",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "address payable",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "finalized",
+              "offset": 20,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "fundingPotId",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "domainId",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "skills",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "dynamic_array",
+                "label": "uint256[]",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "128"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "expenditureCount",
+      "offset": 0,
+      "slot": "24",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "expenditures",
+      "offset": 0,
+      "slot": "25",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.Expenditure)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.Expenditure",
+          "members": [
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "status",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "enum ColonyDataTypes.ExpenditureStatus",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "owner",
+              "offset": 1,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "fundingPotId",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "domainId",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "finalizedTimestamp",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colony/Colony.sol:Colony",
+              "label": "globalClaimDelay",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "160"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "expenditureSlots",
+      "offset": 0,
+      "slot": "26",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(uint256 => struct ColonyDataTypes.ExpenditureSlot))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => struct ColonyDataTypes.ExpenditureSlot)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "struct ColonyDataTypes.ExpenditureSlot",
+            "members": [
+              {
+                "contract": "contracts/colony/Colony.sol:Colony",
+                "label": "recipient",
+                "offset": 0,
+                "slot": "0",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "address payable",
+                  "numberOfBytes": "20"
+                }
+              },
+              {
+                "contract": "contracts/colony/Colony.sol:Colony",
+                "label": "claimDelay",
+                "offset": 0,
+                "slot": "1",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/colony/Colony.sol:Colony",
+                "label": "payoutModifier",
+                "offset": 0,
+                "slot": "2",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "int256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/colony/Colony.sol:Colony",
+                "label": "skills",
+                "offset": 0,
+                "slot": "3",
+                "type": {
+                  "base": {
+                    "encoding": "inplace",
+                    "label": "uint256",
+                    "numberOfBytes": "32"
+                  },
+                  "encoding": "dynamic_array",
+                  "label": "uint256[]",
+                  "numberOfBytes": "32"
+                }
+              }
+            ],
+            "numberOfBytes": "128"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "expenditureSlotPayouts",
+      "offset": 0,
+      "slot": "27",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(uint256 => mapping(address => uint256)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => mapping(address => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "address",
+              "numberOfBytes": "20"
+            },
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "approvals",
+      "offset": 0,
+      "slot": "28",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => mapping(uint256 => uint256)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => mapping(uint256 => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            },
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "obligations",
+      "offset": 0,
+      "slot": "29",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => mapping(uint256 => uint256)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => mapping(uint256 => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            },
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "tokenLockingAddress",
+      "offset": 0,
+      "slot": "30",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "tokenLocks",
+      "offset": 0,
+      "slot": "31",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(uint256 => bool))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => bool)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "bool",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "tokenApprovals",
+      "offset": 0,
+      "slot": "32",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "tokenApprovalTotals",
+      "offset": 0,
+      "slot": "33",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "defaultGlobalClaimDelay",
+      "offset": 0,
+      "slot": "34",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "35",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "rootLocalSkill",
+      "offset": 0,
+      "slot": "36",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colony/Colony.sol:Colony",
+      "label": "localSkills",
+      "offset": 0,
+      "slot": "37",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => bool)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        }
+      }
+    }
+  ]
+}

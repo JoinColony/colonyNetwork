@@ -1,0 +1,26 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/metaTxToken/DSAuthMeta.sol:DSAuthMeta",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/metaTxToken/DSAuthMeta.sol:DSAuthMeta",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    }
+  ]
+}

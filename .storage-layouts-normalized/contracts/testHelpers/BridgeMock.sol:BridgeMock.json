@@ -1,0 +1,26 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/testHelpers/BridgeMock.sol:BridgeMock",
+      "label": "bridgeEnabled",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/BridgeMock.sol:BridgeMock",
+      "label": "messageSender",
+      "offset": 1,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    }
+  ]
+}

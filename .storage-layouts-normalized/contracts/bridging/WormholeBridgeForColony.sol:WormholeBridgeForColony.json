@@ -1,0 +1,90 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "wormhole",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IWormhole",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "colonyBridges",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => address)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        }
+      }
+    },
+    {
+      "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
+      "label": "evmChainIdToWormholeChainId",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => uint16)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint16",
+          "numberOfBytes": "2"
+        }
+      }
+    }
+  ]
+}

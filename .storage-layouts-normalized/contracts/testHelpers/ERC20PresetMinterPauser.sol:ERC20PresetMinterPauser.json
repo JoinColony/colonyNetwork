@@ -1,0 +1,155 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_balances",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_allowances",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_totalSupply",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_name",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_symbol",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_paused",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+      "label": "_roles",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(bytes32 => struct AccessControl.RoleData)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct AccessControl.RoleData",
+          "members": [
+            {
+              "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+              "label": "members",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "address",
+                  "numberOfBytes": "20"
+                },
+                "label": "mapping(address => bool)",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "inplace",
+                  "label": "bool",
+                  "numberOfBytes": "1"
+                }
+              }
+            },
+            {
+              "contract": "contracts/testHelpers/ERC20PresetMinterPauser.sol:ERC20PresetMinterPauser",
+              "label": "adminRole",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes32",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "64"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/Migrations.sol:Migrations",
+      "label": "last_completed_migration",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  ]
+}

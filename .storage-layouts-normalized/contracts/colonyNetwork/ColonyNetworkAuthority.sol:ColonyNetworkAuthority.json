@@ -1,0 +1,161 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuthority.sol:ColonyNetworkAuthority",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuthority.sol:ColonyNetworkAuthority",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuthority.sol:ColonyNetworkAuthority",
+      "label": "_root_users",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuthority.sol:ColonyNetworkAuthority",
+      "label": "_user_roles",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => bytes32)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuthority.sol:ColonyNetworkAuthority",
+      "label": "_capability_roles",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(bytes4 => bytes32))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "bytes4",
+            "numberOfBytes": "4"
+          },
+          "label": "mapping(bytes4 => bytes32)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuthority.sol:ColonyNetworkAuthority",
+      "label": "_public_capabilities",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(bytes4 => bool))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "bytes4",
+            "numberOfBytes": "4"
+          },
+          "label": "mapping(bytes4 => bool)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "bool",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuthority.sol:ColonyNetworkAuthority",
+      "label": "userDomainRoles",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(uint256 => bytes32))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => bytes32)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    }
+  ]
+}

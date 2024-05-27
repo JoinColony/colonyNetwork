@@ -1,0 +1,311 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "userLocks",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => struct TokenLockingDataTypes.Lock))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => struct TokenLockingDataTypes.Lock)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "struct TokenLockingDataTypes.Lock",
+            "members": [
+              {
+                "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+                "label": "lockCount",
+                "offset": 0,
+                "slot": "0",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+                "label": "balance",
+                "offset": 0,
+                "slot": "1",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+                "label": "DEPRECATED_timestamp",
+                "offset": 0,
+                "slot": "2",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+                "label": "pendingBalance",
+                "offset": 0,
+                "slot": "3",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              }
+            ],
+            "numberOfBytes": "128"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "totalLockCount",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "approvals",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => mapping(address => uint256)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => mapping(address => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "address",
+              "numberOfBytes": "20"
+            },
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "obligations",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => mapping(address => uint256)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => mapping(address => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "address",
+              "numberOfBytes": "20"
+            },
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "totalObligations",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "lockers",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(uint256 => address))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => address)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/tokenLocking/TokenLockingStorage.sol:TokenLockingStorage",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    }
+  ]
+}
