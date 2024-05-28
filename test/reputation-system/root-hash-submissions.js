@@ -1,4 +1,4 @@
-/* globals artifacts, hre */
+/* globals artifacts */
 
 const BN = require("bn.js");
 const { ethers } = require("ethers");
@@ -55,7 +55,7 @@ const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+const realProviderPort = 8545;
 const useJsTree = true;
 
 let colonyNetwork;

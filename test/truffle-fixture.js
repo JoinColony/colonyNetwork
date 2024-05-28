@@ -1,4 +1,5 @@
 /* globals artifacts, hre */
+
 const EtherRouter = artifacts.require("EtherRouter");
 const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
 const Resolver = artifacts.require("Resolver");

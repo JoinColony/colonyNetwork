@@ -275,6 +275,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
 
   const res = await exec(
     `cd colonyNetwork-${versionTag} ` +
+      "&& sed -ie 's/8555/8545/g' ./truffle.js " +
       "&& npx truffle exec ./scripts/setupOldUpgradeableVersion.js " +
       `--network ${network} --interfaceName ${interfaceName} --implementationNames ${implementationNames.join(",")}`,
     { maxBuffer: 1024 * 5000 },

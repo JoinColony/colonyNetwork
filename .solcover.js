@@ -22,7 +22,6 @@ module.exports = {
       'extensions/votingReputation/VotingReputationMisalignedRecovery.sol'
     ],
     providerOptions: {
-      port: 8555,
       network_id: 1999,
       account_keys_path: "./ganache-accounts.json",
       vmErrorsOnRPCResponse: false,

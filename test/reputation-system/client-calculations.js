@@ -38,7 +38,7 @@ let metaColony;
 let clnyToken;
 let goodClient;
 const domainSkills = {};
-const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+const realProviderPort = 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();

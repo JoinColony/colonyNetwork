@@ -1,4 +1,4 @@
-/* globals artifacts, hre */
+/* globals artifacts */
 
 const chai = require("chai");
 const bnChai = require("bn-chai");
@@ -74,7 +74,7 @@ contract("Cross-chain", (accounts) => {
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
-  const RPC_PORT_1 = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+  const RPC_PORT_1 = 8545;
   const RPC_PORT_2 = 8546;
 
   const MINER_ADDRESS = accounts[5];
