@@ -1,4 +1,4 @@
-/* globals artifacts, hre */
+/* globals artifacts */
 
 const path = require("path");
 const BN = require("bn.js");
@@ -64,7 +64,7 @@ let clnyToken;
 let localSkillId;
 let goodClient;
 
-const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+const realProviderPort = 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();

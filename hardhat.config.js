@@ -54,7 +54,7 @@ task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(asyn
 
 task("coverage", "Run coverage with an open port").setAction(async () => {
   const app = express();
-  const port = 8555;
+  const port = 8545;
 
   app.use(bodyParser.json());
   app.post("/", async function (req, res) {

@@ -1,4 +1,4 @@
-/* globals artifacts, hre */
+/* globals artifacts */
 
 const path = require("path");
 const { soliditySha3 } = require("web3-utils");
@@ -47,7 +47,7 @@ const ReputationBootstrapper = artifacts.require("ReputationBootstrapper");
 const VotingReputation = artifacts.require("VotingReputation");
 const IVotingReputation = artifacts.require("IVotingReputation");
 
-const REAL_PROVIDER_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+const REAL_PROVIDER_PORT = 8545;
 
 const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "artifacts", "contracts"),

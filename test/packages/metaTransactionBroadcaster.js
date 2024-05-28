@@ -27,7 +27,7 @@ const GasGuzzler = artifacts.require("GasGuzzler");
 
 chai.use(bnChai(web3.utils.BN));
 
-const realProviderPort = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+const realProviderPort = 8545;
 const provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
 
 const loader = new TruffleLoader({

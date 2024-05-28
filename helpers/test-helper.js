@@ -1,4 +1,5 @@
-/* globals artifacts, hre */
+/* globals artifacts */
+
 const fs = require("fs");
 const shortid = require("shortid");
 const chai = require("chai");
@@ -245,7 +246,7 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
   } catch (err) {
     const txid = err.transactionHash;
 
-    const TRUFFLE_PORT = hre.__SOLIDITY_COVERAGE_RUNNING ? 8555 : 8545;
+    const TRUFFLE_PORT = 8545;
     const OTHER_RPC_PORT = 8546;
 
     let provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
