@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50553,
+      "astId": 50364,
       "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50539"
+      "type": "t_contract(DSAuthority)50350"
     },
     {
-      "astId": 50555,
+      "astId": 50366,
       "contract": "contracts/bridging/WormholeBridgeForColony.sol:WormholeBridgeForColony",
       "label": "owner",
       "offset": 0,
@@ -30,7 +30,7 @@
       "label": "wormhole",
       "offset": 0,
       "slot": "3",
-      "type": "t_contract(IWormhole)54429"
+      "type": "t_contract(IWormhole)54240"
     },
     {
       "astId": 2588,
@@ -55,12 +55,12 @@
       "label": "address",
       "numberOfBytes": "20"
     },
-    "t_contract(DSAuthority)50539": {
+    "t_contract(DSAuthority)50350": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"
     },
-    "t_contract(IWormhole)54429": {
+    "t_contract(IWormhole)54240": {
       "encoding": "inplace",
       "label": "contract IWormhole",
       "numberOfBytes": "20"

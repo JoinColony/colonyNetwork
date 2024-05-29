@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50553,
+      "astId": 50364,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50539"
+      "type": "t_contract(DSAuthority)50350"
     },
     {
-      "astId": 50555,
+      "astId": 50366,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "owner",
       "offset": 0,
@@ -41,15 +41,15 @@
       "type": "t_bool"
     },
     {
-      "astId": 34326,
+      "astId": 34137,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "state",
       "offset": 21,
       "slot": "3",
-      "type": "t_enum(ExtensionState)32574"
+      "type": "t_enum(ExtensionState)32385"
     },
     {
-      "astId": 34329,
+      "astId": 34140,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "colonyNetwork",
       "offset": 0,
@@ -57,15 +57,15 @@
       "type": "t_contract(IColonyNetwork)20072"
     },
     {
-      "astId": 34332,
+      "astId": 34143,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "tokenLocking",
       "offset": 0,
       "slot": "5",
-      "type": "t_contract(ITokenLocking)49117"
+      "type": "t_contract(ITokenLocking)48928"
     },
     {
-      "astId": 34334,
+      "astId": 34145,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "token",
       "offset": 0,
@@ -73,7 +73,7 @@
       "type": "t_address"
     },
     {
-      "astId": 34336,
+      "astId": 34147,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "totalStakeFraction",
       "offset": 0,
@@ -81,7 +81,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34338,
+      "astId": 34149,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "voterRewardFraction",
       "offset": 0,
@@ -89,7 +89,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34340,
+      "astId": 34151,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "userMinStakeFraction",
       "offset": 0,
@@ -97,7 +97,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34342,
+      "astId": 34153,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "maxVoteFraction",
       "offset": 0,
@@ -105,7 +105,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34344,
+      "astId": 34155,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "stakePeriod",
       "offset": 0,
@@ -113,7 +113,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34346,
+      "astId": 34157,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "submitPeriod",
       "offset": 0,
@@ -121,7 +121,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34348,
+      "astId": 34159,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "revealPeriod",
       "offset": 0,
@@ -129,7 +129,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34350,
+      "astId": 34161,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "escalationPeriod",
       "offset": 0,
@@ -137,7 +137,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34352,
+      "astId": 34163,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "motionCount",
       "offset": 0,
@@ -145,15 +145,15 @@
       "type": "t_uint256"
     },
     {
-      "astId": 34357,
+      "astId": 34168,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "motions",
       "offset": 0,
       "slot": "16",
-      "type": "t_mapping(t_uint256,t_struct(Motion)32622_storage)"
+      "type": "t_mapping(t_uint256,t_struct(Motion)32433_storage)"
     },
     {
-      "astId": 34365,
+      "astId": 34176,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "stakes",
       "offset": 0,
@@ -161,7 +161,7 @@
       "type": "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))"
     },
     {
-      "astId": 34371,
+      "astId": 34182,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "voteSecrets",
       "offset": 0,
@@ -169,7 +169,7 @@
       "type": "t_mapping(t_uint256,t_mapping(t_address,t_bytes32))"
     },
     {
-      "astId": 34375,
+      "astId": 34186,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "expenditurePastVotes_DEPRECATED",
       "offset": 0,
@@ -177,7 +177,7 @@
       "type": "t_mapping(t_bytes32,t_uint256)"
     },
     {
-      "astId": 34379,
+      "astId": 34190,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "expenditureMotionCounts_DEPRECATED",
       "offset": 0,
@@ -185,7 +185,7 @@
       "type": "t_mapping(t_bytes32,t_uint256)"
     },
     {
-      "astId": 34383,
+      "astId": 34194,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "metatransactionNonces",
       "offset": 0,
@@ -193,7 +193,7 @@
       "type": "t_mapping(t_address,t_uint256)"
     },
     {
-      "astId": 34387,
+      "astId": 34198,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "expenditurePastVotes",
       "offset": 0,
@@ -201,7 +201,7 @@
       "type": "t_mapping(t_uint256,t_uint256)"
     },
     {
-      "astId": 34391,
+      "astId": 34202,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "expenditureMotionLocks",
       "offset": 0,
@@ -209,7 +209,7 @@
       "type": "t_mapping(t_uint256,t_uint256)"
     },
     {
-      "astId": 34393,
+      "astId": 34204,
       "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
       "label": "motionCountV10",
       "offset": 0,
@@ -255,7 +255,7 @@
       "label": "bytes",
       "numberOfBytes": "32"
     },
-    "t_contract(DSAuthority)50539": {
+    "t_contract(DSAuthority)50350": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"
@@ -270,12 +270,12 @@
       "label": "contract IColonyNetwork",
       "numberOfBytes": "20"
     },
-    "t_contract(ITokenLocking)49117": {
+    "t_contract(ITokenLocking)48928": {
       "encoding": "inplace",
       "label": "contract ITokenLocking",
       "numberOfBytes": "20"
     },
-    "t_enum(ExtensionState)32574": {
+    "t_enum(ExtensionState)32385": {
       "encoding": "inplace",
       "label": "enum VotingReputationDataTypes.ExtensionState",
       "numberOfBytes": "1"
@@ -322,12 +322,12 @@
       "numberOfBytes": "32",
       "value": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
     },
-    "t_mapping(t_uint256,t_struct(Motion)32622_storage)": {
+    "t_mapping(t_uint256,t_struct(Motion)32433_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct VotingReputationDataTypes.Motion)",
       "numberOfBytes": "32",
-      "value": "t_struct(Motion)32622_storage"
+      "value": "t_struct(Motion)32433_storage"
     },
     "t_mapping(t_uint256,t_uint256)": {
       "encoding": "mapping",
@@ -336,12 +336,12 @@
       "numberOfBytes": "32",
       "value": "t_uint256"
     },
-    "t_struct(Motion)32622_storage": {
+    "t_struct(Motion)32433_storage": {
       "encoding": "inplace",
       "label": "struct VotingReputationDataTypes.Motion",
       "members": [
         {
-          "astId": 32587,
+          "astId": 32398,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "events",
           "offset": 0,
@@ -349,7 +349,7 @@
           "type": "t_array(t_uint64)3_storage"
         },
         {
-          "astId": 32589,
+          "astId": 32400,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "rootHash",
           "offset": 0,
@@ -357,7 +357,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 32591,
+          "astId": 32402,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "domainId",
           "offset": 0,
@@ -365,7 +365,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32593,
+          "astId": 32404,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "skillId",
           "offset": 0,
@@ -373,7 +373,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32595,
+          "astId": 32406,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "skillRep",
           "offset": 0,
@@ -381,7 +381,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32597,
+          "astId": 32408,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "repSubmitted",
           "offset": 0,
@@ -389,7 +389,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32599,
+          "astId": 32410,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "paidVoterComp",
           "offset": 0,
@@ -397,7 +397,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32603,
+          "astId": 32414,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "pastVoterComp",
           "offset": 0,
@@ -405,7 +405,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 32607,
+          "astId": 32418,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "stakes",
           "offset": 0,
@@ -413,7 +413,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 32611,
+          "astId": 32422,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "votes",
           "offset": 0,
@@ -421,7 +421,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 32613,
+          "astId": 32424,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "escalated",
           "offset": 0,
@@ -429,7 +429,7 @@
           "type": "t_bool"
         },
         {
-          "astId": 32615,
+          "astId": 32426,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "finalized",
           "offset": 1,
@@ -437,7 +437,7 @@
           "type": "t_bool"
         },
         {
-          "astId": 32617,
+          "astId": 32428,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "altTarget",
           "offset": 2,
@@ -445,7 +445,7 @@
           "type": "t_address"
         },
         {
-          "astId": 32619,
+          "astId": 32430,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "sig",
           "offset": 22,
@@ -453,7 +453,7 @@
           "type": "t_bytes4"
         },
         {
-          "astId": 32621,
+          "astId": 32432,
           "contract": "contracts/extensions/votingReputation/VotingReputation.sol:VotingReputation",
           "label": "action",
           "offset": 0,
