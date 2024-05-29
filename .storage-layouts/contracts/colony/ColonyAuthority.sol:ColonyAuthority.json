@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50553,
+      "astId": 50364,
       "contract": "contracts/colony/ColonyAuthority.sol:ColonyAuthority",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50539"
+      "type": "t_contract(DSAuthority)50350"
     },
     {
-      "astId": 50555,
+      "astId": 50366,
       "contract": "contracts/colony/ColonyAuthority.sol:ColonyAuthority",
       "label": "owner",
       "offset": 0,
@@ -17,7 +17,7 @@
       "type": "t_address"
     },
     {
-      "astId": 51037,
+      "astId": 50848,
       "contract": "contracts/colony/ColonyAuthority.sol:ColonyAuthority",
       "label": "_root_users",
       "offset": 0,
@@ -25,7 +25,7 @@
       "type": "t_mapping(t_address,t_bool)"
     },
     {
-      "astId": 51041,
+      "astId": 50852,
       "contract": "contracts/colony/ColonyAuthority.sol:ColonyAuthority",
       "label": "_user_roles",
       "offset": 0,
@@ -33,7 +33,7 @@
       "type": "t_mapping(t_address,t_bytes32)"
     },
     {
-      "astId": 51047,
+      "astId": 50858,
       "contract": "contracts/colony/ColonyAuthority.sol:ColonyAuthority",
       "label": "_capability_roles",
       "offset": 0,
@@ -41,7 +41,7 @@
       "type": "t_mapping(t_address,t_mapping(t_bytes4,t_bytes32))"
     },
     {
-      "astId": 51053,
+      "astId": 50864,
       "contract": "contracts/colony/ColonyAuthority.sol:ColonyAuthority",
       "label": "_public_capabilities",
       "offset": 0,
@@ -86,7 +86,7 @@
       "label": "bytes4",
       "numberOfBytes": "4"
     },
-    "t_contract(DSAuthority)50539": {
+    "t_contract(DSAuthority)50350": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"

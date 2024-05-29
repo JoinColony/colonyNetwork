@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50553,
+      "astId": 50364,
       "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50539"
+      "type": "t_contract(DSAuthority)50350"
     },
     {
-      "astId": 50555,
+      "astId": 50366,
       "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
       "label": "owner",
       "offset": 0,
@@ -316,7 +316,7 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(DSAuthority)50539": {
+    "t_contract(DSAuthority)50350": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"

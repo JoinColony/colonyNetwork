@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50553,
+      "astId": 50364,
       "contract": "contracts/extensions/Whitelist.sol:Whitelist",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50539"
+      "type": "t_contract(DSAuthority)50350"
     },
     {
-      "astId": 50555,
+      "astId": 50366,
       "contract": "contracts/extensions/Whitelist.sol:Whitelist",
       "label": "owner",
       "offset": 0,
@@ -41,7 +41,7 @@
       "type": "t_bool"
     },
     {
-      "astId": 29936,
+      "astId": 29747,
       "contract": "contracts/extensions/Whitelist.sol:Whitelist",
       "label": "useApprovals",
       "offset": 21,
@@ -49,7 +49,7 @@
       "type": "t_bool"
     },
     {
-      "astId": 29938,
+      "astId": 29749,
       "contract": "contracts/extensions/Whitelist.sol:Whitelist",
       "label": "agreementHash",
       "offset": 0,
@@ -57,7 +57,7 @@
       "type": "t_string_storage"
     },
     {
-      "astId": 29942,
+      "astId": 29753,
       "contract": "contracts/extensions/Whitelist.sol:Whitelist",
       "label": "approvals",
       "offset": 0,
@@ -65,7 +65,7 @@
       "type": "t_mapping(t_address,t_bool)"
     },
     {
-      "astId": 29946,
+      "astId": 29757,
       "contract": "contracts/extensions/Whitelist.sol:Whitelist",
       "label": "signatures",
       "offset": 0,
@@ -73,7 +73,7 @@
       "type": "t_mapping(t_address,t_bool)"
     },
     {
-      "astId": 29950,
+      "astId": 29761,
       "contract": "contracts/extensions/Whitelist.sol:Whitelist",
       "label": "metatransactionNonces",
       "offset": 0,
@@ -92,7 +92,7 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(DSAuthority)50539": {
+    "t_contract(DSAuthority)50350": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"

@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50553,
+      "astId": 50364,
       "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50539"
+      "type": "t_contract(DSAuthority)50350"
     },
     {
-      "astId": 50555,
+      "astId": 50366,
       "contract": "contracts/extensions/FundingQueue.sol:FundingQueue",
       "label": "owner",
       "offset": 0,
@@ -54,7 +54,7 @@
       "label": "tokenLocking",
       "offset": 0,
       "slot": "5",
-      "type": "t_contract(ITokenLocking)49117"
+      "type": "t_contract(ITokenLocking)48928"
     },
     {
       "astId": 24013,
@@ -116,7 +116,7 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(DSAuthority)50539": {
+    "t_contract(DSAuthority)50350": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"
@@ -131,7 +131,7 @@
       "label": "contract IColonyNetwork",
       "numberOfBytes": "20"
     },
-    "t_contract(ITokenLocking)49117": {
+    "t_contract(ITokenLocking)48928": {
       "encoding": "inplace",
       "label": "contract ITokenLocking",
       "numberOfBytes": "20"

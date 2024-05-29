@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50553,
+      "astId": 50364,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50539"
+      "type": "t_contract(DSAuthority)50350"
     },
     {
-      "astId": 50555,
+      "astId": 50366,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "owner",
       "offset": 0,
@@ -305,7 +305,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 28309,
+      "astId": 28330,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "numStreamingPayments",
       "offset": 0,
@@ -313,20 +313,12 @@
       "type": "t_uint256"
     },
     {
-      "astId": 28314,
+      "astId": 28335,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "streamingPayments",
       "offset": 0,
       "slot": "38",
-      "type": "t_mapping(t_uint256,t_struct(StreamingPayment)28302_storage)"
-    },
-    {
-      "astId": 28321,
-      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
-      "label": "paymentTokens",
-      "offset": 0,
-      "slot": "39",
-      "type": "t_mapping(t_uint256,t_mapping(t_address,t_struct(PaymentToken)28307_storage))"
+      "type": "t_mapping(t_uint256,t_struct(StreamingPayment)28328_storage)"
     }
   ],
   "types": {
@@ -345,7 +337,7 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(DSAuthority)50539": {
+    "t_contract(DSAuthority)50350": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"
@@ -355,13 +347,6 @@
       "label": "contract IColony",
       "numberOfBytes": "20"
     },
-    "t_mapping(t_address,t_struct(PaymentToken)28307_storage)": {
-      "encoding": "mapping",
-      "key": "t_address",
-      "label": "mapping(address => struct StreamingPayments.PaymentToken)",
-      "numberOfBytes": "32",
-      "value": "t_struct(PaymentToken)28307_storage"
-    },
     "t_mapping(t_address,t_uint256)": {
       "encoding": "mapping",
       "key": "t_address",
@@ -369,49 +354,19 @@
       "numberOfBytes": "32",
       "value": "t_uint256"
     },
-    "t_mapping(t_uint256,t_mapping(t_address,t_struct(PaymentToken)28307_storage))": {
-      "encoding": "mapping",
-      "key": "t_uint256",
-      "label": "mapping(uint256 => mapping(address => struct StreamingPayments.PaymentToken))",
-      "numberOfBytes": "32",
-      "value": "t_mapping(t_address,t_struct(PaymentToken)28307_storage)"
-    },
-    "t_mapping(t_uint256,t_struct(StreamingPayment)28302_storage)": {
+    "t_mapping(t_uint256,t_struct(StreamingPayment)28328_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct StreamingPayments.StreamingPayment)",
       "numberOfBytes": "32",
-      "value": "t_struct(StreamingPayment)28302_storage"
+      "value": "t_struct(StreamingPayment)28328_storage"
     },
-    "t_struct(PaymentToken)28307_storage": {
-      "encoding": "inplace",
-      "label": "struct StreamingPayments.PaymentToken",
-      "members": [
-        {
-          "astId": 28304,
-          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
-          "label": "amount",
-          "offset": 0,
-          "slot": "0",
-          "type": "t_uint256"
-        },
-        {
-          "astId": 28306,
-          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
-          "label": "pseudoAmountClaimedFromStart",
-          "offset": 0,
-          "slot": "1",
-          "type": "t_uint256"
-        }
-      ],
-      "numberOfBytes": "64"
-    },
-    "t_struct(StreamingPayment)28302_storage": {
+    "t_struct(StreamingPayment)28328_storage": {
       "encoding": "inplace",
       "label": "struct StreamingPayments.StreamingPayment",
       "members": [
         {
-          "astId": 28293,
+          "astId": 28313,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "recipient",
           "offset": 0,
@@ -419,7 +374,7 @@
           "type": "t_address_payable"
         },
         {
-          "astId": 28295,
+          "astId": 28315,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "domainId",
           "offset": 0,
@@ -427,7 +382,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28297,
+          "astId": 28317,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "startTime",
           "offset": 0,
@@ -435,7 +390,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28299,
+          "astId": 28319,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "endTime",
           "offset": 0,
@@ -443,15 +398,39 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28301,
+          "astId": 28321,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "interval",
           "offset": 0,
           "slot": "4",
           "type": "t_uint256"
+        },
+        {
+          "astId": 28323,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "token",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_address"
+        },
+        {
+          "astId": 28325,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "amount",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 28327,
+          "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+          "label": "pseudoAmountClaimedFromStart",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_uint256"
         }
       ],
-      "numberOfBytes": "160"
+      "numberOfBytes": "256"
     },
     "t_uint256": {
       "encoding": "inplace",
