@@ -4,7 +4,7 @@
   "description": "Contracts for Colony Network",
   "engines": {
     "node": "v20.11.0",
-    "npm": "10.2.4"
+    "pnpm": "8.14.1"
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
