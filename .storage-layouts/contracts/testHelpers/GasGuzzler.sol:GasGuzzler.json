@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50364,
+      "astId": 50657,
       "contract": "contracts/testHelpers/GasGuzzler.sol:GasGuzzler",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50350"
+      "type": "t_contract(DSAuthority)50643"
     },
     {
-      "astId": 50366,
+      "astId": 50659,
       "contract": "contracts/testHelpers/GasGuzzler.sol:GasGuzzler",
       "label": "owner",
       "offset": 0,
@@ -305,7 +305,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44243,
+      "astId": 44536,
       "contract": "contracts/testHelpers/GasGuzzler.sol:GasGuzzler",
       "label": "storageVar",
       "offset": 0,
@@ -324,7 +324,7 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(DSAuthority)50350": {
+    "t_contract(DSAuthority)50643": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"

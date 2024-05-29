@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50364,
+      "astId": 50657,
       "contract": "contracts/common/DomainRoles.sol:DomainRoles",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50350"
+      "type": "t_contract(DSAuthority)50643"
     },
     {
-      "astId": 50366,
+      "astId": 50659,
       "contract": "contracts/common/DomainRoles.sol:DomainRoles",
       "label": "owner",
       "offset": 0,
@@ -17,7 +17,7 @@
       "type": "t_address"
     },
     {
-      "astId": 50848,
+      "astId": 51141,
       "contract": "contracts/common/DomainRoles.sol:DomainRoles",
       "label": "_root_users",
       "offset": 0,
@@ -25,7 +25,7 @@
       "type": "t_mapping(t_address,t_bool)"
     },
     {
-      "astId": 50852,
+      "astId": 51145,
       "contract": "contracts/common/DomainRoles.sol:DomainRoles",
       "label": "_user_roles",
       "offset": 0,
@@ -33,7 +33,7 @@
       "type": "t_mapping(t_address,t_bytes32)"
     },
     {
-      "astId": 50858,
+      "astId": 51151,
       "contract": "contracts/common/DomainRoles.sol:DomainRoles",
       "label": "_capability_roles",
       "offset": 0,
@@ -41,7 +41,7 @@
       "type": "t_mapping(t_address,t_mapping(t_bytes4,t_bytes32))"
     },
     {
-      "astId": 50864,
+      "astId": 51157,
       "contract": "contracts/common/DomainRoles.sol:DomainRoles",
       "label": "_public_capabilities",
       "offset": 0,
@@ -78,7 +78,7 @@
       "label": "bytes4",
       "numberOfBytes": "4"
     },
-    "t_contract(DSAuthority)50350": {
+    "t_contract(DSAuthority)50643": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"

@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 35279,
+      "astId": 35572,
       "contract": "contracts/metaTxToken/DSAuthMeta.sol:DSAuthMeta",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50350"
+      "type": "t_contract(DSAuthority)50643"
     },
     {
-      "astId": 35281,
+      "astId": 35574,
       "contract": "contracts/metaTxToken/DSAuthMeta.sol:DSAuthMeta",
       "label": "owner",
       "offset": 0,
@@ -23,7 +23,7 @@
       "label": "address",
       "numberOfBytes": "20"
     },
-    "t_contract(DSAuthority)50350": {
+    "t_contract(DSAuthority)50643": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"

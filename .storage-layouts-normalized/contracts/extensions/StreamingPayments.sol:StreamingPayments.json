@@ -549,6 +549,17 @@
           "numberOfBytes": "256"
         }
       }
+    },
+    {
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "nUnresolvedStreamingPayments",
+      "offset": 0,
+      "slot": "39",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
     }
   ]
 }

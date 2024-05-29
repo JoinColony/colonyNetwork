@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50364,
+      "astId": 50657,
       "contract": "contracts/common/EtherRouterCreate3.sol:EtherRouterCreate3",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50350"
+      "type": "t_contract(DSAuthority)50643"
     },
     {
-      "astId": 50366,
+      "astId": 50659,
       "contract": "contracts/common/EtherRouterCreate3.sol:EtherRouterCreate3",
       "label": "owner",
       "offset": 0,
@@ -31,7 +31,7 @@
       "label": "address",
       "numberOfBytes": "20"
     },
-    "t_contract(DSAuthority)50350": {
+    "t_contract(DSAuthority)50643": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"

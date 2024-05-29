@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50364,
+      "astId": 50657,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50350"
+      "type": "t_contract(DSAuthority)50643"
     },
     {
-      "astId": 50366,
+      "astId": 50659,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "owner",
       "offset": 0,
@@ -41,15 +41,15 @@
       "type": "t_bool"
     },
     {
-      "astId": 44958,
+      "astId": 45251,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "state",
       "offset": 21,
       "slot": "3",
-      "type": "t_enum(ExtensionState)44955"
+      "type": "t_enum(ExtensionState)45248"
     },
     {
-      "astId": 44961,
+      "astId": 45254,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "colonyNetwork",
       "offset": 0,
@@ -57,15 +57,15 @@
       "type": "t_contract(IColonyNetwork)20072"
     },
     {
-      "astId": 44964,
+      "astId": 45257,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "tokenLocking",
       "offset": 0,
       "slot": "5",
-      "type": "t_contract(ITokenLocking)48928"
+      "type": "t_contract(ITokenLocking)49221"
     },
     {
-      "astId": 44966,
+      "astId": 45259,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "token",
       "offset": 0,
@@ -73,7 +73,7 @@
       "type": "t_address"
     },
     {
-      "astId": 44968,
+      "astId": 45261,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "totalStakeFraction",
       "offset": 0,
@@ -81,7 +81,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44970,
+      "astId": 45263,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "voterRewardFraction",
       "offset": 0,
@@ -89,7 +89,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44972,
+      "astId": 45265,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "userMinStakeFraction",
       "offset": 0,
@@ -97,7 +97,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44974,
+      "astId": 45267,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "maxVoteFraction",
       "offset": 0,
@@ -105,7 +105,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44976,
+      "astId": 45269,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "stakePeriod",
       "offset": 0,
@@ -113,7 +113,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44978,
+      "astId": 45271,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "submitPeriod",
       "offset": 0,
@@ -121,7 +121,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44980,
+      "astId": 45273,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "revealPeriod",
       "offset": 0,
@@ -129,7 +129,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44982,
+      "astId": 45275,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "escalationPeriod",
       "offset": 0,
@@ -137,7 +137,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 44986,
+      "astId": 45279,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "metatransactionNonces",
       "offset": 0,
@@ -145,7 +145,7 @@
       "type": "t_mapping(t_address,t_uint256)"
     },
     {
-      "astId": 45318,
+      "astId": 45611,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "motionCount",
       "offset": 0,
@@ -153,15 +153,15 @@
       "type": "t_uint256"
     },
     {
-      "astId": 45323,
+      "astId": 45616,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "motions",
       "offset": 0,
       "slot": "17",
-      "type": "t_mapping(t_uint256,t_struct(Motion)45316_storage)"
+      "type": "t_mapping(t_uint256,t_struct(Motion)45609_storage)"
     },
     {
-      "astId": 45331,
+      "astId": 45624,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "stakes",
       "offset": 0,
@@ -169,7 +169,7 @@
       "type": "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))"
     },
     {
-      "astId": 45337,
+      "astId": 45630,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "voteSecrets",
       "offset": 0,
@@ -177,7 +177,7 @@
       "type": "t_mapping(t_uint256,t_mapping(t_address,t_bytes32))"
     },
     {
-      "astId": 45341,
+      "astId": 45634,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "expenditurePastVotes",
       "offset": 0,
@@ -185,7 +185,7 @@
       "type": "t_mapping(t_bytes32,t_uint256)"
     },
     {
-      "astId": 45345,
+      "astId": 45638,
       "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
       "label": "expenditureMotionCounts",
       "offset": 0,
@@ -226,7 +226,7 @@
       "label": "bytes",
       "numberOfBytes": "32"
     },
-    "t_contract(DSAuthority)50350": {
+    "t_contract(DSAuthority)50643": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"
@@ -241,12 +241,12 @@
       "label": "contract IColonyNetwork",
       "numberOfBytes": "20"
     },
-    "t_contract(ITokenLocking)48928": {
+    "t_contract(ITokenLocking)49221": {
       "encoding": "inplace",
       "label": "contract ITokenLocking",
       "numberOfBytes": "20"
     },
-    "t_enum(ExtensionState)44955": {
+    "t_enum(ExtensionState)45248": {
       "encoding": "inplace",
       "label": "enum VotingReputationMisaligned.ExtensionState",
       "numberOfBytes": "1"
@@ -293,12 +293,12 @@
       "numberOfBytes": "32",
       "value": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
     },
-    "t_mapping(t_uint256,t_struct(Motion)45316_storage)": {
+    "t_mapping(t_uint256,t_struct(Motion)45609_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct VotingReputationMisaligned.Motion)",
       "numberOfBytes": "32",
-      "value": "t_struct(Motion)45316_storage"
+      "value": "t_struct(Motion)45609_storage"
     },
     "t_mapping(t_uint256,t_uint256)": {
       "encoding": "mapping",
@@ -307,12 +307,12 @@
       "numberOfBytes": "32",
       "value": "t_uint256"
     },
-    "t_struct(Motion)45316_storage": {
+    "t_struct(Motion)45609_storage": {
       "encoding": "inplace",
       "label": "struct VotingReputationMisaligned.Motion",
       "members": [
         {
-          "astId": 45283,
+          "astId": 45576,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "events",
           "offset": 0,
@@ -320,7 +320,7 @@
           "type": "t_array(t_uint64)3_storage"
         },
         {
-          "astId": 45285,
+          "astId": 45578,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "rootHash",
           "offset": 0,
@@ -328,7 +328,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 45287,
+          "astId": 45580,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "domainId",
           "offset": 0,
@@ -336,7 +336,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 45289,
+          "astId": 45582,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "skillId",
           "offset": 0,
@@ -344,7 +344,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 45291,
+          "astId": 45584,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "skillRep",
           "offset": 0,
@@ -352,7 +352,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 45293,
+          "astId": 45586,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "repSubmitted",
           "offset": 0,
@@ -360,7 +360,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 45295,
+          "astId": 45588,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "paidVoterComp",
           "offset": 0,
@@ -368,7 +368,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 45299,
+          "astId": 45592,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "pastVoterComp",
           "offset": 0,
@@ -376,7 +376,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 45303,
+          "astId": 45596,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "stakes",
           "offset": 0,
@@ -384,7 +384,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 45307,
+          "astId": 45600,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "votes",
           "offset": 0,
@@ -392,7 +392,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 45309,
+          "astId": 45602,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "escalated",
           "offset": 0,
@@ -400,7 +400,7 @@
           "type": "t_bool"
         },
         {
-          "astId": 45311,
+          "astId": 45604,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "finalized",
           "offset": 1,
@@ -408,7 +408,7 @@
           "type": "t_bool"
         },
         {
-          "astId": 45313,
+          "astId": 45606,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "altTarget",
           "offset": 2,
@@ -416,7 +416,7 @@
           "type": "t_address"
         },
         {
-          "astId": 45315,
+          "astId": 45608,
           "contract": "contracts/testHelpers/VotingReputationMisaligned.sol:VotingReputationMisaligned",
           "label": "action",
           "offset": 0,

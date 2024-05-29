@@ -1,17 +1,17 @@
 {
   "storage": [
     {
-      "astId": 37037,
+      "astId": 37330,
       "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
       "label": "tree",
       "offset": 0,
       "slot": "0",
-      "type": "t_struct(Tree)36146_storage"
+      "type": "t_struct(Tree)36439_storage"
     }
   ],
   "types": {
-    "t_array(t_struct(Edge)36129_storage)2_storage": {
-      "base": "t_struct(Edge)36129_storage",
+    "t_array(t_struct(Edge)36422_storage)2_storage": {
+      "base": "t_struct(Edge)36422_storage",
       "encoding": "inplace",
       "label": "struct Data.Edge[2]",
       "numberOfBytes": "192"
@@ -21,19 +21,19 @@
       "label": "bytes32",
       "numberOfBytes": "32"
     },
-    "t_mapping(t_bytes32,t_struct(Node)36135_storage)": {
+    "t_mapping(t_bytes32,t_struct(Node)36428_storage)": {
       "encoding": "mapping",
       "key": "t_bytes32",
       "label": "mapping(bytes32 => struct Data.Node)",
       "numberOfBytes": "32",
-      "value": "t_struct(Node)36135_storage"
+      "value": "t_struct(Node)36428_storage"
     },
-    "t_struct(Edge)36129_storage": {
+    "t_struct(Edge)36422_storage": {
       "encoding": "inplace",
       "label": "struct Data.Edge",
       "members": [
         {
-          "astId": 36125,
+          "astId": 36418,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "node",
           "offset": 0,
@@ -41,22 +41,22 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 36128,
+          "astId": 36421,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "label",
           "offset": 0,
           "slot": "1",
-          "type": "t_struct(Label)36123_storage"
+          "type": "t_struct(Label)36416_storage"
         }
       ],
       "numberOfBytes": "96"
     },
-    "t_struct(Label)36123_storage": {
+    "t_struct(Label)36416_storage": {
       "encoding": "inplace",
       "label": "struct Data.Label",
       "members": [
         {
-          "astId": 36120,
+          "astId": 36413,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "data",
           "offset": 0,
@@ -64,7 +64,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 36122,
+          "astId": 36415,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "length",
           "offset": 0,
@@ -74,27 +74,27 @@
       ],
       "numberOfBytes": "64"
     },
-    "t_struct(Node)36135_storage": {
+    "t_struct(Node)36428_storage": {
       "encoding": "inplace",
       "label": "struct Data.Node",
       "members": [
         {
-          "astId": 36134,
+          "astId": 36427,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "children",
           "offset": 0,
           "slot": "0",
-          "type": "t_array(t_struct(Edge)36129_storage)2_storage"
+          "type": "t_array(t_struct(Edge)36422_storage)2_storage"
         }
       ],
       "numberOfBytes": "192"
     },
-    "t_struct(Tree)36146_storage": {
+    "t_struct(Tree)36439_storage": {
       "encoding": "inplace",
       "label": "struct Data.Tree",
       "members": [
         {
-          "astId": 36137,
+          "astId": 36430,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "root",
           "offset": 0,
@@ -102,20 +102,20 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 36140,
+          "astId": 36433,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "rootEdge",
           "offset": 0,
           "slot": "1",
-          "type": "t_struct(Edge)36129_storage"
+          "type": "t_struct(Edge)36422_storage"
         },
         {
-          "astId": 36145,
+          "astId": 36438,
           "contract": "contracts/patriciaTree/PatriciaTreeNoHash.sol:PatriciaTreeNoHash",
           "label": "nodes",
           "offset": 0,
           "slot": "4",
-          "type": "t_mapping(t_bytes32,t_struct(Node)36135_storage)"
+          "type": "t_mapping(t_bytes32,t_struct(Node)36428_storage)"
         }
       ],
       "numberOfBytes": "160"
