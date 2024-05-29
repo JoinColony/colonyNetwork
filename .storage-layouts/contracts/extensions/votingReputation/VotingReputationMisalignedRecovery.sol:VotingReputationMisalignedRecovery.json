@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50364,
+      "astId": 50657,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50350"
+      "type": "t_contract(DSAuthority)50643"
     },
     {
-      "astId": 50366,
+      "astId": 50659,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "owner",
       "offset": 0,
@@ -17,7 +17,7 @@
       "type": "t_address"
     },
     {
-      "astId": 32543,
+      "astId": 32836,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "resolver",
       "offset": 0,
@@ -25,7 +25,7 @@
       "type": "t_address"
     },
     {
-      "astId": 32546,
+      "astId": 32839,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "colony",
       "offset": 0,
@@ -33,7 +33,7 @@
       "type": "t_contract(IColony)12697"
     },
     {
-      "astId": 32548,
+      "astId": 32841,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_deprecated",
       "offset": 20,
@@ -41,15 +41,15 @@
       "type": "t_bool"
     },
     {
-      "astId": 32551,
+      "astId": 32844,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_state",
       "offset": 21,
       "slot": "3",
-      "type": "t_enum(ExtensionState)32385"
+      "type": "t_enum(ExtensionState)32678"
     },
     {
-      "astId": 32554,
+      "astId": 32847,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "colonyNetwork",
       "offset": 0,
@@ -57,15 +57,15 @@
       "type": "t_contract(IColonyNetwork)20072"
     },
     {
-      "astId": 32557,
+      "astId": 32850,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "tokenLocking",
       "offset": 0,
       "slot": "5",
-      "type": "t_contract(ITokenLocking)48928"
+      "type": "t_contract(ITokenLocking)49221"
     },
     {
-      "astId": 32559,
+      "astId": 32852,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "token",
       "offset": 0,
@@ -73,7 +73,7 @@
       "type": "t_address"
     },
     {
-      "astId": 32561,
+      "astId": 32854,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "totalStakeFraction",
       "offset": 0,
@@ -81,7 +81,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32563,
+      "astId": 32856,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_voterRewardFraction",
       "offset": 0,
@@ -89,7 +89,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32565,
+      "astId": 32858,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_userMinStakeFraction",
       "offset": 0,
@@ -97,7 +97,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32567,
+      "astId": 32860,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_maxVoteFraction",
       "offset": 0,
@@ -105,7 +105,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32569,
+      "astId": 32862,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_stakePeriod",
       "offset": 0,
@@ -113,7 +113,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32571,
+      "astId": 32864,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_submitPeriod",
       "offset": 0,
@@ -121,7 +121,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32573,
+      "astId": 32866,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_revealPeriod",
       "offset": 0,
@@ -129,7 +129,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32575,
+      "astId": 32868,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_escalationPeriod",
       "offset": 0,
@@ -137,7 +137,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32579,
+      "astId": 32872,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_metatransactionNonces",
       "offset": 0,
@@ -145,7 +145,7 @@
       "type": "t_mapping(t_address,t_uint256)"
     },
     {
-      "astId": 32581,
+      "astId": 32874,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_motionCount",
       "offset": 0,
@@ -153,15 +153,15 @@
       "type": "t_uint256"
     },
     {
-      "astId": 32586,
+      "astId": 32879,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "motions",
       "offset": 0,
       "slot": "17",
-      "type": "t_mapping(t_uint256,t_struct(Motion)32433_storage)"
+      "type": "t_mapping(t_uint256,t_struct(Motion)32726_storage)"
     },
     {
-      "astId": 32594,
+      "astId": 32887,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "stakes",
       "offset": 0,
@@ -169,7 +169,7 @@
       "type": "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_uint256)))"
     },
     {
-      "astId": 32600,
+      "astId": 32893,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_voteSecrets",
       "offset": 0,
@@ -177,7 +177,7 @@
       "type": "t_mapping(t_uint256,t_mapping(t_address,t_bytes32))"
     },
     {
-      "astId": 32604,
+      "astId": 32897,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_expenditurePastVotes",
       "offset": 0,
@@ -185,7 +185,7 @@
       "type": "t_mapping(t_bytes32,t_uint256)"
     },
     {
-      "astId": 32608,
+      "astId": 32901,
       "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
       "label": "DO_NOT_USE_expenditureMotionCounts",
       "offset": 0,
@@ -231,7 +231,7 @@
       "label": "bytes",
       "numberOfBytes": "32"
     },
-    "t_contract(DSAuthority)50350": {
+    "t_contract(DSAuthority)50643": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"
@@ -246,12 +246,12 @@
       "label": "contract IColonyNetwork",
       "numberOfBytes": "20"
     },
-    "t_contract(ITokenLocking)48928": {
+    "t_contract(ITokenLocking)49221": {
       "encoding": "inplace",
       "label": "contract ITokenLocking",
       "numberOfBytes": "20"
     },
-    "t_enum(ExtensionState)32385": {
+    "t_enum(ExtensionState)32678": {
       "encoding": "inplace",
       "label": "enum VotingReputationDataTypes.ExtensionState",
       "numberOfBytes": "1"
@@ -298,12 +298,12 @@
       "numberOfBytes": "32",
       "value": "t_mapping(t_address,t_mapping(t_uint256,t_uint256))"
     },
-    "t_mapping(t_uint256,t_struct(Motion)32433_storage)": {
+    "t_mapping(t_uint256,t_struct(Motion)32726_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct VotingReputationDataTypes.Motion)",
       "numberOfBytes": "32",
-      "value": "t_struct(Motion)32433_storage"
+      "value": "t_struct(Motion)32726_storage"
     },
     "t_mapping(t_uint256,t_uint256)": {
       "encoding": "mapping",
@@ -312,12 +312,12 @@
       "numberOfBytes": "32",
       "value": "t_uint256"
     },
-    "t_struct(Motion)32433_storage": {
+    "t_struct(Motion)32726_storage": {
       "encoding": "inplace",
       "label": "struct VotingReputationDataTypes.Motion",
       "members": [
         {
-          "astId": 32398,
+          "astId": 32691,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "events",
           "offset": 0,
@@ -325,7 +325,7 @@
           "type": "t_array(t_uint64)3_storage"
         },
         {
-          "astId": 32400,
+          "astId": 32693,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "rootHash",
           "offset": 0,
@@ -333,7 +333,7 @@
           "type": "t_bytes32"
         },
         {
-          "astId": 32402,
+          "astId": 32695,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "domainId",
           "offset": 0,
@@ -341,7 +341,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32404,
+          "astId": 32697,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "skillId",
           "offset": 0,
@@ -349,7 +349,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32406,
+          "astId": 32699,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "skillRep",
           "offset": 0,
@@ -357,7 +357,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32408,
+          "astId": 32701,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "repSubmitted",
           "offset": 0,
@@ -365,7 +365,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32410,
+          "astId": 32703,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "paidVoterComp",
           "offset": 0,
@@ -373,7 +373,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 32414,
+          "astId": 32707,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "pastVoterComp",
           "offset": 0,
@@ -381,7 +381,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 32418,
+          "astId": 32711,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "stakes",
           "offset": 0,
@@ -389,7 +389,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 32422,
+          "astId": 32715,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "votes",
           "offset": 0,
@@ -397,7 +397,7 @@
           "type": "t_array(t_uint256)2_storage"
         },
         {
-          "astId": 32424,
+          "astId": 32717,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "escalated",
           "offset": 0,
@@ -405,7 +405,7 @@
           "type": "t_bool"
         },
         {
-          "astId": 32426,
+          "astId": 32719,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "finalized",
           "offset": 1,
@@ -413,7 +413,7 @@
           "type": "t_bool"
         },
         {
-          "astId": 32428,
+          "astId": 32721,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "altTarget",
           "offset": 2,
@@ -421,7 +421,7 @@
           "type": "t_address"
         },
         {
-          "astId": 32430,
+          "astId": 32723,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "sig",
           "offset": 22,
@@ -429,7 +429,7 @@
           "type": "t_bytes4"
         },
         {
-          "astId": 32432,
+          "astId": 32725,
           "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
           "label": "action",
           "offset": 0,

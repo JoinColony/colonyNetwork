@@ -1,15 +1,15 @@
 {
   "storage": [
     {
-      "astId": 50364,
+      "astId": 50657,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "authority",
       "offset": 0,
       "slot": "0",
-      "type": "t_contract(DSAuthority)50350"
+      "type": "t_contract(DSAuthority)50643"
     },
     {
-      "astId": 50366,
+      "astId": 50659,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "owner",
       "offset": 0,
@@ -305,7 +305,7 @@
       "type": "t_uint256"
     },
     {
-      "astId": 28330,
+      "astId": 28332,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "numStreamingPayments",
       "offset": 0,
@@ -313,12 +313,20 @@
       "type": "t_uint256"
     },
     {
-      "astId": 28335,
+      "astId": 28337,
       "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
       "label": "streamingPayments",
       "offset": 0,
       "slot": "38",
-      "type": "t_mapping(t_uint256,t_struct(StreamingPayment)28328_storage)"
+      "type": "t_mapping(t_uint256,t_struct(StreamingPayment)28330_storage)"
+    },
+    {
+      "astId": 28339,
+      "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
+      "label": "nUnresolvedStreamingPayments",
+      "offset": 0,
+      "slot": "39",
+      "type": "t_uint256"
     }
   ],
   "types": {
@@ -337,7 +345,7 @@
       "label": "bool",
       "numberOfBytes": "1"
     },
-    "t_contract(DSAuthority)50350": {
+    "t_contract(DSAuthority)50643": {
       "encoding": "inplace",
       "label": "contract DSAuthority",
       "numberOfBytes": "20"
@@ -354,19 +362,19 @@
       "numberOfBytes": "32",
       "value": "t_uint256"
     },
-    "t_mapping(t_uint256,t_struct(StreamingPayment)28328_storage)": {
+    "t_mapping(t_uint256,t_struct(StreamingPayment)28330_storage)": {
       "encoding": "mapping",
       "key": "t_uint256",
       "label": "mapping(uint256 => struct StreamingPayments.StreamingPayment)",
       "numberOfBytes": "32",
-      "value": "t_struct(StreamingPayment)28328_storage"
+      "value": "t_struct(StreamingPayment)28330_storage"
     },
-    "t_struct(StreamingPayment)28328_storage": {
+    "t_struct(StreamingPayment)28330_storage": {
       "encoding": "inplace",
       "label": "struct StreamingPayments.StreamingPayment",
       "members": [
         {
-          "astId": 28313,
+          "astId": 28315,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "recipient",
           "offset": 0,
@@ -374,7 +382,7 @@
           "type": "t_address_payable"
         },
         {
-          "astId": 28315,
+          "astId": 28317,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "domainId",
           "offset": 0,
@@ -382,7 +390,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28317,
+          "astId": 28319,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "startTime",
           "offset": 0,
@@ -390,7 +398,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28319,
+          "astId": 28321,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "endTime",
           "offset": 0,
@@ -398,7 +406,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28321,
+          "astId": 28323,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "interval",
           "offset": 0,
@@ -406,7 +414,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28323,
+          "astId": 28325,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "token",
           "offset": 0,
@@ -414,7 +422,7 @@
           "type": "t_address"
         },
         {
-          "astId": 28325,
+          "astId": 28327,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "amount",
           "offset": 0,
@@ -422,7 +430,7 @@
           "type": "t_uint256"
         },
         {
-          "astId": 28327,
+          "astId": 28329,
           "contract": "contracts/extensions/StreamingPayments.sol:StreamingPayments",
           "label": "pseudoAmountClaimedFromStart",
           "offset": 0,
