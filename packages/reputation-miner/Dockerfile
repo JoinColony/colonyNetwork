@@ -9,7 +9,6 @@ COPY ./pnpm-lock.yaml ./
 COPY ./pnpm-workspace.yaml ./
 COPY ./patches ./patches
 COPY ./artifacts ./artifacts
-RUN git config --global url."https://github.com/".insteadOf git@github.com:
 RUN pnpm install --frozen-lockfile
 EXPOSE 3000
 CMD node $NODE_ARGS packages/reputation-miner/bin/index.js --dbPath $REPUTATION_JSON_PATH --colonyNetworkAddress $COLONYNETWORK_ADDRESS --privateKey $PRIVATE_KEY --syncFrom $SYNC_FROM_BLOCK $ARGS

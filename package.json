@@ -146,6 +146,9 @@
   "pnpm": {
     "patchedDependencies": {
       "@nomiclabs/truffle-contract@4.5.10": "patches/@nomiclabs__truffle-contract@4.5.10.patch"
+    },
+    "overrides": {
+      "git@github.com+ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0": "git+https://github.com/ethereumjs/ethereumjs-abi.git+ee3994657fa7a427238e6ba92a84d0b529bbcde0"
     }
   }
 }
