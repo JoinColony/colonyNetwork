@@ -228,8 +228,8 @@ contract StreamingPayments is ColonyExtensionMeta {
       _toChildSkillIndex,
       _id,
       domainFundingPotId,
-      toAddressArray(streamingPayment.token),
-      toUint256Array(amountToClaim)
+      streamingPayment.token,
+      amountToClaim
     );
 
     colony.claimExpenditurePayout(expenditureId, SLOT, streamingPayment.token);
@@ -427,8 +427,8 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _toChildSkillIndex,
     uint256 _id,
     uint256 _domainFundingPotId,
-    address[] memory _tokens,
-    uint256[] memory _amountsToClaim
+    address _token,
+    uint256 _amountToClaim
   ) internal returns (uint256) {
     uint256 expenditureId = colony.makeExpenditure(
       _permissionDomainId,
@@ -437,35 +437,23 @@ contract StreamingPayments is ColonyExtensionMeta {
     );
     uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-    for (uint256 i; i < _tokens.length; i++) {
-      if (_amountsToClaim[i] > 0) {
-        colony.moveFundsBetweenPots(
-          _permissionDomainId,
-          _childSkillIndex,
-          streamingPayments[_id].domainId,
-          _fromChildSkillIndex,
-          _toChildSkillIndex,
-          _domainFundingPotId,
-          expenditureFundingPotId,
-          _amountsToClaim[i],
-          _tokens[i]
-        );
-        colony.setExpenditurePayout(expenditureId, SLOT, _tokens[i], _amountsToClaim[i]);
-      }
+    if (_amountToClaim > 0) {
+      colony.moveFundsBetweenPots(
+        _permissionDomainId,
+        _childSkillIndex,
+        streamingPayments[_id].domainId,
+        _fromChildSkillIndex,
+        _toChildSkillIndex,
+        _domainFundingPotId,
+        expenditureFundingPotId,
+        _amountToClaim,
+        _token
+      );
+      colony.setExpenditurePayout(expenditureId, SLOT, _token, _amountToClaim);
     }
 
     colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayments[_id].recipient);
     colony.finalizeExpenditure(expenditureId);
     return expenditureId;
-  }
-
-  function toAddressArray(address _token) internal pure returns (address[] memory tokens) {
-    tokens = new address[](1);
-    tokens[0] = _token;
-  }
-
-  function toUint256Array(uint256 _value) internal pure returns (uint256[] memory values) {
-    values = new uint256[](1);
-    values[0] = _value;
   }
 }
