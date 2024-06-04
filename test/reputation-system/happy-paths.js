@@ -264,11 +264,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree: false, minerAddress: MINER1 });
-      await goodClient.initialise(colonyNetwork.address);
-      await goodClient.resetDB();
+      const goodClientSolidityTree = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree: false, minerAddress: MINER1 });
+      await goodClientSolidityTree.initialise(colonyNetwork.address);
+      await goodClientSolidityTree.resetDB();
 
-      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClientSolidityTree, test: this });
     });
 
     it("should allow submitted hashes to go through multiple responses to a challenge", async () => {
