@@ -8,7 +8,7 @@ const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, SECONDS_PER_DAY, ADDRESS_ZERO } = require("../../helpers/constants");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
-const { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime } = require("../../helpers/test-helper");
+const { checkErrorRevert, currentBlockTime, makeTxAtTimestamp, getBlockTime, forwardTime, web3GetStorageAt } = require("../../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -69,18 +69,25 @@ contract("Token Supplier", (accounts) => {
       await tokenSupplier.deprecate(true);
       await tokenSupplier.uninstall();
 
-      const resolver = await tokenSupplier.resolver();
-      expect(resolver).to.equal(ethers.constants.AddressZero);
+      const colonyAddress = await tokenSupplier.getColony();
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(TOKEN_SUPPLIER, version, { from: USER0 });
 
+      const tokenSupplierAddress = await colonyNetwork.getExtensionInstallation(TOKEN_SUPPLIER, colony.address);
+      let resolverAddress = await web3GetStorageAt(tokenSupplierAddress, 2);
+      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+
       await checkErrorRevert(colony.installExtension(TOKEN_SUPPLIER, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(TOKEN_SUPPLIER, { from: USER0 });
+
+      resolverAddress = await web3GetStorageAt(tokenSupplierAddress, 2);
+      expect(resolverAddress).to.equal(ethers.constants.HashZero);
     });
 
     it("can initialise", async () => {

@@ -78,22 +78,9 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
+    super.install(_colony);
 
-    colony = IColony(_colony);
     token = colony.getToken();
-  }
-
-  /// @notice Called when upgrading the extension (currently a no-op)
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {}
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
   }
 
   /// @notice Initialise the extension, must be called before any tokens can be issued

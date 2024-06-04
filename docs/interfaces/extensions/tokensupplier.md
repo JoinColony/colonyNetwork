@@ -10,25 +10,6 @@ _This is a Colony Extension which conforms to the extension interface found [her
   
 ## Interface Methods
 
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension (currently a no-op)
-
-
-
-
 ### ▸ `getLastPinged():uint256 lastPinged`
 
 Get the time of the last token minting event
@@ -160,13 +141,6 @@ Update the tokenSupplyCeiling, cannot set below current tokenSupply
 |Name|Type|Description|
 |---|---|---|
 |_tokenSupplyCeiling|uint256|Total amount of tokens to issue
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

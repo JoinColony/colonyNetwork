@@ -126,10 +126,10 @@ jobs:
             pnpm i --frozen-lockfile
             npx hardhat compile
       - run:
-          name: "Test miner docker build"
+          name: "Test Reputation Miner docker build"
           command: docker build -f ./packages/reputation-miner/Dockerfile .
       - run:
-          name: "Test miner docker build"
+          name: "Test Metatransaction Broadcaster docker build"
           command: docker build -f ./packages/metatransaction-broadcaster/Dockerfile .
   unit-test-contracts:
     <<: *job_common

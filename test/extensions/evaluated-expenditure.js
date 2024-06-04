@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, ADDRESS_ZERO, SLOT0 } = require("../../helpers/constants");
-const { checkErrorRevert } = require("../../helpers/test-helper");
+const { checkErrorRevert, web3GetStorageAt } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -65,18 +65,25 @@ contract("EvaluatedExpenditure", (accounts) => {
       await evaluatedExpenditure.deprecate(true);
       await evaluatedExpenditure.uninstall();
 
-      const resolver = await evaluatedExpenditure.resolver();
-      expect(resolver).to.equal(ethers.constants.AddressZero);
+      const colonyAddress = await evaluatedExpenditure.getColony();
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 });
 
+      const evaluatedExpenditureAddress = await colonyNetwork.getExtensionInstallation(EVALUATED_EXPENDITURE, colony.address);
+      let resolverAddress = await web3GetStorageAt(evaluatedExpenditureAddress, 2);
+      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+
       await checkErrorRevert(colony.installExtension(EVALUATED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(EVALUATED_EXPENDITURE, { from: USER0 });
+
+      resolverAddress = await web3GetStorageAt(evaluatedExpenditureAddress, 2);
+      expect(resolverAddress).to.equal(ethers.constants.HashZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

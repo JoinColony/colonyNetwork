@@ -24,6 +24,7 @@ const {
   makeReputationValue,
   getActiveRepCycle,
   forwardTime,
+  web3GetStorageAt,
 } = require("../../helpers/test-helper");
 
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
@@ -90,8 +91,8 @@ contract("Staged Expenditure", (accounts) => {
       await stagedExpenditure.deprecate(true);
       await stagedExpenditure.uninstall();
 
-      const resolver = await stagedExpenditure.resolver();
-      expect(resolver).to.equal(ethers.constants.AddressZero);
+      const colonyAddress = await stagedExpenditure.getColony();
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
@@ -105,10 +106,17 @@ contract("Staged Expenditure", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(STAGED_EXPENDITURE, version, { from: USER0 });
 
+      const stagedExpenditureAddress = await colonyNetwork.getExtensionInstallation(STAGED_EXPENDITURE, colony.address);
+      let resolverAddress = await web3GetStorageAt(stagedExpenditureAddress, 2);
+      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+
       await checkErrorRevert(colony.installExtension(STAGED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(STAGED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(STAGED_EXPENDITURE, { from: USER0 });
+
+      resolverAddress = await web3GetStorageAt(stagedExpenditureAddress, 2);
+      expect(resolverAddress).to.equal(ethers.constants.HashZero);
     });
   });
 

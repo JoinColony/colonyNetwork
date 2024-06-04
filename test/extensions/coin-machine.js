@@ -16,6 +16,7 @@ const {
   currentBlockTime,
   forwardTimeTo,
   expectEvent,
+  web3GetStorageAt,
 } = require("../../helpers/test-helper");
 
 const { setupRandomToken, setupRandomColony, setupColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -89,18 +90,25 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.deprecate(true);
       await coinMachine.uninstall();
 
-      const resolver = await coinMachine.resolver();
-      expect(resolver).to.equal(ethers.constants.AddressZero);
+      const colonyAddress = await coinMachine.getColony();
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
 
+      const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      let resolverAddress = await web3GetStorageAt(coinMachineAddress, 2);
+      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+
       await checkErrorRevert(colony.installExtension(COIN_MACHINE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(COIN_MACHINE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+
+      resolverAddress = await web3GetStorageAt(coinMachineAddress, 2);
+      expect(resolverAddress).to.equal(ethers.constants.HashZero);
     });
 
     it("can send unsold tokens back to the colony", async () => {

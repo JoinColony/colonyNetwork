@@ -19,9 +19,9 @@
 pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import { TestExtensionBase } from "./TestExtensionBase.sol";
+import { ColonyExtensionMeta } from "./../../extensions/ColonyExtensionMeta.sol";
 
-contract TestExtension0 is TestExtensionBase {
+contract TestExtension0 is ColonyExtensionMeta {
   function identifier() public pure override returns (bytes32) {
     return keccak256("TestExtension");
   }

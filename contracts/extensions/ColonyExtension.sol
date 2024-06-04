@@ -34,7 +34,7 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
 
   event ExtensionInitialised();
 
-  address public resolver; // Align storage with EtherRouter
+  address resolver; // Align storage with EtherRouter
 
   IColony colony;
   bool deprecated;
@@ -59,9 +59,12 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     deprecated = _deprecated;
   }
 
+  // slither-disable reentrancy-no-eth
   function uninstall() public virtual auth {
-    resolver = address(0x0);
     payable(address(colony)).transfer(address(this).balance);
+
+    delete resolver;
+    delete colony;
   }
 
   function getCapabilityRoles(bytes4 _sig) public view virtual returns (bytes32) {

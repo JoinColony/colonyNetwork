@@ -23,6 +23,7 @@ const {
   forwardTime,
   getBlockTime,
   removeSubdomainLimit,
+  web3GetStorageAt,
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -191,18 +192,25 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.deprecate(true);
       await fundingQueue.uninstall();
 
-      const resolver = await fundingQueue.resolver();
-      expect(resolver).to.equal(ethers.constants.AddressZero);
+      const colonyAddress = await fundingQueue.getColony();
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(FUNDING_QUEUE, version, { from: USER0 });
 
+      const fundingQueueAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
+      let resolverAddress = await web3GetStorageAt(fundingQueueAddress, 2);
+      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+
       await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
+
+      resolverAddress = await web3GetStorageAt(fundingQueueAddress, 2);
+      expect(resolverAddress).to.equal(ethers.constants.HashZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

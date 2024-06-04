@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { UINT256_MAX, WAD, SECONDS_PER_DAY, ADDRESS_ZERO } = require("../../helpers/constants");
-const { checkErrorRevert, makeTxAtTimestamp, getBlockTime, forwardTime, expectEvent } = require("../../helpers/test-helper");
+const { checkErrorRevert, expectEvent, makeTxAtTimestamp, getBlockTime, forwardTime, web3GetStorageAt } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -74,18 +74,25 @@ contract("Streaming Payments", (accounts) => {
       await streamingPayments.deprecate(true);
       await streamingPayments.uninstall();
 
-      const resolver = await streamingPayments.resolver();
-      expect(resolver).to.equal(ethers.constants.AddressZero);
+      const colonyAddress = await streamingPayments.getColony();
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(STREAMING_PAYMENTS, version, { from: USER0 });
 
+      const streamingPaymentsAddress = await colonyNetwork.getExtensionInstallation(STREAMING_PAYMENTS, colony.address);
+      let resolverAddress = await web3GetStorageAt(streamingPaymentsAddress, 2);
+      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+
       await checkErrorRevert(colony.installExtension(STREAMING_PAYMENTS, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(STREAMING_PAYMENTS, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(STREAMING_PAYMENTS, { from: USER0 });
+
+      resolverAddress = await web3GetStorageAt(streamingPaymentsAddress, 2);
+      expect(resolverAddress).to.equal(ethers.constants.HashZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

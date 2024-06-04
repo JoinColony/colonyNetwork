@@ -6,7 +6,7 @@ const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
 const { WAD, INT128_MAX, ADDRESS_ZERO, SECONDS_PER_DAY, SECONDS_PER_HOUR } = require("../../helpers/constants");
-const { checkErrorRevert, getBlockTime, forwardTime } = require("../../helpers/test-helper");
+const { checkErrorRevert, getBlockTime, forwardTime, web3GetStorageAt } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -74,13 +74,17 @@ contract("Reputation Bootstrapper", (accounts) => {
       await reputationBootstrapper.deprecate(true);
       await reputationBootstrapper.uninstall();
 
-      const resolver = await reputationBootstrapper.resolver();
-      expect(resolver).to.equal(ethers.constants.AddressZero);
+      const colonyAddress = await reputationBootstrapper.getColony();
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(REPUTATION_BOOTSTRAPPER, version, { from: USER0 });
+
+      const reputationBoostrapperAddress = await colonyNetwork.getExtensionInstallation(REPUTATION_BOOTSTRAPPER, colony.address);
+      let resolverAddress = await web3GetStorageAt(reputationBoostrapperAddress, 2);
+      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
 
       await checkErrorRevert(
         colony.installExtension(REPUTATION_BOOTSTRAPPER, version, { from: USER0 }),
@@ -89,6 +93,9 @@ contract("Reputation Bootstrapper", (accounts) => {
       await checkErrorRevert(colony.uninstallExtension(REPUTATION_BOOTSTRAPPER, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(REPUTATION_BOOTSTRAPPER, { from: USER0 });
+
+      resolverAddress = await web3GetStorageAt(reputationBoostrapperAddress, 2);
+      expect(resolverAddress).to.equal(ethers.constants.HashZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
