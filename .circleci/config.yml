@@ -131,52 +131,6 @@ jobs:
       - run:
           name: "Test Metatransaction Broadcaster docker build"
           command: docker build -f ./packages/metatransaction-broadcaster/Dockerfile .
-  unit-test-contracts:
-    <<: *job_common
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - setup_remote_docker:
-          version: docker23
-      - <<: *step_pull_solc_docker
-      - <<: *step_setup_global_packages
-      - <<: *step_install_lsof
-      - run:
-          name: "Running network contracts unit tests"
-          command: pnpm run test:contracts
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - <<: *step_save_cache
-      # Save test results
-      - store_test_results:
-          path: test-results.xml
-      - store_artifacts:
-          path: test-results.xml
-      - store_artifacts:
-          path: coverage-miner
-  unit-test-extensions:
-    <<: *job_common
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - setup_remote_docker:
-          version: docker23
-      - <<: *step_pull_solc_docker
-      - <<: *step_setup_global_packages
-      - <<: *step_install_lsof
-      - run:
-          name: "Running extension contracts unit tests"
-          command: pnpm run test:contracts:extensions
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - <<: *step_save_cache
-      # Save test results
-      - store_test_results:
-          path: test-results.xml
-      - store_artifacts:
-          path: test-results.xml
-      - store_artifacts:
-          path: coverage-miner
   unit-test-other:
     <<: *job_common
     steps:
@@ -216,8 +170,8 @@ jobs:
             sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
       - <<: *step_install_lsof
       - run:
-          name: "Running ganache upgrade tests"
-          command: pnpm run test:contracts:upgrade:ganache
+          name: "Running hardhat upgrade tests"
+          command: pnpm run test:contracts:upgrade:hardhat
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
           # name: "Running parity upgrade tests"
@@ -228,12 +182,12 @@ jobs:
           name: "Running gas cost tests"
           command: pnpm run test:contracts:gasCosts && npx codechecks
       - <<: *step_install_lsof
-      - run:
-          name: "Reset chains"
-          command: rm -rf ganache-chain-db*
-      - run:
-          name: "Reset ganache chain"
-          command: rm -rf ganache-chain-db*
+      # - run:
+      #     name: "Reset chains"
+      #     command: |
+      #       sudo apt-get update
+      #       sudo apt-get install lsof
+      #       pnpm run stop:blockchain:client
       - run:
           name: "Running patricia tree tests"
           command: pnpm run test:contracts:patricia
@@ -371,7 +325,23 @@ jobs:
           command: pnpm run test:contracts:bridging:1:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+<<<<<<< HEAD
       - <<: *step_install_lsof
+||||||| parent of 0f0e8b71 (Only run tests under coverage)
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
+=======
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            pnpm run stop:blockchain:client
+>>>>>>> 0f0e8b71 (Only run tests under coverage)
       - run:
           name: "Running coverage tests for foreign-side of bridge"
           command: pnpm run test:contracts:bridging:2:coverage
@@ -382,7 +352,13 @@ jobs:
           paths:
             - coverage-cross-chain-foreign
             - coverage-cross-chain-home
+<<<<<<< HEAD
   unit-test-reputation-1:
+||||||| parent of 0f0e8b71 (Only run tests under coverage)
+  reputation-test-non-gnosis:
+=======
+  coverage-reputation-test-non-gnosis:
+>>>>>>> 0f0e8b71 (Only run tests under coverage)
     <<: *job_common
     steps:
       - checkout
@@ -424,9 +400,10 @@ jobs:
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
-          command: pnpm run test:reputation:1:anotherChain
+          command: pnpm run test:reputation:1:anotherChain:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+<<<<<<< HEAD
   unit-test-reputation-foreign-2:
     <<: *job_common
     steps:
@@ -437,11 +414,41 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - <<: *step_install_lsof
+||||||| parent of 0f0e8b71 (Only run tests under coverage)
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
+=======
+      - run:
+          name: "Reset chains"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+            pnpm run stop:blockchain:client
+>>>>>>> 0f0e8b71 (Only run tests under coverage)
       - run:
           name: "Running reputation system unit tests"
-          command: pnpm run test:reputation:2:anotherChain
+          command: pnpm run test:reputation:2:anotherChain:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+<<<<<<< HEAD
+||||||| parent of 0f0e8b71 (Only run tests under coverage)
+      # - run:
+      #     name: "Running storage consistency smoke tests"
+      #     command: pnpm run test:contracts:smoke
+
+
+=======
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-anotherChain-1
+            - coverage-anotherChain-2
+
+>>>>>>> 0f0e8b71 (Only run tests under coverage)
   check-coverage:
     <<: *job_common
     steps:
@@ -474,7 +481,7 @@ jobs:
       - run:
           name: "Slither analysis"
           command: pnpm run test:security:slither
-  end-to-end-tests:
+  coverage-end-to-end-tests:
     <<: *job_common
     steps:
       - checkout
@@ -485,9 +492,13 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running end-to-end tests"
-          command: pnpm run test:contracts:e2e
+          command: pnpm run test:contracts:e2e:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-e2e
 
 workflows:
   version: 2
@@ -499,10 +510,20 @@ workflows:
           context: dockerhub-credentials
       - security-analysis:
           context: dockerhub-credentials
+<<<<<<< HEAD
       - unit-test-contracts:
           context: dockerhub-credentials
       - unit-test-extensions:
           context: dockerhub-credentials
+||||||| parent of 0f0e8b71 (Only run tests under coverage)
+      - unit-test-contracts:
+          context: dockerhub-credentials
+      - unit-test-extensions:
+          context: dockerhub-credentials
+      - unit-test-reputation:
+          context: dockerhub-credentials
+=======
+>>>>>>> 0f0e8b71 (Only run tests under coverage)
       - unit-test-other:
           context: dockerhub-credentials
       - unit-test-reputation-1:
@@ -525,6 +546,14 @@ workflows:
           context: dockerhub-credentials
       - coverage-test-bridging:
           context: dockerhub-credentials
+<<<<<<< HEAD
+||||||| parent of 0f0e8b71 (Only run tests under coverage)
+      - reputation-test-non-gnosis:
+          context: dockerhub-credentials
+=======
+      - coverage-reputation-test-non-gnosis:
+          context: dockerhub-credentials
+>>>>>>> 0f0e8b71 (Only run tests under coverage)
       - check-coverage:
           context: dockerhub-credentials
           requires:

@@ -15,16 +15,16 @@ const { etherRouterAddress } = require("../etherrouter-address.json"); // eslint
 const reputationOraclePath = path.resolve(__dirname, "../packages/reputation-miner");
 
 async function start() {
-  const ganacheAccounts = await getGanacheAccounts();
+  const hardhatAccounts = await getHardhatAccounts();
   const command =
-    `node ${reputationOraclePath}/bin/index.js --minerAddress="${ganacheAccounts[5]}" ` +
+    `node ${reputationOraclePath}/bin/index.js --minerAddress="${hardhatAccounts[5]}" ` +
     `--colonyNetworkAddress="${etherRouterAddress}" --syncFrom=1 --processingDelay=1 --dbPath ./reputations.sqlite`;
   const proc = exec(command, { cwd: path.resolve(__dirname, "..") });
   proc.stdout.pipe(process.stdout);
   proc.stderr.pipe(process.stderr);
 }
 
-async function getGanacheAccounts() {
+async function getHardhatAccounts() {
   try {
     const {
       data: { result },
@@ -36,7 +36,7 @@ async function getGanacheAccounts() {
     });
     return result;
   } catch (e) {
-    throw new Error(`Could not connect to local ganache instance. Error was: ${e.message}`);
+    throw new Error(`Could not connect to local hardhat instance. Error was: ${e.message}`);
   }
 }
 

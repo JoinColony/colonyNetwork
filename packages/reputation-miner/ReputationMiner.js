@@ -32,7 +32,7 @@ class ReputationMiner {
       const hardhat = require("hardhat"); // eslint-disable-line global-require
       const hardhatProvider = hardhat.network.provider;
       this.hardhatProvider = new ethers.providers.Web3Provider(hardhatProvider);
-      this.ganacheWallet = new ethers.Wallet("0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae", this.hardhatProvider);
+      this.hardhatWallet = new ethers.Wallet("0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae", this.hardhatProvider);
     }
 
     // This will have to support provider.getSigner https://docs.ethers.io/ethers.js/html/api-providers.html#jsonrpcprovider
@@ -1625,11 +1625,11 @@ class ReputationMiner {
         bytecode = this.patriciaTreeNoHashContractDef.bytecode
       }
 
-      const contractFactory = new ethers.ContractFactory(abi, bytecode, this.ganacheWallet);
+      const contractFactory = new ethers.ContractFactory(abi, bytecode, this.hardhatWallet);
       const contract = await contractFactory.deploy();
       await contract.deployed();
 
-      return new ethers.Contract(contract.address, abi, this.ganacheWallet);
+      return new ethers.Contract(contract.address, abi, this.hardhatWallet);
     }
 
     if (type === "noop") {

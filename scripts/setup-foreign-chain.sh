@@ -7,7 +7,6 @@ set -o errexit
 
 export CHAIN_ID=2656692
 export PORT="${PORT:-8546}"
-export DBPATH=./ganache-chain-db-2
 
 CHAIN_ID=$CHAIN_ID npm run start:blockchain:client &
 

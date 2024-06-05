@@ -24,12 +24,10 @@ reputations.json
 justificationTreeCache.json
 .coverage_contracts
 etherrouter-address.json
-ganache-chain-db
 colonyNetwork-*
 artifacts/
 cache/
 .DS_Store
-ganache-chain-db-2/
 *Updated*.sol*
 build-coverage/
 coverage-extensions/

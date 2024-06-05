@@ -1,4 +1,4 @@
-/* globals artifacts, hre */
+/* globals artifacts */
 
 const { padLeft, soliditySha3 } = require("web3-utils");
 const BN = require("bn.js");
@@ -391,260 +391,256 @@ contract("Colony Network Recovery", (accounts) => {
   });
 
   describe("when using recovery mode, miners should work correctly", async () => {
-    hre.__SOLIDITY_COVERAGE_RUNNING
-      ? it.skip
-      : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
-          await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
+    it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
 
-          await fundColonyWithTokens(metaColony, clny);
-          await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
+      await fundColonyWithTokens(metaColony, clny);
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
 
-          await client.saveCurrentState();
-          const startingHash = await client.getRootHash();
+      await client.saveCurrentState();
+      const startingHash = await client.getRootHash();
 
-          const newClient = new ReputationMinerTestWrapper({
-            loader: contractLoader,
-            minerAddress: accounts[5],
-            realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true,
-          });
-          await newClient.initialise(colonyNetwork.address);
+      const newClient = new ReputationMinerTestWrapper({
+        loader: contractLoader,
+        minerAddress: accounts[5],
+        realProviderPort: REAL_PROVIDER_PORT,
+        useJsTree: true,
+      });
+      await newClient.initialise(colonyNetwork.address);
 
-          const { colony, token } = await setupRandomColony(colonyNetwork);
-          await colony.mintTokens(1000000000000000);
-          await colony.claimColonyFunds(token.address);
-          await colony.bootstrapColony([accounts[5]], [1000000000000000]);
+      const { colony, token } = await setupRandomColony(colonyNetwork);
+      await colony.mintTokens(1000000000000000);
+      await colony.claimColonyFunds(token.address);
+      await colony.bootstrapColony([accounts[5]], [1000000000000000]);
 
-          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
-          const repCycle = await getActiveRepCycle(colonyNetwork);
-          const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
 
-          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
-          const domain = await colony.getDomain(1);
-          const rootSkill = domain.skillId;
-          const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[5]);
-          const originalValue = client.reputations[reputationKey].slice(2, 66);
-          expect(parseInt(originalValue, 16)).to.equal(1000000000000000);
+      const domain = await colony.getDomain(1);
+      const rootSkill = domain.skillId;
+      const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[5]);
+      const originalValue = client.reputations[reputationKey].slice(2, 66);
+      expect(parseInt(originalValue, 16)).to.equal(1000000000000000);
 
-          await colonyNetwork.enterRecoveryMode();
+      await colonyNetwork.enterRecoveryMode();
 
-          await colonyNetwork.setReplacementReputationUpdateLogEntry(
-            repCycle.address,
-            5,
-            invalidEntry.user,
-            0,
-            invalidEntry.skillId,
-            invalidEntry.colony,
-            invalidEntry.nUpdates,
-            invalidEntry.nPreviousUpdates,
-          );
-          await client.loadState(startingHash);
-          // This sync call will log an error - this is because we've changed a log entry, but the root hash
-          // on-chain which .sync() does a sanity check against hasn't been updated.
-          await client.sync(startingBlockNumber, true);
-          console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
+      await colonyNetwork.setReplacementReputationUpdateLogEntry(
+        repCycle.address,
+        5,
+        invalidEntry.user,
+        0,
+        invalidEntry.skillId,
+        invalidEntry.colony,
+        invalidEntry.nUpdates,
+        invalidEntry.nPreviousUpdates,
+      );
+      await client.loadState(startingHash);
+      // This sync call will log an error - this is because we've changed a log entry, but the root hash
+      // on-chain which .sync() does a sanity check against hasn't been updated.
+      await client.sync(startingBlockNumber, true);
+      console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
 
-          const rootHash = await client.getRootHash();
-          const nLeaves = await client.nReputations;
+      const rootHash = await client.getRootHash();
+      const nLeaves = await client.nReputations;
 
-          // slots 13 and 14 are hash and number of leaves respectively
-          await colonyNetwork.setStorageSlotRecovery(13, rootHash);
-          const nLeavesHex = nLeaves.toHexString();
-          await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nLeavesHex, 64)}`);
+      // slots 13 and 14 are hash and number of leaves respectively
+      await colonyNetwork.setStorageSlotRecovery(13, rootHash);
+      const nLeavesHex = nLeaves.toHexString();
+      await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nLeavesHex, 64)}`);
 
-          await colonyNetwork.approveExitRecovery();
-          await colonyNetwork.exitRecoveryMode();
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
 
-          const newHash = await colonyNetwork.getReputationRootHash();
-          const newHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
-          expect(newHash).to.equal(rootHash);
-          expect(newHashNLeaves).to.eq.BN(nLeaves.toString()); // nLeaves is a BigNumber :sob:
+      const newHash = await colonyNetwork.getReputationRootHash();
+      const newHashNLeaves = await colonyNetwork.getReputationRootHashNLeaves();
+      expect(newHash).to.equal(rootHash);
+      expect(newHashNLeaves).to.eq.BN(nLeaves.toString()); // nLeaves is a BigNumber :sob:
 
-          await newClient.sync(startingBlockNumber);
-          const newValue = newClient.reputations[reputationKey].slice(2, 66);
-          expect(new BN(newValue, 16)).to.be.zero;
-        });
+      await newClient.sync(startingBlockNumber);
+      const newValue = newClient.reputations[reputationKey].slice(2, 66);
+      expect(new BN(newValue, 16)).to.be.zero;
+    });
 
-    hre.__SOLIDITY_COVERAGE_RUNNING
-      ? it.skip
-      : it("the ReputationMiningCycle being replaced mid-cycle should be able to be managed okay by miners (new and old)", async () => {
-          await client.saveCurrentState();
-          const startingHash = await client.getRootHash();
+    it("the ReputationMiningCycle being replaced mid-cycle should be able to be managed okay by miners (new and old)", async () => {
+      await client.saveCurrentState();
+      const startingHash = await client.getRootHash();
 
-          const ignorantclient = new ReputationMinerTestWrapper({
-            loader: contractLoader,
-            minerAddress: accounts[5],
-            realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true,
-          });
-          await ignorantclient.initialise(colonyNetwork.address);
+      const ignorantclient = new ReputationMinerTestWrapper({
+        loader: contractLoader,
+        minerAddress: accounts[5],
+        realProviderPort: REAL_PROVIDER_PORT,
+        useJsTree: true,
+      });
+      await ignorantclient.initialise(colonyNetwork.address);
 
-          const { colony, token } = await setupRandomColony(colonyNetwork);
-          await colony.mintTokens(1000000000000000);
-          await colony.claimColonyFunds(token.address);
+      const { colony, token } = await setupRandomColony(colonyNetwork);
+      await colony.mintTokens(1000000000000000);
+      await colony.claimColonyFunds(token.address);
 
-          await colony.bootstrapColony([accounts[0]], [1000000000000000]);
+      await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
-          // A well intentioned miner makes a submission
-          await forwardTime(MINING_CYCLE_DURATION, this);
-          await ignorantclient.addLogContentsToReputationTree();
-          await ignorantclient.submitRootHash();
+      // A well intentioned miner makes a submission
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await ignorantclient.addLogContentsToReputationTree();
+      await ignorantclient.submitRootHash();
 
-          // Enter recovery mode
-          await colonyNetwork.enterRecoveryMode();
+      // Enter recovery mode
+      await colonyNetwork.enterRecoveryMode();
 
-          // Deploy new instances of ReputationMiningCycle
-          // This has its own resolver, which is the same as the normal ReputationMiningCycle resolver with the addition of
-          // a function that lets us edit storage slots directly.
-          let newActiveCycle = await EtherRouter.new();
-          let newInactiveCycle = await EtherRouter.new();
-          const newResolver = await Resolver.new();
+      // Deploy new instances of ReputationMiningCycle
+      // This has its own resolver, which is the same as the normal ReputationMiningCycle resolver with the addition of
+      // a function that lets us edit storage slots directly.
+      let newActiveCycle = await EtherRouter.new();
+      let newInactiveCycle = await EtherRouter.new();
+      const newResolver = await Resolver.new();
 
-          // We use the existing deployments for the majority of the functions
-          const deployedImplementations = {};
-          deployedImplementations.ReputationMiningCycle = (await ReputationMiningCycle.deployed()).address;
-          deployedImplementations.ReputationMiningCycleRespond = (await ReputationMiningCycleRespond.deployed()).address;
-          deployedImplementations.ReputationMiningCycleBinarySearch = (await ReputationMiningCycleBinarySearch.deployed()).address;
-          await setupEtherRouter("reputationMiningCycle", "IReputationMiningCycle", deployedImplementations, newResolver);
+      // We use the existing deployments for the majority of the functions
+      const deployedImplementations = {};
+      deployedImplementations.ReputationMiningCycle = (await ReputationMiningCycle.deployed()).address;
+      deployedImplementations.ReputationMiningCycleRespond = (await ReputationMiningCycleRespond.deployed()).address;
+      deployedImplementations.ReputationMiningCycleBinarySearch = (await ReputationMiningCycleBinarySearch.deployed()).address;
+      await setupEtherRouter("reputationMiningCycle", "IReputationMiningCycle", deployedImplementations, newResolver);
 
-          // Now add our extra functions.
-          // Add ReputationMiningCycleEditing to the resolver
-          const contractEditing = await ContractEditing.new();
-          await newResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+      // Now add our extra functions.
+      // Add ReputationMiningCycleEditing to the resolver
+      const contractEditing = await ContractEditing.new();
+      await newResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
 
-          // Point our cycles at the resolver.
-          await newActiveCycle.setResolver(newResolver.address);
-          await newInactiveCycle.setResolver(newResolver.address);
-          newActiveCycle = await IReputationMiningCycle.at(newActiveCycle.address);
-          newInactiveCycle = await IReputationMiningCycle.at(newInactiveCycle.address);
+      // Point our cycles at the resolver.
+      await newActiveCycle.setResolver(newResolver.address);
+      await newInactiveCycle.setResolver(newResolver.address);
+      newActiveCycle = await IReputationMiningCycle.at(newActiveCycle.address);
+      newInactiveCycle = await IReputationMiningCycle.at(newInactiveCycle.address);
 
-          // We also need these contracts with the recovery function present.
-          const newActiveCycleAsRecovery = await ContractEditing.at(newActiveCycle.address);
-          const newInactiveCycleAsRecovery = await ContractEditing.at(newInactiveCycle.address);
+      // We also need these contracts with the recovery function present.
+      const newActiveCycleAsRecovery = await ContractEditing.at(newActiveCycle.address);
+      const newInactiveCycleAsRecovery = await ContractEditing.at(newInactiveCycle.address);
 
-          const oldActiveCycle = await getActiveRepCycle(colonyNetwork);
+      const oldActiveCycle = await getActiveRepCycle(colonyNetwork);
 
-          const oldInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-          const oldInactiveCycle = await ReputationMiningCycle.at(oldInactiveCycleAddress);
+      const oldInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
+      const oldInactiveCycle = await ReputationMiningCycle.at(oldInactiveCycleAddress);
 
-          // 'Initialise' the new mining cycles by hand
-          const colonyNetworkAddress = colonyNetwork.address;
-          const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-          const metaColonyAddress = await colonyNetwork.getMetaColony();
-          const myMetaColony = await IMetaColony.at(metaColonyAddress);
-          const myClnyAddress = await myMetaColony.getToken();
+      // 'Initialise' the new mining cycles by hand
+      const colonyNetworkAddress = colonyNetwork.address;
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const metaColonyAddress = await colonyNetwork.getMetaColony();
+      const myMetaColony = await IMetaColony.at(metaColonyAddress);
+      const myClnyAddress = await myMetaColony.getToken();
 
-          // slot 3: colonyNetworkAddress
-          // slot 4: tokenLockingAddress
-          // slot 5: clnyTokenAddress
-          await newActiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          await newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          await newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
-          let timeNow = await currentBlockTime();
-          timeNow = new BN(timeNow).toString(16, 64);
-          await newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
-          await newInactiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          await newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          await newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+      // slot 3: colonyNetworkAddress
+      // slot 4: tokenLockingAddress
+      // slot 5: clnyTokenAddress
+      await newActiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+      await newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+      await newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+      let timeNow = await currentBlockTime();
+      timeNow = new BN(timeNow).toString(16, 64);
+      await newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
+      await newInactiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+      await newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+      await newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
 
-          // Port over log entries.
-          let nLogEntries = await oldActiveCycle.getReputationUpdateLogLength();
-          nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
-          await newActiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
-          const arrayStartingSlot = soliditySha3(6);
-          for (let i = 0; i < nLogEntries; i += 1) {
-            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
-            const logEntry = await oldActiveCycle.getReputationUpdateLogEntry(i);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(
-              logEntryStartingSlot.addn(4),
-              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
-            );
+      // Port over log entries.
+      let nLogEntries = await oldActiveCycle.getReputationUpdateLogLength();
+      nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
+      await newActiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
+      const arrayStartingSlot = soliditySha3(6);
+      for (let i = 0; i < nLogEntries; i += 1) {
+        const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
+        const logEntry = await oldActiveCycle.getReputationUpdateLogEntry(i);
+        await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
+        await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
+        await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
+        await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
+        await newActiveCycleAsRecovery.setStorageSlot(
+          logEntryStartingSlot.addn(4),
+          `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
+        );
 
-            const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
-            expect(portedLogEntry.user).to.equal(logEntry.user);
-            expect(portedLogEntry.amount).to.equal(logEntry.amount);
-            expect(portedLogEntry.skillId).to.equal(logEntry.skillId);
-            expect(portedLogEntry.colony).to.equal(logEntry.colony);
-            expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
-            expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
-          }
+        const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
+        expect(portedLogEntry.user).to.equal(logEntry.user);
+        expect(portedLogEntry.amount).to.equal(logEntry.amount);
+        expect(portedLogEntry.skillId).to.equal(logEntry.skillId);
+        expect(portedLogEntry.colony).to.equal(logEntry.colony);
+        expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
+        expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
+      }
 
-          // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
-          await newActiveCycleAsRecovery.setStorageSlot(new BN(arrayStartingSlot.slice(2), 16).addn(1), `0x${padLeft("0", 64)}`);
+      // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
+      await newActiveCycleAsRecovery.setStorageSlot(new BN(arrayStartingSlot.slice(2), 16).addn(1), `0x${padLeft("0", 64)}`);
 
-          // Do the same for the inactive log entry
-          nLogEntries = await oldInactiveCycle.getReputationUpdateLogLength();
-          nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
-          await newInactiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
+      // Do the same for the inactive log entry
+      nLogEntries = await oldInactiveCycle.getReputationUpdateLogLength();
+      nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
+      await newInactiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
 
-          for (let i = 0; i < nLogEntries; i += 1) {
-            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
-            const logEntry = await oldInactiveCycle.getReputationUpdateLogEntry(i);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(
-              logEntryStartingSlot.addn(4),
-              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
-            );
+      for (let i = 0; i < nLogEntries; i += 1) {
+        const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
+        const logEntry = await oldInactiveCycle.getReputationUpdateLogEntry(i);
+        await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
+        await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
+        await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
+        await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
+        await newInactiveCycleAsRecovery.setStorageSlot(
+          logEntryStartingSlot.addn(4),
+          `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
+        );
 
-            const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
+        const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
 
-            expect(portedLogEntry.user).to.equal(logEntry.user);
-            expect(portedLogEntry.amount).to.equal(logEntry.amount);
-            expect(portedLogEntry.skillId).to.equal(logEntry.skillId);
-            expect(portedLogEntry.colony).to.equal(logEntry.colony);
-            expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
-            expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
-          }
+        expect(portedLogEntry.user).to.equal(logEntry.user);
+        expect(portedLogEntry.amount).to.equal(logEntry.amount);
+        expect(portedLogEntry.skillId).to.equal(logEntry.skillId);
+        expect(portedLogEntry.colony).to.equal(logEntry.colony);
+        expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
+        expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
+      }
 
-          // Set the new cycles
-          await colonyNetwork.setStorageSlotRecovery(16, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
-          await colonyNetwork.setStorageSlotRecovery(17, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
-          const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
-          expect(retrievedActiveCycleAddress).to.equal(newActiveCycle.address);
-          const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-          expect(retrievedInactiveCycleAddress).to.equal(newInactiveCycle.address);
+      // Set the new cycles
+      await colonyNetwork.setStorageSlotRecovery(16, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
+      await colonyNetwork.setStorageSlotRecovery(17, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
+      const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+      expect(retrievedActiveCycleAddress).to.equal(newActiveCycle.address);
+      const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
+      expect(retrievedInactiveCycleAddress).to.equal(newInactiveCycle.address);
 
-          // Exit recovery mode
-          await colonyNetwork.approveExitRecovery();
-          await colonyNetwork.exitRecoveryMode();
+      // Exit recovery mode
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
 
-          // Consume these reputation mining cycles.
-          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
-          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+      // Consume these reputation mining cycles.
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
-          const newClient = new ReputationMinerTestWrapper({
-            loader: contractLoader,
-            minerAddress: accounts[5],
-            realProviderPort: REAL_PROVIDER_PORT,
-            useJsTree: true,
-          });
-          await newClient.initialise(colonyNetwork.address);
-          await newClient.sync(startingBlockNumber);
+      const newClient = new ReputationMinerTestWrapper({
+        loader: contractLoader,
+        minerAddress: accounts[5],
+        realProviderPort: REAL_PROVIDER_PORT,
+        useJsTree: true,
+      });
+      await newClient.initialise(colonyNetwork.address);
+      await newClient.sync(startingBlockNumber);
 
-          const newClientHash = await newClient.getRootHash();
-          const oldClientHash = await client.getRootHash();
+      const newClientHash = await newClient.getRootHash();
+      const oldClientHash = await client.getRootHash();
 
-          expect(newClientHash).to.equal(oldClientHash);
+      expect(newClientHash).to.equal(oldClientHash);
 
-          let ignorantClientHash = await ignorantclient.getRootHash();
-          // We changed one log entry, so these hashes should be different
-          expect(newClientHash).to.not.equal(ignorantClientHash);
+      let ignorantClientHash = await ignorantclient.getRootHash();
+      // We changed one log entry, so these hashes should be different
+      expect(newClientHash).to.not.equal(ignorantClientHash);
 
-          // Now check the ignorant client can recover. Load a state from before we entered recovery mode
-          await ignorantclient.loadState(startingHash);
-          await ignorantclient.sync(startingBlockNumber);
-          ignorantClientHash = await ignorantclient.getRootHash();
+      // Now check the ignorant client can recover. Load a state from before we entered recovery mode
+      await ignorantclient.loadState(startingHash);
+      await ignorantclient.sync(startingBlockNumber);
+      ignorantClientHash = await ignorantclient.getRootHash();
 
-          expect(ignorantClientHash).to.equal(newClientHash);
-        });
+      expect(ignorantClientHash).to.equal(newClientHash);
+    });
   });
 });
