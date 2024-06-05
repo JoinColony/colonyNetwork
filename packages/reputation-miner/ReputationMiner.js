@@ -8,10 +8,6 @@ const { soliditySha3, isAddress } = require("web3-utils");
 const PatriciaTree = require("./patricia");
 const PatriciaTreeNoHash = require("./patriciaNoHashKey");
 
-// We don't need the account address right now for this secret key, but I'm leaving it in in case we
-// do in the future.
-// const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
-const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
 
 const DAY_IN_SECONDS = 60 * 60 * 24;
@@ -32,24 +28,11 @@ class ReputationMiner {
 
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
-      // If this require is global, line numbers are broken in all our tests. If we move it here, it's only an issue if we're not
-      // using the JS tree. There is an issue open at ganache-core about this, and this require will have to remain here until it's fixed.
-      // https://github.com/trufflesuite/ganache-core/issues/287
-      const ganache = require("ganache"); // eslint-disable-line global-require
-      const ganacheProvider = ganache.provider({
-        network_id: 515,
-        vmErrorsOnRPCResponse: false,
-        locked: false,
-        logger: { log: x => console.log("Ganache:", x)},
-        accounts: [
-          {
-            balance: "0x10000000000000000000000000",
-            secretKey
-          }
-        ]
-      });
-      this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
-      this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
+      // Just requiring this starts up the network, so we only want to do it if we're using it.
+      const hardhat = require("hardhat"); // eslint-disable-line global-require
+      const hardhatProvider = hardhat.network.provider;
+      this.hardhatProvider = new ethers.providers.Web3Provider(hardhatProvider);
+      this.ganacheWallet = new ethers.Wallet("0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae", this.hardhatProvider);
     }
 
     // This will have to support provider.getSigner https://docs.ethers.io/ethers.js/html/api-providers.html#jsonrpcprovider
