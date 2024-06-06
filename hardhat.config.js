@@ -126,7 +126,7 @@ module.exports = {
     },
     integration: {
       url: "http://localhost:8545",
-      chainId: 265669100,
+      chainId: Number(process.env.CHAIN_ID) || 265669100,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
