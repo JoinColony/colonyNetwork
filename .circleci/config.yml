@@ -360,6 +360,11 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
           name: "Installing the safe-contracts dependencies"
           command: cd ./lib/safe-contracts && pnpm i --ignore-scripts
       - run:
@@ -369,10 +374,13 @@ jobs:
             NODE_OPTIONS: --max-old-space-size=6144
       - <<: *step_install_lsof
       - run:
+<<<<<<< HEAD
           name: "Reset chains"
           command: |
             pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
+=======
+>>>>>>> 4f1ee7ce (Remove redundant circleci steps)
           name: "Running coverage tests for foreign-side of bridge"
           command: pnpm run test:contracts:bridging:2:coverage
           environment:
