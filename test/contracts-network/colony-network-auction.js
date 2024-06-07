@@ -953,6 +953,7 @@ contract("Colony Network Auction", (accounts) => {
       await web3.eth.sendTransaction({
         from: accounts[0],
         to: nextAuctionAddress,
+        gas: 21000,
         value: 100,
       });
 
@@ -969,16 +970,20 @@ contract("Colony Network Auction", (accounts) => {
       await tokenAuction.finalize();
       await tokenAuction.claim(BIDDER_1);
 
-      const balanceBefore = await clnyToken.balanceOf(metaColony.address);
+      const clnyBalanceBefore = await clnyToken.balanceOf(metaColony.address);
+      const ethBalanceBefore = await hre.ethers.provider.getBalance(metaColony.address);
 
       await giveUserCLNYTokens(colonyNetwork, tokenAuction.address, 100);
       await tokenAuction.destruct();
 
-      const balanceAfter = await clnyToken.balanceOf(metaColony.address);
-      expect(balanceAfter.sub(balanceBefore)).to.eq.BN(100);
+      const clnyBalanceAfter = await clnyToken.balanceOf(metaColony.address);
+      const ethBalanceAfter = await hre.ethers.provider.getBalance(metaColony.address);
 
-      const res = await hre.ethers.provider.getBalance(tokenAuction.address);
-      expect(res.toString()).to.equal("0");
+      expect(clnyBalanceAfter.sub(clnyBalanceBefore)).to.eq.BN(100);
+      expect(new BN(ethBalanceAfter.toString()).sub(new BN(ethBalanceBefore.toString()))).to.eq.BN(100);
+
+      const tokenAuctionBalance = await hre.ethers.provider.getBalance(tokenAuction.address);
+      expect(new BN(tokenAuctionBalance.toString())).to.be.zero;
     });
 
     it("should fail if auction not finalized", async () => {
