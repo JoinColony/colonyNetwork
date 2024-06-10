@@ -437,21 +437,19 @@ contract StreamingPayments is ColonyExtensionMeta {
     );
     uint256 expenditureFundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-    if (_amountToClaim > 0) {
-      colony.moveFundsBetweenPots(
-        _permissionDomainId,
-        _childSkillIndex,
-        streamingPayments[_id].domainId,
-        _fromChildSkillIndex,
-        _toChildSkillIndex,
-        _domainFundingPotId,
-        expenditureFundingPotId,
-        _amountToClaim,
-        _token
-      );
-      colony.setExpenditurePayout(expenditureId, SLOT, _token, _amountToClaim);
-    }
+    colony.moveFundsBetweenPots(
+      _permissionDomainId,
+      _childSkillIndex,
+      streamingPayments[_id].domainId,
+      _fromChildSkillIndex,
+      _toChildSkillIndex,
+      _domainFundingPotId,
+      expenditureFundingPotId,
+      _amountToClaim,
+      _token
+    );
 
+    colony.setExpenditurePayout(expenditureId, SLOT, _token, _amountToClaim);
     colony.setExpenditureRecipient(expenditureId, SLOT, streamingPayments[_id].recipient);
     colony.finalizeExpenditure(expenditureId);
     return expenditureId;
