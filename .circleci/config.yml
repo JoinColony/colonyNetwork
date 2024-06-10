@@ -232,6 +232,9 @@ jobs:
           name: "Reset chains"
           command: rm -rf ganache-chain-db*
       - run:
+          name: "Reset ganache chain"
+          command: rm -rf ganache-chain-db*
+      - run:
           name: "Running patricia tree tests"
           command: pnpm run test:contracts:patricia
       - <<: *step_save_cache
