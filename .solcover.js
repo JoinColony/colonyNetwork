@@ -21,6 +21,9 @@ module.exports = {
       'ens',
       'extensions/votingReputation/VotingReputationMisalignedRecovery.sol'
     ],
+    mocha: {
+      bail: true,
+    },
     providerOptions: {
       network_id: 1999,
       account_keys_path: "./ganache-accounts.json",

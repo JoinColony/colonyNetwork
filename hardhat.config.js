@@ -94,6 +94,7 @@ module.exports = {
   },
   mocha: {
     timeout: 100000000,
+    bail: true,
   },
   contractSizer: {
     strict: true,
