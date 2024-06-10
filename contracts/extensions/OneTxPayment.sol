@@ -325,25 +325,6 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     }
   }
 
-  function moveFundsWithinDomain(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainPotId,
-    uint256 _fundingPotId,
-    uint256 _amount,
-    address _token
-  ) internal {
-    colony.moveFundsBetweenPots(
-      _permissionDomainId,
-      _childSkillIndex,
-      _childSkillIndex,
-      _domainPotId,
-      _fundingPotId,
-      _amount,
-      _token
-    );
-  }
-
   bool constant ARRAY = true;
   uint256 constant EXPENDITURES_SLOT = 25;
   bytes32 constant CLAIM_DELAY_OFFSET = bytes32(uint256(4));
