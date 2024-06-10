@@ -178,7 +178,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     );
 
     if (getAmountClaimableLifetime(numStreamingPayments) > 0) {
-      nUnresolvedStreamingPayments++;
+      nUnresolvedStreamingPayments += 1;
     }
 
     emit StreamingPaymentCreated(msgSender(), numStreamingPayments);
