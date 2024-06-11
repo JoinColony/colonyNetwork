@@ -52,6 +52,11 @@ step_setup_slither: &step_setup_slither
         pip install solc-select
         solc-select install 0.8.25
         solc-select use 0.8.25
+step_install_nvm: &step_install_nvm
+    run:
+      name: "Install nvm"
+      command: |
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 jobs:
   unit-test-reputation:
@@ -129,10 +134,7 @@ jobs:
       - run:
           name: "Upload function selectors to 4byte.directory"
           command: npx hardhat upload-selectors
-      - run:
-          name: "Install nvm"
-          command: |
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      - <<: *step_install_nvm
       - run:
           name: "Checking contract versions"
           command: pnpm run check:versioning

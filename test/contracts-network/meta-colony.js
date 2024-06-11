@@ -5,13 +5,13 @@ const bnChai = require("bn-chai");
 const ethers = require("ethers");
 
 const { soliditySha3 } = require("web3-utils");
-const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO, CURR_VERSION } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
 const {
   checkErrorRevert,
   removeSubdomainLimit,
   restoreSubdomainLimit,
   bn2bytes32,
-  upgradeColonyTo,
+  upgradeColonyOnceThenToLatest,
   getChainId,
 } = require("../../helpers/test-helper");
 const { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } = require("../../helpers/test-data-generator");
@@ -448,7 +448,7 @@ contract("Meta Colony", (accounts) => {
 
       // Upgrade to current version
       await colonyNetworkAsEtherRouter.setResolver(latestResolver);
-      await upgradeColonyTo(metaColony, CURR_VERSION);
+      await upgradeColonyOnceThenToLatest(metaColony);
     });
 
     describe("when getting a skill", () => {
