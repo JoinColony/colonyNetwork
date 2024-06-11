@@ -4,7 +4,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, HASHZERO, CURR_VERSION } = require("../../helpers/constants");
+const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, HASHZERO } = require("../../helpers/constants");
 const {
   getTokenArgs,
   web3GetBalance,
@@ -12,7 +12,7 @@ const {
   expectNoEvent,
   expectAllEvents,
   expectEvent,
-  upgradeColonyTo,
+  upgradeColonyOnceThenToLatest,
 } = require("../../helpers/test-helper");
 const {
   setupRandomColony,
@@ -476,7 +476,7 @@ contract("Colony", (accounts) => {
 
     it("should be able to query for a task", async () => {
       await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, localSkillId, 0, { from: USER0 });
-      await upgradeColonyTo(oldColony, CURR_VERSION);
+      await upgradeColonyOnceThenToLatest(oldColony);
       const taskId = await colony.getTaskCount();
       const task = await colony.getTask(taskId);
 
@@ -497,7 +497,7 @@ contract("Colony", (accounts) => {
 
     it("should be able to query for a payment", async () => {
       await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, localSkillId, { from: USER0 });
-      await upgradeColonyTo(oldColony, CURR_VERSION);
+      await upgradeColonyOnceThenToLatest(oldColony);
 
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
@@ -517,7 +517,7 @@ contract("Colony", (accounts) => {
 
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
-      await upgradeColonyTo(oldColony, CURR_VERSION);
+      await upgradeColonyOnceThenToLatest(oldColony);
       // Move funds back
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });
@@ -533,7 +533,7 @@ contract("Colony", (accounts) => {
 
       // Move funds into task funding pot
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
-      await upgradeColonyTo(oldColony, CURR_VERSION);
+      await upgradeColonyOnceThenToLatest(oldColony);
       // Move funds back
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });

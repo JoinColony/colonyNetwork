@@ -20,9 +20,11 @@ const {
   XDAI_CHAINID,
   FORKED_XDAI_CHAINID,
   CREATEX_ADDRESS,
+  CURR_VERSION,
 } = require("./constants");
 
 const IColony = artifacts.require("IColony");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
@@ -1272,13 +1274,25 @@ exports.getMultichainSkillId = function getMultichainSkillId(chainId, skillId) {
   return ethers.BigNumber.from(chainId).mul(ethers.BigNumber.from(2).pow(128)).add(ethers.BigNumber.from(skillId));
 };
 
-exports.upgradeColonyTo = async function (colony, _version) {
-  const version = new BN(_version);
-  let currentVersion = await colony.version();
-  while (currentVersion.ltn(version)) {
-    await colony.upgrade(currentVersion.addn(1));
-    currentVersion = await colony.version();
-  }
+exports.upgradeColonyOnceThenToLatest = async function (colony) {
+  // Assume that we need to do one 'proper' upgrade, and then we just
+  // set the version to the desired version
+  const currentVersion = await colony.version();
+  await colony.upgrade(currentVersion.addn(1));
+
+  const networkAddress = await colony.getColonyNetwork();
+  const colonyNetwork = await IColonyNetwork.at(networkAddress);
+
+  const editableColony = await exports.getColonyEditable(colony, colonyNetwork);
+  const existingSlot = await exports.web3GetStorageAt(colony.address, 2);
+
+  // Doing it this way preserves the items that share this storage slot with the address,
+  // which are recoverymode related.
+  const newestResolver = await colonyNetwork.getColonyVersionResolver(CURR_VERSION);
+
+  const newSlotValue = existingSlot.slice(0, 26) + newestResolver.slice(2);
+
+  await editableColony.setStorageSlot(2, newSlotValue);
 };
 
 exports.isMainnet = async function isMainnet() {
