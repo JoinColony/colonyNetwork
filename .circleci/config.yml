@@ -57,7 +57,8 @@ step_install_nvm: &step_install_nvm
       name: "Install nvm"
       command: |
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-
+        echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
+        echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
 jobs:
   unit-test-reputation:
     <<: *job_common
