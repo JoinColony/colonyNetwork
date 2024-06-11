@@ -34,7 +34,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   // prettier-ignore
-  function version() public pure returns (uint256 colonyVersion) { return 15; }
+  function version() public pure returns (uint256 colonyVersion) { return 16; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
