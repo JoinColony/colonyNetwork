@@ -42,15 +42,13 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 6;
+    return 7;
   }
 
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _user The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(
-    address _user
-  ) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
