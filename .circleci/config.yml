@@ -59,6 +59,12 @@ step_install_nvm: &step_install_nvm
         curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
         echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
         echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
+step_install_lsof: &step_install_lsof
+    run:
+      name: "Install lsof"
+      command: |
+        sudo apt-get update
+        sudo apt-get install lsof
 jobs:
   unit-test-reputation:
     <<: *job_common
@@ -69,11 +75,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - run:
-          name: "Install lsof"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
+      - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
           command: npm run test:reputation:1
@@ -82,8 +84,6 @@ jobs:
       - run:
           name: "Reset chains"
           command: |
-            sudo apt-get update
-            sudo apt-get install lsof
             npm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running reputation system unit tests"
@@ -168,11 +168,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - run:
-          name: "Install lsof"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
+      - <<: *step_install_lsof
       - run:
           name: "Running network contracts unit tests"
           command: pnpm run test:contracts
@@ -195,11 +191,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - run:
-          name: "Install lsof"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
+      - <<: *step_install_lsof
       - run:
           name: "Running extension contracts unit tests"
           command: pnpm run test:contracts:extensions
@@ -250,11 +242,7 @@ jobs:
             sed -i "s/000000000000000000000000000000deadbeef16/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
             sed -i "s/000000000000000000000000000000deadbeef17/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
             sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-      - run:
-          name: "Install lsof"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
+      - <<: *step_install_lsof
       - run:
           name: "Running ganache upgrade tests"
           command: pnpm run test:contracts:upgrade:ganache
@@ -267,11 +255,10 @@ jobs:
       - run:
           name: "Running gas cost tests"
           command: pnpm run test:contracts:gasCosts && npx codechecks
+      - <<: *step_install_lsof
       - run:
           name: "Reset chains"
           command: |
-            sudo apt-get update
-            sudo apt-get install lsof
             pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running patricia tree tests"
@@ -409,11 +396,10 @@ jobs:
           command: pnpm run test:contracts:bridging:1:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+      - <<: *step_install_lsof
       - run:
           name: "Reset chains"
           command: |
-            sudo apt-get update
-            sudo apt-get install lsof
             pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running coverage tests for foreign-side of bridge"
@@ -434,11 +420,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - run:
-          name: "Install lsof"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
+      - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
           command: pnpm run test:reputation:1:anotherChain
@@ -447,8 +429,6 @@ jobs:
       - run:
           name: "Reset chains"
           command: |
-            sudo apt-get update
-            sudo apt-get install lsof
             pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
       - run:
           name: "Running reputation system unit tests"

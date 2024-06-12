@@ -1276,7 +1276,15 @@ exports.getMultichainSkillId = function getMultichainSkillId(chainId, skillId) {
 
 exports.upgradeColonyOnceThenToLatest = async function (colony) {
   // Assume that we need to do one 'proper' upgrade, and then we just
-  // set the version to the desired version
+  // set the version to the desired version. The idea here is that we are testing either
+  // * Support in the latest version for states that are only archievable historically in version X
+  // * A bug in version X that was fixed.
+  // In either case, installing version X, doing what we need in the test, and then upgrading to X+1
+  // and then the latest version should be sufficient. The 'proper' upgrade allows for a fix to be applied
+  // in `finishUpgrade`, and then upgrading to the latest version will let us check that whatever the state
+  // is, we can handle it 'correctly', whatever that means.
+  // This means that our tests don't get longer and longer to run from deploying and upgrading through every
+  // version in between.
   const currentVersion = await colony.version();
   await colony.upgrade(currentVersion.addn(1));
 
