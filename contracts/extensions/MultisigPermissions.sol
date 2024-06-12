@@ -314,9 +314,18 @@ contract MultisigPermissions is
     emit MotionCancelled(msgSender(), _motionId);
   }
 
-  function execute(
-    uint256 _motionId
-  ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
+  function execute(uint256 _motionId) public {
+    executeFunctionality(_motionId, true);
+  }
+
+  function executeWithoutFailure(uint256 _motionId) public {
+    executeFunctionality(_motionId, false);
+  }
+
+  function executeFunctionality(
+    uint256 _motionId,
+    bool _failingAllowedByUser
+  ) private motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
     Motion storage motion = motions[_motionId];
 
     require(checkThreshold(_motionId, Vote.Approve), "colony-multisig-not-enough-approvals");
@@ -339,9 +348,10 @@ contract MultisigPermissions is
       (bool success, ) = address(motion.targets[i]).call(motion.data[i]);
       overallSuccess = overallSuccess && success;
 
-      // Allow failing execution after seven days
+      // Allow failing execution after seven days, if the user allowed it
       require(
-        success || motion.overallApprovalTimestamp + 7 days <= block.timestamp,
+        success ||
+          (_failingAllowedByUser && motion.overallApprovalTimestamp + 7 days <= block.timestamp),
         "colony-multisig-failed-not-one-week"
       );
     }
