@@ -11,6 +11,7 @@ const { TruffleLoader } = require("../../packages/package-utils"); // eslint-dis
 
 const {
   UINT256_MAX,
+  ADDRESS_FULL,
   WAD,
   MINING_CYCLE_DURATION,
   SECONDS_PER_DAY,
@@ -294,7 +295,7 @@ contract("Voting Reputation", (accounts) => {
       await voting.uninstall();
 
       const colonyAddress = await voting.getColony();
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {

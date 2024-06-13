@@ -59,12 +59,14 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     deprecated = _deprecated;
   }
 
+  address constant FULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
+
   // slither-disable reentrancy-no-eth
   function uninstall() public virtual auth {
     payable(address(colony)).transfer(address(this).balance);
 
-    delete resolver;
-    delete colony;
+    resolver = address(0x0);
+    colony = IColony(FULL_ADDRESS);
   }
 
   function getCapabilityRoles(bytes4 _sig) public view virtual returns (bytes32) {

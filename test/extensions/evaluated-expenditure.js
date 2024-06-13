@@ -5,7 +5,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, ADDRESS_ZERO, SLOT0 } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, ADDRESS_ZERO, ADDRESS_FULL, SLOT0 } = require("../../helpers/constants");
 const { checkErrorRevert, web3GetStorageAt } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
@@ -66,7 +66,7 @@ contract("EvaluatedExpenditure", (accounts) => {
       await evaluatedExpenditure.uninstall();
 
       const colonyAddress = await evaluatedExpenditure.getColony();
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {

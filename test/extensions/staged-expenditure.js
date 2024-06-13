@@ -10,6 +10,7 @@ const {
   UINT128_MAX,
   WAD,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
   MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   SLOT0,
@@ -92,7 +93,7 @@ contract("Staged Expenditure", (accounts) => {
       await stagedExpenditure.uninstall();
 
       const colonyAddress = await stagedExpenditure.getColony();
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

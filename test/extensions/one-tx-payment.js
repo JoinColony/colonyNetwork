@@ -13,6 +13,7 @@ const {
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
   SECONDS_PER_DAY,
 } = require("../../helpers/constants");
 
@@ -98,7 +99,7 @@ contract("One transaction payments", (accounts) => {
       await oneTxPayment.uninstall();
 
       const colonyAddress = await oneTxPayment.getColony();
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {

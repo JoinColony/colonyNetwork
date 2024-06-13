@@ -5,8 +5,15 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
 const { setupRandomColony } = require("../../helpers/test-data-generator");
+const {
+  UINT256_MAX,
+  WAD,
+  MINING_CYCLE_DURATION,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  ADDRESS_ZERO,
+  ADDRESS_FULL,
+} = require("../../helpers/constants");
 const {
   checkErrorRevert,
   makeReputationKey,
@@ -132,7 +139,7 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.uninstall();
 
       const colonyAddress = await stakedExpenditure.getColony();
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

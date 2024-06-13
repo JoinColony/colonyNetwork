@@ -13,6 +13,7 @@ const {
   SECONDS_PER_DAY,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
 } = require("../../helpers/constants");
 
 const {
@@ -193,7 +194,7 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.uninstall();
 
       const colonyAddress = await fundingQueue.getColony();
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {

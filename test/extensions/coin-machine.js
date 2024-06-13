@@ -6,7 +6,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, UINT128_MAX, WAD } = require("../../helpers/constants");
+const { UINT256_MAX, UINT128_MAX, ADDRESS_FULL, WAD } = require("../../helpers/constants");
 
 const {
   checkErrorRevert,
@@ -91,7 +91,7 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.uninstall();
 
       const colonyAddress = await coinMachine.getColony();
-      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {

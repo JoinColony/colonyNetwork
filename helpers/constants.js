@@ -5,6 +5,7 @@ const { ethers } = require("ethers");
 
 const HASHZERO = ethers.constants.HashZero;
 const ADDRESS_ZERO = ethers.constants.AddressZero;
+const ADDRESS_FULL = "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF";
 
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);
@@ -130,6 +131,7 @@ module.exports = {
   IPFS_HASH,
   HASHZERO,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
   SLOT0,
   SLOT1,
   SLOT2,
