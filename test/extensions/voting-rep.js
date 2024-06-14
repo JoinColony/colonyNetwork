@@ -34,7 +34,6 @@ const {
   expectEvent,
   getTokenArgs,
   getBlockTime,
-  web3GetStorageAt,
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters, fundColonyWithTokens } = require("../../helpers/test-data-generator");
@@ -302,17 +301,18 @@ contract("Voting Reputation", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(VOTING_REPUTATION, version, { from: USER0 });
 
-      const votingAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
-      let resolverAddress = await web3GetStorageAt(votingAddress, 2);
-      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
 
       await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
 
-      resolverAddress = await web3GetStorageAt(votingAddress, 2);
-      expect(resolverAddress).to.equal(ethers.constants.HashZero);
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can deprecate the extension if root", async () => {

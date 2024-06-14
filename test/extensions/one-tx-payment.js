@@ -17,7 +17,7 @@ const {
   SECONDS_PER_DAY,
 } = require("../../helpers/constants");
 
-const { checkErrorRevert, rolesToBytes32, expectEvent, upgradeColonyOnceThenToLatest, web3GetStorageAt } = require("../../helpers/test-helper");
+const { checkErrorRevert, rolesToBytes32, expectEvent, upgradeColonyOnceThenToLatest } = require("../../helpers/test-helper");
 const { setupRandomColony, fundColonyWithTokens, getMetaTransactionParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -106,17 +106,18 @@ contract("One transaction payments", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(ONE_TX_PAYMENT, version, { from: USER0 });
 
-      const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
-      let resolverAddress = await web3GetStorageAt(oneTxPaymentAddress, 2);
-      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
 
       await checkErrorRevert(colony.installExtension(ONE_TX_PAYMENT, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(ONE_TX_PAYMENT, { from: USER0 });
 
-      resolverAddress = await web3GetStorageAt(oneTxPaymentAddress, 2);
-      expect(resolverAddress).to.equal(ethers.constants.HashZero);
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

@@ -22,7 +22,6 @@ const {
   forwardTime,
   expectEvent,
   expectNoEvent,
-  web3GetStorageAt,
 } = require("../../helpers/test-helper");
 
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
@@ -153,17 +152,18 @@ contract("StakedExpenditure", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 });
 
-      const stakedExpenditureAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
-      let resolverAddress = await web3GetStorageAt(stakedExpenditureAddress, 2);
-      expect(resolverAddress).to.not.equal(ethers.constants.HashZero);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
 
       await checkErrorRevert(colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER0 });
 
-      resolverAddress = await web3GetStorageAt(stakedExpenditureAddress, 2);
-      expect(resolverAddress).to.equal(ethers.constants.HashZero);
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("setStakeFraction will emit the correct event if stakeFraction == 0", async () => {
