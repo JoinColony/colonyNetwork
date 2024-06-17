@@ -1,16 +1,3 @@
-const { execSync } = require("child_process");
-const log = console.log;
-
-// Copies pre-built token artifacts to .coverage_artifacts/contracts
-function provisionTokenContracts(config){
-  let output;
-  const provisionColonyToken = `BUILD_DIR="build-coverage" bash ./scripts/provision-token-contracts.sh`;
-
-  log('Provisioning ColonyToken contracts...')
-  output = execSync(provisionColonyToken);
-  log(output.toString())
-}
-
 module.exports = {
     configureYulOptimizer: true,
     skipFiles: [
@@ -53,7 +40,6 @@ module.exports = {
         {secretKey:"0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c","balance":"100000000000000000000"}
       ]
     },
-    onCompileComplete: provisionTokenContracts,
     istanbulFolder: "./coverage-contracts",
     modifierWhitelist: ["always", "onlyMiningChain", "onlyNotMiningChain"],
 }
