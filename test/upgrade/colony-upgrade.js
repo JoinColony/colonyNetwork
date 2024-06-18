@@ -1,9 +1,9 @@
 /* globals artifacts */
 const { ethers } = require("ethers");
 
-const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
-const { ROOT_ROLE } = require("../helpers/constants");
-const { makeExpenditure, setupRandomColony } = require("../helpers/test-data-generator");
+const { setupColonyVersionResolver } = require("../../helpers/upgradable-contracts");
+const { ROOT_ROLE } = require("../../helpers/constants");
+const { makeExpenditure, setupRandomColony } = require("../../helpers/test-data-generator");
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");

@@ -204,7 +204,7 @@ jobs:
             sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
       - run:
           name: "Running gas cost tests"
-          command: pnpm run test:contracts:gasCosts && npx codechecks
+          command: pnpm run test:contracts:gas && npx codechecks
       - run:
           name: "Running ganache upgrade tests"
           command: pnpm run test:contracts:upgrade:ganache
@@ -241,7 +241,7 @@ jobs:
           root: ./
           paths:
             - coverage-contracts
-  coverage-test-upgrade:
+  coverage-test/upgrade:
     <<: *job_common
     steps:
       - checkout
@@ -506,7 +506,7 @@ workflows:
           context: dockerhub-credentials
       - coverage-test-chainid:
           context: dockerhub-credentials
-      - coverage-test-upgrade:
+      - coverage-test/upgrade:
           context: dockerhub-credentials
       - coverage-test-bridging:
           context: dockerhub-credentials
@@ -517,5 +517,5 @@ workflows:
             - coverage-test-extensions
             - coverage-test-reputation
             - coverage-test-chainid
-            - coverage-test-upgrade
+            - coverage-test/upgrade
             - coverage-test-bridging
