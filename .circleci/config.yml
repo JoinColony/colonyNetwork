@@ -15,7 +15,7 @@ job_python: &job_python
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
-step_setup_pnpm: &step_setup_pnpm #Only used in python image, as node image comes with it
+step_setup_pnpm: &step_setup_pnpm # Only used in python image, as node image comes with it
   run:
     name: "Install pnpm"
     command: sudo npm i -g pnpm@8.14.1 #Same version as in cimg/node:20.11.0
@@ -41,17 +41,6 @@ step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
       command: docker pull ethereum/solc:0.5.8
-step_setup_slither: &step_setup_slither
-    run:
-      name: "Setup slither analyser https://github.com/crytic/slither"
-      command: |
-        wget https://github.com/ethereum/solidity/releases/download/v0.5.8/solc-static-linux
-        chmod +x solc-static-linux
-        sudo mv solc-static-linux /usr/local/bin/solc
-        pip install slither-analyzer
-        pip install solc-select
-        solc-select install 0.8.25
-        solc-select use 0.8.25
 step_install_nvm: &step_install_nvm
     run:
       name: "Install nvm"
@@ -147,7 +136,6 @@ jobs:
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - <<: *step_save_cache
-      # Save test results
       - store_test_results:
           path: test-results.xml
       - store_artifacts:
@@ -170,7 +158,6 @@ jobs:
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - <<: *step_save_cache
-      # Save test results
       - store_test_results:
           path: test-results.xml
       - store_artifacts:
@@ -186,6 +173,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_install_lsof
       - run:
           name: "Download parity"
           command: wget https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
@@ -214,20 +202,14 @@ jobs:
             sed -i "s/000000000000000000000000000000deadbeef16/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
             sed -i "s/000000000000000000000000000000deadbeef17/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
             sed -i "s/000000000000000000000000000000deadbeef18/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-      - <<: *step_install_lsof
+      - run:
+          name: "Running gas cost tests"
+          command: pnpm run test:contracts:gasCosts && npx codechecks
       - run:
           name: "Running ganache upgrade tests"
           command: pnpm run test:contracts:upgrade:ganache
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-          # name: "Running parity upgrade tests"
-          # command: pnpm run test:contracts:upgrade:parity
-          # environment:
-          #   NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Running gas cost tests"
-          command: pnpm run test:contracts:gasCosts && npx codechecks
-      - <<: *step_install_lsof
       - run:
           name: "Reset chains"
           command: rm -rf ganache-chain-db*
@@ -235,7 +217,6 @@ jobs:
           name: "Running patricia tree tests"
           command: pnpm run test:contracts:patricia
       - <<: *step_save_cache
-      # Save test results
       - store_test_results:
           path: test-results.xml
       - store_artifacts:
@@ -368,7 +349,6 @@ jobs:
           command: pnpm run test:contracts:bridging:1:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-      - <<: *step_install_lsof
       - run:
           name: "Running coverage tests for foreign-side of bridge"
           command: pnpm run test:contracts:bridging:2:coverage
@@ -454,7 +434,6 @@ jobs:
       - run:
           name: "Merge coverage runs and check coverage thresholds"
           command: pnpm run check:coverage
-      # Save coverage artifacts
       - store_artifacts:
           path: coverage-merged
   security-analysis:
@@ -467,7 +446,16 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      - <<: *step_setup_slither
+      - run:
+          name: "Setup slither analyser https://github.com/crytic/slither"
+          command: |
+            wget https://github.com/ethereum/solidity/releases/download/v0.5.8/solc-static-linux
+            chmod +x solc-static-linux
+            sudo mv solc-static-linux /usr/local/bin/solc
+            pip install slither-analyzer
+            pip install solc-select
+            solc-select install 0.8.25
+            solc-select use 0.8.25
       - run:
           name: "Slither analysis"
           command: pnpm run test:security:slither
@@ -531,13 +519,3 @@ workflows:
             - coverage-test-chainid
             - coverage-test-upgrade
             - coverage-test-bridging
- # nightly:
- #   triggers:
- #     - schedule:
- #         cron: "0 1 * * *" # 1am UTC
- #         filters:
- #           branches:
- #             only:
- #               - develop
- #   jobs:
- #     - end-to-end-tests
