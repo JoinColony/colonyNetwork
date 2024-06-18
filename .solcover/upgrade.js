@@ -1,5 +1,6 @@
+const config = require("./solcover.js")
+
 const { execSync } = require("child_process");
-const config = require("./.solcover.js")
 
 function getFilesToSkip(){
   const array = [

@@ -13,7 +13,7 @@ module.exports = {
     },
     providerOptions: {
       network_id: 1999,
-      account_keys_path: "./ganache-accounts.json",
+      account_keys_path: "./../ganache-accounts.json",
       vmErrorsOnRPCResponse: false,
       total_accounts: 18,
       _chainId: 265669100,

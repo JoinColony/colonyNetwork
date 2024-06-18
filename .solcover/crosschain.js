@@ -1,7 +1,6 @@
-const config = require("./.solcover.js")
-const ethers  = require("ethers");
+const config = require("./solcover.js")
 
-const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
+const { FORKED_XDAI_CHAINID } = require("./../helpers/constants");
 
 config.istanbulFolder = `./coverage-cross-chain-${process.env.HARDHAT_FOREIGN === "true" ? "foreign" : "home"}`
 console.log(`Coverage folder: ${config.istanbulFolder}`)
