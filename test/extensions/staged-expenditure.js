@@ -306,16 +306,16 @@ contract("Staged Expenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
 
       let tx = await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
-      await expectEvent(tx, "ExpenditureMadeStaged", [expenditureId, true]);
+      await expectEvent(tx, "ExpenditureMadeStaged", [USER0, expenditureId, true]);
 
       tx = await stagedExpenditure.setExpenditureStaged(expenditureId, true, { from: USER0 });
-      await expectNoEvent(tx, "ExpenditureMadeStaged", [expenditureId, true]);
+      await expectNoEvent(tx, "ExpenditureMadeStaged", [USER0, expenditureId, true]);
 
       tx = await stagedExpenditure.setExpenditureStaged(expenditureId, false, { from: USER0 });
-      await expectEvent(tx, "ExpenditureMadeStaged", [expenditureId, false]);
+      await expectEvent(tx, "ExpenditureMadeStaged", [USER0, expenditureId, false]);
 
       tx = await stagedExpenditure.setExpenditureStaged(expenditureId, false, { from: USER0 });
-      await expectNoEvent(tx, "ExpenditureMadeStaged", [expenditureId, false]);
+      await expectNoEvent(tx, "ExpenditureMadeStaged", [USER0, expenditureId, false]);
     });
 
     it("can release, but not claim, a staged payment", async () => {
@@ -351,7 +351,9 @@ contract("Staged Expenditure", (accounts) => {
 
       let slotBefore = await colony.getExpenditureSlot(expenditureId, SLOT0);
 
-      await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [], { from: USER0 });
+      const tx = await stagedExpenditure.releaseStagedPayment(1, UINT256_MAX, expenditureId, SLOT0, [], { from: USER0 });
+
+      await expectEvent(tx, "StagedPaymentReleased", [USER0, expenditureId, SLOT0]);
 
       let slotAfter = await colony.getExpenditureSlot(expenditureId, SLOT0);
 

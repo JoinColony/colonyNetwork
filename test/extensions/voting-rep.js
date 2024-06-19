@@ -3351,7 +3351,7 @@ contract("Voting Reputation", (accounts) => {
       expect(logs[0].args.executed).to.be.true;
 
       const balanceAfter = await token.balanceOf(USER1);
-      await expectEvent(tx, "StagedPaymentReleased(uint256 indexed,uint256)", [expenditureId, 0]);
+      await expectEvent(tx, "StagedPaymentReleased(address,uint256 indexed,uint256)", [voting.address, expenditureId, 0]);
 
       expect(balanceAfter.sub(balanceBefore)).to.eq.BN(WAD.sub(WAD.divn(100).addn(1))); // Network fee
     });
