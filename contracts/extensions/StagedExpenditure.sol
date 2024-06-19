@@ -27,8 +27,8 @@ import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   // Events
 
-  event ExpenditureMadeStaged(uint256 indexed expenditureId, bool staged);
-  event StagedPaymentReleased(uint256 indexed expenditureId, uint256 slot);
+  event ExpenditureMadeStaged(address agent, uint256 indexed expenditureId, bool staged);
+  event StagedPaymentReleased(address agent, uint256 indexed expenditureId, uint256 slot);
 
   // Storage
 
@@ -45,7 +45,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
@@ -83,7 +83,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
     if (stagedExpenditures[_expenditureId] != _staged) {
       stagedExpenditures[_expenditureId] = _staged;
 
-      emit ExpenditureMadeStaged(_expenditureId, _staged);
+      emit ExpenditureMadeStaged(msgSender(), _expenditureId, _staged);
     }
   }
 
@@ -186,7 +186,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
       bytes32(0)
     );
 
-    emit StagedPaymentReleased(_expenditureId, _slot);
+    emit StagedPaymentReleased(msgSender(), _expenditureId, _slot);
 
     for (uint256 i; i < _tokens.length; i++) {
       colony.claimExpenditurePayout(_expenditureId, _slot, _tokens[i]);
