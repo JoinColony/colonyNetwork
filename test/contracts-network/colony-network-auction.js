@@ -10,7 +10,6 @@ const {
   checkErrorRevert,
   forwardTime,
   getBlockTime,
-  getColonyEditable,
   isMainnet,
   getChainId,
 } = require("../../helpers/test-helper");
@@ -80,8 +79,7 @@ contract("Colony Network Auction", (accounts) => {
     });
 
     it("should fail with a zero clny token", async () => {
-      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await hre.network.provider.send("hardhat_setStorageAt", [metaColony.address, "0x7", ethers.constants.HashZero]);
 
       const args = getTokenArgs();
       token = await Token.new(...args);

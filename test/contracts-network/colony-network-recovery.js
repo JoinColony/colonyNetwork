@@ -19,6 +19,7 @@ const {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   getTokenArgs,
+  setStorageSlot,
 } = require("../../helpers/test-helper");
 const {
   setupClaimedExpenditure,
@@ -43,7 +44,6 @@ const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
 const ReputationMiningCycleBinarySearch = artifacts.require("ReputationMiningCycleBinarySearch");
 const Resolver = artifacts.require("Resolver");
-const ContractEditing = artifacts.require("ContractEditing");
 
 const contractLoader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
@@ -509,20 +509,11 @@ contract("Colony Network Recovery", (accounts) => {
           deployedImplementations.ReputationMiningCycleBinarySearch = (await ReputationMiningCycleBinarySearch.deployed()).address;
           await setupEtherRouter("reputationMiningCycle", "IReputationMiningCycle", deployedImplementations, newResolver);
 
-          // Now add our extra functions.
-          // Add ReputationMiningCycleEditing to the resolver
-          const contractEditing = await ContractEditing.new();
-          await newResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-
           // Point our cycles at the resolver.
           await newActiveCycle.setResolver(newResolver.address);
           await newInactiveCycle.setResolver(newResolver.address);
           newActiveCycle = await IReputationMiningCycle.at(newActiveCycle.address);
           newInactiveCycle = await IReputationMiningCycle.at(newInactiveCycle.address);
-
-          // We also need these contracts with the recovery function present.
-          const newActiveCycleAsRecovery = await ContractEditing.at(newActiveCycle.address);
-          const newInactiveCycleAsRecovery = await ContractEditing.at(newInactiveCycle.address);
 
           const oldActiveCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -539,29 +530,30 @@ contract("Colony Network Recovery", (accounts) => {
           // slot 3: colonyNetworkAddress
           // slot 4: tokenLockingAddress
           // slot 5: clnyTokenAddress
-          await newActiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          await newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          await newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+          await setStorageSlot(newActiveCycle, 3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+          await setStorageSlot(newActiveCycle, 4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+          await setStorageSlot(newActiveCycle, 5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
           let timeNow = await currentBlockTime();
           timeNow = new BN(timeNow).toString(16, 64);
-          await newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
-          await newInactiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          await newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          await newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+          await setStorageSlot(newActiveCycle, 9, `0x${timeNow.toString(16, 64)}`);
+          await setStorageSlot(newInactiveCycle, 3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+          await setStorageSlot(newInactiveCycle, 4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+          await setStorageSlot(newInactiveCycle, 5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
 
           // Port over log entries.
           let nLogEntries = await oldActiveCycle.getReputationUpdateLogLength();
           nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
-          await newActiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
+          await setStorageSlot(newActiveCycle, 6, nLogEntries);
           const arrayStartingSlot = soliditySha3(6);
           for (let i = 0; i < nLogEntries; i += 1) {
             const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
             const logEntry = await oldActiveCycle.getReputationUpdateLogEntry(i);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(
+            await setStorageSlot(newActiveCycle, logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
+            await setStorageSlot(newActiveCycle, logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
+            await setStorageSlot(newActiveCycle, logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
+            await setStorageSlot(newActiveCycle, logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
+            await setStorageSlot(
+              newActiveCycle,
               logEntryStartingSlot.addn(4),
               `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
             );
@@ -576,21 +568,22 @@ contract("Colony Network Recovery", (accounts) => {
           }
 
           // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
-          await newActiveCycleAsRecovery.setStorageSlot(new BN(arrayStartingSlot.slice(2), 16).addn(1), `0x${padLeft("0", 64)}`);
+          await setStorageSlot(newActiveCycle, new BN(arrayStartingSlot.slice(2), 16).addn(1), `0x${padLeft("0", 64)}`);
 
           // Do the same for the inactive log entry
           nLogEntries = await oldInactiveCycle.getReputationUpdateLogLength();
           nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
-          await newInactiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
+          await setStorageSlot(newInactiveCycle, 6, nLogEntries);
 
           for (let i = 0; i < nLogEntries; i += 1) {
             const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
             const logEntry = await oldInactiveCycle.getReputationUpdateLogEntry(i);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(
+            await setStorageSlot(newInactiveCycle, logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
+            await setStorageSlot(newInactiveCycle, logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
+            await setStorageSlot(newInactiveCycle, logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
+            await setStorageSlot(newInactiveCycle, logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
+            await setStorageSlot(
+              newInactiveCycle,
               logEntryStartingSlot.addn(4),
               `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`,
             );

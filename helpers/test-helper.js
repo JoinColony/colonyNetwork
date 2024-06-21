@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const fs = require("fs");
 const shortid = require("shortid");
@@ -31,9 +31,7 @@ const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
 const Resolver = artifacts.require("Resolver");
-const ContractEditing = artifacts.require("ContractEditing");
 const ColonyDomains = artifacts.require("ColonyDomains");
-const EtherRouter = artifacts.require("EtherRouter");
 const ChainId = artifacts.require("ChainId");
 
 const { expect } = chai;
@@ -678,6 +676,26 @@ exports.startMining = async function startMining() {
   });
 };
 
+exports.setStorageSlot = async function (contract, slot, value) {
+  const slotString = `0x${new BN(slot).toString(16)}`;
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "hardhat_setStorageAt",
+        params: [contract.address, slotString, value],
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      },
+    );
+  });
+};
+
 exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp) {
   await helpers.time.setNextBlockTimestamp(timestamp);
   return f(...args);
@@ -1111,26 +1129,6 @@ exports.getChildSkillIndex = async function getChildSkillIndex(colonyNetwork, co
   throw Error("Supplied child domain is not a child of the supplied parent domain");
 };
 
-exports.getColonyEditable = async function getColonyEditable(colony, colonyNetwork) {
-  const colonyVersion = await colony.version();
-  const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(colonyVersion);
-  const colonyResolver = await Resolver.at(colonyResolverAddress);
-  const contractEditing = await ContractEditing.new();
-  await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-  const colonyUnderRecovery = await ContractEditing.at(colony.address);
-  return colonyUnderRecovery;
-};
-
-exports.getColonyNetworkEditable = async function getColonyNetworkEditable(colonyNetwork) {
-  const networkAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
-  const resolverAddress = await networkAsEtherRouter.resolver();
-  const colonyNetworkResolver = await Resolver.at(resolverAddress);
-  const contractEditing = await ContractEditing.new();
-  await colonyNetworkResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-  const colonyNetworkEditable = await ContractEditing.at(colonyNetwork.address);
-  return colonyNetworkEditable;
-};
-
 exports.getWaitForNSubmissionsPromise = function getWaitForNSubmissionsPromise(repCycleEthers, fromBlock, rootHash, nLeaves, jrh, n) {
   if (!repCycleEthers || !fromBlock) {
     throw new Error("repCycleEthers and fromBlock must be defined when calling getWaitForNSubmissionsPromise");
@@ -1291,16 +1289,14 @@ exports.upgradeColonyOnceThenToLatest = async function (colony) {
   const networkAddress = await colony.getColonyNetwork();
   const colonyNetwork = await IColonyNetwork.at(networkAddress);
 
-  const editableColony = await exports.getColonyEditable(colony, colonyNetwork);
-  const existingSlot = await exports.web3GetStorageAt(colony.address, 2);
-
   // Doing it this way preserves the items that share this storage slot with the address,
   // which are recoverymode related.
   const newestResolver = await colonyNetwork.getColonyVersionResolver(CURR_VERSION);
 
+  const existingSlot = await exports.web3GetStorageAt(colony.address, 2);
   const newSlotValue = existingSlot.slice(0, 26) + newestResolver.slice(2);
 
-  await editableColony.setStorageSlot(2, newSlotValue);
+  await hre.network.provider.send("hardhat_setStorageAt", [colony.address, "0x2", newSlotValue]);
 };
 
 exports.isMainnet = async function isMainnet() {
