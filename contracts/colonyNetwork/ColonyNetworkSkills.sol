@@ -24,7 +24,7 @@ import "./ColonyNetworkStorage.sol";
 import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
 import { CallWithGuards } from "../common/CallWithGuards.sol";
 
-contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, CallWithGuards {
+contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   // Skills
 
   function addSkill(
@@ -487,22 +487,5 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, CallWithGuards 
       decayEpochs >>= 1;
     }
     return _reputation;
-  }
-
-  function callThroughBridgeWithGuards(bytes memory payload) internal returns (bool) {
-    bytes memory bridgePayload = abi.encodeWithSignature(
-      "sendMessage(uint256,bytes)",
-      getAndCacheReputationMiningChainId(),
-      payload
-    );
-
-    (bool success, bytes memory returnData) = callWithGuards(colonyBridgeAddress, bridgePayload);
-
-    // If the function call was a success, and it returned true
-    if (success) {
-      bool res = abi.decode(returnData, (bool));
-      return res;
-    }
-    return false;
   }
 }

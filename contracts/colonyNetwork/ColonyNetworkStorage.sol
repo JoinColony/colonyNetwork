@@ -24,11 +24,12 @@ import { CommonStorage } from "./../common/CommonStorage.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
+import { CallWithGuards } from "../common/CallWithGuards.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain {
+contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain, CallWithGuards {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -216,5 +217,22 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
       reputationMiningChainId = block.chainid;
     }
     return reputationMiningChainId;
+  }
+
+  function callThroughBridgeWithGuards(bytes memory payload) internal returns (bool) {
+    bytes memory bridgePayload = abi.encodeWithSignature(
+      "sendMessage(uint256,bytes)",
+      getAndCacheReputationMiningChainId(),
+      payload
+    );
+
+    (bool success, bytes memory returnData) = callWithGuards(colonyBridgeAddress, bridgePayload);
+
+    // If the function call was a success, and it returned true
+    if (success) {
+      bool res = abi.decode(returnData, (bool));
+      return res;
+    }
+    return false;
   }
 }
