@@ -34,8 +34,6 @@
     "start:blockchain:client:both": "CHAIN_ID=$CHAIN_ID_1 pnpm run start:blockchain:client & sleep 1 && CHAIN_ID=$CHAIN_ID_2 pnpm run start:blockchain:client:2",
     "start:reputation:oracle": "./scripts/start-reputation-oracle.js",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
-    "fork:goerli": "ganache --fork https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8605",
-    "fork:mainnet": "ganache --fork https://mainnet.infura.io/v3/e21146aa267845a2b7b4da025178196d --port 8601",
     "pretest:contracts": "pnpm run stop:blockchain:client",
     "pretest:contracts:extensions": "pnpm run stop:blockchain:client",
     "test:contracts": "pnpm run start:blockchain:client && npx hardhat test ./test/contracts-network/* ./test/packages/* --network development",
