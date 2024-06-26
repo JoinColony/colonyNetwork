@@ -12,6 +12,7 @@
     "error-reason": "error",
     "max-len": "error",
     "no-trailing-whitespace": "error",
-    "blank-lines": "error"
+    "blank-lines": "error",
+    "custom-errors": "off"
   }
 }
