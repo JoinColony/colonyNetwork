@@ -129,6 +129,15 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
+  function createColonyShell(bytes32 _salt) public onlyColonyBridge {
+    ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
+      _salt,
+      type(EtherRouterCreate3).creationCode,
+      abi.encodeWithSignature("setOwner(address)", (address(this))),
+      ICreateX.Values(0, 0)
+    );
+  }
+
   /**
    * @dev Generates pseudo-randomly a salt value using a diverse selection of block and
    * transaction properties.

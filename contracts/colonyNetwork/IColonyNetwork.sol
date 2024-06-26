@@ -626,4 +626,9 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _chainId The chainId the update was bridged from
   /// @param _colony The colony being queried
   function addPendingReputationUpdate(uint256 _chainId, address _colony) external;
+
+  /// @notice Send the claimFunds transaction from the shell to the colony
+  /// @param _token The token being held by the shell
+  /// @param _balance The shell's current balance of the token
+  function sendClaimColonyShellFunds(address _token, uint256 _balance) external;
 }
