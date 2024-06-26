@@ -154,6 +154,19 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
+### ▸ `claimColonyShellFunds(address _token, uint256 _balance)`
+
+Move any funds received by the shell colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_balance|uint256|Balance of the token held by the shell colony
+
+
 ### ▸ `claimExpenditurePayout(uint256 _id, uint256 _slot, address _token)`
 
 Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
