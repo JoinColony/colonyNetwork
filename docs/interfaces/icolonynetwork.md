@@ -1113,6 +1113,19 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
+### ▸ `sendClaimColonyShellFunds(address _token, uint256 _balance)`
+
+Send the claimFunds transaction from the shell to the colony
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|The token being held by the shell
+|_balance|uint256|The shell's current balance of the token
+
+
 ### ▸ `setColonyBridgeAddress(address _bridgeAddress)`
 
 Called to set the address of the colony bridge contract
