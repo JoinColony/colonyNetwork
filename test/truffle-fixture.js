@@ -51,6 +51,8 @@ const TokenSupplier = artifacts.require("TokenSupplier");
 const Whitelist = artifacts.require("Whitelist");
 const StagedExpenditure = artifacts.require("StagedExpenditure");
 
+const USDC = artifacts.require("USDC");
+
 // We `require` the ReputationMiningCycle object to make sure
 // it is injected in the `artifacts` variables during test
 // preparation. We need this for the eth-gas-reporter.
@@ -75,7 +77,7 @@ const {
   setupENSRegistrar,
   setupEtherRouter,
 } = require("../helpers/upgradable-contracts");
-const { FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX, CREATEX_ADDRESS } = require("../helpers/constants");
+const { WAD, FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX, CREATEX_ADDRESS } = require("../helpers/constants");
 const { getChainId, hardhatRevert, hardhatSnapshot, deployCreateXIfNeeded, isXdai } = require("../helpers/test-helper");
 
 module.exports = async () => {
@@ -172,6 +174,25 @@ async function setupColonyNetwork() {
 
   const etherRouter = await EtherRouterCreate3.at(tx.logs.filter((log) => log.event === "ContractCreation")[0].args.newContract);
   EtherRouter.setAsDeployed(etherRouter);
+
+  // This is a fake instance of an ERC20, just so we can call encodeABI
+  const fakeUSDC = await USDC.at(colonyNetwork.address);
+  const setOwnerData2 = fakeUSDC.contract.methods.setOwner(accounts[0]).encodeABI();
+  const USDCtx = await createX.methods["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
+    `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e8`,
+    USDC.bytecode,
+    setOwnerData2,
+    [0, 0],
+    { from: accounts[0] },
+  );
+
+  const usdc = await USDC.at(USDCtx.logs.filter((log) => log.event === "ContractCreation")[0].args.newContract);
+  USDC.setAsDeployed(usdc);
+
+  await usdc.unlock();
+  await usdc.mint(WAD.muln(1000000));
+
+  console.log(`  => USDC deployed at ${usdc.address}`);
 
   await setupUpgradableColonyNetwork(
     etherRouter,
