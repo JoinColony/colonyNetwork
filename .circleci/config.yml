@@ -253,7 +253,7 @@ jobs:
           root: ./
           paths:
             - coverage-extensions
-  coverage-test-reputation:
+  coverage-test-reputation-1:
     <<: *job_common
     steps:
       - checkout
@@ -264,13 +264,68 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Running reputation tests with coverage"
-          command: pnpm run test:reputation:coverage
+          command: pnpm run test:reputation:1:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
-            - coverage-reputation
+            - coverage-reputation-1
+  coverage-test-reputation-2:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running reputation tests with coverage"
+          command: pnpm run test:reputation:2:coverage
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-reputation-2
+  coverage-test-reputation-anotherChain-1:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running reputation tests with coverage"
+          command: pnpm run test:reputation:1:anotherChain:coverage
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-anotherChain-1
+  coverage-test-reputation-anotherChain-2:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running reputation tests with coverage"
+          command: pnpm run test:reputation:2:anotherChain:coverage
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - coverage-anotherChain-2
+
   coverage-test-chainid:
     <<: *job_common
     steps:
@@ -325,23 +380,7 @@ jobs:
           command: pnpm run test:contracts:bridging:1:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-<<<<<<< HEAD
       - <<: *step_install_lsof
-||||||| parent of 0f0e8b71 (Only run tests under coverage)
-      - run:
-          name: "Reset chains"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
-            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
-=======
-      - run:
-          name: "Reset chains"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
-            pnpm run stop:blockchain:client
->>>>>>> 0f0e8b71 (Only run tests under coverage)
       - run:
           name: "Running coverage tests for foreign-side of bridge"
           command: pnpm run test:contracts:bridging:2:coverage
@@ -352,13 +391,7 @@ jobs:
           paths:
             - coverage-cross-chain-foreign
             - coverage-cross-chain-home
-<<<<<<< HEAD
-  unit-test-reputation-1:
-||||||| parent of 0f0e8b71 (Only run tests under coverage)
-  reputation-test-non-gnosis:
-=======
-  coverage-reputation-test-non-gnosis:
->>>>>>> 0f0e8b71 (Only run tests under coverage)
+  coverage-reputation-test-another-chain-1:
     <<: *job_common
     steps:
       - checkout
@@ -370,85 +403,33 @@ jobs:
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
-          command: npm run test:reputation:1
+          command: npm run test:reputation:1:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-  unit-test-reputation-2:
-    <<: *job_common
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - setup_remote_docker:
-          version: docker23
-      - <<: *step_pull_solc_docker
-      - <<: *step_setup_global_packages
-      - <<: *step_install_lsof
-      - run:
-          name: "Running reputation system unit tests"
-          command: npm run test:reputation:2
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-  unit-test-reputation-foreign-1:
-    <<: *job_common
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - setup_remote_docker:
-          version: docker23
-      - <<: *step_pull_solc_docker
-      - <<: *step_setup_global_packages
-      - <<: *step_install_lsof
-      - run:
-          name: "Running reputation system unit tests"
-          command: pnpm run test:reputation:1:anotherChain:coverage
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-<<<<<<< HEAD
-  unit-test-reputation-foreign-2:
-    <<: *job_common
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - setup_remote_docker:
-          version: docker23
-      - <<: *step_pull_solc_docker
-      - <<: *step_setup_global_packages
-      - <<: *step_install_lsof
-||||||| parent of 0f0e8b71 (Only run tests under coverage)
-      - run:
-          name: "Reset chains"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
-            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
-=======
-      - run:
-          name: "Reset chains"
-          command: |
-            sudo apt-get update
-            sudo apt-get install lsof
-            pnpm run stop:blockchain:client
->>>>>>> 0f0e8b71 (Only run tests under coverage)
-      - run:
-          name: "Running reputation system unit tests"
-          command: pnpm run test:reputation:2:anotherChain:coverage
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-<<<<<<< HEAD
-||||||| parent of 0f0e8b71 (Only run tests under coverage)
-      # - run:
-      #     name: "Running storage consistency smoke tests"
-      #     command: pnpm run test:contracts:smoke
-
-
-=======
       - persist_to_workspace:
           root: ./
           paths:
             - coverage-anotherChain-1
+  coverage-reputation-test-another-chain-2:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - <<: *step_install_lsof
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:2:anotherChain
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - persist_to_workspace:
+          root: ./
+          paths:
             - coverage-anotherChain-2
 
->>>>>>> 0f0e8b71 (Only run tests under coverage)
   check-coverage:
     <<: *job_common
     steps:
@@ -510,35 +491,19 @@ workflows:
           context: dockerhub-credentials
       - security-analysis:
           context: dockerhub-credentials
-<<<<<<< HEAD
-      - unit-test-contracts:
-          context: dockerhub-credentials
-      - unit-test-extensions:
-          context: dockerhub-credentials
-||||||| parent of 0f0e8b71 (Only run tests under coverage)
-      - unit-test-contracts:
-          context: dockerhub-credentials
-      - unit-test-extensions:
-          context: dockerhub-credentials
-      - unit-test-reputation:
-          context: dockerhub-credentials
-=======
->>>>>>> 0f0e8b71 (Only run tests under coverage)
       - unit-test-other:
-          context: dockerhub-credentials
-      - unit-test-reputation-1:
-          context: dockerhub-credentials
-      - unit-test-reputation-2:
-          context: dockerhub-credentials
-      - unit-test-reputation-foreign-1:
-          context: dockerhub-credentials
-      - unit-test-reputation-foreign-2:
           context: dockerhub-credentials
       - coverage-test-contracts:
           context: dockerhub-credentials
       - coverage-test-extensions:
           context: dockerhub-credentials
-      - coverage-test-reputation:
+      - coverage-test-reputation-1:
+          context: dockerhub-credentials
+      - coverage-test-reputation-2:
+          context: dockerhub-credentials
+      - coverage-test-reputation-anotherChain-1:
+          context: dockerhub-credentials
+      - coverage-test-reputation-anotherChain-2:
           context: dockerhub-credentials
       - coverage-test-chainid:
           context: dockerhub-credentials
@@ -546,20 +511,15 @@ workflows:
           context: dockerhub-credentials
       - coverage-test-bridging:
           context: dockerhub-credentials
-<<<<<<< HEAD
-||||||| parent of 0f0e8b71 (Only run tests under coverage)
-      - reputation-test-non-gnosis:
-          context: dockerhub-credentials
-=======
-      - coverage-reputation-test-non-gnosis:
-          context: dockerhub-credentials
->>>>>>> 0f0e8b71 (Only run tests under coverage)
       - check-coverage:
           context: dockerhub-credentials
           requires:
             - coverage-test-contracts
             - coverage-test-extensions
-            - coverage-test-reputation
+            - coverage-test-reputation-1
+            - coverage-test-reputation-2
+            - coverage-test-reputation-anotherChain-1
+            - coverage-test-reputation-anotherChain-2
             - coverage-test-chainid
             - coverage-test-upgrade
             - coverage-test-bridging
