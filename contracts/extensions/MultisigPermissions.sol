@@ -186,6 +186,8 @@ contract MultisigPermissions is
     motion.creationTimestamp = block.timestamp;
 
     for (uint256 i = 0; i < _data.length; i += 1) {
+      require(_targets[i] != address(colony), "multisig-passed-target-cannot-be-base-colony");
+
       ActionSummary memory actionSummary = getActionSummary(
         address(colonyNetwork),
         address(colony),
@@ -345,7 +347,9 @@ contract MultisigPermissions is
 
     for (uint256 i = 0; i < motion.data.length; i += 1) {
       // solhint-disable-next-line avoid-low-level-calls
-      (bool success, ) = address(motion.targets[i]).call(motion.data[i]);
+      (bool success, ) = address(getTarget(motion.targets[i], address(colony))).call(
+        motion.data[i]
+      );
       overallSuccess = overallSuccess && success;
 
       // Allow failing execution after seven days, if the user allowed it
