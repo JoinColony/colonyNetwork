@@ -5,11 +5,17 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
 const { setupRandomColony } = require("../../helpers/test-data-generator");
 const {
+  UINT256_MAX,
+  WAD,
+  MINING_CYCLE_DURATION,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  ADDRESS_ZERO,
+  ADDRESS_FULL,
+} = require("../../helpers/constants");
+const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -131,8 +137,8 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.deprecate(true);
       await stakedExpenditure.uninstall();
 
-      const code = await web3GetCode(stakedExpenditure.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await stakedExpenditure.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
@@ -146,10 +152,18 @@ contract("StakedExpenditure", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("setStakeFraction will emit the correct event if stakeFraction == 0", async () => {
@@ -203,6 +217,9 @@ contract("StakedExpenditure", (accounts) => {
 
       // Also not greater than WAD!
       await checkErrorRevert(stakedExpenditure.setStakeFraction(WAD.addn(1), { from: USER0 }), "staked-expenditure-value-too-large");
+
+      // Also not zero!
+      await checkErrorRevert(stakedExpenditure.setStakeFraction(0, { from: USER0 }), "staked-expenditure-value-too-small");
     });
 
     it("can create an expenditure by submitting a stake", async () => {
@@ -399,6 +416,15 @@ contract("StakedExpenditure", (accounts) => {
         stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId, { from: USER1 }),
         "staked-expenditure-must-be-owner",
       );
+    });
+
+    it("cannot cancel and reclaim the stake in one transaction if finalized", async () => {
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      await checkErrorRevert(stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId), "staked-expenditure-expenditure-not-draft");
     });
 
     it("can reclaim the stake by finalizing the expenditure", async () => {

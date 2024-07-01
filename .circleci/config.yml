@@ -66,33 +66,6 @@ step_install_lsof: &step_install_lsof
         sudo apt-get update
         sudo apt-get install lsof
 jobs:
-  unit-test-reputation:
-    <<: *job_common
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - setup_remote_docker:
-          version: docker23
-      - <<: *step_pull_solc_docker
-      - <<: *step_setup_global_packages
-      - <<: *step_install_lsof
-      - run:
-          name: "Running reputation system unit tests"
-          command: npm run test:reputation:1
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Reset chains"
-          command: |
-            npm run stop:blockchain:client && rm -rf ganache-chain-db*
-      - run:
-          name: "Running reputation system unit tests"
-          command: npm run test:reputation:2
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      # - run:
-      #     name: "Running storage consistency smoke tests"
-      #     command: pnpm run test:contracts:smoke
   build-checks:
     <<: *job_common
     steps:
@@ -153,12 +126,11 @@ jobs:
             pnpm i --frozen-lockfile
             npx hardhat compile
       - run:
-          name: "Test miner docker build"
+          name: "Test Reputation Miner docker build"
           command: docker build -f ./packages/reputation-miner/Dockerfile .
       - run:
-          name: "Test miner docker build"
+          name: "Test Metatransaction Broadcaster docker build"
           command: docker build -f ./packages/metatransaction-broadcaster/Dockerfile .
-  lint-and-unit-test:
   unit-test-contracts:
     <<: *job_common
     steps:
@@ -258,8 +230,10 @@ jobs:
       - <<: *step_install_lsof
       - run:
           name: "Reset chains"
-          command: |
-            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
+          command: rm -rf ganache-chain-db*
+      - run:
+          name: "Reset ganache chain"
+          command: rm -rf ganache-chain-db*
       - run:
           name: "Running patricia tree tests"
           command: pnpm run test:contracts:patricia
@@ -388,6 +362,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_install_lsof
       - run:
           name: "Installing the safe-contracts dependencies"
           command: cd ./lib/safe-contracts && pnpm i --ignore-scripts
@@ -398,10 +373,6 @@ jobs:
             NODE_OPTIONS: --max-old-space-size=6144
       - <<: *step_install_lsof
       - run:
-          name: "Reset chains"
-          command: |
-            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
-      - run:
           name: "Running coverage tests for foreign-side of bridge"
           command: pnpm run test:contracts:bridging:2:coverage
           environment:
@@ -411,7 +382,37 @@ jobs:
           paths:
             - coverage-cross-chain-foreign
             - coverage-cross-chain-home
-  reputation-test-non-gnosis:
+  unit-test-reputation-1:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - <<: *step_install_lsof
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:1
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+  unit-test-reputation-2:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - <<: *step_install_lsof
+      - run:
+          name: "Running reputation system unit tests"
+          command: npm run test:reputation:2
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+  unit-test-reputation-foreign-1:
     <<: *job_common
     steps:
       - checkout
@@ -426,20 +427,21 @@ jobs:
           command: pnpm run test:reputation:1:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Reset chains"
-          command: |
-            pnpm run stop:blockchain:client && rm -rf ganache-chain-db*
+  unit-test-reputation-foreign-2:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker:
+          version: docker23
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
           command: pnpm run test:reputation:2:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
-      # - run:
-      #     name: "Running storage consistency smoke tests"
-      #     command: pnpm run test:contracts:smoke
-
-
   check-coverage:
     <<: *job_common
     steps:
@@ -501,9 +503,15 @@ workflows:
           context: dockerhub-credentials
       - unit-test-extensions:
           context: dockerhub-credentials
-      - unit-test-reputation:
-          context: dockerhub-credentials
       - unit-test-other:
+          context: dockerhub-credentials
+      - unit-test-reputation-1:
+          context: dockerhub-credentials
+      - unit-test-reputation-2:
+          context: dockerhub-credentials
+      - unit-test-reputation-foreign-1:
+          context: dockerhub-credentials
+      - unit-test-reputation-foreign-2:
           context: dockerhub-credentials
       - coverage-test-contracts:
           context: dockerhub-credentials
@@ -516,8 +524,6 @@ workflows:
       - coverage-test-upgrade:
           context: dockerhub-credentials
       - coverage-test-bridging:
-          context: dockerhub-credentials
-      - reputation-test-non-gnosis:
           context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials

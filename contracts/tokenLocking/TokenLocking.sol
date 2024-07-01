@@ -58,14 +58,12 @@ contract TokenLocking is
 
   // Public functions
 
-  function getMetatransactionNonce(
-    address userAddress
-  ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user] += 1;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user] += 1;
   }
 
   function setColonyNetwork(address _colonyNetwork) public auth {

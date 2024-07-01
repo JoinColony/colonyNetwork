@@ -23,7 +23,7 @@ import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { Whitelist } from "./Whitelist.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
@@ -69,16 +69,14 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param _userAddress The user's address
-  /// @return _nonce The nonce
-  function getMetatransactionNonce(
-    address _userAddress
-  ) public view override returns (uint256 _nonce) {
-    return metatransactionNonces[_userAddress];
+  /// @param _user The user's address
+  /// @return nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers
@@ -91,7 +89,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
     _;
   }
 
-  // Public
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -102,15 +100,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 10;
-  }
-
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
+    return 11;
   }
 
   /// @notice Called when upgrading the extension
@@ -143,8 +133,10 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
       }
     }
 
-    selfdestruct(payable(address(colony)));
+    super.uninstall();
   }
+
+  // Public
 
   /// @notice Must be called before any sales can be made
   /// @param _token The token we are selling. Cannot be ether

@@ -141,14 +141,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     token = ERC20Extended(_token);
   }
 
-  function getMetatransactionNonce(
-    address userAddress
-  ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user] += 1;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user] += 1;
   }
 
   function start() public auctionNotStarted {
@@ -285,19 +283,24 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     return true;
   }
 
-  // slither-disable-next-line suicidal
   function destruct() public auctionFinalized allBidsClaimed {
     // Transfer token remainder to the network
-    uint auctionTokenBalance = token.balanceOf(address(this));
-    assert(token.transfer(colonyNetwork, auctionTokenBalance));
-    // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
-    uint auctionClnyBalance = clnyToken.balanceOf(address(this));
-    assert(clnyToken.transfer(metaColonyAddress, auctionClnyBalance));
-    // Check this contract balances in the working tokens is 0 before we kill it
-    // slither-disable-next-line incorrect-equality
-    assert(clnyToken.balanceOf(address(this)) == 0);
+    assert(token.transfer(colonyNetwork, token.balanceOf(address(this))));
+    // Check this contract balances in the token is 0 before we kill it
     // slither-disable-next-line incorrect-equality
     assert(token.balanceOf(address(this)) == 0);
-    selfdestruct(colonyNetwork);
+
+    // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
+    assert(clnyToken.transfer(metaColonyAddress, clnyToken.balanceOf(address(this))));
+    // Check this contract balances in the token is 0 before we kill it
+    // slither-disable-next-line incorrect-equality
+    assert(clnyToken.balanceOf(address(this)) == 0);
+
+    // Send ether to the metaColony
+    // slither-disable-next-line arbitrary-send-eth
+    payable(metaColonyAddress).transfer(address(this).balance);
+    // Check this contract balances in the token is 0 before we kill it
+    // slither-disable-next-line incorrect-equality
+    assert(address(this).balance == 0);
   }
 }

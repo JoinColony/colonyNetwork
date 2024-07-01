@@ -25,7 +25,7 @@ import { ColonyExtension } from "./ColonyExtension.sol";
 abstract contract ColonyExtensionMeta is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
-  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
     return metatransactionNonces[_user];
   }
 

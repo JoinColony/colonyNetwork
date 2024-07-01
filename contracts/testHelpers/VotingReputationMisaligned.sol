@@ -112,14 +112,12 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   uint256 escalationPeriod; // Length of time for escalating after a vote
   mapping(address => uint256) metatransactionNonces;
 
-  function getMetatransactionNonce(
-    address userAddress
-  ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers

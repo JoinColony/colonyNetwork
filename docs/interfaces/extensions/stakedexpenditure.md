@@ -6,6 +6,8 @@ finalized without issue, then the stake is returned. If for whatever reason
 the creator is found to have acted inapproriately, they run the risk of losing
 their stake.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
 
@@ -38,25 +40,6 @@ Can only be called by expenditure owner while expenditure is in draft state
 |_permissionDomainId|uint256|The domainId in which the extension has the arbitration permission
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_expenditureId|uint256|The id of the expenditure
-
-
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
 
 
 ### ▸ `getStake(uint256 _expenditureId):Stake stake`
@@ -112,18 +95,6 @@ Initialise the extension
 |_stakeFraction|uint256|WAD-denominated fraction, used to determine stake as fraction of rep in domain
 
 
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
-
 ### ▸ `makeExpenditureWithStake(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
 Make an expenditure by putting up a stake
@@ -164,13 +135,6 @@ Sets the stake fraction
 |Name|Type|Description|
 |---|---|---|
 |_stakeFraction|uint256|WAD-denominated fraction, used to determine stake as fraction of rep in domain
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

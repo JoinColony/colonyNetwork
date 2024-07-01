@@ -4,6 +4,8 @@ Alongside the Coin Machine Extension, a colony may use the Whitelist extension t
 
 See [here](https://colony.gitbook.io/colony/extensions/whitelist) for more information.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
 
@@ -18,25 +20,6 @@ Sets user statuses in the whitelist
 |---|---|---|
 |_users|address[]|An array of user addresses
 |_status|bool|The whitelist status to set
-
-
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
 
 
 ### ▸ `getAgreementHash():string _hash`
@@ -68,7 +51,7 @@ Get the user's approval status
 |---|---|---|
 |_status|bool|The user's approval status
 
-### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 _nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -77,13 +60,13 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|The nonce
+|_nonce|uint256|The nonce
 
 ### ▸ `getSignature(address _user):bool _status`
 
@@ -139,18 +122,6 @@ Initialise the extension
 |_agreementHash|string|An agreement hash (such as an IPFS URI)
 
 
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
-
 ### ▸ `isApproved(address _user):bool _approved`
 
 Get the user's overall whitelist status
@@ -178,13 +149,6 @@ The user's signature on the agreement
 |Name|Type|Description|
 |---|---|---|
 |_agreementHash|string|The agreement hash being signed
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

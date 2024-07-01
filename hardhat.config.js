@@ -126,7 +126,7 @@ module.exports = {
     },
     integration: {
       url: "http://localhost:8545",
-      chainId: 265669100,
+      chainId: Number(process.env.CHAIN_ID) || 265669100,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -134,6 +134,7 @@ module.exports = {
       blockGasLimit: 6721975,
     },
     hardhat: {
+      hardfork: "cancun",
       chainId: Number(process.env.CHAIN_ID) || FORKED_XDAI_CHAINID, // Supports chainId tests
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,

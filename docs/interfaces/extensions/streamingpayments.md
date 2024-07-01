@@ -6,6 +6,8 @@ streaming payments, indicating the tokens and amounts to be transferred
 over a given interval of time. Users can then claim tokens continually, at
 whatever frequency they choose.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
 
@@ -73,18 +75,6 @@ Creates a new streaming payment
 |_amount|uint256|The amount to be paid out (per _interval of time)
 
 
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
 ### ▸ `finishUpgrade()`
 
 Called when upgrading the extension
@@ -150,18 +140,6 @@ Returns the identifier of the extension
 |---|---|---|
 |_identifier|bytes32|The extension's identifier
 
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
-
 ### ▸ `setEndTime(uint256 _adminPermissionDomainId, uint256 _adminChildSkillIndex, uint256 _id, uint256 _endTime)`
 
 Update the endTime, only if the new endTime is in the future
@@ -209,13 +187,6 @@ Update the token amount to be paid out. Claims existing payout prior to the chan
 |_toChildSkillIndex|uint256|The linking the domainId to the toPot domain
 |_id|uint256|The id of the streaming payment
 |_amount|uint256|The new amount to pay out
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

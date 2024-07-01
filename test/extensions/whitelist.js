@@ -5,8 +5,8 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, IPFS_HASH, ADDRESS_ZERO } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode } = require("../../helpers/test-helper");
+const { UINT256_MAX, IPFS_HASH, ADDRESS_ZERO, ADDRESS_FULL } = require("../../helpers/constants");
+const { checkErrorRevert } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -65,18 +65,26 @@ contract("Whitelist", (accounts) => {
       await whitelist.deprecate(true);
       await whitelist.uninstall();
 
-      const code = await web3GetCode(whitelist.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await whitelist.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(WHITELIST, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(WHITELIST, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(colony.installExtension(WHITELIST, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(WHITELIST, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(WHITELIST, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

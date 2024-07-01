@@ -20,7 +20,7 @@ pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
@@ -99,7 +99,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     _;
   }
 
-  // Public
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -113,29 +113,12 @@ contract StreamingPayments is ColonyExtensionMeta {
     return 5;
   }
 
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
   /// @notice Called when upgrading the extension
   function finishUpgrade() public override auth {
     revert("streaming-payments-not-upgradeable-from-v4");
   }
 
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
+  // Public
 
   /// @notice Creates a new streaming payment
   /// @param _fundingPermissionDomainId The domain in which the caller holds the funding permission

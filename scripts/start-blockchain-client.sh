@@ -25,7 +25,7 @@ bc_client_running() {
 }
 
 start_ganache() {
-  echo $CHAIN_ID
+  echo "Chain id $CHAIN_ID"
   node_modules/.bin/ganache --acctKeys="./ganache-accounts.json" --gasLimit 6721975 --server.port $bc_client_port --chain.chainId $CHAIN_ID --db $DBPATH \
     --account="0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae, 100000000000000000000" \
     --account="0xe9aebe8791ad1ebd33211687e9c53f13fe8cca53b271a6529c7d7ba05eda5ce2, 100000000000000000000" \
@@ -44,11 +44,13 @@ start_ganache() {
     --account="0xc93aad16dd4aca2fa61316f83307362306ad6b2fc3e4a91801ce9010be7d9b63, 100000000000000000000" \
     --account="0x27f8f0be23a027196c7b8f4c98502b113e3fa1474fc10eda21ef3b5473c1b773, 100000000000000000000" \
     --account="0xb6245e0d2b64a92c0e6359500231087278f499de46fdfa351d4f1e09faf95a47, 100000000000000000000" \
-    --account="0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c, 100000000000000000000" >/dev/null 2>&1
+    --account="0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c, 100000000000000000000" >/dev/null 2>&1 \
+    & bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 $PORT
 }
 
 start_hardhat() {
-  CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1 & bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 $PORT
+  CHAIN_ID=$CHAIN_ID npx hardhat node --port $PORT >/dev/null 2>&1 \
+  & bash -c 'until nc -z $0 $1; do sleep 1; done' 127.0.0.1 $PORT
 }
 
 start_parity() {

@@ -9,7 +9,7 @@ const { soliditySha3 } = require("web3-utils");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 const { checkErrorRevert, web3GetBalance, encodeTxData } = require("../../helpers/test-helper");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
-const { UINT256_MAX } = require("../../helpers/constants");
+const { UINT256_MAX, ADDRESS_FULL } = require("../../helpers/constants");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -95,7 +95,7 @@ contract("Colony Network Extensions", (accounts) => {
       await extension.install(colony.address);
 
       // Can get the colony
-      const colonyAddress = await extension.getColony();
+      let colonyAddress = await extension.getColony();
       expect(colonyAddress).to.equal(colony.address);
 
       // Can only install once
@@ -106,10 +106,13 @@ contract("Colony Network Extensions", (accounts) => {
       // But can using separate payable function
       await extension.receiveEther({ value: 100 });
 
-      // Can uninstall as expected, with ether going to the colony
+      // Can uninstall as expected, with ether going to the colony and the colony/resolver being deleted
       await extension.uninstall();
       const colonyBalance = await web3GetBalance(colony.address);
       expect(new BN(colonyBalance)).to.eq.BN(100);
+
+      colonyAddress = await extension.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
   });
 

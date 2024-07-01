@@ -19,7 +19,7 @@
 pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import { IColony, ColonyDataTypes } from "../colony/IColony.sol";
+import { ColonyDataTypes } from "../colony/IColony.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
@@ -34,17 +34,17 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
 
   mapping(address => uint256) metatransactionNonces;
 
+  // Interface overrides
+
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(
-    address userAddress
-  ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[userAddress];
+  /// @param _user The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   /// @notice Returns the identifier of the extension
@@ -56,15 +56,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 7;
-  }
-
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
+    return 8;
   }
 
   /// @notice Called when upgrading the extension
@@ -72,15 +64,6 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     // Check colony has been upgraded first
     require(colony.version() >= 14, "voting-rep-upgrade-colony-first");
   } // solhint-disable-line no-empty-blocks
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {} // solhint-disable-line no-empty-blocks
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
 
   bytes4 constant MAKE_PAYMENT_SIG =
     bytes4(
@@ -113,6 +96,8 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       return bytes32(0);
     }
   }
+
+  // Public
 
   /// @notice Completes a colony payment in a single transaction
   /// @dev Assumes that each entity holds administration and funding roles in the root domain
@@ -338,25 +323,6 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         uniqueTokens[i]
       );
     }
-  }
-
-  function moveFundsWithinDomain(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainPotId,
-    uint256 _fundingPotId,
-    uint256 _amount,
-    address _token
-  ) internal {
-    colony.moveFundsBetweenPots(
-      _permissionDomainId,
-      _childSkillIndex,
-      _childSkillIndex,
-      _domainPotId,
-      _fundingPotId,
-      _amount,
-      _token
-    );
   }
 
   bool constant ARRAY = true;

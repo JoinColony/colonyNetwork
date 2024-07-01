@@ -42,16 +42,14 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(
-    address userAddress
-  ) public view override returns (uint256 nonce) {
-    return metatransactionNonces[userAddress];
+  /// @param _user The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) internal override {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers
@@ -61,7 +59,7 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
     _;
   }
 
-  // Public
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -72,30 +70,10 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 6;
+    return 7;
   }
 
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
+  // Public
 
   /// @notice Initialise the extension
   /// @param _useApprovals Whether or not to require administrative approval

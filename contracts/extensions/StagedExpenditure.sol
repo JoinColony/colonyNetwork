@@ -34,7 +34,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
 
   mapping(uint256 => bool) stagedExpenditures;
 
-  // Overrides
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
@@ -46,27 +46,6 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
     return 3;
-  }
-
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-    colony = IColony(_colony);
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
   }
 
   // Public

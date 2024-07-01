@@ -41,6 +41,11 @@ const INTERFACES = [
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "itokenlocking.md"),
   },
   {
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "IColonyExtension.sol"),
+    templateFile: path.resolve(__dirname, "..", "docs", ".templates", "icolonyextension.md"),
+    outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "icolonyextension.md"),
+  },
+  {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "CoinMachine.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "coinmachine.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "coinmachine.md"),

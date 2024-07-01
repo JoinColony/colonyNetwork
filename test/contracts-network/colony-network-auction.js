@@ -1,4 +1,4 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 const BN = require("bn.js");
 const { ethers } = require("ethers");
 const chai = require("chai");
@@ -7,7 +7,6 @@ const bnChai = require("bn-chai");
 const {
   getTokenArgs,
   web3GetTransactionReceipt,
-  web3GetCode,
   checkErrorRevert,
   forwardTime,
   getBlockTime,
@@ -942,12 +941,49 @@ contract("Colony Network Auction", (accounts) => {
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
     });
 
-    it("should be able to destruct the auction and kill the auction contract", async () => {
+    it("should be able to destruct the auction and send ether to the meta colony", async () => {
+      await forwardTime(SECONDS_PER_DAY * 30, this);
+      // What's the auction address going to be?
+      const networkNonce = await web3.eth.getTransactionCount(colonyNetwork.address);
+      const nextAuctionAddress = ethers.utils.getContractAddress({
+        from: colonyNetwork.address,
+        nonce: networkNonce,
+      });
+
+      await web3.eth.sendTransaction({
+        from: accounts[0],
+        to: nextAuctionAddress,
+        gas: 21000,
+        value: 100,
+      });
+
+      await token.mint(colonyNetwork.address, quantity);
+      const { logs, receipt } = await colonyNetwork.startTokenAuction(token.address);
+      createAuctionTxReceipt = receipt;
+      const auctionAddress = logs[0].args.auction;
+      tokenAuction = await DutchAuction.at(auctionAddress);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout);
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+
       await tokenAuction.finalize();
       await tokenAuction.claim(BIDDER_1);
+
+      const clnyBalanceBefore = await clnyToken.balanceOf(metaColony.address);
+      const ethBalanceBefore = await hre.ethers.provider.getBalance(metaColony.address);
+
+      await giveUserCLNYTokens(colonyNetwork, tokenAuction.address, 100);
       await tokenAuction.destruct();
-      const code = await web3GetCode(tokenAuction.address);
-      expect(code).to.equal("0x");
+
+      const clnyBalanceAfter = await clnyToken.balanceOf(metaColony.address);
+      const ethBalanceAfter = await hre.ethers.provider.getBalance(metaColony.address);
+
+      expect(clnyBalanceAfter.sub(clnyBalanceBefore)).to.eq.BN(100);
+      expect(new BN(ethBalanceAfter.toString()).sub(new BN(ethBalanceBefore.toString()))).to.eq.BN(100);
+
+      const tokenAuctionBalance = await hre.ethers.provider.getBalance(tokenAuction.address);
+      expect(new BN(tokenAuctionBalance.toString())).to.be.zero;
     });
 
     it("should fail if auction not finalized", async () => {

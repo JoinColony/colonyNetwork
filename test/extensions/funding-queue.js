@@ -13,11 +13,11 @@ const {
   SECONDS_PER_DAY,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
 } = require("../../helpers/constants");
 
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -192,18 +192,26 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.deprecate(true);
       await fundingQueue.uninstall();
 
-      const code = await web3GetCode(fundingQueue.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await fundingQueue.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(FUNDING_QUEUE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {

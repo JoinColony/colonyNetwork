@@ -2,6 +2,8 @@
 
 Coin Machine is a mechanism to sell tokens within a colony, simplifying the process for all participants involved. It introduces the functionality to sell limited amounts of tokens in fixed-price batches, adjusting prices up or down in between sale periods based on recent demand. Coin Machine sacrifices continual availability and real-time price adjustment for the simplicity of fixed price and fixed supply, thereby also sidestepping the challenges of price manipulation, volatility, and front-running.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
 See [here](https://colony.gitbook.io/colony/extensions/coin-machine) for more information.
 
   
@@ -139,7 +141,7 @@ Get the maximum amount of tokens a user can purchase in a period
 |---|---|---|
 |_max|uint256|Maximum amount of tokens
 
-### ▸ `getMetatransactionNonce(address _userAddress):uint256 _nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -148,13 +150,13 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|_userAddress|address|The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_nonce|uint256|The nonce
+|nonce|uint256|The nonce
 
 ### ▸ `getPeriodLength():uint256 _length`
 
@@ -299,18 +301,6 @@ Must be called before any sales can be made
 |_userLimitFraction|uint256|The fraction of the total sale that a single user can buy (in WAD)
 |_startingPrice|uint256|The sale price to start at, expressed in units of _purchaseToken per token being sold, as a WAD
 |_whitelist|address|Optionally an address of a whitelist contract to use can be provided. Pass 0x0 if no whitelist being used
-
-
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
 
 
 ### ▸ `setWhitelist(address _whitelist)`

@@ -21,23 +21,44 @@ pragma experimental ABIEncoderV2;
 import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
 
 interface IColonyExtension is IBasicMetaTransaction {
-  function identifier() external pure returns (bytes32);
+  /// @notice Returns the identifier of the extension
+  /// @return identifier The extension's identifier
+  function identifier() external pure returns (bytes32 identifier);
 
-  function version() external pure virtual returns (uint256);
+  /// @notice Returns the version of the extension
+  /// @return version The extension's version number
+  function version() external pure virtual returns (uint256 version);
 
+  /// @notice Configures the extension
+  /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) external virtual;
 
+  /// @notice Called when upgrading the extension (can be a no-op)
   function finishUpgrade() external virtual;
 
+  /// @notice Called when deprecating (or undeprecating) the extension
+  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
   function deprecate(bool _deprecated) external virtual;
 
+  /// @notice Called when uninstalling the extension
   function uninstall() external virtual;
 
-  function getCapabilityRoles(bytes4 _sig) external view virtual returns (bytes32);
+  /// @notice Gets the bytes32 representation of the roles authorized to call a function
+  /// @param _sig The function signature
+  /// @return roles bytes32 representation of the authorized roles
+  function getCapabilityRoles(bytes4 _sig) external view virtual returns (bytes32 roles);
 
-  function getDeprecated() external view returns (bool);
+  /// @notice Gets the boolean indicating whether or not the extension is deprecated
+  /// @return deprecated Boolean indicating whether or not the extension is deprecated
+  function getDeprecated() external view returns (bool deprecated);
 
-  function getColony() external view returns (address);
+  /// @notice Gets the address of the extension's colony
+  /// @return colony The address of the colony
+  function getColony() external view returns (address colony);
 
-  function multicall(bytes[] calldata) external virtual returns (bytes[] memory results);
+  /// @notice Call multiple functions in the current contract and return the data from all of them if they all succeed
+  /// @dev The `msg.value` should not be trusted for any method callable from multicall.
+  /// @param _data The encoded function data for each of the calls to make to this contract
+  /// @return results The results from each of the calls passed in via data
+  function multicall(bytes[] calldata _data) external virtual returns (bytes[] memory results);
 }

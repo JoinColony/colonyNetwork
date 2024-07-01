@@ -11,6 +11,7 @@ const { TruffleLoader } = require("../../packages/package-utils"); // eslint-dis
 
 const {
   UINT256_MAX,
+  ADDRESS_FULL,
   WAD,
   MINING_CYCLE_DURATION,
   SECONDS_PER_DAY,
@@ -24,7 +25,6 @@ const {
 
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -293,18 +293,26 @@ contract("Voting Reputation", (accounts) => {
       await voting.deprecate(true);
       await voting.uninstall();
 
-      const code = await web3GetCode(voting.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await voting.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(VOTING_REPUTATION, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(colony.installExtension(VOTING_REPUTATION, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(VOTING_REPUTATION, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(VOTING_REPUTATION, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can deprecate the extension if root", async () => {

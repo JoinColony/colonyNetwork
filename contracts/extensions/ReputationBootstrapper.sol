@@ -23,7 +23,7 @@ import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
@@ -67,7 +67,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     _;
   }
 
-  // Overrides
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   function identifier() public pure override returns (bytes32) {
@@ -75,30 +75,22 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   }
 
   /// @notice Returns the version of the extension
+  /// @return _version The extension's version number
   function version() public pure override returns (uint256) {
-    return 4;
+    return 5;
   }
 
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
+    super.install(_colony);
 
-    colony = IColony(_colony);
     token = colony.getToken();
 
     address colonyNetwork = colony.getColonyNetwork();
     address repCycle = IColonyNetwork(colonyNetwork).getReputationMiningCycle(false);
     decayPeriod = IReputationMiningCycle(repCycle).getMiningWindowDuration();
     (decayNumerator, decayDenominator) = IReputationMiningCycle(repCycle).getDecayConstant();
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
   }
 
   /// @notice Called when uninstalling the extension
@@ -109,7 +101,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
       "reputation-bootstrapper-transfer-failed"
     );
 
-    selfdestruct(payable(address(colony)));
+    super.uninstall();
   }
 
   // Public
