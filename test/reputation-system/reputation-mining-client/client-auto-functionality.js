@@ -84,6 +84,7 @@ contract("Reputation miner client auto enabled functionality", (accounts) => {
       useJsTree: true,
       // dbPath: "./reputationStates_good.sqlite"
     });
+    goodClient.realProvider._nextId = 7777777000000000;
     reputationMinerClient = new ReputationMinerClient({
       loader,
       realProviderPort,
@@ -93,6 +94,7 @@ contract("Reputation miner client auto enabled functionality", (accounts) => {
       oracle: false,
       processingDelay: 1,
     });
+    reputationMinerClient._miner.realProvider._nextId = 888888000000000;
   };
 
   before(async () => {

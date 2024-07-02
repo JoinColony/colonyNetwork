@@ -55,15 +55,29 @@ task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(asyn
 task("coverage", "Run coverage with an open port").setAction(async () => {
   const app = express();
   const port = 8545;
-
+  // let delay = 0;
+  let postCount = 0;
   app.use(bodyParser.json());
   app.post("/", async function (req, res) {
+    console.log("In", req.body.id);
+    // if (req.body.id > 1600) {
+    //   delay = 1000;
+    // }
+    postCount += 1;
+    console.log(new Date().toISOString(), "postCountIn", postCount);
     try {
+      // await new Promise((resolve) => {
+      //   setTimeout(resolve, delay);
+      // });
       const response = await hre.network.provider.request(req.body);
+      console.log("out", req.body.id);
       res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
     } catch (error) {
+      console.error(error);
       res.send({ jsonrpc: "2.0", error, id: req.body.id });
     }
+    postCount -= 1;
+    console.log(new Date().toISOString(), "postCountOut", postCount);
   });
   app.listen(port, function () {
     console.log(`Exposing the provider on port ${port}!`);

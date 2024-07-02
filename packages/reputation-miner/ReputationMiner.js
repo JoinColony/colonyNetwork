@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file */
 const fs = require("fs").promises;
 const path = require("path");
 const BN = require("bn.js");
@@ -29,6 +30,7 @@ class ReputationMiner {
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
       // Just requiring this starts up the network, so we only want to do it if we're using it.
+      delete require.cache[require.resolve("hardhat")]
       const hardhat = require("hardhat"); // eslint-disable-line global-require
       const hardhatProvider = hardhat.network.provider;
       this.hardhatProvider = new ethers.providers.Web3Provider(hardhatProvider);
@@ -40,6 +42,9 @@ class ReputationMiner {
       this.realProvider = provider;
     } else {
       this.realProvider = new ethers.providers.StaticJsonRpcProvider(`http://localhost:${realProviderPort}`);
+      this.realProvider.on('debug', (info) => {
+        console.log("DEBUG:", info.request);
+      });
     }
 
     if (minerAddress) {
