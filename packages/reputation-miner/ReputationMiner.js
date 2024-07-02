@@ -42,9 +42,6 @@ class ReputationMiner {
       this.realProvider = provider;
     } else {
       this.realProvider = new ethers.providers.StaticJsonRpcProvider(`http://localhost:${realProviderPort}`);
-      this.realProvider.on('debug', (info) => {
-        console.log("DEBUG:", info.request);
-      });
     }
 
     if (minerAddress) {
@@ -1055,61 +1052,68 @@ class ReputationMiner {
    * @return {Promise} Resolves to the tx hash of the response
    */
   async respondToBinarySearchForChallenge() {
-    const [round, index] = await this.getMySubmissionRoundAndIndex();
-    const repCycle = await this.getActiveRepCycle();
-    const disputeRound = await repCycle.getDisputeRound(round);
-    const disputedEntry = disputeRound[index];
+    try {
 
-    const targetLeafKey = disputedEntry.lowerBound;
-    const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
+      const [round, index] = await this.getMySubmissionRoundAndIndex();
+      const repCycle = await this.getActiveRepCycle();
+      const disputeRound = await repCycle.getDisputeRound(round);
+      const disputedEntry = disputeRound[index];
 
-    const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
-    const proof = await this.justificationTree.getProof(targetLeafKeyAsHex);
-    const [branchMask] = proof;
-    let [, siblings] = proof;
+      const targetLeafKey = disputedEntry.lowerBound;
+      const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
 
-    let proofEndingHash = await this.justificationTree.getImpliedRoot(
-      targetLeafKeyAsHex,
-      this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
-      branchMask,
-      siblings
-    );
+      const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
+      const proof = await this.justificationTree.getProof(targetLeafKeyAsHex);
+      const [branchMask] = proof;
+      let [, siblings] = proof;
 
-    while (siblings.length > 1 && disputedEntry.targetHashDuringSearch !== proofEndingHash) {
-      // Remove the first sibling
-      siblings = siblings.slice(1);
-      // Recalulate ending hash
-      proofEndingHash = await this.justificationTree.getImpliedRoot(
+      let proofEndingHash = await this.justificationTree.getImpliedRoot(
         targetLeafKeyAsHex,
         this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
         branchMask,
         siblings
       );
-    }
 
-    let gasEstimate;
-    try {
-      gasEstimate = await repCycle.estimateGas.respondToBinarySearchForChallenge(
+      while (siblings.length > 1 && disputedEntry.targetHashDuringSearch !== proofEndingHash) {
+        // Remove the first sibling
+        siblings = siblings.slice(1);
+        // Recalulate ending hash
+        proofEndingHash = await this.justificationTree.getImpliedRoot(
+          targetLeafKeyAsHex,
+          this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
+          branchMask,
+          siblings
+        );
+      }
+
+      let gasEstimate;
+      try {
+        gasEstimate = await repCycle.estimateGas.respondToBinarySearchForChallenge(
+          round,
+          index,
+          intermediateReputationHash,
+          siblings
+        );
+        // Add some extra gas just in case the details change and a little more is needed
+        gasEstimate = gasEstimate.mul(11).div(10);
+      } catch (err) {
+        console.log('gas estimate failed', err);
+        gasEstimate = ethers.BigNumber.from(1000000);
+      }
+      return repCycle.respondToBinarySearchForChallenge(
         round,
         index,
         intermediateReputationHash,
-        siblings
+        siblings,
+        {
+          gasLimit: gasEstimate,
+          ...this.feeData
+        }
       );
-      // Add some extra gas just in case the details change and a little more is needed
-      gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err) {
-      gasEstimate = ethers.BigNumber.from(1000000);
+      console.log(err);
+      throw err;
     }
-    return repCycle.respondToBinarySearchForChallenge(
-      round,
-      index,
-      intermediateReputationHash,
-      siblings,
-      {
-        gasLimit: gasEstimate,
-        ...this.feeData
-      }
-    );
   }
 
   /**

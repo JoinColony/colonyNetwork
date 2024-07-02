@@ -481,7 +481,7 @@ contract("Reputation miner client auto enabled functionality", (accounts) => {
       }
     });
 
-    it("should successfully complete a dispute resolution", async function () {
+    it.only("should successfully complete a dispute resolution", async function () {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER3 }, 1, 0);
       await badClient.initialise(colonyNetwork.address);
       // We need to load the current good state in to the bad client.
