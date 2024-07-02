@@ -1023,7 +1023,10 @@ exports.finishReputationMiningCycle = async function finishReputationMiningCycle
       const roundNumber = nUniqueSubmittedHashes.eqn(1) ? 0 : 1; // Not a general solution - only works for one or two submissions.
       const disputeRound = await repCycle.getDisputeRound(roundNumber);
       const timestamp = disputeRound[0].lastResponseTimestamp;
-      await exports.forwardTimeTo(parseInt(timestamp, 10) + MINING_CYCLE_DURATION, test);
+      const currentTimestamp = await exports.currentBlockTime();
+      if (currentTimestamp < parseInt(timestamp, 10) + MINING_CYCLE_DURATION) {
+        await exports.forwardTimeTo(parseInt(timestamp, 10) + MINING_CYCLE_DURATION, test);
+      }
 
       const accounts = await exports.web3GetAccounts();
       const minerAddress = accounts[5];
