@@ -415,10 +415,18 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             miner3TxCountAfter = await web3.eth.getTransactionCount(MINER3, "pending");
           }
 
-          await startMining();
-          await mineBlock();
+          await startMining(); // Turn on automining
+          await mineBlock(); // Mine the pending transactions
 
+          // Wait until the clients have processed the block
+          while (reputationMinerClient.lockedForBlockProcessing || reputationMinerClient2.lockedForBlockProcessing) {
+            await sleep(1000);
+          }
+
+          // Mine another block, which should trigger submissions (with a processing delay of 1)
+          await mineBlock();
           await receive12Submissions;
+
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
           await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
