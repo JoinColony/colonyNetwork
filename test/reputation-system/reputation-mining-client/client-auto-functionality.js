@@ -206,9 +206,15 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           await forwardTime(MINING_CYCLE_DURATION * 0.1 + MINING_CYCLE_DURATION, this);
           await miningCycleComplete;
 
-          await oracleUpdated;
+          await mineBlock(); // Triggers the client to process the next cycle.
 
+          await oracleUpdated;
           clearTimeout(oracleCheckInterval);
+
+          // Wait until the client has processed the block
+          while (reputationMinerClient.lockedForBlockProcessing) {
+            await sleep(1000);
+          }
 
           // Check the oracle has the same root hash as the miner after updating
           const oracleHash = await oracleClient._miner.reputationTree.getRootHash();
