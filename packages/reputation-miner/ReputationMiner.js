@@ -1266,7 +1266,10 @@ class ReputationMiner {
   async confirmNewHash() {
     const repCycle = await this.getActiveRepCycle();
     const [round] = await this.getMySubmissionRoundAndIndex();
-
+    if (round.eq(ethers.constants.NegativeOne)) {
+      console.log("No submission found to confirm - maybe we were beaten to it?");
+      return false;
+    }
     let gasEstimate;
     try {
       gasEstimate = await repCycle.estimateGas.confirmNewHash(round);

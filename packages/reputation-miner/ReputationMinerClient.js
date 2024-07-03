@@ -761,9 +761,11 @@ class ReputationMinerClient {
 
       const confirmNewHashTx = await this._miner.confirmNewHash();
 
-      this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
-      await confirmNewHashTx.wait();
-      this._adapter.log("✅ New reputation hash confirmed");
+      if (confirmNewHashTx) {
+        this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
+        await confirmNewHashTx.wait();
+        this._adapter.log("✅ New reputation hash confirmed");
+      }
     }
   }
 
