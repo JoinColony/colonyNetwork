@@ -1052,68 +1052,61 @@ class ReputationMiner {
    * @return {Promise} Resolves to the tx hash of the response
    */
   async respondToBinarySearchForChallenge() {
-    try {
+    const [round, index] = await this.getMySubmissionRoundAndIndex();
+    const repCycle = await this.getActiveRepCycle();
+    const disputeRound = await repCycle.getDisputeRound(round);
+    const disputedEntry = disputeRound[index];
 
-      const [round, index] = await this.getMySubmissionRoundAndIndex();
-      const repCycle = await this.getActiveRepCycle();
-      const disputeRound = await repCycle.getDisputeRound(round);
-      const disputedEntry = disputeRound[index];
+    const targetLeafKey = disputedEntry.lowerBound;
+    const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
 
-      const targetLeafKey = disputedEntry.lowerBound;
-      const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
+    const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
+    const proof = await this.justificationTree.getProof(targetLeafKeyAsHex);
+    const [branchMask] = proof;
+    let [, siblings] = proof;
 
-      const intermediateReputationHash = this.justificationHashes[targetLeafKeyAsHex].jhLeafValue;
-      const proof = await this.justificationTree.getProof(targetLeafKeyAsHex);
-      const [branchMask] = proof;
-      let [, siblings] = proof;
+    let proofEndingHash = await this.justificationTree.getImpliedRoot(
+      targetLeafKeyAsHex,
+      this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
+      branchMask,
+      siblings
+    );
 
-      let proofEndingHash = await this.justificationTree.getImpliedRoot(
+    while (siblings.length > 1 && disputedEntry.targetHashDuringSearch !== proofEndingHash) {
+      // Remove the first sibling
+      siblings = siblings.slice(1);
+      // Recalulate ending hash
+      proofEndingHash = await this.justificationTree.getImpliedRoot(
         targetLeafKeyAsHex,
         this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
         branchMask,
         siblings
       );
+    }
 
-      while (siblings.length > 1 && disputedEntry.targetHashDuringSearch !== proofEndingHash) {
-        // Remove the first sibling
-        siblings = siblings.slice(1);
-        // Recalulate ending hash
-        proofEndingHash = await this.justificationTree.getImpliedRoot(
-          targetLeafKeyAsHex,
-          this.justificationHashes[targetLeafKeyAsHex].jhLeafValue,
-          branchMask,
-          siblings
-        );
-      }
-
-      let gasEstimate;
-      try {
-        gasEstimate = await repCycle.estimateGas.respondToBinarySearchForChallenge(
-          round,
-          index,
-          intermediateReputationHash,
-          siblings
-        );
-        // Add some extra gas just in case the details change and a little more is needed
-        gasEstimate = gasEstimate.mul(11).div(10);
-      } catch (err) {
-        console.log('gas estimate failed', err);
-        gasEstimate = ethers.BigNumber.from(1000000);
-      }
-      return repCycle.respondToBinarySearchForChallenge(
+    let gasEstimate;
+    try {
+      gasEstimate = await repCycle.estimateGas.respondToBinarySearchForChallenge(
         round,
         index,
         intermediateReputationHash,
-        siblings,
-        {
-          gasLimit: gasEstimate,
-          ...this.feeData
-        }
+        siblings
       );
+      // Add some extra gas just in case the details change and a little more is needed
+      gasEstimate = gasEstimate.mul(11).div(10);
     } catch (err) {
-      console.log(err);
-      throw err;
+      gasEstimate = ethers.BigNumber.from(1000000);
     }
+    return repCycle.respondToBinarySearchForChallenge(
+      round,
+      index,
+      intermediateReputationHash,
+      siblings,
+      {
+        gasLimit: gasEstimate,
+        ...this.feeData
+      }
+    );
   }
 
   /**

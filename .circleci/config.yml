@@ -104,7 +104,7 @@ jobs:
           command: npx hardhat storage-layout --check
       - run:
           name: "Checking contract storage layout hasn't had additions made"
-          command: npx hardhat storage-layout --update && npm run normalize:storageSlots && git checkout ./.storage-layouts && git diff --exit-code
+          command: npx hardhat storage-layout --update && pnpm run normalize:storageSlots && git checkout ./.storage-layouts && git diff --exit-code
       - run:
           name: "Upload function selectors to 4byte.directory"
           command: npx hardhat upload-selectors
@@ -403,7 +403,7 @@ jobs:
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
-          command: npm run test:reputation:1:anotherChain
+          command: pnpm run test:reputation:1:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
@@ -422,7 +422,7 @@ jobs:
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
-          command: npm run test:reputation:2:anotherChain
+          command: pnpm run test:reputation:2:anotherChain
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
