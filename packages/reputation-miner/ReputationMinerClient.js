@@ -607,18 +607,38 @@ class ReputationMinerClient {
       }
       this.endDoBlockChecks();
     } catch (err) {
-      const repCycleCode = await this._miner.realProvider.getCode(repCycle.address);
+
+      if (repCycle && repCycle.address) {
+        let repCycleCode;
+        try {
+          repCycleCode = await this._miner.realProvider.getCode(repCycle.address);
+        } catch (e) {
+          this._adapter.error(`Error getting repCycle code: ${e}`);
+        }
+
+        if (repCycleCode === "0x") {
+          // TODO: Update this for the selfdestruct changes
+          // The repcycle was probably advanced by another miner while we were trying to
+          // respond to it. That's fine, and we'll sort ourselves out on the next block.
+          this.endDoBlockChecks();
+          return;
+        }
+      }
+
+      if (err.toString().indexOf('ECONNRESET') >= 0) {
+        // Ethers saw a connection reset error. This can happen occasionally, even when functioning well, depending
+        // on the provider endpoint. Regardless of when this happens in the block checks, I believe we can resume just fine,
+        // so log and continue.
+        this._adapter.error(`Connection reset error - continuing`);
+        this.endDoBlockChecks();
+        return;
+      }
+
       // If it's out-of-ether...
       if (err.toString().indexOf('does not have enough funds') >= 0 ) {
         // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
         const signingAddress = await this._miner.realWallet.getAddress()
         this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${signingAddress}\`, then restart the miner`);
-        return;
-      }
-      if (repCycleCode === "0x") {
-        // The repcycle was probably advanced by another miner while we were trying to
-        // respond to it. That's fine, and we'll sort ourselves out on the next block.
-        this.endDoBlockChecks();
         return;
       }
       this._adapter.error(`Error during block checks: ${err}`);
