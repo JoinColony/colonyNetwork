@@ -629,6 +629,14 @@ class ReputationMinerClient {
         this.endDoBlockChecks();
         return;
       }
+      if (err.toString().indexOf('ECONNRESET') >= 0) {
+        // Ethers saw a connection reset error. This can happen occasionally, even when functioning well, depending
+        // on the provider endpoint. Regardless of when this happens in the block checks, I believe we can resume just fine,
+        // so log and continue.
+        this._adapter.error(`Connection reset error - continuing`);
+        this.endDoBlockChecks();
+        return;
+      }
       if (this._exitOnError) {
         this._adapter.error(`Automatically restarting`);
         process.exit(1);
