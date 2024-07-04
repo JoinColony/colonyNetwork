@@ -466,7 +466,7 @@ contract ReputationMiningCycle is ReputationMiningCycleCommon {
     );
     require(
       responsePossible(
-        DisputeStages.ConfirmNewHash,
+        DisputeStages.ConfirmJRH,
         disputeRounds[_round][_index].lastResponseTimestamp
       ),
       "colony-reputation-mining-user-ineligible-to-respond"
