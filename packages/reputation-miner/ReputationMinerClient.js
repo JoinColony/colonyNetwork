@@ -461,6 +461,12 @@ class ReputationMinerClient {
       if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
         // Is what we believe to be the right submission being disputed?
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+        // This means the state we have wasn't submitted. Hopefully that's because we were in dispute, and the
+        // cycle has been completed...
+        if (round.eq(ethers.constants.NegativeOne)) {
+          this.endDoBlockChecks();
+          return;
+        }
         const disputeRound = await repCycle.getDisputeRound(round);
         const entry = disputeRound[index];
         const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
@@ -585,6 +591,12 @@ class ReputationMinerClient {
       if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
         // If the submission window is closed and we are the last hash, confirm it
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+        // This means the state we have wasn't submitted. Hopefully that's because we were in dispute, and the
+        // cycle has been completed...
+        if (round.eq(ethers.constants.NegativeOne)) {
+          this.endDoBlockChecks();
+          return;
+        }
         const disputeRound = await repCycle.getDisputeRound(round);
         const entry = disputeRound[index];
 
