@@ -7,6 +7,7 @@ const { soliditySha3, isAddress } = require("web3-utils");
 
 const PatriciaTree = require("./patricia");
 const PatriciaTreeNoHash = require("./patriciaNoHashKey");
+const { RetryProvider } = require("../package-utils/retryProvider");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -56,7 +57,7 @@ class ReputationMiner {
     if (provider) {
       this.realProvider = provider;
     } else {
-      this.realProvider = new ethers.providers.StaticJsonRpcProvider(`http://localhost:${realProviderPort}`);
+      this.realProvider = new RetryProvider(`http://localhost:${realProviderPort}`);
     }
 
     if (minerAddress) {
