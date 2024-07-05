@@ -625,7 +625,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
-          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1);
 
           await mineBlock();
           await goodClientConfirmedBinarySearch;
@@ -635,7 +635,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           disputeRound = await repCycle.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
 
-          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1);
 
           await mineBlock();
           await goodClientCompleteChallenge;
@@ -666,6 +666,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
           await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-decay-incorrect");
 
+          // await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
           await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should now realise it can timeout bad submission
