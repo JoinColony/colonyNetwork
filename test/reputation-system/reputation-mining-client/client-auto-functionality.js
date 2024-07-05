@@ -1040,10 +1040,14 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
         function noEventSeen(contract, event) {
           return new Promise(function (resolve, reject) {
+            let listener;
             contract.on(event, async () => {
+              await contract.off(event, listener);
               reject(new Error(`ERROR: The event ${event} was unexpectedly seen`));
             });
-            setTimeout(() => {
+            [listener] = contract.listeners(event).slice(-1);
+            setTimeout(async () => {
+              await contract.off(event, listener);
               resolve();
             }, 5000);
           });
