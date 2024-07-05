@@ -326,7 +326,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             let completionEvent;
             const miningCycleCompletePromise = new Promise(function (resolve, reject) {
               colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-                event.removeListener();
+                await event.removeListener();
                 cycleComplete = true;
                 completionEvent = event;
                 resolve();
@@ -526,7 +526,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -540,7 +540,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientConfirmedBinarySearch = new Promise(function (resolve, reject) {
             repCycleEthers.on("BinarySearchConfirmed", async (_hash, _nLeaves, _jrh, _firstDisagree, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -555,7 +555,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientCompleteChallenge = new Promise(function (resolve, reject) {
             repCycleEthers.on("ChallengeCompleted", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -593,7 +593,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             return new Promise(function (resolve, reject) {
               repCycleEthers.on("BinarySearchStep", async (_hash, _nLeaves, _jrh, event) => {
                 if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                  event.removeListener();
+                  await event.removeListener();
                   resolve();
                 }
               });
@@ -643,7 +643,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -676,7 +676,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
           const newCycleStart = new Promise(function (resolve, reject) {
             reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-              event.removeListener();
+              await event.removeListener();
               resolve();
             });
 
@@ -772,7 +772,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -799,7 +799,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -823,7 +823,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
           const newCycleStart = new Promise(function (resolve, reject) {
             reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-              event.removeListener();
+              await event.removeListener();
               resolve();
             });
 
@@ -891,7 +891,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -909,7 +909,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
