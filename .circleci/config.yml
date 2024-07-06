@@ -18,7 +18,7 @@ job_python: &job_python
 step_setup_pnpm: &step_setup_pnpm #Only used in python image, as node image comes with it
   run:
     name: "Install pnpm"
-    command: npm i -g pnpm@8.14.1 #Same version as in cimg/node:20.11.0
+    command: sudo npm i -g pnpm@8.14.1 #Same version as in cimg/node:20.11.0
 step_save_cache: &step_save_cache
   save_cache:
     name: Save pnpm Package Cache
