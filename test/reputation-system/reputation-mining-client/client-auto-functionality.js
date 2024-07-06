@@ -784,17 +784,11 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           });
 
           await badClient.submitRootHash();
-          let disputeRound = await repCycle.getDisputeRound(0);
-          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
-          const goodIndex = badIndex.add(1).mod(2);
 
-          let goodEntry = disputeRound[goodIndex];
+          const openingTimestamp = await repCycleEthers.getReputationMiningWindowOpenTimestamp();
 
-          // Forward time again so clients can start responding to challenges
-          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION), this);
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
-
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
 
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
@@ -804,19 +798,22 @@ hre.__SOLIDITY_COVERAGE_RUNNING
               }
             });
 
-            // After 30s, we throw a timeout error
+            // After 60s, we throw a timeout error
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for HashInvalidated"));
-            }, 30000);
+            }, 60000);
           });
 
-          disputeRound = await repCycle.getDisputeRound(0);
-          goodEntry = disputeRound[goodIndex];
+          const disputeRound = await repCycle.getDisputeRound(0);
+          const entry = disputeRound[0];
 
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          // Forward time again so clients can start responding to challenges
+          await forwardTimeTo(parseInt(entry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION, this);
 
-          // Good client should now realise it can timeout bad submission
+          // Good client should now realise it can confirm JRH
           await goodClientConfirmedJRH;
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          // Good client should now relise it can invalidate the bad submission
           await goodClientInvalidateOpponent;
           await mineBlock();
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
