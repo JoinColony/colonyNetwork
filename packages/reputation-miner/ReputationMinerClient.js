@@ -669,6 +669,7 @@ class ReputationMinerClient {
 
   endDoBlockChecks() {
     if (this.resolveBlockChecksFinished){
+      this.lockedForBlockProcessing = false;
       this.resolveBlockChecksFinished();
     } else {
       this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
