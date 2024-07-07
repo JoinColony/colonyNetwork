@@ -9,7 +9,6 @@ const { TruffleLoader } = require("../../../packages/package-utils");
 
 const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../../helpers/constants");
 const {
-  getActiveRepCycle,
   forwardTime,
   forwardTimeTo,
   advanceMiningCycleNoContest,
@@ -49,16 +48,16 @@ const loader = new TruffleLoader({
 });
 
 const realProviderPort = 8545;
+let MINER1;
+let MINER2;
+let MINER3;
 
 hre.__SOLIDITY_COVERAGE_RUNNING
   ? contract.skip
   : contract("Reputation miner client auto enabled functionality", (accounts) => {
-      const MINER1 = accounts[5];
-      const MINER2 = accounts[6];
-      const MINER3 = accounts[7];
+      [, , , , , MINER1, MINER2, MINER3] = accounts;
 
       let colonyNetwork;
-      let repCycle;
       let reputationMinerClient;
       let goodClient;
       let startingBlockNumber;
@@ -104,11 +103,19 @@ hre.__SOLIDITY_COVERAGE_RUNNING
       });
 
       beforeEach(async function () {
-        repCycle = await getActiveRepCycle(colonyNetwork);
         await goodClient.initialise(colonyNetwork.address);
         await goodClient.resetDB();
         await goodClient.sync(startingBlockNumber);
         await goodClient.saveCurrentState();
+        reputationMinerClient = new ReputationMinerClient({
+          loader,
+          realProviderPort,
+          minerAddress: MINER1,
+          useJsTree: true,
+          auto: true,
+          oracle: false,
+          processingDelay: 1,
+        });
         await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
       });
 
@@ -584,7 +591,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           });
 
           await badClient.submitRootHash();
-          let disputeRound = await repCycle.getDisputeRound(0);
+          let disputeRound = await repCycleEthers.getDisputeRound(0);
           const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
           const goodIndex = badIndex.add(1).mod(2);
 
@@ -602,7 +609,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           await mineBlock();
           await badClient.confirmJustificationRootHash();
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
@@ -622,7 +629,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             });
           }
 
-          while (badEntry.upperBound !== badEntry.lowerBound) {
+          while (!badEntry.upperBound.eq(badEntry.lowerBound)) {
             await mineBlock();
             const goodClientSearchStepPromise = getGoodClientBinarySearchStepPromise();
             await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
@@ -631,14 +638,14 @@ hre.__SOLIDITY_COVERAGE_RUNNING
               await mineBlock();
               await badClient.respondToBinarySearchForChallenge();
             }
-            disputeRound = await repCycle.getDisputeRound(0);
+            disputeRound = await repCycleEthers.getDisputeRound(0);
             badEntry = disputeRound[badIndex];
             goodEntry = disputeRound[goodIndex];
           }
 
           await noEventSeen(repCycleEthers, "BinarySearchConfirmed");
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
@@ -649,7 +656,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           await mineBlock();
           await badClient.confirmBinarySearchResult();
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
 
           await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1);
@@ -671,7 +678,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             }, 30000);
           });
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
@@ -821,7 +828,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             }, 60000);
           });
 
-          const disputeRound = await repCycle.getDisputeRound(0);
+          const disputeRound = await repCycleEthers.getDisputeRound(0);
           const entry = disputeRound[0];
 
           // Forward time again so clients can start responding to challenges
@@ -934,7 +941,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
             }, 30000);
           });
 
-          const disputeRound = await repCycle.getDisputeRound(0);
+          const disputeRound = await repCycleEthers.getDisputeRound(0);
           const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
 
           const badEntry = disputeRound[badIndex];
