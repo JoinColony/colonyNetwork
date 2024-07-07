@@ -83,7 +83,7 @@ hre.__SOLIDITY_COVERAGE_RUNNING
       });
 
       afterEach(async () => {
-        client.close();
+        await client.close();
       });
 
       describe("core functionality", () => {

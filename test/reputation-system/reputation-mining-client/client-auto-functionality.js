@@ -489,7 +489,24 @@ hre.__SOLIDITY_COVERAGE_RUNNING
 
           // If we are locked for block processing (for example, after stopping block checks due to an error), this will hang
           // Reset everything to be well behaved before testing the assertion.
-          reputationMinerClient2.lockedForBlockProcessing = false;
+          try {
+            let count = 0;
+            while (reputationMinerClient.lockedForBlockProcessing || reputationMinerClient2.lockedForBlockProcessing) {
+              await sleep(1000);
+              count += 1;
+              if (count > 60) {
+                throw new Error("ERROR: timeout while waiting for block processing to finish");
+              }
+            }
+          } catch (err) {
+            // If the above timed out, the test probably failed and we need to take manual action to close reputationMinerClient2
+            if (err.toString().includes("ERROR: timeout while waiting for block processing to finish")) {
+              reputationMinerClient2.lockedForBlockProcessing = false;
+            } else {
+              throw err;
+            }
+          }
+
           await reputationMinerClient2.close();
 
           if ([...new Set(submissionAddresses)].length === 1) {
