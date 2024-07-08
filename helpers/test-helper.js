@@ -678,9 +678,10 @@ exports.startMining = async function startMining() {
 
 exports.setStorageSlot = async function (contract, slot, value) {
   const slotString = `0x${new BN(slot).toString(16)}`;
-
+  // Accommodate both ethers and truffle contract objects
+  const provider = contract.provider || contract.contract.currentProvider;
   return new Promise((resolve, reject) => {
-    web3.currentProvider.send(
+    provider.send(
       {
         jsonrpc: "2.0",
         method: "hardhat_setStorageAt",
