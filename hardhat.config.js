@@ -8,11 +8,13 @@ const bodyParser = require("body-parser");
 const ethers = require("ethers");
 
 const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
+
+require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-truffle5");
+require("@solidstate/hardhat-4byte-uploader");
 require("hardhat-contract-sizer");
 require("hardhat-storage-layout-changes");
-require("@solidstate/hardhat-4byte-uploader");
-require("@nomiclabs/hardhat-ethers");
+require("hardhat-tracer");
 require("solidity-coverage");
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
@@ -108,7 +110,7 @@ module.exports = {
   networks: {
     development: {
       url: "http://localhost:8545",
-      chainId: Number(process.env.CHAIN_ID) || 265669100,
+      chainId: Number(process.env.CHAIN_ID) || FORKED_XDAI_CHAINID,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -126,7 +128,7 @@ module.exports = {
     },
     integration: {
       url: "http://localhost:8545",
-      chainId: Number(process.env.CHAIN_ID) || 265669100,
+      chainId: Number(process.env.CHAIN_ID) || FORKED_XDAI_CHAINID,
       throwOnCallFailures: false,
       throwOnTransactionFailures: false,
       allowBlocksWithSameTimestamp: true,
@@ -161,6 +163,14 @@ module.exports = {
         { privateKey: "0xb6245e0d2b64a92c0e6359500231087278f499de46fdfa351d4f1e09faf95a47", balance: "100000000000000000000" },
         { privateKey: "0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c", balance: "100000000000000000000" },
       ],
+      chains: {
+        // FORKED_XDAI_CHAINID
+        265669100: {
+          hardforkHistory: {
+            cancun: 1,
+          },
+        },
+      },
     },
   },
 };
