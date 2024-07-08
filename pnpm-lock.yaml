@@ -35,9 +35,6 @@ importers:
       '@nomiclabs/hardhat-truffle5':
         specifier: ^2.0.7
         version: 2.0.7(@nomiclabs/hardhat-web3@2.0.0)(hardhat@2.22.5)(web3-core-helpers@1.10.3)(web3-core-promievent@1.10.3)(web3-eth-abi@1.10.4)(web3-utils@1.10.4)(web3@1.10.4)
-      '@nomiclabs/hardhat-web3':
-        specifier: ^2.0.0
-        version: 2.0.0(hardhat@2.22.5)(web3@1.10.4)
       '@openzeppelin/contracts':
         specifier: ^4.9.6
         version: 4.9.6
