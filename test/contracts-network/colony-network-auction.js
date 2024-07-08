@@ -12,6 +12,7 @@ const {
   getBlockTime,
   isMainnet,
   getChainId,
+  setStorageSlot,
 } = require("../../helpers/test-helper");
 
 const { WAD, SECONDS_PER_DAY } = require("../../helpers/constants");
@@ -79,7 +80,7 @@ contract("Colony Network Auction", (accounts) => {
     });
 
     it("should fail with a zero clny token", async () => {
-      await hre.network.provider.send("hardhat_setStorageAt", [metaColony.address, "0x7", ethers.constants.HashZero]);
+      await setStorageSlot(metaColony, "0x7", ethers.constants.HashZero);
 
       const args = getTokenArgs();
       token = await Token.new(...args);

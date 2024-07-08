@@ -1,4 +1,4 @@
-/* globals artifacts, hre */
+/* globals artifacts */
 
 const fs = require("fs");
 const shortid = require("shortid");
@@ -1296,8 +1296,7 @@ exports.upgradeColonyOnceThenToLatest = async function (colony) {
 
   const existingSlot = await exports.web3GetStorageAt(colony.address, 2);
   const newSlotValue = existingSlot.slice(0, 26) + newestResolver.slice(2);
-
-  await hre.network.provider.send("hardhat_setStorageAt", [colony.address, "0x2", newSlotValue]);
+  await exports.setStorageSlot(colony, "0x2", newSlotValue);
 };
 
 exports.isMainnet = async function isMainnet() {
