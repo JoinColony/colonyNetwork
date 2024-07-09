@@ -676,16 +676,27 @@ exports.startMining = async function startMining() {
   });
 };
 
-exports.setStorageSlot = async function (contract, slot, value) {
-  const slotString = `0x${new BN(slot).toString(16)}`;
+exports.setStorageSlot = async function (_contract, _slot, _value) {
+  let slot = _slot;
+  if (typeof _slot === "string") {
+    if (!_slot.startsWith("0x")) {
+      slot = `0x${_slot}`;
+    } else {
+      slot = _slot;
+    }
+  } else if (isBN(_slot)) {
+    slot = `0x${_slot.toString(16)}`;
+  }
+
+  const slotString = `${ethers.BigNumber.from(slot).toHexString()}`;
   // Accommodate both ethers and truffle contract objects
-  const provider = contract.provider || contract.contract.currentProvider;
+  const provider = _contract.provider || _contract.contract.currentProvider;
   return new Promise((resolve, reject) => {
     provider.send(
       {
         jsonrpc: "2.0",
         method: "hardhat_setStorageAt",
-        params: [contract.address, slotString, value],
+        params: [_contract.address, slotString, _value],
       },
       (err) => {
         if (err) {
