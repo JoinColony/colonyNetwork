@@ -137,22 +137,15 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   ); // eslint-disable-line no-unused-vars
 
   // TODO: Start the bridge monitor
-  console.log(path.resolve(__dirname, "..", "packages", "wormhole-relayer"));
-  const relayerProcess = spawn("npx", ["tsx", "./index.ts"], {
+  console.log("Starting bridge monitor");
+
+  const relayerProcess = spawn("pnpm", ["exec", "tsx", "./index.ts"], {
     cwd: path.resolve(__dirname, "..", "packages", "wormhole-relayer"),
+    stdio: "inherit",
   });
 
-  relayerProcess.stdout.on("data", (d) => {
-    console.log(`stdout: ${d}`);
-  });
-
-  relayerProcess.stderr.on("data", (d) => {
-    console.error(`stderr: ${d}`);
-    process.exit(1);
-  });
-
-  relayerProcess.on("close", (code) => {
-    console.log(`child process exited with code ${code}`);
+  process.on("exit", () => {
+    relayerProcess.kill();
   });
 
   // Wait until the bridge monitor has connected to the spy
