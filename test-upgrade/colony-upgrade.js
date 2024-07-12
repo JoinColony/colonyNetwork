@@ -1,5 +1,6 @@
 /* globals artifacts */
-const { getColonyEditable } = require("../helpers/test-helper");
+const { ethers } = require("ethers");
+
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
 const { ROOT_ROLE } = require("../helpers/constants");
 const { makeExpenditure, setupRandomColony } = require("../helpers/test-data-generator");
@@ -14,6 +15,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyRewards = artifacts.require("ColonyRewards");
 const ColonyRoles = artifacts.require("ColonyRoles");
 const ContractRecovery = artifacts.require("ContractRecovery");
+const ContractEditing = artifacts.require("ContractEditing");
 const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
@@ -73,8 +75,14 @@ contract("Colony contract upgrade", (accounts) => {
     // Upgrade our existing colony
     // 8->9 upgrade, unlike other upgrades to date, not idempotent, so have to delete
     // the local root skill id
-    const editableColony = await getColonyEditable(colony, colonyNetwork);
-    await editableColony.setStorageSlot(36, "0x0000000000000000000000000000000000000000000000000000000000000000");
+    // As this test runs using Ganache, we can't use hardhat_setStorageAt here
+    const contractEditing = await ContractEditing.new();
+    const colonyAsEtherRouter = await EtherRouter.at(colony.address);
+    const colonyResolverAddress = await colonyAsEtherRouter.resolver();
+    const colonyResolver = await Resolver.at(colonyResolverAddress);
+    await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
+    const editableColony = await ContractEditing.at(colony.address);
+    await editableColony.setStorageSlot(36, ethers.constants.HashZero);
 
     await colony.upgrade(updatedColonyVersion);
     updatedColony = await IUpdatedColony.at(colony.address);

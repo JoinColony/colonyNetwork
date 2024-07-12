@@ -21,9 +21,9 @@ const {
   checkErrorRevert,
   expectEvent,
   expectNoEvent,
-  getColonyEditable,
   isXdai,
   getChainId,
+  setStorageSlot,
 } = require("../../helpers/test-helper");
 
 const { CURR_VERSION, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
@@ -177,8 +177,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should not allow initialisation of mining on this chain if the clny token is 0", async () => {
-      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await setStorageSlot(metaColony, 7, ethers.constants.HashZero);
       const chainId = await getChainId();
       await checkErrorRevert(
         metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0),
@@ -187,8 +186,7 @@ contract("Colony Network", (accounts) => {
     });
 
     it("should allow initialisation of mining on another chain if the clny token is 0", async () => {
-      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await setStorageSlot(metaColony, 7, ethers.constants.HashZero);
       let chainId = await getChainId();
       chainId += 1;
       await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
@@ -201,8 +199,7 @@ contract("Colony Network", (accounts) => {
     it("should not allow another mining cycle to start if the clny token is 0", async () => {
       const chainId = await getChainId();
       await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
-      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await setStorageSlot(metaColony, 7, ethers.constants.HashZero);
 
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
     });
@@ -472,8 +469,7 @@ contract("Colony Network", (accounts) => {
 
       // 8->9 upgrade, unlike other upgrades to date, not idempotent, so have to delete
       // the local root skill id
-      const editableColony = await getColonyEditable(colony, colonyNetwork);
-      await editableColony.setStorageSlot(36, "0x0000000000000000000000000000000000000000000000000000000000000000");
+      await setStorageSlot(colony, 36, ethers.constants.HashZero);
 
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);

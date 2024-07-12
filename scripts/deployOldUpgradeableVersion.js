@@ -5,7 +5,7 @@ const fs = require("fs");
 const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
 const contract = require("@truffle/contract");
-const { getColonyEditable, getColonyNetworkEditable, web3GetCode } = require("../helpers/test-helper");
+const { web3GetCode, setStorageSlot } = require("../helpers/test-helper");
 const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE, ADDRESS_ZERO } = require("../helpers/constants");
 
 const colonyDeployed = {};
@@ -152,7 +152,6 @@ module.exports.downgradeColony = async (colonyNetwork, colony, version) => {
     throw new Error("Version not deployed");
   }
   const accounts = await web3.eth.getAccounts();
-  const editableColony = await getColonyEditable(colony, colonyNetwork);
 
   // To downgrade a colony, we need to set the authority to the old authority contract,
   // and set the resolver to the old version resolver. We don't allow this during ordinary
@@ -164,9 +163,9 @@ module.exports.downgradeColony = async (colonyNetwork, colony, version) => {
   await oldAuthority.setUserRole(accounts[0], ADMINISTRATION_ROLE, true);
   await oldAuthority.setUserRole(accounts[0], ARCHITECTURE_ROLE, true);
   await oldAuthority.setOwner(colony.address);
-  await editableColony.setStorageSlot(0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
+  await setStorageSlot(colony, 0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
   const oldVersionResolver = colonyDeployed.IMetaColony[version].resolverAddress;
-  await editableColony.setStorageSlot(2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
+  await setStorageSlot(colony, 2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
 };
 
 module.exports.downgradeColonyNetwork = async (colonyNetwork, version) => {
@@ -174,11 +173,10 @@ module.exports.downgradeColonyNetwork = async (colonyNetwork, version) => {
     throw new Error("Version not deployed");
   }
 
-  const editableNetwork = await getColonyNetworkEditable(colonyNetwork);
   const oldAuthority = await colonyNetworkDeployed[version].OldAuthority.new(colonyNetwork.address);
-  await editableNetwork.setStorageSlot(0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
+  await setStorageSlot(colonyNetwork, 0, `0x${"0".repeat(24)}${oldAuthority.address.slice(2)}`);
   const oldVersionResolver = colonyNetworkDeployed[version].resolverAddress;
-  await editableNetwork.setStorageSlot(2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
+  await setStorageSlot(colonyNetwork, 2, `0x${"0".repeat(24)}${oldVersionResolver.slice(2)}`);
 };
 
 module.exports.deployOldColonyNetworkVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {

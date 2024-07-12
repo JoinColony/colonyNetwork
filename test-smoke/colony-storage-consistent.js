@@ -2,9 +2,11 @@
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const BN = require("bn.js");
+const { ethers } = require("ethers");
 
 const { UINT256_MAX, WAD } = require("../helpers/constants");
 const { fundColonyWithTokens, setupColony } = require("../helpers/test-data-generator");
+const { setStorageSlot } = require("../helpers/test-helper");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -13,8 +15,6 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
-const ContractEditing = artifacts.require("ContractEditing");
-const Resolver = artifacts.require("Resolver");
 
 const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
@@ -108,27 +108,20 @@ contract("Contract Storage", (accounts) => {
       // For this test to be reproducible, have to zero timestamps / time depenedent things
       // For colonyNetwork, that means the mining staking timestamp
 
-      const contractEditing = await ContractEditing.new();
-      const networkAsER = await EtherRouter.at(colonyNetwork.address);
-      const colonyNetworkResolverAddress = await networkAsER.resolver();
-      const colonyNetworkResolver = await Resolver.at(colonyNetworkResolverAddress);
-      await colonyNetworkResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-      const editableNetwork = await ContractEditing.at(colonyNetwork.address);
-
       // Following
       // https://solidity.readthedocs.io/en/v0.6.8/internals/layout_in_storage.html#mappings-and-dynamic-arrays
       // This is the hash of the key (the address) and the storage slot containing the mapping (33)
       let hashable = `0x000000000000000000000000${accounts[5].slice(2)}${new BN(33).toString(16, 64)}`;
       let hashed = web3.utils.soliditySha3(hashable);
       let slot = new BN(hashed.slice(2), 16);
+
       // To get the slot containing the timestamp of the miner submission, we add one to where the struct starts
       // (see ColonyNetworkDataTypes)
       slot = slot.addn(1);
-
-      await editableNetwork.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
+      await setStorageSlot(colonyNetwork, slot, ethers.constants.HashZero);
 
       // Also zero out the slot containing the current colony version
-      await editableNetwork.setStorageSlot(7, "0x0000000000000000000000000000000000000000000000000000000000000000");
+      await setStorageSlot(colonyNetwork, 7, ethers.constants.HashZero);
 
       const colonyNetworkStateHash = await getAddressStateHash(colonyNetwork.address);
 
@@ -140,12 +133,7 @@ contract("Contract Storage", (accounts) => {
       // To find the slot storing the timestamp, we add three to where the struct starts (see ColonyDataTypes).
       slot = slot.addn(3);
 
-      const colonyAsER = await EtherRouter.at(colony.address);
-      const colonyResolverAddress = await colonyAsER.resolver();
-      const colonyResolver = await Resolver.at(colonyResolverAddress);
-      await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-      const editableColony = await ContractEditing.at(colony.address);
-      await editableColony.setStorageSlot(slot, "0x0000000000000000000000000000000000000000000000000000000000000000");
+      await setStorageSlot(colony, slot, ethers.constants.HashZero);
 
       const colonyStateHash = await getAddressStateHash(colony.address);
       const metaColonyStateHash = await getAddressStateHash(metaColony.address);

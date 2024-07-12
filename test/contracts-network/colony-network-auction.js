@@ -10,9 +10,9 @@ const {
   checkErrorRevert,
   forwardTime,
   getBlockTime,
-  getColonyEditable,
   isMainnet,
   getChainId,
+  setStorageSlot,
 } = require("../../helpers/test-helper");
 
 const { WAD, SECONDS_PER_DAY } = require("../../helpers/constants");
@@ -80,8 +80,7 @@ contract("Colony Network Auction", (accounts) => {
     });
 
     it("should fail with a zero clny token", async () => {
-      const metaColonyUnderRecovery = await getColonyEditable(metaColony, colonyNetwork);
-      await metaColonyUnderRecovery.setStorageSlot(7, ethers.constants.AddressZero);
+      await setStorageSlot(metaColony, "0x7", ethers.constants.HashZero);
 
       const args = getTokenArgs();
       token = await Token.new(...args);
