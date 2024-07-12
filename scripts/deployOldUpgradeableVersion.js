@@ -135,8 +135,6 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
       colonyNetwork,
     );
 
-    console.log("colonyversionresolverAddress", colonyVersionResolverAddress);
-
     await module.exports.registerOldColonyVersion(colonyVersionResolverAddress, colonyNetwork);
     const versionUsesTruffle = fs.existsSync(`./colonyNetwork-${versionTag}/truffle.js`);
     if (versionUsesTruffle) {
