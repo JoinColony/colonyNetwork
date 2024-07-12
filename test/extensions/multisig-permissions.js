@@ -16,17 +16,10 @@ const {
   INITIAL_FUNDING,
   SECONDS_PER_DAY,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
 } = require("../../helpers/constants");
 
-const {
-  checkErrorRevert,
-  web3GetCode,
-  encodeTxData,
-  expectEvent,
-  forwardTime,
-  rolesToBytes32,
-  makeTxAtTimestamp,
-} = require("../../helpers/test-helper");
+const { checkErrorRevert, encodeTxData, expectEvent, forwardTime, rolesToBytes32, makeTxAtTimestamp } = require("../../helpers/test-helper");
 
 const { setupRandomColony, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
@@ -110,8 +103,8 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.deprecate(true);
       await multisigPermissions.uninstall();
 
-      const code = await web3GetCode(multisigPermissions.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await multisigPermissions.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {
