@@ -167,7 +167,7 @@ module.exports = {
         // FORKED_XDAI_CHAINID
         265669100: {
           hardforkHistory: {
-            cancun: 1,
+            cancun: 0,
           },
         },
       },
