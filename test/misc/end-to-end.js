@@ -6,7 +6,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const ethers = require("ethers");
 
-const { TruffleLoader } = require("../packages/package-utils");
+const { TruffleLoader } = require("../../packages/package-utils");
 const {
   submitAndForwardTimeToDispute,
   getActiveRepCycle,
@@ -16,7 +16,7 @@ const {
   makeReputationValue,
   removeSubdomainLimit,
   getChainId,
-} = require("../helpers/test-helper");
+} = require("../../helpers/test-helper");
 
 const {
   giveUserCLNYTokensAndStake,
@@ -25,12 +25,12 @@ const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   setupClaimedExpenditure,
-} = require("../helpers/test-data-generator");
+} = require("../../helpers/test-data-generator");
 
-const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../helpers/constants");
+const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
 
-const ReputationMinerTestWrapper = require("../packages/reputation-miner/test/ReputationMinerTestWrapper");
-const MaliciousReputationMinerExtraRep = require("../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

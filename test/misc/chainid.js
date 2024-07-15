@@ -4,14 +4,14 @@ const bnChai = require("bn-chai");
 const BN = require("bn.js");
 const ethers = require("ethers");
 
-const { setupENSRegistrar } = require("../helpers/upgradable-contracts");
+const { setupENSRegistrar } = require("../../helpers/upgradable-contracts");
 const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokens,
   giveUserCLNYTokensAndStake,
   unlockCLNYToken,
-} = require("../helpers/test-data-generator");
+} = require("../../helpers/test-data-generator");
 const {
   forwardTime,
   getActiveRepCycle,
@@ -23,8 +23,8 @@ const {
   isMainnet,
   isXdai,
   getChainId,
-} = require("../helpers/test-helper");
-const { MINING_CYCLE_DURATION, MIN_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION, WAD, DEFAULT_STAKE, XDAI_CHAINID } = require("../helpers/constants");
+} = require("../../helpers/test-helper");
+const { MINING_CYCLE_DURATION, MIN_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION, WAD, DEFAULT_STAKE, XDAI_CHAINID } = require("../../helpers/constants");
 
 const { expect } = chai;
 const ENSRegistry = artifacts.require("ENSRegistry");

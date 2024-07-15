@@ -1,6 +1,6 @@
 /* globals artifacts */
-const { setupReputationMiningCycleResolver } = require("../helpers/upgradable-contracts");
-const { advanceMiningCycleNoContest } = require("../helpers/test-helper");
+const { setupReputationMiningCycleResolver } = require("../../helpers/upgradable-contracts");
+const { advanceMiningCycleNoContest } = require("../../helpers/test-helper");
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");

@@ -14,7 +14,7 @@ const {
   INITIAL_FUNDING,
   MINING_CYCLE_DURATION,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
-} = require("../helpers/constants");
+} = require("../../helpers/constants");
 
 const {
   getTokenArgs,
@@ -27,14 +27,14 @@ const {
   advanceMiningCycleNoContest,
   submitAndForwardTimeToDispute,
   accommodateChallengeAndInvalidateHash,
-} = require("../helpers/test-helper");
+} = require("../../helpers/test-helper");
 
-const { giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } = require("../helpers/test-data-generator");
+const { giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 
-const { TruffleLoader } = require("../packages/package-utils");
-const PatriciaTree = require("../packages/reputation-miner/patricia");
-const ReputationMinerTestWrapper = require("../packages/reputation-miner/test/ReputationMinerTestWrapper");
-const MaliciousReputationMinerExtraRep = require("../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
+const { TruffleLoader } = require("../../packages/package-utils");
+const PatriciaTree = require("../../packages/reputation-miner/patricia");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
@@ -50,7 +50,7 @@ const IVotingReputation = artifacts.require("IVotingReputation");
 const REAL_PROVIDER_PORT = 8545;
 
 const contractLoader = new TruffleLoader({
-  contractRoot: path.resolve(__dirname, "..", "artifacts", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 contract("All", function (accounts) {
