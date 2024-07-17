@@ -34,6 +34,7 @@ const {
   expectEvent,
   getTokenArgs,
   getBlockTime,
+  upgradeExtensionOnceThenToLatest,
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters, fundColonyWithTokens } = require("../../helpers/test-data-generator");
@@ -2833,8 +2834,9 @@ contract("Voting Reputation", (accounts) => {
     // This function as written would also need updating every version, but is infinitely more
     // upgradeable
     async function upgradeFromV9ToLatest(colonyInTest) {
-      await colonyInTest.upgradeExtension(VOTING_REPUTATION, 10);
-      await colonyInTest.upgradeExtension(VOTING_REPUTATION, 11);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(VOTING_REPUTATION, colonyInTest.address);
+      const extension = await IVotingReputation.at(extensionAddress);
+      await upgradeExtensionOnceThenToLatest(extension);
     }
 
     beforeEach(async () => {

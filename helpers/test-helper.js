@@ -1310,6 +1310,28 @@ exports.upgradeColonyOnceThenToLatest = async function (colony) {
   await exports.setStorageSlot(colony, "0x2", newSlotValue);
 };
 
+exports.upgradeExtensionOnceThenToLatest = async function (extension) {
+  // Same logic as above, but for extensions
+  const currentVersion = await extension.version();
+  const colonyAddress = await extension.getColony();
+  const colony = await IColony.at(colonyAddress);
+  const extensionIdentifier = await extension.identifier();
+  await colony.upgradeExtension(extensionIdentifier, currentVersion.addn(1));
+
+  const networkAddress = await colony.getColonyNetwork();
+  const colonyNetwork = await IColonyNetwork.at(networkAddress);
+  let newestVersion = 100;
+  let newestResolver = ethers.constants.AddressZero;
+  while (newestResolver === ethers.constants.AddressZero) {
+    newestResolver = await colonyNetwork.getExtensionResolver(extensionIdentifier, newestVersion);
+    newestVersion -= 1;
+  }
+
+  const existingSlot = await exports.web3GetStorageAt(extension.address, 2);
+  const newSlotValue = existingSlot.slice(0, 26) + newestResolver.slice(2);
+  await exports.setStorageSlot(extension, "0x2", newSlotValue);
+};
+
 exports.isMainnet = async function isMainnet() {
   const chainId = await exports.web3GetChainId();
   return chainId === MAINNET_CHAINID || chainId === FORKED_MAINNET_CHAINID;
