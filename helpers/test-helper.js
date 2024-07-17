@@ -1315,17 +1315,22 @@ exports.upgradeExtensionOnceThenToLatest = async function (extension) {
   const currentVersion = await extension.version();
   const colonyAddress = await extension.getColony();
   const colony = await IColony.at(colonyAddress);
-  const extensionIdentifier = await extension.identifier();
-  await colony.upgradeExtension(extensionIdentifier, currentVersion.addn(1));
+  const extensionId = await extension.identifier();
+  await colony.upgradeExtension(extensionId, currentVersion.addn(1));
 
   const networkAddress = await colony.getColonyNetwork();
   const colonyNetwork = await IColonyNetwork.at(networkAddress);
-  let newestVersion = 100;
-  let newestResolver = ethers.constants.AddressZero;
-  while (newestResolver === ethers.constants.AddressZero) {
-    newestResolver = await colonyNetwork.getExtensionResolver(extensionIdentifier, newestVersion);
-    newestVersion -= 1;
-  }
+
+  const events = await colonyNetwork.getPastEvents("ExtensionAddedToNetwork", {
+    fromBlock: 0,
+    toBlock: "latest",
+    filter: { extensionId },
+  });
+
+  events.sort((a, b) => b.returnValues.version - a.returnValues.version);
+
+  const newestVersion = events[0].returnValues.version;
+  const newestResolver = await colonyNetwork.getExtensionResolver(extensionId, newestVersion);
 
   const existingSlot = await exports.web3GetStorageAt(extension.address, 2);
   const newSlotValue = existingSlot.slice(0, 26) + newestResolver.slice(2);
