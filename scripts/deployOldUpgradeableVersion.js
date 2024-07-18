@@ -167,6 +167,56 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
   }
 };
 
+module.exports.deployNextColonyVersion = async (colonyNetwork) => {
+  console.log("Cloning the network...");
+  await exec(`rm -rf colonyNetwork-next`);
+  await exec(`git clone --depth 1 --branch develop https://github.com/JoinColony/colonyNetwork.git colonyNetwork-next`);
+  await exec(`cd colonyNetwork-next && git submodule update --init --recursive`);
+  const nodeVersion = fs.readFileSync(`colonyNetwork-next/.nvmrc`);
+  await exec(`cd colonyNetwork-next && npm install node@${nodeVersion}`);
+
+  console.log("Installing the network...");
+  let packageManagerCommand;
+  if (fs.existsSync(`./colonyNetwork-next/pnpm-lock.yaml`)) {
+    packageManagerCommand = "pnpm";
+  } else {
+    packageManagerCommand = "npm";
+  }
+
+  await exec(`cd colonyNetwork-next && ${packageManagerCommand} install`);
+
+  // Bump version number in Colony.sol
+  const version = (
+    await exec(
+      `cd colonyNetwork-next/contracts/colony/ &&
+    grep 'function version() public pure returns (uint256 colonyVersion) { return ' Colony.sol |
+    sed 's/function version() public pure returns (uint256 colonyVersion) { return //' | sed 's/; }//' | sed 's/ //g'`,
+    )
+  ).trim();
+  console.log(`Current Colony contract version is ${version}`);
+  const nextVersion = parseInt(version, 10) + 1;
+
+  await exec(
+    // eslint-disable-next-line max-len
+    `sed -i.bak "s/function version() public pure returns (uint256 colonyVersion) { return ${version}/function version() public pure returns (uint256 colonyVersion) { return ${nextVersion}/g" ./colonyNetwork-next/contracts/colony/Colony.sol`,
+  );
+
+  const resolverAddress = await deployViaHardhat("next", "Colony", "IMetaColony", [
+    // eslint-disable-next-line max-len
+    "Colony",
+    "ColonyDomains",
+    "ColonyExpenditure",
+    "ColonyFunding",
+    "ColonyRewards",
+    "ColonyRoles",
+    "ContractRecovery",
+    "ColonyArbitraryTransaction",
+  ]);
+
+  await module.exports.registerOldColonyVersion(resolverAddress, colonyNetwork);
+  console.log('Deployed "next" version of Colony contract with resolver', resolverAddress);
+};
+
 module.exports.downgradeColony = async (colonyNetwork, colony, version) => {
   if (!colonyDeployed.IMetaColony[version]) {
     throw new Error("Version not deployed");
