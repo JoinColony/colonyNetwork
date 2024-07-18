@@ -717,20 +717,16 @@ contract("Multisig Permissions", (accounts) => {
 
       // Reject
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER1 });
-      await multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER0 });
       let rejectionCount = await multisigPermissions.getMotionRoleVoteCount(motionId, ROOT_ROLE, REJECTION);
-      expect(rejectionCount).to.eq.BN(2);
+      expect(rejectionCount).to.eq.BN(1);
 
       let userRejection = await multisigPermissions.getUserVote(motionId, USER1, ROOT_ROLE, REJECTION);
       expect(userRejection).to.equal(true);
 
-      // Could reject if we wanted
-      await multisigPermissions.cancel.estimateGas(motionId);
-
       // Unreject
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, NONE, { from: USER1 });
       rejectionCount = await multisigPermissions.getMotionRoleVoteCount(motionId, ROOT_ROLE, REJECTION);
-      expect(rejectionCount).to.eq.BN(1);
+      expect(rejectionCount).to.eq.BN(0);
       userRejection = await multisigPermissions.getUserVote(motionId, USER1, ROOT_ROLE, REJECTION);
       expect(userRejection).to.equal(false);
 
@@ -772,6 +768,9 @@ contract("Multisig Permissions", (accounts) => {
 
     it("can't repeatedly reject or unreject and have an effect", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ROOT_ROLE]));
+      await setRootRoles(multisigPermissions, USER3, rolesToBytes32([ROOT_ROLE]));
+
       await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
@@ -863,11 +862,9 @@ contract("Multisig Permissions", (accounts) => {
       // Give user funding, specifically in the domain
       await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE, ARBITRATION_ROLE]));
 
-      // Have them reject
+      // Have them reject. This will meet threshold and auto-cancel
       await multisigPermissions.changeVote(2, UINT256_MAX, motionId, REJECTION, { from: USER1 });
 
-      // Now both permissions meet the threshold, can reject even though not creator
-      await multisigPermissions.cancel(motionId, { from: USER1 });
       const motion = await multisigPermissions.getMotion(motionId);
       expect(motion.rejected).to.be.true;
 

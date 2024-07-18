@@ -217,6 +217,10 @@ contract MultisigPermissions is
     validateMotionDomain(_permissionDomainId, _childSkillIndex, _motionId);
     changeVoteFunctionality(_permissionDomainId, _motionId, Vote.Approve, _vote == Vote.Approve);
     changeVoteFunctionality(_permissionDomainId, _motionId, Vote.Reject, _vote == Vote.Reject);
+
+    if (_vote == Vote.Reject && checkThreshold(_motionId, Vote.Reject)) {
+      cancelFunctionality(_motionId);
+    }
   }
 
   function changeVoteFunctionality(
@@ -296,6 +300,11 @@ contract MultisigPermissions is
       "colony-multisig-not-enough-rejections"
     );
 
+    cancelFunctionality(_motionId);
+  }
+
+  function cancelFunctionality(uint256 _motionId) private {
+    Motion storage motion = motions[_motionId];
     motion.rejected = true;
 
     emit MotionCancelled(msgSender(), _motionId);
