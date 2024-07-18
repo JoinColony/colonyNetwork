@@ -1,3 +1,5 @@
+set -e
+
 LATEST_RELEASE=`curl --silent "https://api.github.com/repos/joinColony/colonyNetwork/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")'`
 
 CURRENT_BRANCH=`git branch --show-current`
@@ -29,6 +31,7 @@ rm -rf artifacts-$LATEST_RELEASE || true
 mv artifacts artifacts-$LATEST_RELEASE
 
 # Compile current commit
+git checkout .
 git checkout $CURRENT_BRANCH
 $NODE_MANAGER install
 $NODE_MANAGER use
@@ -80,26 +83,29 @@ relevant_bytecode() {
 }
 
 compare_bytecodes_check_extension_version() {
-	CONTRACT_NAME=`basename $1 .sol`
+	PATH_TO_CONTRACT=$1
 	FILE_WITH_VERSION=$2
+	CONTRACT_NAME=`basename $PATH_TO_CONTRACT .sol`
 
-	LAST_RELEASE_FILE="artifacts-$LATEST_RELEASE/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json"
-	THIS_COMMIT_FILE="artifacts/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json"
+	LAST_RELEASE_FILE="artifacts-$LATEST_RELEASE/$PATH_TO_CONTRACT/$CONTRACT_NAME.json"
+	THIS_COMMIT_FILE="artifacts/$PATH_TO_CONTRACT/$CONTRACT_NAME.json"
 
 	if [ ! -f "$LAST_RELEASE_FILE" ]; then
 	    echo "$LAST_RELEASE_FILE does not exist in last release, skipping."
 	    return
 	fi
 
-	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./artifacts-$LATEST_RELEASE/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
-	NEW_BYTECODE=$(relevant_bytecode ./artifacts/contracts/extensions/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
-
+	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./artifacts-$LATEST_RELEASE/$PATH_TO_CONTRACT/$CONTRACT_NAME.json)
+	NEW_BYTECODE=$(relevant_bytecode ./artifacts/$PATH_TO_CONTRACT/$CONTRACT_NAME.json)
 	# If the bytecode is different, check the version in the appropriate file
 	if [ "$LAST_RELEASE_BYTECODE" != "$NEW_BYTECODE" ]; then
+		echo "Bytecode changed for $CONTRACT_NAME"
 		oldVersion="$(version_from_commit_extensions $LATEST_RELEASE $FILE_WITH_VERSION)"
 
 		# What version does the staged version have?
 		newVersion="$(version_from_commit_extensions '' $FILE_WITH_VERSION)"
+		echo "Old version: $oldVersion"
+		echo "New version: $newVersion"
 		if [ $oldVersion -eq -1 ]; then
 			# It didn't exist in the old commit, so allow without further comparison
 			echo "Skipping $CONTRACT_NAME as $2 doesn't exist in latest release. If it's been moved, check if version bump necessary manually"
@@ -113,12 +119,8 @@ compare_bytecodes_check_extension_version() {
 extension_check_and_dependencies() {
 	local BASE_CONTRACT_NAME=`basename $1 .sol`
 	local FILE_WITH_VERSION=$2
-	compare_bytecodes_check_extension_version $BASE_CONTRACT_NAME $FILE_WITH_VERSION
-	# Anything that relies on that file
-	for extensionFile in $(grep -ilr "^contract.* is .*$BASE_CONTRACT_NAME[, {]" ./contracts/extensions/)
-	do
-		extension_check_and_dependencies $extensionFile $extensionFile
-	done
+	local PATH_TO_CONTRACT=`find ./contracts/ -name $BASE_CONTRACT_NAME.sol`
+	compare_bytecodes_check_extension_version $PATH_TO_CONTRACT $FILE_WITH_VERSION
 }
 
 # Are there changes in the colony contract that need colony version bumped?
@@ -144,12 +146,12 @@ do
 done
 
 # Now the same for the extensions
-for file in contracts/extensions/*
+for file in contracts/extensions/* contracts/extensions/**/*
 do
 	# Skip directories
 	if [ ! -d "$file" ]; then
-		if [ $file = "contracts/extensions/votingReputation/VotingReputation*.sol" ]; then
-			extension_check_and_dependencies $file contracts/extensions/votingReputation/VotingReputation.sol
+		if [[ $file == contracts/extensions/votingReputation/*.sol ]]; then
+			extension_check_and_dependencies $file contracts/extensions/votingReputation/VotingReputationStorage.sol
 		else
 			extension_check_and_dependencies $file $file
 		fi
