@@ -646,7 +646,7 @@ contract("Multisig Permissions", (accounts) => {
       await setRootRoles(colony, multisigPermissions.address, rolesToBytes32([ROOT_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE, ARBITRATION_ROLE]));
       await setRootRoles(colony, oneTxPayment.address, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE, ARBITRATION_ROLE]));
 
-      // Make a motion that requires two permissions
+      // Make a motion that requires three permissions
       const action = await encodeTxData(
         oneTxPayment,
         "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)",
@@ -837,7 +837,7 @@ contract("Multisig Permissions", (accounts) => {
       await setRootRoles(colony, multisigPermissions.address, rolesToBytes32([ROOT_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]));
       await setRootRoles(colony, oneTxPayment.address, rolesToBytes32([FUNDING_ROLE, ADMINISTRATION_ROLE]));
 
-      // Make a motion that requires two permissions
+      // Make a motion that requires three permissions
       const action = await encodeTxData(
         oneTxPayment,
         "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)",
@@ -861,13 +861,13 @@ contract("Multisig Permissions", (accounts) => {
       await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "colony-multisig-not-enough-rejections");
       await multisigPermissions.cancel.estimateGas(motionId, { from: USER0 });
       // Give user funding, specifically in the domain
-      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE]));
+      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE, ARBITRATION_ROLE]));
 
       // Have them reject
       await multisigPermissions.changeVote(2, UINT256_MAX, motionId, REJECTION, { from: USER1 });
 
-      // Now both permissions meet the threshold, can reject.
-      await multisigPermissions.cancel(motionId);
+      // Now both permissions meet the threshold, can reject even though not creator
+      await multisigPermissions.cancel(motionId, { from: USER1 });
       const motion = await multisigPermissions.getMotion(motionId);
       expect(motion.rejected).to.be.true;
 
