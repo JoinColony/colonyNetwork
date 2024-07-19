@@ -300,7 +300,7 @@ class MockBridgeMonitor {
     if (this.bridgingPromiseCount === 0) {
       // TODO: this probably introduces some race conditions now this is not broadcast...
       console.log('waiting...')
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      // await new Promise((resolve) => setTimeout(resolve, 10000));
       this.resolveBridgingPromise(tx);
     }
     if (this.locked) {
@@ -349,7 +349,7 @@ class MockBridgeMonitor {
     this.bridgingPromiseCount -= 1;
 
     if (this.bridgingPromiseCount === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 10000));
+      // await new Promise((resolve) => setTimeout(resolve, 10000));
       this.resolveBridgingPromise(tx);
     }
   }
