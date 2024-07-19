@@ -91,8 +91,6 @@ class MockBridgeMonitor {
     this.server.bindAsync('0.0.0.0:7073', ServerCredentials.createInsecure(), () => {
         console.log('server is running on 0.0.0.0:7073');
     });
-    console.log('after')
-
   }
 
   getPromiseForNextBridgedTransaction(_count = 1) {
@@ -164,9 +162,6 @@ class MockBridgeMonitor {
       + "01" // signature index
       + "7777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007777"
 
-    console.log('vaaHeader', vaaHeader);
-    console.log('vaaBody', vaaBody.toString('hex'));
-
     return vaaHeader + vaaBody.toString('hex').slice(2);
     // return signatures.toString('hex').slice(2);
   }
@@ -192,7 +187,6 @@ class MockBridgeMonitor {
     this.skipped = [];
     this.locked = false;
     this.homeBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
-        console.log('on LogMessagePublished home')
       const { chainId } = await this.signerHome.provider.getNetwork();
       // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
       // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
@@ -217,14 +211,12 @@ class MockBridgeMonitor {
     });
 
     this.foreignBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
-        console.log('on LogMessagePublished foreign')
       const { chainId } = await this.signerForeign.provider.getNetwork();
       // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
       // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
       // and for chainId 256669101, we use 10002 (which is really sepolia).
       // This isn't ideal, but it's the best solution I have for now
       let wormholeChainId;
-      console.log(chainId);
       if (chainId === 265669100) {
         wormholeChainId = 10003;
       } else if (chainId === 265669101) {
@@ -232,7 +224,6 @@ class MockBridgeMonitor {
       } else {
         throw new Error("Unsupported chainId");
       }
-      console.log(wormholeChainId);
 
       if (this.skipCount > 0) {
         this.skipped.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
@@ -265,7 +256,6 @@ class MockBridgeMonitor {
     let tx;
     // If it passes the filter, send it
     if (this.subscriptionFilters.filter(f => {
-      console.log(f?.emitterFilter?.chainId, wormholeChainID, f?.emitterFilter?.emitterAddress, ethereumAddressToWormholeAddress(sender).slice(2));
       return f?.emitterFilter?.chainId === wormholeChainID &&
         f?.emitterFilter?.emitterAddress === ethereumAddressToWormholeAddress(sender).slice(2)
     }).length > 0) {
@@ -274,7 +264,6 @@ class MockBridgeMonitor {
       // We do that by waiting for the nonce of the account we're using for bridging to increase
       // TODO: Makle this address more dynamic.
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
-      console.log('relayerNonce', relayerNonce);
 
       this.subscription.write({vaaBytes: Buffer.from(vaa.slice(2), 'hex')});
 
@@ -317,7 +306,6 @@ class MockBridgeMonitor {
     let tx;
     // If it passes the filter, send it
     if (this.subscriptionFilters.filter(f => {
-      console.log(f?.emitterFilter?.chainId, wormholeChainID, f?.emitterFilter?.emitterAddress, ethereumAddressToWormholeAddress(sender).slice(2));
       return f?.emitterFilter?.chainId === wormholeChainID &&
         f?.emitterFilter?.emitterAddress === ethereumAddressToWormholeAddress(sender).slice(2)
     }).length > 0) {
@@ -326,7 +314,6 @@ class MockBridgeMonitor {
       // We do that by waiting for the nonce of the account we're using for bridging to increase
       // TODO: Makle this address more dynamic.
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
-      console.log('relayerNonce', relayerNonce);
 
       this.subscription.write({vaaBytes: Buffer.from(vaa.slice(2), 'hex')});
 

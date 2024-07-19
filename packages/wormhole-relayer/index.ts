@@ -116,7 +116,6 @@ import {
     } = {};
 
     Object.keys(config.chains).forEach((chainid) => colonyBridgeAddresses[chainid] = config.chains[chainid].colonyBridgeAddress);
-    console.log(colonyBridgeAddresses)
     app.multiple( colonyBridgeAddresses,
     async (ctx, next) => {
         // console.log('callback');
@@ -134,17 +133,13 @@ import {
           if (vaa.emitterChain === CHAIN_ID_SEPOLIA) {
             // TODO: Explicit gas limit is a nod to tests...
             const tx = await colonyBridges[CHAIN_ID_ARBITRUM_SEPOLIA].receiveMessage(ctx.vaaBytes, { gasLimit: 1000000 });
-            console.log(tx);
             const r = await tx.wait();
             console.log('bridged with txhash' + tx.hash)
-            console.log(r);
 
           } else if (vaa.emitterChain === CHAIN_ID_ARBITRUM_SEPOLIA) {
             const tx = await colonyBridges[CHAIN_ID_SEPOLIA].receiveMessage(ctx.vaaBytes, { gasLimit: 1000000 });
-            console.log(tx);
             const r = await tx.wait();
             console.log('bridged with txhash' + tx.hash)
-            console.log(r);
           } else {
             console.log('Unknown chain', vaa.emitterChain);
           }
