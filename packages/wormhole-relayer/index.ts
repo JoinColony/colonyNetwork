@@ -47,16 +47,19 @@ import {
         // },
 
     );
-    const p = {
-      chains: {
-        [CHAIN_ID_ARBITRUM_SEPOLIA]: {
-          endpoints: ["http://localhost:8545"],
-        },
-        [CHAIN_ID_SEPOLIA]: {
-          endpoints: ["http://localhost:8546"],
-        },
-      },
-    }
+
+    const config = require("./config.js");
+
+    // const p = {
+    //   chains: {
+    //     [CHAIN_ID_ARBITRUM_SEPOLIA]: {
+    //       endpoints: ["http://localhost:8545"],
+    //     },
+    //     [CHAIN_ID_SEPOLIA]: {
+    //       endpoints: ["http://localhost:8546"],
+    //     },
+    //   },
+    // }
 
 
     // Config
@@ -72,15 +75,15 @@ import {
 
     // Set up middleware
     // app.use(logging(console)); // <-- logging middleware
-    app.use(providers(p));
+    app.use(providers(config));
     // app.use(stagingArea());
     // app.use(sourceTx());
 
 
-    const colonyBridgeAddresses = {
-      [CHAIN_ID_ARBITRUM_SEPOLIA]: "0x633899227A3BC1f79de097149E1E3C8097c07b1a",
-      [CHAIN_ID_SEPOLIA]: "0x161944B5601a7d3004E20d4Ca823F710838Ea1be",
-    };
+    // const colonyBridgeAddresses = {
+    //   [CHAIN_ID_ARBITRUM_SEPOLIA]: "0x633899227A3BC1f79de097149E1E3C8097c07b1a",
+    //   [CHAIN_ID_SEPOLIA]: "0x161944B5601a7d3004E20d4Ca823F710838Ea1be",
+    // };
 
     const { TruffleLoader } = require("../package-utils");
     const path = require("path");
@@ -92,9 +95,9 @@ import {
     const colonyBridgeContractDef = await loader.load({ contractDir: "bridging", contractName: "WormholeBridgeForColony" });
     const ethers = require('ethers');
     const privateKey = "0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c";
-    for (const chainId of Object.keys(colonyBridgeAddresses)) {
-      const colonyBridgeAddress = colonyBridgeAddresses[chainId];
-      const providerAddress = p.chains[chainId].endpoints[0];
+    for (const chainId of Object.keys(config.chains)) {
+      const colonyBridgeAddress = config.chains[chainId].colonyBridgeAddress;
+      const providerAddress = config.chains[chainId].endpoints[0];
       const wallet = new ethers.Wallet(privateKey, new ethers.providers.JsonRpcProvider(providerAddress));
       const nonceManager = new NonceManager(wallet);
 
@@ -108,6 +111,12 @@ import {
     // add a filter with a callback that will be
     // invoked on finding a VAA that matches the filter
 
+    const colonyBridgeAddresses: {
+      [chainid: string]: string
+    } = {};
+
+    Object.keys(config.chains).forEach((chainid) => colonyBridgeAddresses[chainid] = config.chains[chainid].colonyBridgeAddress);
+    console.log(colonyBridgeAddresses)
     app.multiple( colonyBridgeAddresses,
     async (ctx, next) => {
         // console.log('callback');

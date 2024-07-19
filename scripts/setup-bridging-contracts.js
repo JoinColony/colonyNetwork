@@ -6,6 +6,7 @@
  */
 
 const path = require("path");
+const fs = require("fs");
 const ethers = require("ethers");
 const { spawn } = require("child_process");
 const { TruffleLoader } = require("../packages/package-utils");
@@ -138,6 +139,25 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
 
   // TODO: Start the bridge monitor
   console.log("Starting bridge monitor");
+
+  // Write config file
+  const config = `
+    const wormhole = require("@certusone/wormhole-sdk");
+
+    module.exports = {
+      chains: {
+        [wormhole.CHAIN_ID_ARBITRUM_SEPOLIA]: {
+          endpoints: ["${homeRpcUrl}"],
+          colonyBridgeAddress: "${homeColonyBridge.address}",
+        },
+        [wormhole.CHAIN_ID_SEPOLIA]: {
+          endpoints: ["${foreignRpcUrl}"],
+          colonyBridgeAddress: "${foreignColonyBridge.address}",
+        },
+      },
+    };
+  `;
+  fs.writeFileSync(path.resolve(__dirname, "..", "packages", "wormhole-relayer", "config.js"), config);
 
   const relayerProcess = spawn("pnpm", ["exec", "tsx", "./index.ts"], {
     cwd: path.resolve(__dirname, "..", "packages", "wormhole-relayer"),
