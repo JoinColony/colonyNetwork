@@ -130,25 +130,36 @@ import {
           `Got a VAA with sequence: ${vaa.sequence} from with txhash: ${hash}`,
         );
 
-        try {
-          if (vaa.emitterChain === CHAIN_ID_SEPOLIA) {
-            // TODO: Explicit gas limit is a nod to tests...
-            const tx = await colonyBridges[CHAIN_ID_ARBITRUM_SEPOLIA].receiveMessage(ctx.vaaBytes, { gasLimit: 1000000 });
-            const r = await tx.wait();
-            console.log('bridged with txhash' + tx.hash)
+        let destinationBridge;
 
-          } else if (vaa.emitterChain === CHAIN_ID_ARBITRUM_SEPOLIA) {
-            const tx = await colonyBridges[CHAIN_ID_SEPOLIA].receiveMessage(ctx.vaaBytes, { gasLimit: 1000000 });
-            const r = await tx.wait();
-            console.log('bridged with txhash' + tx.hash)
-          } else {
-            console.log('Unknown chain', vaa.emitterChain);
-          }
-        } catch(err) {
-          console.log("ERROR", err);
+        if (vaa.emitterChain === CHAIN_ID_ARBITRUM_SEPOLIA) {
+          destinationBridge = colonyBridges[CHAIN_ID_SEPOLIA];
+        } else if (vaa.emitterChain === CHAIN_ID_SEPOLIA) {
+          destinationBridge = colonyBridges[CHAIN_ID_ARBITRUM_SEPOLIA];
+        } else {
+          console.log('Unknown chain', vaa.emitterChain);
+          return next();
         }
 
+        try {
+          // TODO: Explicit gas limit is a nod to tests...
+          const tx = await destinationBridge.receiveMessage(ctx.vaaBytes, { gasLimit: 1000000 });
+          const r = await tx.wait();
+          console.log('bridged with txhash' + tx.hash)
+        } catch(err) {
+          console.log("ERROR", err);
+          console.log('trying estimate gas with', err.transaction.to, err.transaction.data);
+          try {
 
+            const errEst = await destinationBridge.provider.estimateGas({
+              to: err.transaction.to,
+              data: err.transaction.data
+            });
+            console.log('errEst', errEst.toString());
+          } catch(err2){
+            console.log('ERROR2', err2);
+          }
+        }
 
         next();
       },
