@@ -7,7 +7,7 @@ const { argv } = require("yargs")
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
-const RetryProvider = require("../../package-utils/retryProvider").default;
+const {RetryProvider} = require("../../package-utils");
 
 const { ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../package-utils");
 
@@ -60,7 +60,7 @@ if (network) {
   provider = new ethers.providers.InfuraProvider(network);
 } else if (providerAddress.length === 0){
   const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
-  provider = new ethers.providers.StaticJsonRpcProvider(rpcEndpoint);
+  provider = new RetryProvider(rpcEndpoint);
 } else {
   const providers = providerAddress.map(endpoint => {
     const {protocol, username, password, host, pathname} = new URL(endpoint);

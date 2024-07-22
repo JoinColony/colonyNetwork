@@ -1,4 +1,5 @@
 const ethers = require("ethers");
+const { RetryProvider } = require("../packages/package-utils");
 
 // eslint-disable-next-line import/no-unresolved
 const bridgeAbi = require("../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json").abi;
@@ -76,8 +77,8 @@ class MockBridgeMonitor {
       this.foreignBridge.removeAllListeners("LogMessagePublished");
     }
 
-    this.signerHome = new ethers.providers.StaticJsonRpcProvider(this.homeRpc).getSigner();
-    this.signerForeign = new ethers.providers.StaticJsonRpcProvider(this.foreignRpc).getSigner();
+    this.signerHome = new RetryProvider(this.homeRpc).getSigner();
+    this.signerForeign = new RetryProvider(this.foreignRpc).getSigner();
     this.homeBridge = new ethers.Contract(this.homeBridgeAddress, bridgeAbi, this.signerHome);
     this.foreignBridge = new ethers.Contract(this.foreignBridgeAddress, bridgeAbi, this.signerForeign);
     this.homeWormholeBridgeForColony = new ethers.Contract(this.homeColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerHome);
