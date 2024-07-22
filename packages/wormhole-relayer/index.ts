@@ -13,6 +13,7 @@ import {
   import { CHAIN_ID_ARBITRUM_SEPOLIA, CHAIN_ID_SEPOLIA, SignedVaa } from "@certusone/wormhole-sdk";
 
   const NonceManager = require("./../metatransaction-broadcaster/ExtendedNonceManager");
+  const { RetryProvider } = require("../package-utils")
 
   export class TestStorage extends RedisStorage {
     // startWorker(cb: onJobHandler): void {
@@ -98,7 +99,7 @@ import {
     for (const chainId of Object.keys(config.chains)) {
       const colonyBridgeAddress = config.chains[chainId].colonyBridgeAddress;
       const providerAddress = config.chains[chainId].endpoints[0];
-      const wallet = new ethers.Wallet(privateKey, new ethers.providers.JsonRpcProvider(providerAddress));
+      const wallet = new ethers.Wallet(privateKey, new RetryProvider(providerAddress));
       const nonceManager = new NonceManager(wallet);
 
       colonyBridges[chainId] = new ethers.Contract(colonyBridgeAddress, colonyBridgeContractDef.abi, nonceManager);

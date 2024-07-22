@@ -22,6 +22,7 @@ const {
   CREATEX_ADDRESS,
   CURR_VERSION,
 } = require("./constants");
+const { RetryProvider } = require("../packages/package-utils");
 
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -248,11 +249,10 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
 
     const TRUFFLE_PORT = 8545;
     const OTHER_RPC_PORT = 8546;
-
-    let provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
+    let provider = new RetryProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
     receipt = await provider.getTransactionReceipt(txid);
     if (!receipt) {
-      provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${OTHER_RPC_PORT}`);
+      provider = new RetryProvider(`http://127.0.0.1:${OTHER_RPC_PORT}`);
       receipt = await provider.getTransactionReceipt(txid);
     }
 

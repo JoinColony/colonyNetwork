@@ -27,4 +27,4 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 }
 
-exports.RetryProvider = RetryProvider;
+module.exports = RetryProvider;

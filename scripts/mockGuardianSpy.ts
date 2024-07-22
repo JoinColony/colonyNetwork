@@ -7,6 +7,8 @@ const GUARDIAN_PRIVATE_KEY = '0x5756c5018454b83225f8e8264651c3a8032c4ac931e1d310
 const guardians = new MockGuardians(0, [
     GUARDIAN_PRIVATE_KEY,
   ]);
+
+const RetryProvider = require("../packages/package-utils").RetryProvider;
 // Random key
 
 const vaa = "AQAAAAABADgbykvOsEtlw6QJf5oKPXacqMKYVAvlmhCPVzROoatsM7CMKOpPuaGT59ztB4i4yjAmE5ytzdqSQKXHflUh8N0AZhgDQ2ZmAQAABQAAAAAAAAAAAAAAADd9VaeSjARuGO67YZd+cU0qdkcqAAAAAAAAmfQPAgAAAAAAAAAAAAAAACk4+usSFQG1YMCJvYu8nF/QlM9eAAUSSFQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIZWxsb1Rva2VuAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
@@ -174,8 +176,8 @@ class MockBridgeMonitor {
       this.foreignBridge.removeAllListeners("LogMessagePublished");
     }
 
-    this.signerHome = new ethers.providers.StaticJsonRpcProvider(this.homeRpc).getSigner();
-    this.signerForeign = new ethers.providers.StaticJsonRpcProvider(this.foreignRpc).getSigner();
+    this.signerHome = new RetryProvider(this.homeRpc).getSigner();
+    this.signerForeign = new RetryProvider(this.foreignRpc).getSigner();
     this.homeBridge = new ethers.Contract(this.homeBridgeAddress, bridgeAbi, this.signerHome);
     this.foreignBridge = new ethers.Contract(this.foreignBridgeAddress, bridgeAbi, this.signerForeign);
     this.homeWormholeBridgeForColony = new ethers.Contract(this.homeColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerHome);

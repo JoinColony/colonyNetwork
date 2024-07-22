@@ -6,7 +6,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 const axios = require("axios");
-const { TruffleLoader } = require("../../packages/package-utils");
+const { TruffleLoader, RetryProvider } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
 const { web3GetTransaction, currentBlockTime } = require("../../helpers/test-helper");
@@ -28,7 +28,7 @@ const GasGuzzler = artifacts.require("GasGuzzler");
 chai.use(bnChai(web3.utils.BN));
 
 const realProviderPort = 8545;
-const provider = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+const provider = new RetryProvider(`http://127.0.0.1:${realProviderPort}`);
 
 const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
