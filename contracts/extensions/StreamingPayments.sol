@@ -289,14 +289,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     // Update 'claimed' as if we've had this rate since the beginning
     streamingPayment.pseudoAmountClaimedFromStart = getAmountEntitledFromStart(_id);
 
-    bool isResolved = streamingPayment.pseudoAmountClaimedFromStart >=
-      getAmountClaimableLifetime(_id);
-
-    if (wasResolved && !isResolved) {
-      nUnresolvedStreamingPayments += 1;
-    } else if (!wasResolved && isResolved) {
-      nUnresolvedStreamingPayments -= 1;
-    }
+    updateUnresolvedPaymentCount(_id, wasResolved);
 
     emit PaymentTokenUpdated(msgSender(), _id, _amount, _interval);
   }
@@ -370,18 +363,11 @@ contract StreamingPayments is ColonyExtensionMeta {
 
     streamingPayment.endTime = _endTime;
 
-    uint256 newLifetimeClaimable = getAmountClaimableLifetime(_id);
-
     // Unlike when we're setting start time, we need to compare to pseudoAmountClaimedFromStart
     // in order to determine if the payment is resolved or not.
     bool wasResolved = streamingPayment.pseudoAmountClaimedFromStart >= oldLifetimeClaimable;
-    bool isResolved = streamingPayment.pseudoAmountClaimedFromStart >= newLifetimeClaimable;
 
-    if (wasResolved && !isResolved) {
-      nUnresolvedStreamingPayments += 1;
-    } else if (!wasResolved && isResolved) {
-      nUnresolvedStreamingPayments -= 1;
-    }
+    updateUnresolvedPaymentCount(_id, wasResolved);
 
     emit EndTimeSet(msgSender(), _id, _endTime);
   }
@@ -518,6 +504,18 @@ contract StreamingPayments is ColonyExtensionMeta {
     }
 
     return wmul(streamingPayment.amount, intervalsToClaimAsWad);
+  }
+
+  function updateUnresolvedPaymentCount(uint256 _id, bool wasResolved) internal {
+    StreamingPayment storage streamingPayment = streamingPayments[_id];
+    bool isResolved = streamingPayment.pseudoAmountClaimedFromStart >=
+      getAmountClaimableLifetime(_id);
+
+    if (wasResolved && !isResolved) {
+      nUnresolvedStreamingPayments += 1;
+    } else if (!wasResolved && isResolved) {
+      nUnresolvedStreamingPayments -= 1;
+    }
   }
 
   function setupExpenditure(

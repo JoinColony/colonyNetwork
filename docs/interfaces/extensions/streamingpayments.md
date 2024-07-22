@@ -219,6 +219,13 @@ Update the token amount to be paid out. Claims existing payout prior to the chan
 |_interval|uint256|The new interval over which _amount is paid out
 
 
+### ▸ `uninstall()`
+
+Called when uninstalling the extension
+
+
+
+
 ### ▸ `version():uint256 _version`
 
 Returns the version of the extension
