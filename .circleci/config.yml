@@ -357,6 +357,10 @@ jobs:
           command: pnpm run test:contracts:bridging:1:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+      - run :
+          name: "Reset hardhat build info"
+          command:  |
+            rm -rf artifacts/build-info
       - run:
           name: "Running coverage tests for foreign-side of bridge"
           command: pnpm run test:contracts:bridging:2:coverage
