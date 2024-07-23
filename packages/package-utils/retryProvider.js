@@ -8,6 +8,10 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 
   static attemptCheck(err, attemptNumber) {
+    if (err.code === "CALL_EXCEPTION" || err.code === "UNPREDICTABLE_GAS_LIMIT") {
+      console.log(`Got a ${err.code}, no retrying`);
+      return false;
+    }
     console.log("Retrying RPC request #", attemptNumber);
     if (attemptNumber === 5) {
       return false;
