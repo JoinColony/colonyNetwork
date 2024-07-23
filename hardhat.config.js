@@ -14,7 +14,7 @@ require("@nomiclabs/hardhat-truffle5");
 require("@solidstate/hardhat-4byte-uploader");
 require("hardhat-contract-sizer");
 require("hardhat-storage-layout-changes");
-require("hardhat-tracer");
+// require("hardhat-tracer");
 require("solidity-coverage");
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
