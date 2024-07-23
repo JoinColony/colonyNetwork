@@ -165,8 +165,7 @@ module.exports = {
         { privateKey: "0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c", balance: "100000000000000000000" },
       ],
       chains: {
-        // FORKED_XDAI_CHAINID
-        265669100: {
+        [FORKED_XDAI_CHAINID]: {
           hardforkHistory: {
             cancun: 0,
           },
