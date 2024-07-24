@@ -233,13 +233,24 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     require(rootLocalSkill != 0, "colony-local-skill-tree-not-initialised");
 
     uint256 newLocalSkill = IColonyNetwork(colonyNetworkAddress).addSkill(rootLocalSkill);
-    localSkills[newLocalSkill] = true;
+    localSkills[newLocalSkill] = LocalSkill({ exists: true, deprecated: false });
 
     emit LocalSkillAdded(msgSender(), newLocalSkill);
   }
 
   function deprecateLocalSkill(uint256 _localSkillId, bool _deprecated) public stoppable auth {
-    if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(_localSkillId, _deprecated)) {
+    LocalSkill storage localSkill = localSkills[_localSkillId];
+    if (localSkill.exists && localSkill.deprecated != _deprecated) {
+      localSkill.deprecated = _deprecated;
+
+      emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
+    }
+
+    // Handle local skills created prior to colonyNetwork#1280
+    if (DEPRECATED_localSkills[_localSkillId] && _deprecated) {
+      localSkills[_localSkillId] = LocalSkill({ exists: true, deprecated: _deprecated });
+      delete DEPRECATED_localSkills[_localSkillId];
+
       emit LocalSkillDeprecated(msgSender(), _localSkillId, _deprecated);
     }
   }
