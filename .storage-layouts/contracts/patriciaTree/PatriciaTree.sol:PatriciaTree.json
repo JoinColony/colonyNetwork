@@ -1,0 +1,129 @@
+{
+  "storage": [
+    {
+      "astId": 38158,
+      "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+      "label": "tree",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_struct(Tree)37267_storage"
+    }
+  ],
+  "types": {
+    "t_array(t_struct(Edge)37250_storage)2_storage": {
+      "base": "t_struct(Edge)37250_storage",
+      "encoding": "inplace",
+      "label": "struct Data.Edge[2]",
+      "numberOfBytes": "192"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_bytes32,t_struct(Node)37256_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct Data.Node)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Node)37256_storage"
+    },
+    "t_struct(Edge)37250_storage": {
+      "encoding": "inplace",
+      "label": "struct Data.Edge",
+      "members": [
+        {
+          "astId": 37246,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "node",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 37249,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "label",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_struct(Label)37244_storage"
+        }
+      ],
+      "numberOfBytes": "96"
+    },
+    "t_struct(Label)37244_storage": {
+      "encoding": "inplace",
+      "label": "struct Data.Label",
+      "members": [
+        {
+          "astId": 37241,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "data",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 37243,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "length",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_struct(Node)37256_storage": {
+      "encoding": "inplace",
+      "label": "struct Data.Node",
+      "members": [
+        {
+          "astId": 37255,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "children",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_array(t_struct(Edge)37250_storage)2_storage"
+        }
+      ],
+      "numberOfBytes": "192"
+    },
+    "t_struct(Tree)37267_storage": {
+      "encoding": "inplace",
+      "label": "struct Data.Tree",
+      "members": [
+        {
+          "astId": 37258,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "root",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 37261,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "rootEdge",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_struct(Edge)37250_storage"
+        },
+        {
+          "astId": 37266,
+          "contract": "contracts/patriciaTree/PatriciaTree.sol:PatriciaTree",
+          "label": "nodes",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_mapping(t_bytes32,t_struct(Node)37256_storage)"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

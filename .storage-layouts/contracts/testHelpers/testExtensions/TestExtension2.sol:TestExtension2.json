@@ -1,0 +1,342 @@
+{
+  "storage": [
+    {
+      "astId": 45121,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)45107"
+    },
+    {
+      "astId": 45123,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 20435,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 20438,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_contract(IColony)10058"
+    },
+    {
+      "astId": 20440,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": "t_bool"
+    },
+    {
+      "astId": 20666,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 20694,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder00",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20696,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder01",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20698,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder02",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20700,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder03",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20702,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder04",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20704,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder05",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20706,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder06",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20708,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder07",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20710,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder08",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20712,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder09",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20714,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder10",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20716,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder11",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20718,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder12",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20720,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder13",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20722,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder14",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20724,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder15",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20726,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder16",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20728,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder17",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20730,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder18",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20732,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder19",
+      "offset": 0,
+      "slot": "24",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20734,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder20",
+      "offset": 0,
+      "slot": "25",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20736,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder21",
+      "offset": 0,
+      "slot": "26",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20738,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder22",
+      "offset": 0,
+      "slot": "27",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20740,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder23",
+      "offset": 0,
+      "slot": "28",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20742,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder24",
+      "offset": 0,
+      "slot": "29",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20744,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder25",
+      "offset": 0,
+      "slot": "30",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20746,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder26",
+      "offset": 0,
+      "slot": "31",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20748,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder27",
+      "offset": 0,
+      "slot": "32",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20750,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder28",
+      "offset": 0,
+      "slot": "33",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20752,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder29",
+      "offset": 0,
+      "slot": "34",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20754,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder30",
+      "offset": 0,
+      "slot": "35",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 20756,
+      "contract": "contracts/testHelpers/testExtensions/TestExtension2.sol:TestExtension2",
+      "label": "placeholder31",
+      "offset": 0,
+      "slot": "36",
+      "type": "t_uint256"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_contract(DSAuthority)45107": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_contract(IColony)10058": {
+      "encoding": "inplace",
+      "label": "contract IColony",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    }
+  }
+}

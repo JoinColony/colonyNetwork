@@ -1,0 +1,814 @@
+{
+  "storage": [
+    {
+      "astId": 45121,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(DSAuthority)45107"
+    },
+    {
+      "astId": 45123,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 17759,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_address"
+    },
+    {
+      "astId": 17761,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "recoveryMode",
+      "offset": 20,
+      "slot": "2",
+      "type": "t_bool"
+    },
+    {
+      "astId": 17763,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "recoveryRolesCount",
+      "offset": 21,
+      "slot": "2",
+      "type": "t_uint64"
+    },
+    {
+      "astId": 17765,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "recoveryApprovalCount",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_uint64"
+    },
+    {
+      "astId": 17767,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "recoveryEditedTimestamp",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 17771,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "recoveryApprovalTimestamps",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 16220,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "colonyCount",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16222,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "currentColonyVersion",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16224,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "metaColony",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_address"
+    },
+    {
+      "astId": 16226,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "tokenLocking",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_address"
+    },
+    {
+      "astId": 16228,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "feeInverse",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16230,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "skillCount",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16232,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "reputationMiningSkillId",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16234,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "reputationRootHash",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_bytes32"
+    },
+    {
+      "astId": 16236,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "reputationRootHashNLeaves",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16238,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "miningCycleResolver",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_address"
+    },
+    {
+      "astId": 16240,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "activeReputationMiningCycle",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_address"
+    },
+    {
+      "astId": 16242,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "inactiveReputationMiningCycle",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_address"
+    },
+    {
+      "astId": 16246,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "colonies",
+      "offset": 0,
+      "slot": "18",
+      "type": "t_mapping(t_uint256,t_address)"
+    },
+    {
+      "astId": 16250,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "_isColony",
+      "offset": 0,
+      "slot": "19",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 16254,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "colonyVersionResolver",
+      "offset": 0,
+      "slot": "20",
+      "type": "t_mapping(t_uint256,t_address)"
+    },
+    {
+      "astId": 16259,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "skills",
+      "offset": 0,
+      "slot": "21",
+      "type": "t_mapping(t_uint256,t_struct(Skill)11679_storage)"
+    },
+    {
+      "astId": 16263,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "stakedBalances",
+      "offset": 0,
+      "slot": "22",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 16267,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "recentAuctions",
+      "offset": 0,
+      "slot": "23",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 16269,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "ens",
+      "offset": 0,
+      "slot": "24",
+      "type": "t_address"
+    },
+    {
+      "astId": 16271,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "rootNode",
+      "offset": 0,
+      "slot": "25",
+      "type": "t_bytes32"
+    },
+    {
+      "astId": 16273,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "userNode",
+      "offset": 0,
+      "slot": "26",
+      "type": "t_bytes32"
+    },
+    {
+      "astId": 16275,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "colonyNode",
+      "offset": 0,
+      "slot": "27",
+      "type": "t_bytes32"
+    },
+    {
+      "astId": 16279,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "colonyLabels",
+      "offset": 0,
+      "slot": "28",
+      "type": "t_mapping(t_address,t_string_storage)"
+    },
+    {
+      "astId": 16283,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "userLabels",
+      "offset": 0,
+      "slot": "29",
+      "type": "t_mapping(t_address,t_string_storage)"
+    },
+    {
+      "astId": 16288,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "records",
+      "offset": 0,
+      "slot": "30",
+      "type": "t_mapping(t_bytes32,t_struct(ENSRecord)11684_storage)"
+    },
+    {
+      "astId": 16295,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "replacementReputationUpdateLog",
+      "offset": 0,
+      "slot": "31",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(ReputationLogEntry)11697_storage))"
+    },
+    {
+      "astId": 16299,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "replacementReputationUpdateLogsExist",
+      "offset": 0,
+      "slot": "32",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 16304,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "miningStakes",
+      "offset": 0,
+      "slot": "33",
+      "type": "t_mapping(t_address,t_struct(MiningStake)11702_storage)"
+    },
+    {
+      "astId": 16308,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "pendingMiningRewards",
+      "offset": 0,
+      "slot": "34",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 16310,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "totalMinerRewardPerCycle",
+      "offset": 0,
+      "slot": "35",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16312,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "DEPRECATED_annualMetaColonyStipend",
+      "offset": 0,
+      "slot": "36",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16314,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "DEPRECATED_lastMetaColonyStipendIssued",
+      "offset": 0,
+      "slot": "37",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16320,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "resolvers",
+      "offset": 0,
+      "slot": "38",
+      "type": "t_mapping(t_bytes32,t_mapping(t_uint256,t_address))"
+    },
+    {
+      "astId": 16326,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "installations",
+      "offset": 0,
+      "slot": "39",
+      "type": "t_mapping(t_bytes32,t_mapping(t_address,t_address_payable))"
+    },
+    {
+      "astId": 16330,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "payoutWhitelist",
+      "offset": 0,
+      "slot": "40",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 16337,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "41",
+      "type": "t_mapping(t_address,t_uint256)"
+    },
+    {
+      "astId": 16341,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "miningDelegators",
+      "offset": 0,
+      "slot": "42",
+      "type": "t_mapping(t_address,t_address)"
+    },
+    {
+      "astId": 16343,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "reputationMiningChainId",
+      "offset": 0,
+      "slot": "43",
+      "type": "t_uint256"
+    },
+    {
+      "astId": 16345,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "colonyBridgeAddress",
+      "offset": 0,
+      "slot": "44",
+      "type": "t_address"
+    },
+    {
+      "astId": 16349,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "bridgeCurrentRootHashNonces",
+      "offset": 0,
+      "slot": "45",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 16353,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "networkSkillCounts",
+      "offset": 0,
+      "slot": "46",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 16359,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "pendingSkillAdditions",
+      "offset": 0,
+      "slot": "47",
+      "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_uint256))"
+    },
+    {
+      "astId": 16365,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "reputationUpdateCount",
+      "offset": 0,
+      "slot": "48",
+      "type": "t_mapping(t_uint256,t_mapping(t_address,t_uint256))"
+    },
+    {
+      "astId": 16374,
+      "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+      "label": "pendingReputationUpdates",
+      "offset": 0,
+      "slot": "49",
+      "type": "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_struct(PendingReputationUpdate)11713_storage)))"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_address_payable": {
+      "encoding": "inplace",
+      "label": "address payable",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)dyn_storage": {
+      "base": "t_uint256",
+      "encoding": "dynamic_array",
+      "label": "uint256[]",
+      "numberOfBytes": "32"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_contract(DSAuthority)45107": {
+      "encoding": "inplace",
+      "label": "contract DSAuthority",
+      "numberOfBytes": "20"
+    },
+    "t_int256": {
+      "encoding": "inplace",
+      "label": "int256",
+      "numberOfBytes": "32"
+    },
+    "t_mapping(t_address,t_address)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => address)",
+      "numberOfBytes": "32",
+      "value": "t_address"
+    },
+    "t_mapping(t_address,t_address_payable)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => address payable)",
+      "numberOfBytes": "32",
+      "value": "t_address_payable"
+    },
+    "t_mapping(t_address,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_struct(PendingReputationUpdate)11713_storage))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => struct ColonyNetworkDataTypes.PendingReputationUpdate))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_struct(PendingReputationUpdate)11713_storage)"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_struct(ReputationLogEntry)11697_storage))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => struct ColonyNetworkDataTypes.ReputationLogEntry))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_struct(ReputationLogEntry)11697_storage)"
+    },
+    "t_mapping(t_address,t_string_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => string)",
+      "numberOfBytes": "32",
+      "value": "t_string_storage"
+    },
+    "t_mapping(t_address,t_struct(MiningStake)11702_storage)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => struct ColonyNetworkDataTypes.MiningStake)",
+      "numberOfBytes": "32",
+      "value": "t_struct(MiningStake)11702_storage"
+    },
+    "t_mapping(t_address,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_address,t_address_payable))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(address => address payable))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_address_payable)"
+    },
+    "t_mapping(t_bytes32,t_mapping(t_uint256,t_address))": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => mapping(uint256 => address))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_address)"
+    },
+    "t_mapping(t_bytes32,t_struct(ENSRecord)11684_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct ColonyNetworkDataTypes.ENSRecord)",
+      "numberOfBytes": "32",
+      "value": "t_struct(ENSRecord)11684_storage"
+    },
+    "t_mapping(t_uint256,t_address)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => address)",
+      "numberOfBytes": "32",
+      "value": "t_address"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_mapping(t_uint256,t_struct(PendingReputationUpdate)11713_storage)))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => mapping(uint256 => struct ColonyNetworkDataTypes.PendingReputationUpdate)))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_mapping(t_uint256,t_struct(PendingReputationUpdate)11713_storage))"
+    },
+    "t_mapping(t_uint256,t_mapping(t_address,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(address => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_address,t_uint256)"
+    },
+    "t_mapping(t_uint256,t_mapping(t_uint256,t_uint256))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(uint256 => uint256))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_uint256)"
+    },
+    "t_mapping(t_uint256,t_struct(PendingReputationUpdate)11713_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyNetworkDataTypes.PendingReputationUpdate)",
+      "numberOfBytes": "32",
+      "value": "t_struct(PendingReputationUpdate)11713_storage"
+    },
+    "t_mapping(t_uint256,t_struct(ReputationLogEntry)11697_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyNetworkDataTypes.ReputationLogEntry)",
+      "numberOfBytes": "32",
+      "value": "t_struct(ReputationLogEntry)11697_storage"
+    },
+    "t_mapping(t_uint256,t_struct(Skill)11679_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct ColonyNetworkDataTypes.Skill)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Skill)11679_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_string_storage": {
+      "encoding": "bytes",
+      "label": "string",
+      "numberOfBytes": "32"
+    },
+    "t_struct(ENSRecord)11684_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyNetworkDataTypes.ENSRecord",
+      "members": [
+        {
+          "astId": 11681,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "addr",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 11683,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "orbitdb",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_string_storage"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_struct(MiningStake)11702_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyNetworkDataTypes.MiningStake",
+      "members": [
+        {
+          "astId": 11699,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "amount",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 11701,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "timestamp",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "64"
+    },
+    "t_struct(PendingReputationUpdate)11713_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyNetworkDataTypes.PendingReputationUpdate",
+      "members": [
+        {
+          "astId": 11704,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "user",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 11706,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "amount",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_int256"
+        },
+        {
+          "astId": 11708,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "skillId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 11710,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "colony",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_address"
+        },
+        {
+          "astId": 11712,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "timestamp",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_struct(ReputationLogEntry)11697_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyNetworkDataTypes.ReputationLogEntry",
+      "members": [
+        {
+          "astId": 11686,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "user",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 11688,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "amount",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_int256"
+        },
+        {
+          "astId": 11690,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "skillId",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 11692,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "colony",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_address"
+        },
+        {
+          "astId": 11694,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "nUpdates",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint128"
+        },
+        {
+          "astId": 11696,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "nPreviousUpdates",
+          "offset": 16,
+          "slot": "4",
+          "type": "t_uint128"
+        }
+      ],
+      "numberOfBytes": "160"
+    },
+    "t_struct(Skill)11679_storage": {
+      "encoding": "inplace",
+      "label": "struct ColonyNetworkDataTypes.Skill",
+      "members": [
+        {
+          "astId": 11666,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "nParents",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint128"
+        },
+        {
+          "astId": 11668,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "nChildren",
+          "offset": 16,
+          "slot": "0",
+          "type": "t_uint128"
+        },
+        {
+          "astId": 11671,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "parents",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_array(t_uint256)dyn_storage"
+        },
+        {
+          "astId": 11674,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "children",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_array(t_uint256)dyn_storage"
+        },
+        {
+          "astId": 11676,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "DEPRECATED_globalSkill",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_bool"
+        },
+        {
+          "astId": 11678,
+          "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
+          "label": "DEPRECATED_deprecated",
+          "offset": 1,
+          "slot": "3",
+          "type": "t_bool"
+        }
+      ],
+      "numberOfBytes": "128"
+    },
+    "t_uint128": {
+      "encoding": "inplace",
+      "label": "uint128",
+      "numberOfBytes": "16"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    }
+  }
+}
