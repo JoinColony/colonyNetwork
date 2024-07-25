@@ -259,6 +259,10 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     return rootLocalSkill;
   }
 
+  function getLocalSkill(uint256 _localSkillId) public view returns (LocalSkill memory localSkill) {
+    localSkill = localSkills[_localSkillId];
+  }
+
   function verifyReputationProof(
     bytes memory key,
     bytes memory value,

@@ -314,7 +314,7 @@ contract("Colony Expenditure", (accounts) => {
       );
     });
 
-    it.skip("should not allow owners to update a slot skill with a deprecated local skill", async () => {
+    it("should not allow owners to update a slot skill with a deprecated local skill", async () => {
       await colony.deprecateLocalSkill(localSkillId, true);
 
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId], { from: ADMIN }), "colony-not-valid-local-skill");
@@ -322,6 +322,56 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should not allow owners to update many slot skills with nonexistent skills", async () => {
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [100], { from: ADMIN }), "colony-not-valid-local-skill");
+    });
+
+    it("should allow colonies to deprecate 'old' local skills", async () => {
+      const { OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork);
+      await deployColonyVersionHMWSS(colonyNetwork);
+      await downgradeColony(colonyNetwork, colony, "glwss4");
+
+      // Make the colonyNetwork the old version
+      await deployColonyNetworkVersionGLWSS4();
+
+      const colonyNetworkAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
+      const latestResolver = await colonyNetworkAsEtherRouter.resolver();
+
+      await downgradeColonyNetwork(colonyNetwork, "glwss4");
+
+      // Add two local skills
+      const oldColony = await OldInterface.at(colony.address);
+      await oldColony.addLocalSkill();
+      const localSkillId2 = await colonyNetwork.getSkillCount();
+      await oldColony.addLocalSkill();
+      const localSkillId3 = await colonyNetwork.getSkillCount();
+
+      // Deprecate localSkillId2 in the old way
+      await colony.deprecateLocalSkill(localSkillId2, true);
+
+      // Upgrade to current version
+      await colonyNetworkAsEtherRouter.setResolver(latestResolver);
+      await upgradeColonyOnceThenToLatest(colony);
+
+      // Deprecate localSkillId3 in the new way
+      await colony.deprecateLocalSkill(localSkillId3, true);
+
+      const localSkill = await colony.getLocalSkill(localSkillId3);
+      expect(localSkill.exists).to.be.true;
+      expect(localSkill.deprecated).to.be.true;
+
+      // Both are deprecated
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      expenditureId = await colony.getExpenditureCount();
+
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId2]), "colony-not-valid-local-skill");
+      await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId3]), "colony-not-valid-local-skill");
+
+      // A skill that doesn't exist cannot be deprecated
+      const fakeLocalSkillId = 10000;
+      await colony.deprecateLocalSkill(fakeLocalSkillId, true);
+
+      const fakeLocalSkill = await colony.getLocalSkill(fakeLocalSkillId);
+      expect(fakeLocalSkill.exists).to.be.false;
+      expect(fakeLocalSkill.deprecated).to.be.false;
     });
 
     it("should not allow owners to set a (now defunct) global skill, either deprecated or undeprecated", async () => {
