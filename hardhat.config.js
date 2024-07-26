@@ -14,8 +14,10 @@ require("@nomiclabs/hardhat-truffle5");
 require("@solidstate/hardhat-4byte-uploader");
 require("hardhat-contract-sizer");
 require("hardhat-storage-layout-changes");
-process.argv.includes("node") ? undefined : require("hardhat-tracer");
 require("solidity-coverage");
+
+// Avoid this require if possible
+process.argv.includes("trace") || process.argv.includes("tracecall") ? require("hardhat-tracer") : undefined;
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
   await runSuper();
