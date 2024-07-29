@@ -17,7 +17,7 @@ require("hardhat-storage-layout-changes");
 require("solidity-coverage");
 
 // Avoid this require if possible
-process.argv.includes("trace") || process.argv.includes("tracecall") ? require("hardhat-tracer") : undefined;
+process.argv.filter((arg) => ["trace", "tracecall", "decode", "decodelog"].includes(arg)).length > 0 ? require("hardhat-tracer") : undefined;
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
   await runSuper();
