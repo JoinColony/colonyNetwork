@@ -223,71 +223,6 @@ contract MultisigPermissions is
     }
   }
 
-  function changeVoteFunctionality(
-    uint256 _permissionDomainId,
-    uint256 _motionId,
-    Vote _vote,
-    bool _setTo
-  ) private {
-    if (_setTo) {
-      validateUserPermissions(_permissionDomainId, _motionId);
-    }
-
-    Motion storage motion = motions[_motionId];
-    bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
-
-    uint8 roleIndex;
-    bool newlyAtThreshold;
-    bool anyBelowThreshold;
-
-    while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
-      if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
-        // Then the motion requires this permission. Let's check it
-        // If the user is adding a vote but lacks the permission, skip
-        if (uint256(userPermissions) & (1 << roleIndex) == 0 && _setTo) {
-          roleIndex += 1;
-          continue;
-        }
-
-        // Update appropriately if vote changes
-        if (getUserVote(_motionId, msgSender(), roleIndex, _vote) != _setTo) {
-          setUserVote(_motionId, msgSender(), _vote, roleIndex, _setTo);
-
-          if (_setTo) {
-            motionVoteCount[_motionId][_vote][roleIndex] += 1;
-          } else {
-            motionVoteCount[_motionId][_vote][roleIndex] -= 1;
-          }
-
-          if (_vote == Vote.Approve) {
-            emit ApprovalChanged(msgSender(), _motionId, roleIndex, _setTo);
-          } else {
-            emit RejectionChanged(msgSender(), _motionId, roleIndex, _setTo);
-          }
-        }
-
-        if (_vote == Vote.Approve) {
-          uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
-          if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
-            anyBelowThreshold = true;
-          } else if (motionVoteCount[_motionId][_vote][roleIndex] == threshold && _setTo) {
-            newlyAtThreshold = true;
-          }
-        }
-      }
-
-      roleIndex += 1;
-    }
-
-    if (_vote == Vote.Approve) {
-      if (anyBelowThreshold) {
-        delete motion.overallApprovalTimestamp;
-      } else if (newlyAtThreshold) {
-        motion.overallApprovalTimestamp = block.timestamp;
-      }
-    }
-  }
-
   function cancel(
     uint256 _motionId
   ) public motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
@@ -297,17 +232,10 @@ contract MultisigPermissions is
       msgSender() == motion.creator ||
         checkThreshold(_motionId, Vote.Reject) ||
         block.timestamp > motion.creationTimestamp + 7 days,
-      "colony-multisig-not-enough-rejections"
+      "multisig-not-enough-rejections"
     );
 
     cancelFunctionality(_motionId);
-  }
-
-  function cancelFunctionality(uint256 _motionId) private {
-    Motion storage motion = motions[_motionId];
-    motion.rejected = true;
-
-    emit MotionCancelled(msgSender(), _motionId);
   }
 
   function execute(uint256 _motionId) public {
@@ -316,64 +244,6 @@ contract MultisigPermissions is
 
   function executeWithoutFailure(uint256 _motionId) public {
     executeFunctionality(_motionId, false);
-  }
-
-  function executeFunctionality(
-    uint256 _motionId,
-    bool _failingAllowedByUser
-  ) private motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
-    Motion storage motion = motions[_motionId];
-
-    require(checkThreshold(_motionId, Vote.Approve), "colony-multisig-not-enough-approvals");
-
-    // If approvals were made, threshold lowered, and then executed,
-    //  motion.overallApprovalTimestamp is 0 (since it was never set)
-    if (motion.overallApprovalTimestamp == 0) {
-      // We set the overall approval timestamp to now, and return
-      // We don't execute the motion, but we want to commit the timestamp
-      //  (which wouldn't happen if we continued and a call failed)
-      motion.overallApprovalTimestamp = block.timestamp;
-      return;
-    }
-
-    motion.executed = true;
-    bool overallSuccess = true;
-
-    for (uint256 i = 0; i < motion.data.length; i += 1) {
-      // solhint-disable-next-line avoid-low-level-calls
-      (bool success, ) = address(getTarget(motion.targets[i], address(colony))).call(
-        motion.data[i]
-      );
-      overallSuccess = overallSuccess && success;
-
-      // Allow failing execution after seven days, if the user allowed it
-      require(
-        success ||
-          (_failingAllowedByUser && motion.overallApprovalTimestamp + 7 days <= block.timestamp),
-        "colony-multisig-failed-not-one-week"
-      );
-    }
-
-    emit MotionExecuted(msgSender(), _motionId, overallSuccess);
-  }
-
-  function checkThreshold(uint256 _motionId, Vote _vote) private view returns (bool thresholdMet) {
-    Motion storage motion = motions[_motionId];
-    uint8 roleIndex;
-
-    // While there are still relevant roles we've not checked yet
-    while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
-      // For the current role, is it required for the motion?
-      if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
-        uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
-        if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
-          return false;
-        }
-      }
-      roleIndex += 1;
-    }
-
-    return true;
   }
 
   function getGlobalThreshold() public view returns (uint256) {
@@ -494,6 +364,135 @@ contract MultisigPermissions is
   }
 
   // Internal functions
+
+  function changeVoteFunctionality(
+    uint256 _permissionDomainId,
+    uint256 _motionId,
+    Vote _vote,
+    bool _setTo
+  ) internal {
+    if (_setTo) {
+      validateUserPermissions(_permissionDomainId, _motionId);
+    }
+
+    Motion storage motion = motions[_motionId];
+    bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
+
+    uint8 roleIndex;
+    bool newlyAtThreshold;
+    bool anyBelowThreshold;
+
+    while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
+      if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
+        // Then the motion requires this permission. Let's check it
+        // If the user is adding a vote but lacks the permission, skip
+        if (uint256(userPermissions) & (1 << roleIndex) == 0 && _setTo) {
+          roleIndex += 1;
+          continue;
+        }
+
+        // Update appropriately if vote changes
+        if (getUserVote(_motionId, msgSender(), roleIndex, _vote) != _setTo) {
+          setUserVote(_motionId, msgSender(), _vote, roleIndex, _setTo);
+
+          if (_setTo) {
+            motionVoteCount[_motionId][_vote][roleIndex] += 1;
+          } else {
+            motionVoteCount[_motionId][_vote][roleIndex] -= 1;
+          }
+
+          if (_vote == Vote.Approve) {
+            emit ApprovalChanged(msgSender(), _motionId, roleIndex, _setTo);
+          } else {
+            emit RejectionChanged(msgSender(), _motionId, roleIndex, _setTo);
+          }
+        }
+
+        if (_vote == Vote.Approve) {
+          uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
+          if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
+            anyBelowThreshold = true;
+          } else if (motionVoteCount[_motionId][_vote][roleIndex] == threshold && _setTo) {
+            newlyAtThreshold = true;
+          }
+        }
+      }
+
+      roleIndex += 1;
+    }
+
+    if (_vote == Vote.Approve) {
+      if (anyBelowThreshold) {
+        delete motion.overallApprovalTimestamp;
+      } else if (newlyAtThreshold) {
+        motion.overallApprovalTimestamp = block.timestamp;
+      }
+    }
+  }
+
+  function cancelFunctionality(uint256 _motionId) internal {
+    motions[_motionId].rejected = true;
+
+    emit MotionCancelled(msgSender(), _motionId);
+  }
+
+  function executeFunctionality(
+    uint256 _motionId,
+    bool _failingAllowedByUser
+  ) internal motionExists(_motionId) notExecuted(_motionId) notRejected(_motionId) {
+    Motion storage motion = motions[_motionId];
+
+    require(checkThreshold(_motionId, Vote.Approve), "multisig-not-enough-approvals");
+
+    // If approvals were made, threshold lowered, and then executed,
+    //  motion.overallApprovalTimestamp is 0 (since it was never set)
+    if (motion.overallApprovalTimestamp == 0) {
+      // We set the overall approval timestamp to now, and return
+      // We don't execute the motion, but we want to commit the timestamp
+      //  (which wouldn't happen if we continued and a call failed)
+      motion.overallApprovalTimestamp = block.timestamp;
+      return;
+    }
+
+    motion.executed = true;
+    bool overallSuccess = true;
+
+    for (uint256 i = 0; i < motion.data.length; i += 1) {
+      // solhint-disable-next-line avoid-low-level-calls
+      (bool success, ) = address(getTarget(motion.targets[i], address(colony))).call(
+        motion.data[i]
+      );
+      overallSuccess = overallSuccess && success;
+
+      // Allow failing execution after seven days, if the user allowed it
+      require(
+        success ||
+          (_failingAllowedByUser && motion.overallApprovalTimestamp + 7 days <= block.timestamp),
+        "multisig-failed-not-one-week"
+      );
+    }
+
+    emit MotionExecuted(msgSender(), _motionId, overallSuccess);
+  }
+
+  function checkThreshold(uint256 _motionId, Vote _vote) internal view returns (bool thresholdMet) {
+    Motion storage motion = motions[_motionId];
+    uint8 roleIndex;
+
+    // While there are still relevant roles we've not checked yet
+    while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
+      // For the current role, is it required for the motion?
+      if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
+        uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
+        if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
+          return false;
+        }
+      }
+      roleIndex += 1;
+    }
+
+    return true;
+  }
 
   function validateMotionDomain(
     uint256 _permissionDomainId,
