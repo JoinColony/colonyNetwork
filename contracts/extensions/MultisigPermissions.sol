@@ -195,7 +195,6 @@ contract MultisigPermissions is
     }
 
     validateMotionDomain(_permissionDomainId, _childSkillIndex, motionCount);
-    validateUserPermissions(_permissionDomainId, motionCount);
 
     emit MotionCreated(msgSender(), motionCount);
 
