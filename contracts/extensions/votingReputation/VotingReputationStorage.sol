@@ -193,16 +193,21 @@ contract VotingReputationStorage is
     } else if (_motionId <= motionCountV10 && getSig(motion.action) == MULTICALL) {
       // (Inefficiently) handle the potential case of a v9 motion:
       //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS
-      ActionSummary memory actionSummary = getActionSummary(
-        address(colonyNetwork),
-        address(colony),
-        motion.action,
-        motion.altTarget
-      );
-      return
-        (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
-          ? MotionState.Finalized
-          : MotionState.Finalizable;
+      try
+        this.getActionSummary(
+          address(colonyNetwork),
+          address(colony),
+          motion.action,
+          motion.altTarget
+        )
+      returns (ActionSummary memory actionSummary) {
+        return
+          (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
+            ? MotionState.Finalized
+            : MotionState.Finalizable;
+      } catch {
+        return MotionState.Finalized;
+      }
     } else {
       return MotionState.Finalizable;
     }

@@ -184,19 +184,19 @@ contract("Multisig Permissions", (accounts) => {
 
     it("cannot propose a motion requiring root permissions if you do not have root multisig permissions", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
-      await checkErrorRevert(
-        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }),
-        "colony-multisig-no-permissions",
-      );
+      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }), "multisig-no-permissions");
     });
 
     it("cannot propose a motion with mismatching lengths of targets/data", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
-      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action, action]), "colony-multisig-invalid-motion");
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action, action]),
+        "multisig-invalid-motion-mismatched-targets-data",
+      );
     });
 
     it("cannot propose a motion with no targets/data", async () => {
-      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [], []), "colony-multisig-invalid-motion");
+      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [], []), "multisig-invalid-motion-no-data");
     });
 
     it("can't propose an action requiring multiple different permissions", async () => {
@@ -204,17 +204,23 @@ contract("Multisig Permissions", (accounts) => {
       const action2 = "0x12345678"; // Will be flagged as requiring root, but is also the special 'NO_ACTION' sig used by voting reputation.
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO], [action, action2]),
-        "colony-multisig-invalid-motion",
+        "multisig-invalid-motion-inconsistent",
       );
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO], [action2, action]),
-        "colony-multisig-invalid-motion",
+        "multisig-invalid-motion-inconsistent",
       );
 
       const multicallAction1 = await encodeTxData(colony, "multicall", [[action, action2]]);
       const multicallAction2 = await encodeTxData(colony, "multicall", [[action2, action]]);
-      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction1]), "colony-multisig-invalid-motion");
-      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction2]), "colony-multisig-invalid-motion");
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction1]),
+        "colony-action-summary-inconsistent-permissions",
+      );
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction2]),
+        "colony-action-summary-inconsistent-permissions",
+      );
     });
 
     it("can't propose an action requiring the same permissions for multiple actions, but in different domains, even via multicall", async () => {
@@ -229,11 +235,11 @@ contract("Multisig Permissions", (accounts) => {
 
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO], [action1, action2], { from: USER2 }),
-        "colony-multisig-invalid-motion",
+        "multisig-invalid-motion-inconsistent",
       );
       await checkErrorRevert(
         multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }),
-        "colony-multisig-invalid-motion",
+        "colony-action-summary-inconsistent-domain-skill-id",
       );
     });
 
@@ -247,10 +253,7 @@ contract("Multisig Permissions", (accounts) => {
       const motion = await multisigPermissions.getMotion(motionId);
       expect(motion.domainSkillId).to.eq.BN(domain1.skillId);
 
-      await checkErrorRevert(
-        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }),
-        "colony-multisig-no-permissions",
-      );
+      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }), "multisig-no-permissions");
     });
 
     it("cannot create a motion suggesting a nested multicall", async () => {
@@ -332,10 +335,7 @@ contract("Multisig Permissions", (accounts) => {
       // Try to create a motion to award core funding in root
       let action = await encodeTxData(colony, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE])]);
 
-      await checkErrorRevert(
-        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }),
-        "colony-multisig-no-permissions",
-      );
+      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }), "multisig-no-permissions");
 
       // Can create motions to award core funding in subdomain
       action = await encodeTxData(colony, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
@@ -450,11 +450,11 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
 
       // No permissions
-      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER2 }), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER2 }), "multisig-no-permissions");
 
       // Not right permissions
       await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARBITRATION_ROLE]));
-      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER2 }), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER2 }), "multisig-no-permissions");
     });
 
     it("if you don't show the right permissions, you cannot approve", async () => {
@@ -463,7 +463,7 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
 
       // Not right permissions
-      await checkErrorRevert(multisigPermissions.changeVote(1, 0, motionId, APPROVAL), "colony-multisig-not-same-domain");
+      await checkErrorRevert(multisigPermissions.changeVote(1, 0, motionId, APPROVAL), "multisig-not-same-domain");
     });
 
     it("can withdraw approvals", async () => {
@@ -471,7 +471,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-not-enough-approvals");
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-not-enough-approvals");
 
       // Approve
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
@@ -492,7 +492,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(userApproval).to.equal(false);
 
       // Can't call
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-not-enough-approvals");
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-not-enough-approvals");
     });
 
     it("overallApprovalTimestamp updates as expected as moving above/below approval limit", async () => {
@@ -571,7 +571,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(userApproval).to.equal(false);
 
       // Can't call
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-not-enough-approvals");
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-not-enough-approvals");
     });
 
     it("can't repeatedly approve or unapprove and have an effect", async () => {
@@ -609,7 +609,7 @@ contract("Multisig Permissions", (accounts) => {
 
     it("can approve if you have permissions in a parent domain, but you don't count for calculating the threshold", async () => {
       const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
-      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]), "multisig-no-permissions");
 
       // Give user0 root and admin in root domain
       await setRootRoles(multisigPermissions, USER0, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
@@ -654,7 +654,7 @@ contract("Multisig Permissions", (accounts) => {
       );
 
       // If we don't have any permissions, can't create
-      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]), "multisig-no-permissions");
 
       // Give one permission
       await setRootRoles(multisigPermissions, USER0, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
@@ -664,7 +664,7 @@ contract("Multisig Permissions", (accounts) => {
 
       // One meets threshold, still can't execute
       const motionId = await multisigPermissions.getMotionCount();
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-not-enough-approvals");
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-not-enough-approvals");
 
       // Give user funding, arbitration, specifically in the domain
       await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE, ARBITRATION_ROLE]));
@@ -689,11 +689,11 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
 
       // No permissions
-      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER2 }), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER2 }), "multisig-no-permissions");
 
       // Not right permissions
       await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARBITRATION_ROLE]));
-      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER2 }), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER2 }), "multisig-no-permissions");
     });
 
     it("if you don't show the right permissions, you cannot reject", async () => {
@@ -702,7 +702,7 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
 
       // Not right permissions
-      await checkErrorRevert(multisigPermissions.changeVote(1, 0, motionId, REJECTION), "colony-multisig-not-same-domain");
+      await checkErrorRevert(multisigPermissions.changeVote(1, 0, motionId, REJECTION), "multisig-not-same-domain");
     });
 
     it("can withdraw rejections", async () => {
@@ -710,7 +710,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
-      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "colony-multisig-not-enough-rejections");
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "multisig-not-enough-rejections");
 
       // But even though not at threshold, creator could reject
       await multisigPermissions.cancel.estimateGas(motionId);
@@ -731,7 +731,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(userRejection).to.equal(false);
 
       // Can't reject unless creator
-      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "colony-multisig-not-enough-rejections");
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "multisig-not-enough-rejections");
       await multisigPermissions.cancel.estimateGas(motionId);
     });
 
@@ -763,7 +763,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(userRejection).to.equal(false);
 
       // Can't call
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-not-enough-approvals");
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-not-enough-approvals");
     });
 
     it("can't repeatedly reject or unreject and have an effect", async () => {
@@ -804,7 +804,7 @@ contract("Multisig Permissions", (accounts) => {
 
     it("can reject if you have permissions in a parent domain, but you don't count for calculating the threshold", async () => {
       const action = await encodeTxData(colony, "makeExpenditure", [1, 0, 2]);
-      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]), "multisig-no-permissions");
 
       // Give user0 root and admin in root domain
       await setRootRoles(multisigPermissions, USER0, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
@@ -844,7 +844,7 @@ contract("Multisig Permissions", (accounts) => {
       );
 
       // If we don't have any permissions, can't create
-      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]), "colony-multisig-no-permissions");
+      await checkErrorRevert(multisigPermissions.createMotion(1, 0, [oneTxPayment.address], [action]), "multisig-no-permissions");
 
       // Give one permission
       await setRootRoles(multisigPermissions, USER0, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
@@ -857,7 +857,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.changeVote(1, 0, motionId, REJECTION, { from: USER0 });
 
       // One meets threshold, still can't reject unless creator
-      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "colony-multisig-not-enough-rejections");
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "multisig-not-enough-rejections");
       await multisigPermissions.cancel.estimateGas(motionId, { from: USER0 });
       // Give user funding, specifically in the domain
       await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([FUNDING_ROLE, ARBITRATION_ROLE]));
@@ -881,13 +881,13 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
       const motion = await multisigPermissions.getMotion(motionId);
 
-      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER3 }), "colony-multisig-not-enough-rejections");
+      await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER3 }), "multisig-not-enough-rejections");
 
       const oneWeek = parseInt(motion.creationTimestamp, 10) + SECONDS_PER_DAY * 7;
 
       await checkErrorRevert(
         makeTxAtTimestamp(multisigPermissions.cancel, [motionId, { from: USER3, gasLimit: 1000000 }], oneWeek, this),
-        "colony-multisig-not-enough-rejections",
+        "multisig-not-enough-rejections",
       );
 
       await makeTxAtTimestamp(multisigPermissions.cancel, [motionId, { from: USER3, gasLimit: 1000000 }], oneWeek + 1, this);
@@ -904,7 +904,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
 
       const motionId = await multisigPermissions.getMotionCount();
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-not-enough-approvals");
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-not-enough-approvals");
 
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
 
@@ -922,7 +922,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
       const motionId = await multisigPermissions.getMotionCount();
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
-      await checkErrorRevert(multisigPermissions.execute(motionId), "colony-multisig-failed-not-one-week");
+      await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-failed-not-one-week");
 
       await forwardTime(7 * 3600 * 24 + 1, this);
 

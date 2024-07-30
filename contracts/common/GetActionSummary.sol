@@ -141,8 +141,8 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
       if (
         totalSummary.domainSkillId > 0 && totalSummary.domainSkillId != actionSummary.domainSkillId
       ) {
-        // Invalid multicall, caller should handle appropriately
-        totalSummary.domainSkillId = type(uint256).max;
+        // Invalid multicall
+        revert("colony-action-summary-inconsistent-domain-skill-id");
       } else {
         totalSummary.domainSkillId = actionSummary.domainSkillId;
       }
@@ -163,8 +163,8 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
           totalSummary.expenditureId > 0 &&
           totalSummary.expenditureId != actionSummary.expenditureId
         ) {
-          // Invalid multicall, caller should handle appropriately
-          totalSummary.expenditureId = type(uint256).max;
+          // Invalid multicall
+          revert("colony-action-summary-inconsistent-expenditure-id");
         } else {
           totalSummary.expenditureId = actionSummary.expenditureId;
         }
@@ -182,8 +182,7 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         totalSummary.requiredPermissions > 0 &&
         totalSummary.requiredPermissions != actionSummary.requiredPermissions
       ) {
-        // Invalid multicall, caller should handle appropriately
-        totalSummary.requiredPermissions = bytes32(type(uint256).max);
+        revert("colony-action-summary-inconsistent-permissions");
       } else {
         totalSummary.requiredPermissions = actionSummary.requiredPermissions;
       }

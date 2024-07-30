@@ -160,8 +160,8 @@ contract MultisigPermissions is
     address[] memory _targets,
     bytes[] memory _data
   ) public notDeprecated {
-    require(_data.length >= 1, "colony-multisig-invalid-motion");
-    require(_targets.length == _data.length, "colony-multisig-invalid-motion");
+    require(_data.length >= 1, "multisig-invalid-motion-no-data");
+    require(_targets.length == _data.length, "multisig-invalid-motion-mismatched-targets-data");
 
     motionCount += 1;
     Motion storage motion = motions[motionCount];
@@ -180,12 +180,6 @@ contract MultisigPermissions is
         _targets[i]
       );
 
-      require(actionSummary.domainSkillId < type(uint256).max, "colony-multisig-invalid-motion");
-      require(
-        actionSummary.requiredPermissions != bytes32(type(uint256).max),
-        "colony-multisig-invalid-motion"
-      );
-
       // slither-disable-next-line incorrect-equality
       if (motion.domainSkillId == 0 && motion.requiredPermissions == 0) {
         motion.domainSkillId = actionSummary.domainSkillId;
@@ -195,7 +189,7 @@ contract MultisigPermissions is
         require(
           motion.domainSkillId == actionSummary.domainSkillId &&
             motion.requiredPermissions == actionSummary.requiredPermissions,
-          "colony-multisig-invalid-motion"
+          "multisig-invalid-motion-inconsistent"
         );
       }
     }
@@ -503,14 +497,14 @@ contract MultisigPermissions is
     uint256 domainSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _childSkillIndex);
 
     // slither-disable-next-line incorrect-equality
-    require(domainSkillId == motions[_motionId].domainSkillId, "colony-multisig-not-same-domain");
+    require(domainSkillId == motions[_motionId].domainSkillId, "multisig-not-same-domain");
   }
 
   function validateUserPermissions(uint256 _permissionDomainId, uint256 _motionId) internal view {
     bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
     require(
       userPermissions & motions[_motionId].requiredPermissions > 0,
-      "colony-multisig-no-permissions"
+      "multisig-no-permissions"
     );
   }
 
