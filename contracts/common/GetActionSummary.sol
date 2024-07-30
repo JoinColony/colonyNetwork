@@ -115,7 +115,7 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     address colonyAddress,
     bytes memory _action,
     address _altTarget
-  ) public view returns (ActionSummary memory) {
+  ) internal view returns (ActionSummary memory) {
     address target = getTarget(_altTarget, colonyAddress);
     bytes[] memory actions;
 

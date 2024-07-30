@@ -139,6 +139,12 @@ contract VotingReputationStorage is
   }
 
   // View functions
+  function getActionSummary(
+    bytes memory _action,
+    address _altTarget
+  ) public view returns (ActionSummary memory) {
+    return getActionSummary(address(colonyNetwork), address(colony), _action, _altTarget);
+  }
 
   function getMotionState(uint256 _motionId) public view returns (MotionState _motionState) {
     Motion storage motion = motions[_motionId];
@@ -193,14 +199,9 @@ contract VotingReputationStorage is
     } else if (_motionId <= motionCountV10 && getSig(motion.action) == MULTICALL) {
       // (Inefficiently) handle the potential case of a v9 motion:
       //  Return `Finalized` if either NO_ACTION or OLD_MOVE_FUNDS
-      try
-        this.getActionSummary(
-          address(colonyNetwork),
-          address(colony),
-          motion.action,
-          motion.altTarget
-        )
-      returns (ActionSummary memory actionSummary) {
+      try this.getActionSummary(motion.action, motion.altTarget) returns (
+        ActionSummary memory actionSummary
+      ) {
         return
           (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
             ? MotionState.Finalized
