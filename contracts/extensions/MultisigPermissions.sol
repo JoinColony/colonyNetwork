@@ -400,14 +400,14 @@ contract MultisigPermissions is
           } else {
             emit RejectionChanged(msgSender(), _motionId, roleIndex, _setTo);
           }
-        }
 
-        if (_vote == Vote.Approve) {
-          uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
-          if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
-            anyBelowThreshold = true;
-          } else if (motionVoteCount[_motionId][_vote][roleIndex] == threshold && _setTo) {
-            newlyAtThreshold = true;
+          if (_vote == Vote.Approve) {
+            uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
+            if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
+              anyBelowThreshold = true;
+            } else if (motionVoteCount[_motionId][_vote][roleIndex] == threshold && _setTo) {
+              newlyAtThreshold = true;
+            }
           }
         }
       }
