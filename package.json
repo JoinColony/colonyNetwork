@@ -78,8 +78,12 @@
   },
   "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
   "devDependencies": {
+    "@certusone/wormhole-sdk": "^0.10.15",
     "@codechecks/client": "^0.1.12",
     "@colony/eslint-config-colony": "9.0.2",
+    "@grpc/grpc-js": "^1.10.8",
+    "@grpc/proto-loader": "^0.7.13",
+    "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-truffle5": "^2.0.7",
@@ -87,6 +91,7 @@
     "@solidity-parser/parser": "^0.14.5",
     "@solidstate/hardhat-4byte-uploader": "^1.2.2",
     "@truffle/contract": "^4.6.31",
+    "@types/node": "^20.11.0",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
     "@wormhole-foundation/relayer-engine": "^0.3.2",
     "async-request": "^1.2.0",
@@ -112,6 +117,7 @@
     "ethers": "^5.7.2",
     "ethlint": "^1.2.5",
     "express": "^4.19.2",
+    "express-ws": "^5.0.2",
     "find-in-files": "^0.5.0",
     "ganache": "7.9.2",
     "hardhat": "^2.22.6",
@@ -133,9 +139,10 @@
     "solhint": "^3.6.2",
     "solidity-coverage": "^0.8.12",
     "solidity-steamroller": "^1.1.0",
-    "web3-utils": "^1.10.4",
     "tsx": "^4.10.4",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "web3-utils": "^1.10.4",
+    "ws": "^8.17.0"
   },
   "optionalDependencies": {
     "fsevents": "^2.3.3"
@@ -154,14 +161,5 @@
     "packages/metatransaction-broadcaster",
     "packages/package-utils",
     "packages/reputation-miner"
-  ],
-  "dependencies": {
-    "@certusone/wormhole-sdk": "^0.10.15",
-    "@grpc/grpc-js": "^1.10.8",
-    "@grpc/proto-loader": "^0.7.13",
-    "@nomicfoundation/hardhat-ethers": "^3.0.5",
-    "@types/node": "^20.11.0",
-    "express-ws": "^5.0.2",
-    "ws": "^8.17.0"
-  }
+  ]
 }

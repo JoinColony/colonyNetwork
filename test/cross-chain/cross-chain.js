@@ -34,7 +34,7 @@ const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
 
 const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION, CREATEX_ADDRESS } = require("../../helpers/constants");
-const { forwardTime, checkErrorRevertEthers } = require("../../helpers/test-helper");
+const { forwardTime, checkErrorRevertEthers, revert, snapshot } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
 
@@ -60,6 +60,7 @@ contract("Cross-chain", (accounts) => {
   let foreignChainId;
   let wormholeHomeChainId;
   let wormholeForeignChainId;
+  let resetRelayer;
 
   let homeMetacolony;
   let foreignMetacolony;
@@ -69,8 +70,8 @@ contract("Cross-chain", (accounts) => {
 
   let client;
 
-  // let homeSnapshotId;
-  // let foreignSnapshotId;
+  let homeSnapshotId;
+  let foreignSnapshotId;
 
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
@@ -123,10 +124,8 @@ contract("Cross-chain", (accounts) => {
 
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
-    ({ bridgeMonitor, gnosisSafe, zodiacBridge, homeBridge, foreignBridge, foreignColonyBridge, homeColonyBridge } = await setupBridging(
-      homeRpcUrl,
-      foreignRpcUrl,
-    ));
+    ({ bridgeMonitor, resetRelayer, gnosisSafe, zodiacBridge, homeBridge, foreignBridge, foreignColonyBridge, homeColonyBridge } =
+      await setupBridging(homeRpcUrl, foreignRpcUrl));
 
     // Add bridge to the foreign colony network
     // const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
@@ -175,8 +174,8 @@ contract("Cross-chain", (accounts) => {
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
     web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
-    // homeSnapshotId = await snapshot(web3HomeProvider);
-    // foreignSnapshotId = await snapshot(web3ForeignProvider);
+    homeSnapshotId = await snapshot(web3HomeProvider);
+    foreignSnapshotId = await snapshot(web3ForeignProvider);
     bridgeMonitor.reset();
 
     let tx = await foreignBridge.setBridgeEnabled(true);
@@ -196,14 +195,11 @@ contract("Cross-chain", (accounts) => {
 
     const latestSkillId = await foreignColonyNetwork.getSkillCount();
     const alreadyBridged = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
-    console.log(latestSkillId, alreadyBridged);
-    // const skillId = ethers.BigNumber.from(foreignChainId).mul(ethers.BigNumber.from(2).pow(128)).add(1);
     for (let i = alreadyBridged.add(1); i <= latestSkillId; i = i.add(1)) {
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
       tx = await foreignColonyNetwork.bridgeSkillIfNotMiningChain(i);
       await tx.wait();
       await p;
-      // process.exit(1);
     }
 
     // Set up mining client
@@ -251,8 +247,9 @@ contract("Cross-chain", (accounts) => {
   }
 
   afterEach(async () => {
-    // await revert(web3HomeProvider, homeSnapshotId);
-    // await revert(web3ForeignProvider, foreignSnapshotId);
+    await revert(web3HomeProvider, homeSnapshotId);
+    await revert(web3ForeignProvider, foreignSnapshotId);
+    await resetRelayer();
   });
 
   after(async () => {

@@ -279,19 +279,9 @@ class MockBridgeMonitor {
       tx = await this.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce)
     }
 
-    // We do that by waiting for the nonce of the account we're using for
-    // const tx = await bridge.receiveMessage(vaa, { gasLimit: 1000000 });
-    // try {
-      // await tx.wait();
-    // } catch (err) {
-      // We don't need to do anything here, we just want to make sure the transaction is mined
-    // }
     this.bridgingPromiseCount -= 1;
 
     if (this.bridgingPromiseCount === 0) {
-      // TODO: this probably introduces some race conditions now this is not broadcast...
-      console.log('waiting...')
-      // await new Promise((resolve) => setTimeout(resolve, 10000));
       this.resolveBridgingPromise(tx);
     }
     if (this.locked) {
@@ -314,7 +304,6 @@ class MockBridgeMonitor {
 
       // We also want to wait for the bridging transaction to be mined
       // We do that by waiting for the nonce of the account we're using for bridging to increase
-      // TODO: Makle this address more dynamic.
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
 
       this.subscription.write({vaaBytes: Buffer.from(vaa.slice(2), 'hex')});
@@ -329,16 +318,9 @@ class MockBridgeMonitor {
       tx = await this.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
     }
 
-    // const tx = await bridge.receiveMessage(vaa, { gasLimit: 1000000 });
-    // try {
-    //   await tx.wait();
-    // } catch (err) {
-    //   // We don't need to do anything here, we just want to make sure the transaction is mined
-    // }
     this.bridgingPromiseCount -= 1;
 
     if (this.bridgingPromiseCount === 0) {
-      // await new Promise((resolve) => setTimeout(resolve, 10000));
       this.resolveBridgingPromise(tx);
     }
   }
