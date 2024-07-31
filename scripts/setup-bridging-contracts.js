@@ -159,7 +159,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   `;
   fs.writeFileSync(path.resolve(__dirname, "..", "packages", "wormhole-relayer", "config.js"), config);
 
-  const relayerProcess = spawn("pnpm", ["exec", "tsx", "./index.ts"], {
+  let relayerProcess = spawn("pnpm", ["exec", "tsx", "./index.ts"], {
     cwd: path.resolve(__dirname, "..", "packages", "wormhole-relayer"),
     stdio: "inherit",
   });
@@ -175,6 +175,22 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
     });
   }
 
+  async function resetRelayer() {
+    await relayerProcess.kill();
+    guardianSpy.subscription = undefined;
+    relayerProcess = spawn("pnpm", ["exec", "tsx", "./index.ts"], {
+      cwd: path.resolve(__dirname, "..", "packages", "wormhole-relayer"),
+      stdio: "inherit",
+    });
+
+    // Wait until the bridge monitor has connected to the spy
+    while (!guardianSpy.subscription) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      });
+    }
+  }
+
   console.log(`Home bridge address: ${homeBridge.address}`);
   console.log(`Foreign bridge address: ${foreignBridge.address}`);
   console.log(`Home colony bridge address: ${homeColonyBridge.address}`);
@@ -183,7 +199,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
   console.log(`Token address: ${token.address}`);
-  return { gnosisSafe, bridgeMonitor: guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
+  return { gnosisSafe, resetRelayer, bridgeMonitor: guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
 }
 
 async function getSig(provider, account, dataHash) {
