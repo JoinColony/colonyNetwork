@@ -1,7 +1,6 @@
 /* globals artifacts, hre */
 
 const fs = require("fs");
-const os = require("os");
 
 const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
@@ -297,6 +296,28 @@ module.exports.deployOldColonyNetworkVersion = async (contractName, interfaceNam
   }
 };
 
+const getNodeVersionCommand = async (_nodeVersion) => {
+  let nodeVersion = _nodeVersion;
+  if (_nodeVersion.startsWith("14.")) {
+    // 14.x is not supported by truffle, our .nvmrc was incorrect for some releases
+    nodeVersion = "16";
+  }
+  try {
+    await exec(". $HOME/.nvm/nvm.sh ");
+    return `. $HOME/.nvm/nvm.sh && nvm install ${nodeVersion} && nvm use ${nodeVersion}`;
+  } catch (error) {
+    console.log("No nvm found, try fnm");
+  }
+  try {
+    await exec("fnm --version");
+    return `eval "$(fnm env)" && fnm install ${nodeVersion} && fnm use ${nodeVersion}`;
+  } catch (error) {
+    console.log("No fnm found");
+  }
+  // Try n?
+  throw new Error("No node version manager found");
+};
+
 module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName, implementationNames, versionTag) => {
   // Check out old version of repo in to a new directory
   //  If directory exists, assume we've already done this and skip
@@ -322,14 +343,8 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
   }
 
   // Configure node version
-  if (os.arch() === "arm64") {
-    const nodeVersion = fs.readFileSync(`colonyNetwork-${versionTag}/.nvmrc`).toString().trim();
-    cmdBase = `cd colonyNetwork-${versionTag} && source $HOME/.nvm/nvm.sh && nvm use ${nodeVersion}`;
-  } else {
-    const nodeVersion = fs.readFileSync(`colonyNetwork-${versionTag}/.nvmrc`).toString().trim();
-    cmdBase = `cd colonyNetwork-${versionTag}`;
-    await exec(`${cmdBase} && npm install node@${nodeVersion}`);
-  }
+  const nodeVersion = fs.readFileSync(`colonyNetwork-${versionTag}/.nvmrc`).toString().trim();
+  cmdBase = `cd colonyNetwork-${versionTag} && ${await getNodeVersionCommand(nodeVersion)}`; // eslint-disable-line prefer-const
 
   // Finish building if needed
   if (!exists) {
@@ -339,7 +354,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
       await exec(`${cmdBase} && sed -ie 's/parseInt(process.env.CHAIN_ID, 10) || 1999/"*"/g' ./truffle.js`); // Handle hardhat coverage
 
       console.log("Installing the network...");
-      await exec(`${cmdBase} && npm install`);
+      await exec(`${cmdBase} && npm i -g yarn && yarn install --ignore-engines`); // npm install slow on old node versions
       await exec(`${cmdBase} && npm run provision:token:contracts`);
     } else {
       console.log("Installing the network...");
