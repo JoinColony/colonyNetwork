@@ -10,15 +10,11 @@ job_common: &job_common
   run:
 job_python: &job_python
   docker:
-    - image: cimg/python:3.12-node
+    - image: cimg/python:3.12
       auth:
         username: colonyci
         password: $COLONYCI_DOCKERHUB_PASSWORD
   working_directory: ~/colonyNetwork
-step_setup_pnpm: &step_setup_pnpm # Only used in python image, as node image comes with it
-  run:
-    name: "Install pnpm"
-    command: sudo npm i -g pnpm@8.14.1 #Same version as in cimg/node:20.11.0
 step_save_cache: &step_save_cache
   save_cache:
     name: Save pnpm Package Cache
@@ -34,6 +30,13 @@ step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
     command: |
+      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+      echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
+      echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
+      DIR=$PWD && cd .. && source "$BASH_ENV" && cd $DIR
+      nvm install
+      nvm use
+      npm i -g pnpm@8.14.1
       pnpm config set store-dir .pnpm-store
       pnpm install --frozen-lockfile
       git submodule update --init
@@ -41,13 +44,6 @@ step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
       command: docker pull ethereum/solc:0.5.8
-step_install_nvm: &step_install_nvm
-    run:
-      name: "Install nvm"
-      command: |
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-        echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
-        echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
 step_install_lsof: &step_install_lsof
     run:
       name: "Install lsof"
@@ -97,7 +93,6 @@ jobs:
       - run:
           name: "Upload function selectors to 4byte.directory"
           command: npx hardhat upload-selectors
-      - <<: *step_install_nvm
       - run:
           name: "Checking contract versions"
           command: pnpm run check:versioning
@@ -440,12 +435,11 @@ jobs:
     <<: *job_python
     steps:
       - checkout
-      - <<: *step_setup_pnpm
+      - <<: *step_setup_global_packages
       - <<: *step_restore_cache
       - setup_remote_docker:
           version: docker23
       - <<: *step_pull_solc_docker
-      - <<: *step_setup_global_packages
       - run:
           name: "Setup slither analyser https://github.com/crytic/slither"
           command: |
