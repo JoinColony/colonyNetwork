@@ -21,6 +21,7 @@
     "exponential-backoff": "^3.1.0",
     "express": "^4.19.2",
     "ganache": "^7.9.2",
+    "hardhat": "^2.22.7",
     "web3-utils": "^1.7.5",
     "yargs": "^17.5.1"
   },
