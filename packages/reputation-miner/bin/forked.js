@@ -1,5 +1,7 @@
 const hre = require("hardhat");
 const path = require("path");
+const express = require("express");
+const axios = require("axios")
 
 const { argv } = require("yargs")
   .option('privateKey', {string:true})
@@ -44,13 +46,62 @@ const client = new ReputationMinerClient({
   oracle,
   exitOnError,
   adapter: adapterObject,
-  oraclePort,
+  oraclePort: 3001,
   processingDelay
 });
 
 async function main() {
   await client.initialise(colonyNetworkAddress, syncFrom);
   client._miner.realWallet = await ethers.getImpersonatedSigner(minerAddress);
+
+  if (oracle) {
+    // Start a forked oracle. This will query our local node, and if that fails, query upstream.
+
+    this._app = express();
+
+    this._app.use(function(req, res, next) {
+      res.header("Access-Control-Allow-Origin", "*");
+      next();
+    });
+
+    this._app.get("/favicon.ico", (req, res) => {
+      res.status(204).end();
+    });
+
+    this._app.get("/", (req, res) => {
+      res.status(204).end();
+    });
+
+
+    this._app.get("*", async (req, res) => {
+
+      try {
+        const { data } = await axios.get(`http://localhost:${3001}/${req.originalUrl}`);
+        res.send(data);
+      } catch (e) {
+        console.log('Local reputation request failed, try upstream URL:');
+        // If the local oracle fails, query the upstream oracle.
+        console.log(`${process.env.REPUTATION_URL}/${req.originalUrl}`)
+        try {
+
+          const { data } = await axios({
+            url: `${process.env.REPUTATION_URL}/${req.originalUrl}`,
+            responseType: "stream",
+          });
+
+          res.send(data);
+        } catch (e2) {
+          console.log('Upstream reputation request failed');
+          res.status(500).send(e2);
+        }
+      }
+    });
+
+
+    this._app.listen(oraclePort || 3000, () => {
+      console.log(`Forked (pass-through) oracle listening on port ${oraclePort || 3000}`);
+    });
+  }
 }
 
 main();

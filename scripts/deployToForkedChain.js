@@ -9,14 +9,14 @@ const axios = require("axios");
 
 const provider = new ethers.providers.StaticJsonRpcProvider("http://127.0.0.1:8545");
 
-const { FORKED_NETWORK_ADDRESS, LATEST_STATE_URL } = process.env;
+const { FORKED_NETWORK_ADDRESS, REPUTATION_URL } = process.env;
 
 if (!FORKED_NETWORK_ADDRESS) {
   throw new Error("FORKED_NETWORK_ADDRESS must be set");
 }
 
-if (!LATEST_STATE_URL) {
-  throw new Error("LATEST_STATE_URL must be set");
+if (!REPUTATION_URL) {
+  throw new Error("REPUTATION_URL must be set");
 }
 
 let signer;
@@ -125,7 +125,7 @@ async function main() {
 
   const response = await axios({
     method: "GET",
-    url: LATEST_STATE_URL,
+    url: `${REPUTATION_URL}/latestState`,
     responseType: "stream",
   });
 
