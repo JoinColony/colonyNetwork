@@ -79,20 +79,19 @@ async function main() {
         const { data } = await axios.get(`http://localhost:${3001}/${req.originalUrl}`);
         res.send(data);
       } catch (e) {
-        console.log('Local reputation request failed, try upstream URL:');
+        console.log('Local reputation request failed, trying upstream URL:');
         // If the local oracle fails, query the upstream oracle.
         console.log(`${process.env.REPUTATION_URL}/${req.originalUrl}`)
         try {
 
           const { data } = await axios({
             url: `${process.env.REPUTATION_URL}/${req.originalUrl}`,
-            responseType: "stream",
           });
 
           res.send(data);
         } catch (e2) {
-          console.log('Upstream reputation request failed');
-          res.status(500).send(e2);
+          console.log('Upstream reputation request failed, forwarding result');
+          res.status(e2.response.status).send(await e2.response.data);
         }
       }
     });
