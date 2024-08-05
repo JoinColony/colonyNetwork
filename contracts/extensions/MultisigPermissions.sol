@@ -22,19 +22,11 @@ import { ColonyDataTypes, IColony } from "./../colony/IColony.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
-import { ExtractCallData } from "./../common/ExtractCallData.sol";
-import { GetActionDomainSkillId } from "./../common/GetActionDomainSkillId.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
 
 // ignore-file-swc-108
 
-contract MultisigPermissions is
-  ColonyExtensionMeta,
-  ColonyDataTypes,
-  ExtractCallData,
-  GetActionDomainSkillId,
-  GetActionSummary
-{
+contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionSummary {
   // Events
 
   event MultisigRoleSet(address agent, address user, uint256 domainId, uint256 roleId, bool setTo);
@@ -395,18 +387,16 @@ contract MultisigPermissions is
           }
 
           if (_vote == Vote.Approve) {
-            emit ApprovalChanged(msgSender(), _motionId, roleIndex, _setTo);
-          } else {
-            emit RejectionChanged(msgSender(), _motionId, roleIndex, _setTo);
-          }
-
-          if (_vote == Vote.Approve) {
             uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
             if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
               anyBelowThreshold = true;
             } else if (motionVoteCount[_motionId][_vote][roleIndex] == threshold && _setTo) {
               newlyAtThreshold = true;
             }
+
+            emit ApprovalChanged(msgSender(), _motionId, roleIndex, _setTo);
+          } else {
+            emit RejectionChanged(msgSender(), _motionId, roleIndex, _setTo);
           }
         }
       }
