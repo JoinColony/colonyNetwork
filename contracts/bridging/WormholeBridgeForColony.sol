@@ -101,11 +101,17 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
 
     // We ignore sequence numbers - bridging out of order is okay, because we have our own way of handling that
 
+    bytes memory payload = wormholeMessage.payload;
+    // Strip off the chain id prefix, and make sure we are on that chain Id
+    uint256 destinationChainId;
+    bytes memory payloadWithoutChainId;
+
+    (destinationChainId, payloadWithoutChainId) = abi.decode(payload, (uint256, bytes));
+
+    require(destinationChainId == block.chainid, "colony-bridge-destination-chain-id-mismatch");
+
     // Make the call requested to the colony network
-    (bool success, bytes memory returndata) = callWithGuards(
-      colonyNetwork,
-      wormholeMessage.payload
-    );
+    (bool success, bytes memory returndata) = callWithGuards(colonyNetwork, payloadWithoutChainId);
 
     // Note that this is not a require because returndata might not be a string, and if we try
     // to decode it we'll get a revert.
@@ -122,7 +128,11 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     // This returns a sequence, but we don't care about it
     // The first sequence ID is, I believe 0, so all return values are potentially valid
     // slither-disable-next-line unused-return
-    try wormhole.publishMessage(0, _payload, 0) {
+
+    // For wormhole, we prefix the supplied payload with the _evmChainId
+    // This is because wormhole is a generic bridge, and we need to tell it which chain to send to
+
+    try wormhole.publishMessage(0, abi.encode(_evmChainId, _payload), 0) {
       return true;
     } catch {
       return false;
