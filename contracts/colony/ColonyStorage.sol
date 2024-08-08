@@ -113,6 +113,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   uint256 rootLocalSkill; // Storage slot 36
   mapping(uint256 => bool) localSkills; // Storage slot 37
 
+  // Expenditure Id > Slot Id > Chain Id > Token Address > Amount
+  mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(address => uint256)))) expenditureSlotChainPayouts; // Storage slot 38
+
   // Constants
 
   uint256 constant MAX_PAYOUT = 2 ** 128 - 1; // 340,282,366,920,938,463,463 WADs

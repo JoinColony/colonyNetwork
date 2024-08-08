@@ -61,7 +61,12 @@ contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
 
     tokenBalances[_token] = balance;
 
-    bytes memory payload = abi.encodeWithSignature("recordClaimedFundsFromBridge(uint256,address,uint256)", block.chainid, _token, difference);
+    bytes memory payload = abi.encodeWithSignature(
+      "recordClaimedFundsFromBridge(uint256,address,uint256)",
+      block.chainid,
+      _token,
+      difference
+    );
     ShellColonyNetwork(owner).bridgeMessage(payload);
 
     emit ColonyFundsClaimed(_token, balance);

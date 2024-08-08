@@ -49,5 +49,9 @@ interface IColonyBridge {
   /// @param payload The message payload
   /// @return bool Whether the message was sent successfully (to the best of the contract's knowledge,
   /// in terms of the underlying bridge implementation)
-  function sendMessage(uint256 evmChainId, address destination, bytes memory payload) external returns (bool);
+  function sendMessage(
+    uint256 evmChainId,
+    address destination,
+    bytes memory payload
+  ) external returns (bool);
 }
