@@ -106,18 +106,6 @@ contract ColonyFunding is
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
   }
 
-  function claimColonyShellFunds(address _token, uint256 _balance) public stoppable {
-    uint256 toClaim = (_balance - nonRewardPotsTotal[_token]) - fundingPots[0].balance[_token];
-    uint256 feeToPay = toClaim / getRewardInverse(); // ignore-swc-110
-    uint256 remainder = toClaim - feeToPay;
-
-    nonRewardPotsTotal[_token] += remainder;
-    fundingPots[1].balance[_token] += remainder;
-    fundingPots[0].balance[_token] += feeToPay;
-
-    emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
-  }
-
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
     return nonRewardPotsTotal[_token];
   }
@@ -246,6 +234,20 @@ contract ColonyFunding is
 
   function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256) {
     return fundingPots[_potId].balance[_token];
+  }
+
+  function getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token)
+    public
+    view
+    returns (uint256)
+  {
+    return fundingPots[_potId].chainBalances[_chainId][_token];
+  }
+
+  function recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount) public stoppable {
+    fundingPots[1].chainBalances[_chainId][_token] += _amount;
+
+    emit ProxyColonyFundsClaimed(_chainId, _token, _amount);
   }
 
   function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256) {

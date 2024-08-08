@@ -841,13 +841,11 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimColonyFunds(address _token) external;
 
-  /// @notice Move any funds received by the shell colony in `_token` denomination to the top-level domain pot,
-  /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
-  /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @param _balance Balance of the token held by the shell colony
-  function claimColonyShellFunds(address _token, uint256 _balance) external;
 
-  function createColonyShell(uint256 _destinationChainId, bytes32 _salt) external;
+  function recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount) external;
+  function getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token)  external view returns (uint256);
+
+  function createShellColony(uint256 _destinationChainId, bytes32 _salt) external;
 
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
   /// @param _token Address of the token, `0x0` value indicates Ether

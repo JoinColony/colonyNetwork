@@ -22,33 +22,33 @@ pragma experimental ABIEncoderV2;
 import { IColony } from "./../colony/IColony.sol";
 import { Multicall } from "./../common/Multicall.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
-import { ColonyShell } from "./../bridging/ColonyShell.sol";
+import { ShellColony } from "./../bridging/ShellColony.sol";
 
 contract ColonyNetworkShells is ColonyNetworkStorage, Multicall {
   // To shells
 
-  function sendDeployColonyShell(bytes32 _salt) public calledByColony {
-    bytes memory payload = abi.encodeWithSignature("deployColonyShell(bytes32)", _salt);
+  function sendDeployShellColony(bytes32 _salt) public calledByColony {
+    bytes memory payload = abi.encodeWithSignature("deployShellColony(bytes32)", _salt);
 
     require(callThroughBridgeWithGuards(payload), "colony-network-shell-deploy-failed");
   }
 
-  function colonyShellTransfer(
+  function ShellColonyTransfer(
     address _colony,
     address _token,
     address _user,
     uint256 _amount
   ) public onlyColonyBridge {
-    ColonyShell(_colony).transfer(_token, _user, _amount);
+    ShellColony(_colony).transfer(_token, _user, _amount);
   }
 
-  function sendColonyShellTransfer(
+  function sendShellColonyTransfer(
     address _token,
     address _user,
     uint256 _amount
   ) public calledByColony {
     bytes memory payload = abi.encodeWithSignature(
-      "colonyShellTransfer(address,address,address,uint256)",
+      "ShellColonyTransfer(address,address,address,uint256)",
       msgSender(),
       _token,
       _user,
@@ -60,17 +60,9 @@ contract ColonyNetworkShells is ColonyNetworkStorage, Multicall {
 
   // From shells
 
-  function claimColonyShellFunds(
-    address _colony,
-    address _token,
-    uint256 _balance
-  ) public onlyColonyBridge {
-    IColony(_colony).claimColonyShellFunds(_token, _balance);
-  }
-
-  function sendClaimColonyShellFunds(address _token, uint256 _balance) public calledByColony {
+  function sendClaimShellColonyFunds(address _token, uint256 _balance) public calledByColony {
     bytes memory payload = abi.encodeWithSignature(
-      "claimColonyShellFunds(address,address,uint256)",
+      "claimShellColonyFunds(address,address,uint256)",
       msgSender(),
       _token,
       _balance

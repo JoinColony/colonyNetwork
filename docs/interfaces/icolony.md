@@ -154,19 +154,6 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ `claimColonyShellFunds(address _token, uint256 _balance)`
-
-Move any funds received by the shell colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token, `0x0` value indicates Ether
-|_balance|uint256|Balance of the token held by the shell colony
-
-
 ### ▸ `claimExpenditurePayout(uint256 _id, uint256 _slot, address _token)`
 
 Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
@@ -196,6 +183,19 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
 |siblings|bytes32[]|The siblings of the proof
+
+
+### ▸ `createShellColony(uint256 _destinationChainId, bytes32 _salt)`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_destinationChainId|uint256|
+|_salt|bytes32|
 
 
 ### ▸ `deobligateStake(address _user, uint256 _domainId, uint256 _amount)`
@@ -624,6 +624,25 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |Name|Type|Description|
 |---|---|---|
 |payout|uint256|Funding pot payout amount
+
+### ▸ `getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token):uint256 uint256`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_potId|uint256|
+|_chainId|uint256|
+|_token|address|
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
 
 ### ▸ `getNonRewardPotsTotal(address _token):uint256 amount`
 
@@ -1165,6 +1184,20 @@ Get the colony `owner` address. This should be address(0x0) at all times.
 |Name|Type|Description|
 |---|---|---|
 |colonyOwner|address|Address of the colony owner
+
+### ▸ `recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount)`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|
+|_token|address|
+|_amount|uint256|
+
 
 ### ▸ `registerColonyLabel(string memory colonyName, string memory orbitdb)`
 
