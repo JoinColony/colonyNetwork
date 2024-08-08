@@ -38,7 +38,7 @@ contract ShellColonyNetwork is DSAuth, Multicall, CallWithGuards {
   address public colonyBridgeAddress;
   uint256 public homeChainId;
   address public shellColonyResolverAddress;
-  mapping (address => bool) public shellColonies;
+  mapping(address => bool) public shellColonies;
 
   /// @notice Event logged when the colony network has data about a bridge contract set.
   /// @param bridgeAddress The address of the bridge contract that will be interacted with
@@ -78,12 +78,16 @@ contract ShellColonyNetwork is DSAuth, Multicall, CallWithGuards {
   }
 
   function createShellColonyFromBridge(bytes32 _salt) public onlyColonyBridge {
-    EtherRouter etherRouter = EtherRouter(payable(ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
-      _salt,
-      type(EtherRouterCreate3).creationCode,
-      abi.encodeWithSignature("setOwner(address)", (address(this))),
-      ICreateX.Values(0, 0)
-    )));
+    EtherRouter etherRouter = EtherRouter(
+      payable(
+        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
+          _salt,
+          type(EtherRouterCreate3).creationCode,
+          abi.encodeWithSignature("setOwner(address)", (address(this))),
+          ICreateX.Values(0, 0)
+        )
+      )
+    );
 
     shellColonies[address(etherRouter)] = true;
 
@@ -91,6 +95,9 @@ contract ShellColonyNetwork is DSAuth, Multicall, CallWithGuards {
   }
 
   function bridgeMessage(bytes memory _payload) public onlyColony {
-    require(IColonyBridge(colonyBridgeAddress).sendMessage(homeChainId, msg.sender, _payload), "colony-network-bridge-message-failed");
+    require(
+      IColonyBridge(colonyBridgeAddress).sendMessage(homeChainId, msg.sender, _payload),
+      "colony-network-bridge-message-failed"
+    );
   }
 }

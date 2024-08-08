@@ -56,7 +56,7 @@ contract ColonyFunding is
       "colony-invalid-domain-inheritance"
     );
 
-    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
+    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, block.chainid, _token);
   }
 
   function moveFundsBetweenPots(
@@ -75,7 +75,7 @@ contract ColonyFunding is
     authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
     validFundingTransfer(_fromPot, _toPot)
   {
-    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _token);
+    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, block.chainid, _token);
   }
 
   function claimColonyFunds(address _token) public stoppable {
@@ -86,13 +86,13 @@ contract ColonyFunding is
       // It's ether
       toClaim =
         (address(this).balance - nonRewardPotsTotal[_token]) -
-        fundingPots[0].balance[_token];
+        getFundingPotBalance(0, _token);
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
       toClaim =
         (targetToken.balanceOf(address(this)) - nonRewardPotsTotal[_token]) -
-        fundingPots[0].balance[_token]; // ignore-swc-123
+        getFundingPotBalance(0, _token); // ignore-swc-123
     }
 
     feeToPay = toClaim / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
@@ -101,8 +101,18 @@ contract ColonyFunding is
     // able to do with recovery mode.
     remainder = toClaim - feeToPay;
     nonRewardPotsTotal[_token] += remainder;
-    fundingPots[1].balance[_token] += remainder;
-    fundingPots[0].balance[_token] += feeToPay;
+    setFundingPotBalance(
+      1,
+      block.chainid,
+      _token,
+      getFundingPotBalance(1, block.chainid, _token) + remainder
+    );
+    setFundingPotBalance(
+      0,
+      block.chainid,
+      _token,
+      getFundingPotBalance(0, block.chainid, _token) + feeToPay
+    );
 
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
   }
@@ -196,7 +206,7 @@ contract ColonyFunding is
     address _token,
     uint256[] memory _amounts
   ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
-    setExpenditurePayoutsInternal(_id, _slots, _token, _amounts);
+    setExpenditurePayoutsInternal(_id, _slots, block.chainid, _token, _amounts);
   }
 
   /// @notice For arbitrators to update payouts with one token and one slot
@@ -217,7 +227,7 @@ contract ColonyFunding is
     slots[0] = _slot;
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = _amount;
-    setExpenditurePayoutsInternal(_id, slots, _token, amounts);
+    setExpenditurePayoutsInternal(_id, slots, block.chainid, _token, amounts);
   }
 
   /// @notice For owners to update payouts with one token and one slot
@@ -231,15 +241,20 @@ contract ColonyFunding is
     slots[0] = _slot;
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = _amount;
-    setExpenditurePayoutsInternal(_id, slots, _token, amounts);
+    setExpenditurePayoutsInternal(_id, slots, block.chainid, _token, amounts);
   }
 
   int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
   int256 constant MIN_PAYOUT_MODIFIER = -int256(WAD);
 
+  function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) public stoppable {
+    claimExpenditurePayout(_id, _slot, block.chainid, _token);
+  }
+
   function claimExpenditurePayout(
     uint256 _id,
     uint256 _slot,
+    uint256 _chainId,
     address _token
   ) public stoppable expenditureFinalized(_id) {
     Expenditure storage expenditure = expenditures[_id];
@@ -255,25 +270,35 @@ contract ColonyFunding is
       "colony-expenditure-cannot-claim"
     );
 
-    FundingPot storage fundingPot = fundingPots[expenditure.fundingPotId];
-    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
-
-    uint256 initialPayout = expenditureSlotPayouts[_id][_slot][_token];
-    delete expenditureSlotPayouts[_id][_slot][_token];
-
-    int256 payoutModifier = imin(
-      imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER),
-      MAX_PAYOUT_MODIFIER
+    uint256 fundingPotId = expenditure.fundingPotId;
+    assert(
+      getFundingPotBalance(fundingPotId, _chainId, _token) >=
+        getFundingPotPayout(fundingPotId, _chainId, _token)
     );
-    uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
 
-    uint256 repPayout = wmul(initialPayout, payoutScalar);
-    uint256 tokenPayout = min(initialPayout, repPayout);
-    uint256 tokenSurplus = initialPayout - tokenPayout;
+    uint256 repPayout;
+    uint256 tokenPayout;
 
-    // Deduct any surplus from the outstanding payouts (for payoutScalars < 1)
-    if (tokenSurplus > 0) {
-      fundingPot.payouts[_token] -= tokenSurplus;
+    {
+      uint256 initialPayout = getExpenditureSlotPayout(_id, _slot, _chainId, _token);
+      setExpenditureSlotPayout(_id, _slot, _chainId, _token, 0);
+
+      int256 payoutModifier = imin(
+        imax(slot.payoutModifier, MIN_PAYOUT_MODIFIER),
+        MAX_PAYOUT_MODIFIER
+      );
+      uint256 payoutScalar = uint256(payoutModifier + int256(WAD));
+      repPayout = wmul(initialPayout, payoutScalar);
+      tokenPayout = min(initialPayout, repPayout);
+      uint256 tokenSurplus = initialPayout - tokenPayout;
+
+      // Deduct any surplus from the outstanding payouts (for payoutScalars < 1)
+
+      if (tokenSurplus > 0) {
+        // UNCOMMENT
+        uint256 oldFundingPotPayout = getFundingPotPayout(fundingPotId, _chainId, _token);
+        setFundingPotPayout(fundingPotId, _chainId, _token, oldFundingPotPayout - tokenSurplus);
+      }
     }
 
     // Process reputation updates if internal token
@@ -297,6 +322,7 @@ contract ColonyFunding is
     // Finish the payout
     uint256 payoutMinusFee = processPayout(
       expenditure.fundingPotId,
+      _chainId,
       _token,
       tokenPayout,
       slot.recipient
@@ -312,25 +338,29 @@ contract ColonyFunding is
   }
 
   function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256) {
-    return fundingPots[_potId].balance[_token];
+    return getFundingPotBalance(_potId, block.chainid, _token);
   }
 
-  function getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token)
-    public
-    view
-    returns (uint256)
-  {
+  function getFundingPotProxyBalance(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token
+  ) public view returns (uint256) {
     return fundingPots[_potId].chainBalances[_chainId][_token];
   }
 
-  function recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount) public stoppable {
+  function recordClaimedFundsFromBridge(
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  ) public stoppable {
     fundingPots[1].chainBalances[_chainId][_token] += _amount;
 
     emit ProxyColonyFundsClaimed(_chainId, _token, _amount);
   }
 
   function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256) {
-    return fundingPots[_potId].payouts[_token];
+    return getFundingPotPayout(_potId, block.chainid, _token);
   }
 
   function getFundingPot(
@@ -377,19 +407,30 @@ contract ColonyFunding is
     uint256 _fromPot,
     uint256 _toPot,
     uint256 _amount,
+    uint256 _chainId,
     address _token
   ) internal {
     FundingPot storage fromPot = fundingPots[_fromPot];
     FundingPot storage toPot = fundingPots[_toPot];
 
-    fromPot.balance[_token] -= _amount;
-    toPot.balance[_token] += _amount;
+    setFundingPotBalance(
+      _fromPot,
+      _chainId,
+      _token,
+      getFundingPotBalance(_fromPot, _chainId, _token) - _amount
+    );
+    setFundingPotBalance(
+      _toPot,
+      _chainId,
+      _token,
+      getFundingPotBalance(_toPot, _chainId, _token) + _amount
+    );
 
-    if (_fromPot == 1) {
+    if (_fromPot == 1 && _chainId == block.chainid) {
       // If we're moving from the root pot, then check we haven't dropped below what we need
       // to cover any approvals that we've made.
       require(
-        fromPot.balance[_token] >= tokenApprovalTotals[_token],
+        getFundingPotBalance(_fromPot, _chainId, _token) >= tokenApprovalTotals[_token],
         "colony-funding-too-many-approvals"
       );
     }
@@ -399,17 +440,18 @@ contract ColonyFunding is
       //  unless the expenditure was cancelled
       require(
         expenditures[fromPot.associatedTypeId].status == ExpenditureStatus.Cancelled ||
-          fromPot.balance[_token] >= fromPot.payouts[_token],
+          getFundingPotBalance(_fromPot, _chainId, _token) >=
+          getFundingPotPayout(_fromPot, _chainId, _token),
         "colony-funding-expenditure-bad-state"
       );
 
       uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
-      updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
+      updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _chainId, _token, fromPotPreviousAmount);
     }
 
     if (toPot.associatedType == FundingPotAssociatedType.Expenditure) {
-      uint256 toPotPreviousAmount = toPot.balance[_token] - _amount;
-      updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
+      uint256 toPotPreviousAmount = getFundingPotBalance(_toPot, _chainId, _token) - _amount;
+      updatePayoutsWeCannotMakeAfterPotChange(_toPot, _chainId, _token, toPotPreviousAmount);
     }
 
     if (_toPot == 0) {
@@ -421,20 +463,27 @@ contract ColonyFunding is
 
   function updatePayoutsWeCannotMakeAfterPotChange(
     uint256 _fundingPotId,
+    uint256 _chainId,
     address _token,
     uint256 _prev
   ) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
-    if (_prev >= tokenPot.payouts[_token]) {
+    if (_prev >= getFundingPotPayout(_fundingPotId, _chainId, _token)) {
       // If the old amount in the pot was enough to pay for the budget
-      if (tokenPot.balance[_token] < tokenPot.payouts[_token]) {
+      if (
+        getFundingPotBalance(_fundingPotId, _chainId, _token) <
+        getFundingPotPayout(_fundingPotId, _chainId, _token)
+      ) {
         // And the new amount in the pot is not enough to pay for the budget...
         tokenPot.payoutsWeCannotMake += 1; // Then this is a set of payouts we cannot make that we could before.
       }
     } else {
       // If this 'else' is running, then the old amount in the pot could not pay for the budget
-      if (tokenPot.balance[_token] >= tokenPot.payouts[_token]) {
+      if (
+        getFundingPotBalance(_fundingPotId, _chainId, _token) >=
+        getFundingPotPayout(_fundingPotId, _chainId, _token)
+      ) {
         // And the new amount in the pot can pay for the budget
         tokenPot.payoutsWeCannotMake -= 1; // Then this is a set of payouts we can make that we could not before.
       }
@@ -466,6 +515,7 @@ contract ColonyFunding is
   function setExpenditurePayoutsInternal(
     uint256 _id,
     uint256[] memory _slots,
+    uint256 _chainId,
     address _token,
     uint256[] memory _amounts
   ) internal {
@@ -474,14 +524,15 @@ contract ColonyFunding is
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     assert(fundingPot.associatedType == FundingPotAssociatedType.Expenditure);
 
-    uint256 previousTotal = fundingPot.payouts[_token];
-    uint256 runningTotal = fundingPot.payouts[_token];
+    uint256 previousTotal = getFundingPotPayout(expenditures[_id].fundingPotId, _chainId, _token);
+    uint256 runningTotal = previousTotal;
 
     for (uint256 i; i < _slots.length; i++) {
       require(_amounts[i] <= MAX_PAYOUT, "colony-payout-too-large");
-      uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
-
-      expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
+      uint256 currentPayout = getExpenditureSlotPayout(_id, _slots[i], _chainId, _token);
+      // uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
+      setExpenditureSlotPayout(_id, _slots[i], _chainId, _token, _amounts[i]);
+      // expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
       runningTotal = (runningTotal - currentPayout) + _amounts[i];
 
       emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
@@ -497,38 +548,56 @@ contract ColonyFunding is
 
   function processPayout(
     uint256 _fundingPotId,
+    uint256 _chainId,
     address _token,
     uint256 _payout,
     address payable _user
   ) private returns (uint256) {
-    refundDomain(_fundingPotId, _token);
+    refundDomain(_fundingPotId, _chainId, _token);
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
 
-    fundingPots[_fundingPotId].balance[_token] -= _payout;
-    fundingPots[_fundingPotId].payouts[_token] -= _payout;
-    nonRewardPotsTotal[_token] -= _payout;
+    setFundingPotBalance(
+      _fundingPotId,
+      _chainId,
+      _token,
+      getFundingPotBalance(_fundingPotId, _chainId, _token) - _payout
+    );
+    setFundingPotPayout(
+      _fundingPotId,
+      _chainId,
+      _token,
+      getFundingPotPayout(_fundingPotId, _chainId, _token) - _payout
+    );
 
-    uint256 fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
-    uint256 payoutToUser = _payout - fee;
+    uint256 payoutToUser;
 
-    if (_token == address(0x0)) {
-      // Payout ether
-      // Fee goes directly to Meta Colony
-      _user.transfer(payoutToUser);
-      metaColonyAddress.transfer(fee);
-    } else {
-      // Payout token
-      // If it's a whitelisted token, it goes straight to the metaColony
-      // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
-      ERC20Extended payoutToken = ERC20Extended(_token);
-      assert(payoutToken.transfer(_user, payoutToUser));
-      if (colonyNetworkContract.getPayoutWhitelist(_token)) {
-        assert(payoutToken.transfer(metaColonyAddress, fee));
+    if (_chainId == block.chainid) {
+      nonRewardPotsTotal[_token] -= _payout;
+
+      uint256 fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
+      payoutToUser = _payout - fee;
+
+      if (_token == address(0x0)) {
+        // Payout ether
+        // Fee goes directly to Meta Colony
+        _user.transfer(payoutToUser);
+        metaColonyAddress.transfer(fee);
       } else {
-        assert(payoutToken.transfer(colonyNetworkAddress, fee));
+        // Payout token
+        // If it's a whitelisted token, it goes straight to the metaColony
+        // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
+        ERC20Extended payoutToken = ERC20Extended(_token);
+        assert(payoutToken.transfer(_user, payoutToUser));
+        if (colonyNetworkContract.getPayoutWhitelist(_token)) {
+          assert(payoutToken.transfer(metaColonyAddress, fee));
+        } else {
+          assert(payoutToken.transfer(colonyNetworkAddress, fee));
+        }
       }
+    } else {
+      // TODO: Shell colony payout
     }
 
     // slither-disable-next-line reentrancy-unlimited-gas
@@ -537,17 +606,104 @@ contract ColonyFunding is
     return payoutToUser;
   }
 
-  function refundDomain(uint256 _fundingPotId, address _token) private {
-    FundingPot storage fundingPot = fundingPots[_fundingPotId];
-    if (fundingPot.payouts[_token] < fundingPot.balance[_token]) {
+  function refundDomain(uint256 _fundingPotId, uint256 _chainId, address _token) private {
+    if (
+      getFundingPotPayout(_fundingPotId, _chainId, _token) <
+      getFundingPotBalance(_fundingPotId, _chainId, _token)
+    ) {
       uint256 domainId = getDomainFromFundingPot(_fundingPotId);
-      uint256 surplus = fundingPot.balance[_token] - fundingPot.payouts[_token];
+      uint256 surplus = getFundingPotBalance(_fundingPotId, _chainId, _token) -
+        getFundingPotPayout(_fundingPotId, _chainId, _token);
+
       moveFundsBetweenPotsFunctionality(
         _fundingPotId,
         domains[domainId].fundingPotId,
         surplus,
+        _chainId,
         _token
       );
+    }
+  }
+
+  function getFundingPotBalance(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token
+  ) internal view returns (uint256) {
+    if (_chainId == block.chainid) {
+      return fundingPots[_potId].balance[_token];
+    }
+    return fundingPots[_potId].chainBalances[_chainId][_token];
+  }
+
+  function setFundingPotBalance(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token,
+    uint256 _newValue
+  ) internal stoppable {
+    if (_chainId == block.chainid) {
+      fundingPots[_potId].balance[_token] = _newValue;
+    } else {
+      fundingPots[_potId].chainBalances[_chainId][_token] = _newValue;
+    }
+  }
+
+  function getFundingPotPayout(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token
+  ) internal view returns (uint256) {
+    if (_chainId == block.chainid) {
+      return fundingPots[_potId].payouts[_token];
+    }
+    return fundingPots[_potId].chainPayouts[_chainId][_token];
+  }
+
+  function setFundingPotPayout(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token,
+    uint256 _newValue
+  ) internal {
+    if (_chainId == block.chainid) {
+      fundingPots[_potId].payouts[_token] = _newValue;
+    } else {
+      fundingPots[_potId].chainPayouts[_chainId][_token] = _newValue;
+    }
+  }
+
+  function getExpenditureSlotPayout(
+    uint256 _id,
+    uint256 _slot,
+    address _token
+  ) public view returns (uint256) {
+    return getExpenditureSlotPayout(_id, _slot, block.chainid, _token);
+  }
+
+  function getExpenditureSlotPayout(
+    uint256 _id,
+    uint256 _slot,
+    uint256 chainId,
+    address _token
+  ) public view returns (uint256) {
+    if (chainId == block.chainid) {
+      return expenditureSlotPayouts[_id][_slot][_token];
+    }
+    return expenditureSlotChainPayouts[_id][_slot][chainId][_token];
+  }
+
+  function setExpenditureSlotPayout(
+    uint256 _id,
+    uint256 _slot,
+    uint256 chainId,
+    address _token,
+    uint256 _newValue
+  ) internal {
+    if (chainId == block.chainid) {
+      expenditureSlotPayouts[_id][_slot][_token] = _newValue;
+    } else {
+      expenditureSlotChainPayouts[_id][_slot][chainId][_token] = _newValue;
     }
   }
 }

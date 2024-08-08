@@ -23,7 +23,6 @@ import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";
 import { IColonyBridge } from "./IColonyBridge.sol";
 import { CallWithGuards } from "../common/CallWithGuards.sol";
 import { DSAuth } from "../../lib/dappsys/auth.sol";
-import "hardhat/console.sol";
 
 contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
   address public colonyNetwork;
@@ -94,9 +93,6 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     require(valid, reason);
 
     // Check came from a known colony bridge
-    console.log("emitterAddress", wormholeAddressToEVMAddress(wormholeMessage.emitterAddress));
-    console.log("emitterChainId", wormholeMessage.emitterChainId);
-    console.log("colonyBridges[wormholeMessage.emitterChainId]", colonyBridges[wormholeMessage.emitterChainId]);
 
     require(
       wormholeAddressToEVMAddress(wormholeMessage.emitterAddress) ==
@@ -112,22 +108,23 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     address destinationAddress;
     bytes memory payloadWithoutChainId;
 
-    (destinationChainId, destinationAddress, payloadWithoutChainId) = abi.decode(payload, (uint256, address, bytes));
+    (destinationChainId, destinationAddress, payloadWithoutChainId) = abi.decode(
+      payload,
+      (uint256, address, bytes)
+    );
 
-    console.log("destinationChainId", destinationChainId);
     require(destinationChainId == block.chainid, "colony-bridge-destination-chain-id-mismatch");
-    console.log("destinationAddress", destinationAddress);
-    console.log("payload:");
-    console.logBytes(payloadWithoutChainId);
     // Make the call requested to the destination address
-    (bool success, bytes memory returndata) = callWithGuards(destinationAddress, payloadWithoutChainId);
+    (bool success, bytes memory returndata) = callWithGuards(
+      destinationAddress,
+      payloadWithoutChainId
+    );
 
     // Note that this is not a require because returndata might not be a string, and if we try
     // to decode it we'll get a revert.
     if (!success) {
       revert(abi.decode(returndata, (string)));
     }
-    console.log("call successful");
   }
 
   function sendMessage(
