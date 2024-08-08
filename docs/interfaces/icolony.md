@@ -218,6 +218,19 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |siblings|bytes32[]|The siblings of the proof
 
 
+### ▸ `createShellColony(uint256 _destinationChainId, bytes32 _salt)`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_destinationChainId|uint256|
+|_salt|bytes32|
+
+
 ### ▸ `deobligateStake(address _user, uint256 _domainId, uint256 _amount)`
 
 Deobligate the user some amount of tokens, releasing the stake.
@@ -710,6 +723,25 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |Name|Type|Description|
 |---|---|---|
 |payout|uint256|Funding pot payout amount
+
+### ▸ `getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token):uint256 uint256`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_potId|uint256|
+|_chainId|uint256|
+|_token|address|
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|
 
 ### ▸ `getLocalSkill(uint256 localSkillId):LocalSkill localSkill`
 
@@ -1286,6 +1318,20 @@ Get the owner of the contract
 |Name|Type|Description|
 |---|---|---|
 |owner|address|The owner of the contract
+
+### ▸ `recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount)`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|
+|_token|address|
+|_amount|uint256|
+
 
 ### ▸ `registerColonyLabel(string memory colonyName, string memory orbitdb)`
 

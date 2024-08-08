@@ -127,9 +127,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     );
 
     // slither-disable-next-line unchecked-lowlevel
-    bool success = IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, payload);
+    // bool success = IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, payload);
     // We require success so estimation calls can tell us if bridging is going to work
-    require(success, "colony-mining-bridge-call-failed");
+    // require(success, "colony-mining-bridge-call-failed");
   }
 
   function setReputationRootHash(

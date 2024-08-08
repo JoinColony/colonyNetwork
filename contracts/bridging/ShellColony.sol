@@ -25,12 +25,16 @@ import { DSAuth } from "./../../lib/dappsys/auth.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { Multicall } from "./../common/Multicall.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ShellColonyNetwork } from "./ShellColonyNetwork.sol";
 
-contract ColonyShell is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards {
+contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
   mapping(address => uint256) metatransactionNonces;
+
+  // Token address => known balance
+  mapping(address => uint256) tokenBalances;
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
     return metatransactionNonces[_user];
@@ -47,17 +51,25 @@ contract ColonyShell is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
 
   // Public functions
 
-  function claimColonyShellFunds(address _token) public {
+  function claimTokens(address _token) public {
     uint256 balance = (_token == address(0x0))
       ? address(this).balance
       : ERC20Extended(_token).balanceOf(address(this));
 
-    IColonyNetwork(owner).sendClaimColonyShellFunds(_token, balance);
+    require(balance >= tokenBalances[_token], "colony-shell-token-bookkeeping-error");
+    uint256 difference = balance - tokenBalances[_token];
+
+    tokenBalances[_token] = balance;
+
+    bytes memory payload = abi.encodeWithSignature("recordClaimedFundsFromBridge(uint256,address,uint256)", block.chainid, _token, difference);
+    ShellColonyNetwork(owner).bridgeMessage(payload);
 
     emit ColonyFundsClaimed(_token, balance);
   }
 
   function transfer(address _token, address _user, uint256 _amount) public auth {
+    tokenBalances[_token] -= _amount;
+
     require(ERC20Extended(_token).transfer(_user, _amount), "colony-shell-transfer-failed");
 
     emit TransferMade(_token, _user, _amount);
