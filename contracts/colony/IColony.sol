@@ -859,7 +859,11 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   function getAllowedDomainReputationReceipt(uint256 _domainId) external view returns (uint256);
 
   function recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount) external;
-  function getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token)  external view returns (uint256);
+  function getFundingPotProxyBalance(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token
+  ) external view returns (uint256);
 
   function createShellColony(uint256 _destinationChainId, bytes32 _salt) external;
 
