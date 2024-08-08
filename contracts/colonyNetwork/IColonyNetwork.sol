@@ -631,4 +631,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _token The token being held by the shell
   /// @param _balance The shell's current balance of the token
   function sendClaimColonyShellFunds(address _token, uint256 _balance) external;
+
+  function createColonyShell(uint256 _destinationChainId, bytes32 _salt) external;
+  function createColonyShellFromBridge(bytes32 _salt) external;
 }

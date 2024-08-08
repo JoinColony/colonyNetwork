@@ -27,20 +27,26 @@ import { ColonyShell } from "./../bridging/ColonyShell.sol";
 contract ColonyNetworkShells is ColonyNetworkStorage, Multicall {
   // To shells
 
-  function sendDeployColonyShell(bytes32 _salt) public calledByColony{
-    bytes memory payload = abi.encodeWithSignature(
-      "deployColonyShell(bytes32)",
-      _salt
-    );
+  function sendDeployColonyShell(bytes32 _salt) public calledByColony {
+    bytes memory payload = abi.encodeWithSignature("deployColonyShell(bytes32)", _salt);
 
     require(callThroughBridgeWithGuards(payload), "colony-network-shell-deploy-failed");
   }
 
-  function colonyShellTransfer(address _colony, address _token, address _user, uint256 _amount) public onlyColonyBridge {
+  function colonyShellTransfer(
+    address _colony,
+    address _token,
+    address _user,
+    uint256 _amount
+  ) public onlyColonyBridge {
     ColonyShell(_colony).transfer(_token, _user, _amount);
   }
 
-  function sendColonyShellTransfer(address _token, address _user, uint256 _amount) public calledByColony{
+  function sendColonyShellTransfer(
+    address _token,
+    address _user,
+    uint256 _amount
+  ) public calledByColony {
     bytes memory payload = abi.encodeWithSignature(
       "colonyShellTransfer(address,address,address,uint256)",
       msgSender(),
@@ -54,11 +60,15 @@ contract ColonyNetworkShells is ColonyNetworkStorage, Multicall {
 
   // From shells
 
-  function claimColonyShellFunds(address _colony, address _token, uint256 _balance) public onlyColonyBridge {
+  function claimColonyShellFunds(
+    address _colony,
+    address _token,
+    uint256 _balance
+  ) public onlyColonyBridge {
     IColony(_colony).claimColonyShellFunds(_token, _balance);
   }
 
-  function sendClaimColonyShellFunds(address _token, uint256 _balance) public calledByColony{
+  function sendClaimColonyShellFunds(address _token, uint256 _balance) public calledByColony {
     bytes memory payload = abi.encodeWithSignature(
       "claimColonyShellFunds(address,address,uint256)",
       msgSender(),

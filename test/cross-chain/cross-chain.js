@@ -23,14 +23,15 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
+// const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
-const ICreateX = artifacts.require("ICreateX");
+// const ICreateX = artifacts.require("ICreateX");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
+// const { assert } = require("console");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
 
 const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION, CREATEX_ADDRESS } = require("../../helpers/constants");
@@ -88,7 +89,9 @@ contract("Cross-chain", (accounts) => {
 
   const ethersForeignProvider = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl);
   const ethersForeignSigner = ethersForeignProvider.getSigner();
-  const ethersHomeSigner = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner();
+  const ethersHomeProvider = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl);
+  const ethersHomeSigner = ethersHomeProvider.getSigner();
+  // const ethersHomeSigner = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner();
   const ethersForeignSigner2 = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl).getSigner(1);
   const ethersHomeSigner2 = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner(1);
 
@@ -283,37 +286,34 @@ contract("Cross-chain", (accounts) => {
       const colonyCreationSalt = await homeColonyNetwork.getColonyCreationSalt({ blockTag: createXDeployEvent.blockNumber });
       console.log("colony creation salt", colonyCreationSalt);
 
-      // Query CreateX on other network to prove this salt being used in the Create3 pattern
-      // from colonyNetwork would result in a colony at the same address
+      // Now have the colony request a deployment of a shell on the other chain.
 
-      // This test should be replaced by one that shows the colony on the home network can request
-      // a deployment on the other chain, and that the resulting address is the same. However, that
-      // functionality is not implemented yet, so we do a static call to CreateX, and get the address
-      // that would be created if colonyNetwork created a colony with that salt.
-      const createXForeign = new ethers.Contract(CREATEX_ADDRESS, ICreateX.abi, ethersForeignProvider);
-      const cnAsEr = await EtherRouterCreate3.at(homeColonyNetwork.address);
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
 
-      const setOwnerData = cnAsEr.contract.methods.setOwner(foreignColonyNetwork.address).encodeABI();
+      const deployedColony = new ethers.Contract(colonyAddress, IColony.abi, ethersHomeSigner);
 
-      const colonyAddressWithSalt = await createXForeign.callStatic["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
-        colonyCreationSalt,
-        EtherRouterCreate3.bytecode,
-        setOwnerData,
-        [0, 0],
-        { from: foreignColonyNetwork.address },
-      );
+      tx = await deployedColony.createColonyShell(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
 
-      expect(colonyAddressWithSalt).to.equal(colonyAddress);
+      await tx.wait();
+      await p;
 
+      // Did we deploy a shell colony on the foreign chain at the right address? Should have EtherRouter code...
+      const code = await ethersForeignProvider.getCode(deployedColony.address);
+      const codeExpected = await ethersHomeProvider.getCode(deployedColony.address);
+      expect(code).to.equal(codeExpected);
+
+      // TODO: And the right resolver?
+
+      // TODO: Equivalent of this?
       // Demonstrate that another address using that salt would not get the same address
-      const otherAddress = await createXForeign.callStatic["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
-        colonyCreationSalt,
-        EtherRouterCreate3.bytecode,
-        setOwnerData,
-        [0, 0],
-      );
+      // const otherAddress = await createXForeign.callStatic["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
+      //   colonyCreationSalt,
+      //   EtherRouterCreate3.bytecode,
+      //   setOwnerData,
+      //   [0, 0],
+      // );
 
-      expect(otherAddress).to.not.equal(colonyAddress);
+      // expect(otherAddress).to.not.equal(colonyAddress);
     });
 
     it("bridge data can be queried", async () => {

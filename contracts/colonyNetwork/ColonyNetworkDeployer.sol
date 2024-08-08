@@ -27,6 +27,7 @@ import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";
 import { DSAuth, DSAuthority } from "./../../lib/dappsys/auth.sol";
 import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouterCreate3 } from "./../common/EtherRouterCreate3.sol";
+import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
 
 contract ColonyNetworkDeployer is ColonyNetworkStorage {
   address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
@@ -129,7 +130,13 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
-  function createColonyShell(bytes32 _salt) public onlyColonyBridge {
+  function createColonyShell(uint256 _destinationChainId, bytes32 _salt) public calledByColony {
+    // TODO: Check if the colony is allowed to use the salt
+    bytes memory payload = abi.encodeWithSignature("createColonyShellFromBridge(bytes32)", _salt);
+    IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, payload);
+  }
+
+  function createColonyShellFromBridge(bytes32 _salt) public onlyColonyBridge {
     ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
       _salt,
       type(EtherRouterCreate3).creationCode,
