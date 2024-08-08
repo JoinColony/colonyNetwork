@@ -340,6 +340,19 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
+### ▸ `createShellColony(uint256 _destinationChainId, bytes32 _salt)`
+
+
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_destinationChainId|uint256|
+|_salt|bytes32|
+
+
 ### ▸ `deployTokenAuthority(address _token, address _colony, address[] memory _allowedToTransfer):address _tokenAuthority`
 
 Called to deploy a token authority
@@ -1113,7 +1126,7 @@ Used to track that a user is eligible to claim a reward
 |_amount|uint256|The amount of CLNY to be awarded
 
 
-### ▸ `sendClaimColonyShellFunds(address _token, uint256 _balance)`
+### ▸ `sendClaimShellColonyFunds(address _token, uint256 _balance)`
 
 Send the claimFunds transaction from the shell to the colony
 

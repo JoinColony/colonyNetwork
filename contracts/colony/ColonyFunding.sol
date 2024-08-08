@@ -315,6 +315,20 @@ contract ColonyFunding is
     return fundingPots[_potId].balance[_token];
   }
 
+  function getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token)
+    public
+    view
+    returns (uint256)
+  {
+    return fundingPots[_potId].chainBalances[_chainId][_token];
+  }
+
+  function recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount) public stoppable {
+    fundingPots[1].chainBalances[_chainId][_token] += _amount;
+
+    emit ProxyColonyFundsClaimed(_chainId, _token, _amount);
+  }
+
   function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256) {
     return fundingPots[_potId].payouts[_token];
   }

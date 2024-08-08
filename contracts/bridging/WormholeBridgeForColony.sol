@@ -23,6 +23,7 @@ import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";
 import { IColonyBridge } from "./IColonyBridge.sol";
 import { CallWithGuards } from "../common/CallWithGuards.sol";
 import { DSAuth } from "../../lib/dappsys/auth.sol";
+import "hardhat/console.sol";
 
 contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
   address public colonyNetwork;
@@ -93,6 +94,10 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     require(valid, reason);
 
     // Check came from a known colony bridge
+    console.log("emitterAddress", wormholeAddressToEVMAddress(wormholeMessage.emitterAddress));
+    console.log("emitterChainId", wormholeMessage.emitterChainId);
+    console.log("colonyBridges[wormholeMessage.emitterChainId]", colonyBridges[wormholeMessage.emitterChainId]);
+
     require(
       wormholeAddressToEVMAddress(wormholeMessage.emitterAddress) ==
         colonyBridges[wormholeMessage.emitterChainId],
@@ -104,24 +109,30 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     bytes memory payload = wormholeMessage.payload;
     // Strip off the chain id prefix, and make sure we are on that chain Id
     uint256 destinationChainId;
+    address destinationAddress;
     bytes memory payloadWithoutChainId;
 
-    (destinationChainId, payloadWithoutChainId) = abi.decode(payload, (uint256, bytes));
+    (destinationChainId, destinationAddress, payloadWithoutChainId) = abi.decode(payload, (uint256, address, bytes));
 
+    console.log("destinationChainId", destinationChainId);
     require(destinationChainId == block.chainid, "colony-bridge-destination-chain-id-mismatch");
-
-    // Make the call requested to the colony network
-    (bool success, bytes memory returndata) = callWithGuards(colonyNetwork, payloadWithoutChainId);
+    console.log("destinationAddress", destinationAddress);
+    console.log("payload:");
+    console.logBytes(payloadWithoutChainId);
+    // Make the call requested to the destination address
+    (bool success, bytes memory returndata) = callWithGuards(destinationAddress, payloadWithoutChainId);
 
     // Note that this is not a require because returndata might not be a string, and if we try
     // to decode it we'll get a revert.
     if (!success) {
       revert(abi.decode(returndata, (string)));
     }
+    console.log("call successful");
   }
 
   function sendMessage(
     uint256 _evmChainId,
+    address _destination,
     bytes memory _payload
   ) public onlyColonyNetwork returns (bool) {
     require(supportedEvmChainId(_evmChainId), "colony-bridge-not-known-chain");
@@ -132,7 +143,8 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     // For wormhole, we prefix the supplied payload with the _evmChainId
     // This is because wormhole is a generic bridge, and we need to tell it which chain to send to
 
-    try wormhole.publishMessage(0, abi.encode(_evmChainId, _payload), 0) {
+    // We also prefix with the destination chain Id, which we assume is the same as the sender.
+    try wormhole.publishMessage(0, abi.encode(_evmChainId, _destination, _payload), 0) {
       return true;
     } catch {
       return false;

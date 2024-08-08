@@ -277,7 +277,8 @@ class MockGuardianSpy {
     this.bridgingPromiseCount -= 1;
 
     if (this.bridgingPromiseCount === 0) {
-      this.resolveBridgingPromise(tx);
+      const receipt = await bridge.provider.getTransactionReceipt(tx.hash);
+      this.resolveBridgingPromise(receipt);
     }
     if (this.locked) {
       this.locked = false;
