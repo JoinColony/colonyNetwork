@@ -5,6 +5,7 @@ const fs = require("fs");
 
 function readArtifact(contractDir, contractName) {
   const artifactPath = `./artifacts/contracts/${contractDir}/${contractName}.sol/${contractName}.json`;
+  console.log(artifactPath);
   try {
     return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
   } catch (err) {
@@ -85,7 +86,10 @@ exports.setupEtherRouter = async function setupEtherRouter(contractDir, interfac
       const sig = `${fName}(${iAbi[i].inputs.map((parameter) => parameter.type).join(",")})`;
       const address = functionsToResolve[fName].definedIn;
       try {
-        await resolver.register(sig, address);
+        const txOrReceipt = await resolver.register(sig, address);
+        if (txOrReceipt.wait) {
+          await txOrReceipt.wait();
+        }
       } catch (err) {
         console.log(err);
         throw new Error(`${sig} could not be registered. Is it defined?`);
@@ -196,4 +200,15 @@ exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensR
 
   await ensRegistry.setSubnodeOwner(rootNode, USER_HASH, colonyNetwork.address);
   await ensRegistry.setSubnodeOwner(rootNode, COLONY_HASH, colonyNetwork.address);
+};
+
+exports.setupShellColonyNetwork = async function setupShellColonyNetwork(etherRouter, shellColonyNetwork, resolver) {
+  const deployedImplementations = {};
+  deployedImplementations.ShellColonyNetwork = shellColonyNetwork.address;
+
+  await exports.setupEtherRouter("bridging", "ShellColonyNetwork", deployedImplementations, resolver);
+  const txOrReceipt = await etherRouter.setResolver(resolver.address);
+  if (txOrReceipt.wait) {
+    await txOrReceipt.wait();
+  }
 };
