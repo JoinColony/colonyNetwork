@@ -324,6 +324,9 @@ interface ColonyDataTypes {
 
     // Chainid => tokenAddress => balance
     mapping (uint256 => mapping (address => uint256)) chainBalances;
+
+    // Chainid => tokenAddress => payouts
+    mapping (uint256 => mapping (address => uint256)) chainPayouts;
   }
 
   struct Domain {

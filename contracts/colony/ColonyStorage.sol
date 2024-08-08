@@ -117,6 +117,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Mapping of domain id => token address => approval to receive if reputation-earning
   mapping(uint256 => mapping(address => uint256)) domainReputationTokenApprovals; // Storage slot 39
 
+  // Expenditure Id > Slot Id > Chain Id > Token Address > Amount
+  mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(address => uint256)))) expenditureSlotChainPayouts; // Storage slot 40
+
   // Constants
 
   uint256 constant MAX_PAYOUT = 2 ** 128 - 1; // 340,282,366,920,938,463,463 WADs
