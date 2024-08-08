@@ -29,7 +29,13 @@ import { CallWithGuards } from "../common/CallWithGuards.sol";
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain, CallWithGuards {
+contract ColonyNetworkStorage is
+  ColonyNetworkDataTypes,
+  DSMath,
+  CommonStorage,
+  MultiChain,
+  CallWithGuards
+{
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
