@@ -25,9 +25,9 @@ import { DSAuth } from "./../../lib/dappsys/auth.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { Multicall } from "./../common/Multicall.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
-import { ShellColonyNetwork } from "./ShellColonyNetwork.sol";
+import { ProxyColonyNetwork } from "./ProxyColonyNetwork.sol";
 
-contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards {
+contract ProxyColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
@@ -47,7 +47,7 @@ contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
   // Events
 
   modifier onlyColonyBridge() {
-    require(ShellColonyNetwork(owner).colonyBridgeAddress() == msgSender(), "colony-only-bridge");
+    require(ProxyColonyNetwork(owner).colonyBridgeAddress() == msgSender(), "colony-only-bridge");
     _;
   }
 
@@ -72,7 +72,7 @@ contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
       _token,
       difference
     );
-    ShellColonyNetwork(owner).bridgeMessage(payload);
+    ProxyColonyNetwork(owner).bridgeMessage(payload);
 
     emit ColonyFundsClaimed(_token, balance);
   }
@@ -92,7 +92,7 @@ contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
 
   function makeArbitraryTransactions(address[] memory _targets, bytes[] memory _payloads) public onlyColonyBridge() {
     require(_targets.length == _payloads.length, "colony-targets-and-payloads-length-mismatch");
-    address bridgeAddress = ShellColonyNetwork(owner).colonyBridgeAddress();
+    address bridgeAddress = ProxyColonyNetwork(owner).colonyBridgeAddress();
     for (uint256 i; i < _targets.length; i += 1) {
       // TODO: Stop, or otherwise handle, approve / transferFrom
       require(_targets[i] != bridgeAddress, "colony-cannot-target-bridge");

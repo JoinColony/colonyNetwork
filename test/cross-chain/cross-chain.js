@@ -32,8 +32,8 @@ const IColony = artifacts.require("IColony");
 const ICreateX = artifacts.require("ICreateX");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
-const ShellColonyNetwork = artifacts.require("ShellColonyNetwork");
-const ShellColony = artifacts.require("ShellColony");
+const ProxyColonyNetwork = artifacts.require("ProxyColonyNetwork");
+const ProxyColony = artifacts.require("ProxyColony");
 const MetaTxToken = artifacts.require("MetaTxToken");
 // const { assert } = require("console");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
@@ -50,7 +50,7 @@ const {
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
-const { setupShellColonyNetwork, setupEtherRouter } = require("../../helpers/upgradable-contracts");
+const { setupProxyColonyNetwork, setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
 const UINT256_MAX_ETHERS = ethers.BigNumber.from(2).pow(256).sub(1);
 
@@ -189,23 +189,23 @@ contract("Cross-chain", (accounts) => {
         ethersForeignSigner,
       );
       let resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
-      const shellColonyNetworkImplementation = await new ethers.ContractFactory(
-        ShellColonyNetwork.abi,
-        ShellColonyNetwork.bytecode,
+      const proxyColonyNetworkImplementation = await new ethers.ContractFactory(
+        ProxyColonyNetwork.abi,
+        ProxyColonyNetwork.bytecode,
         ethersForeignSigner,
       ).deploy();
 
-      await setupShellColonyNetwork(etherRouter, shellColonyNetworkImplementation, resolver);
+      await setupProxyColonyNetwork(etherRouter, proxyColonyNetworkImplementation, resolver);
       console.log("**** shell colony network set up");
 
       // Set up the resolver for shell colonies
       resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
-      const shellColonyImplementation = await new ethers.ContractFactory(ShellColony.abi, ShellColony.bytecode, ethersForeignSigner).deploy();
+      const proxyColonyImplementation = await new ethers.ContractFactory(ProxyColony.abi, ProxyColony.bytecode, ethersForeignSigner).deploy();
 
-      await setupEtherRouter("bridging", "ShellColony", { ShellColony: shellColonyImplementation.address }, resolver);
-      const shellColonyNetwork = new ethers.Contract(etherRouter.address, ShellColonyNetwork.abi, ethersForeignSigner);
+      await setupEtherRouter("bridging", "ProxyColony", { ProxyColony: proxyColonyImplementation.address }, resolver);
+      const proxyColonyNetwork = new ethers.Contract(etherRouter.address, ProxyColonyNetwork.abi, ethersForeignSigner);
 
-      await shellColonyNetwork.setShellColonyResolverAddress(resolver.address);
+      await proxyColonyNetwork.setProxyColonyResolverAddress(resolver.address);
     } catch (err) {
       console.log(err);
       process.exit(1);
@@ -220,7 +220,7 @@ contract("Cross-chain", (accounts) => {
     homeColonyNetwork = await new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
 
     const foreignEtherRouterAddress = homeEtherRouterAddress;
-    foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, ShellColonyNetwork.abi, ethersForeignSigner);
+    foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, ProxyColonyNetwork.abi, ethersForeignSigner);
   });
 
   beforeEach(async () => {
@@ -304,9 +304,9 @@ contract("Cross-chain", (accounts) => {
   }
 
   afterEach(async () => {
-    // await revert(web3HomeProvider, homeSnapshotId);
-    // await revert(web3ForeignProvider, foreignSnapshotId);
-    // await resetRelayer();
+    await revert(web3HomeProvider, homeSnapshotId);
+    await revert(web3ForeignProvider, foreignSnapshotId);
+    await resetRelayer();
   });
 
   after(async () => {
@@ -320,9 +320,9 @@ contract("Cross-chain", (accounts) => {
       const homeVersionResolver = await homeColonyNetwork.getColonyVersionResolver(CURR_VERSION);
       console.log(foreignColonyNetwork.address);
       console.log(await ethersForeignProvider.getBlockNumber());
-      const shellColonyResolver = await foreignColonyNetwork.shellColonyResolverAddress();
+      const proxyColonyResolver = await foreignColonyNetwork.proxyColonyResolverAddress();
       expect(homeVersionResolver).to.not.equal(ADDRESS_ZERO);
-      expect(shellColonyResolver).to.not.equal(ADDRESS_ZERO);
+      expect(proxyColonyResolver).to.not.equal(ADDRESS_ZERO);
     });
 
     it.only("colonies deployed on different chains can have same address", async () => {
@@ -354,7 +354,7 @@ contract("Cross-chain", (accounts) => {
 
       const deployedColony = new ethers.Contract(colonyAddress, IColony.abi, ethersHomeSigner);
 
-      tx = await deployedColony.createShellColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
+      tx = await deployedColony.createProxyColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
 
       await tx.wait();
       await p;
@@ -367,7 +367,7 @@ contract("Cross-chain", (accounts) => {
       const colonyAsEtherRouter = new ethers.Contract(deployedColony.address, EtherRouter.abi, ethersForeignSigner);
       const resolverAddress = await colonyAsEtherRouter.resolver();
 
-      const expectedResolver = await foreignColonyNetwork.shellColonyResolverAddress();
+      const expectedResolver = await foreignColonyNetwork.proxyColonyResolverAddress();
 
       expect(resolverAddress).to.equal(expectedResolver);
     });
@@ -1177,7 +1177,7 @@ contract("Cross-chain", (accounts) => {
   describe("collecting and paying out tokens on another chain", async () => {
     let foreignToken;
     let colony;
-    let shellColony;
+    let proxyColony;
     beforeEach(async () => {
       colony = await setupColony(homeColonyNetwork);
 
@@ -1189,11 +1189,11 @@ contract("Cross-chain", (accounts) => {
 
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
 
-      const tx = await colony.createShellColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
+      const tx = await colony.createProxyColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
       await tx.wait();
 
       await p;
-      shellColony = new ethers.Contract(colony.address, ShellColony.abi, ethersForeignSigner);
+      proxyColony = new ethers.Contract(colony.address, ProxyColony.abi, ethersForeignSigner);
       // Deploy a token on the foreign network
 
       const tokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersForeignSigner);
@@ -1207,14 +1207,14 @@ contract("Cross-chain", (accounts) => {
     it.only("Can track tokens received on the foreign chain", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
-      let tx = await foreignToken["mint(address,uint256)"](shellColony.address, tokenAmount);
+      let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
       await tx.wait();
 
       // Claim on the foreign chain
 
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
 
-      tx = await shellColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimTokens(foreignToken.address);
       await tx.wait();
 
       const receipt = await p;
@@ -1229,12 +1229,12 @@ contract("Cross-chain", (accounts) => {
     it.only("Can track tokens sent on the foreign chain", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
-      let tx = await foreignToken["mint(address,uint256)"](shellColony.address, tokenAmount);
+      let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
       await tx.wait();
 
       // Claim on the foreign chain
       let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
-      tx = await shellColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimTokens(foreignToken.address);
       await tx.wait();
       await p;
 
@@ -1290,7 +1290,7 @@ contract("Cross-chain", (accounts) => {
       expect(balance1.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
 
       // Check actually paid on foreign chain
-      const colonyBalance = await foreignToken.balanceOf(shellColony.address);
+      const colonyBalance = await foreignToken.balanceOf(proxyColony.address);
       const recipientBalance = await foreignToken.balanceOf(accounts[0]);
 
       expect(colonyBalance.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
@@ -1300,7 +1300,7 @@ contract("Cross-chain", (accounts) => {
 
   describe("making arbitrary transactions on another chain", async () => {
     let colony;
-    let shellColony;
+    let proxyColony;
     let foreignToken;
     beforeEach(async () => {
       colony = await setupColony(homeColonyNetwork);
@@ -1313,48 +1313,48 @@ contract("Cross-chain", (accounts) => {
 
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
 
-      const tx = await colony.createShellColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
+      const tx = await colony.createProxyColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
       await tx.wait();
 
       await p;
-      shellColony = new ethers.Contract(colony.address, ShellColony.abi, ethersForeignSigner);
+      proxyColony = new ethers.Contract(colony.address, ProxyColony.abi, ethersForeignSigner);
       // Deploy a token on the foreign network
 
       const tokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersForeignSigner);
       foreignToken = await tokenFactory.deploy("Test Token", "TT", 18);
       await (await foreignToken.unlock()).wait();
-      await (await foreignToken.setOwner(shellColony.address)).wait();
+      await (await foreignToken.setOwner(proxyColony.address)).wait();
     });
 
     it.only("can make arbitrary transactions on the foreign chain", async () => {
-      const balanceBefore = await foreignToken.balanceOf(shellColony.address);
+      const balanceBefore = await foreignToken.balanceOf(proxyColony.address);
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
 
-      const payload = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [shellColony.address, ethers.utils.parseEther("100")]);
+      const payload = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [proxyColony.address, ethers.utils.parseEther("100")]);
 
       const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], [payload]);
       await tx.wait();
       await p;
 
-      const balanceAfter = await foreignToken.balanceOf(shellColony.address);
+      const balanceAfter = await foreignToken.balanceOf(proxyColony.address);
       console.log(balanceBefore.toHexString(), balanceAfter.toHexString());
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
 
     it.only("can make multiple arbitrary transactions on the foreign chain in one go", async () => {
-      const shellBalanceBefore = await foreignToken.balanceOf(shellColony.address);
+      const shellBalanceBefore = await foreignToken.balanceOf(proxyColony.address);
       const colonyBalanceBefore = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
 
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
 
-      const payload1 = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [shellColony.address, ethers.utils.parseEther("100")]);
-      const payload2 = shellColony.interface.encodeFunctionData("claimTokens(address)", [foreignToken.address]);
+      const payload1 = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [proxyColony.address, ethers.utils.parseEther("100")]);
+      const payload2 = proxyColony.interface.encodeFunctionData("claimTokens(address)", [foreignToken.address]);
 
-      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address, shellColony.address], [payload1, payload2]);
+      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address, proxyColony.address], [payload1, payload2]);
       await tx.wait();
       await p;
 
-      const shellBalanceAfter = await foreignToken.balanceOf(shellColony.address);
+      const shellBalanceAfter = await foreignToken.balanceOf(proxyColony.address);
       console.log(shellBalanceBefore.toHexString(), shellBalanceAfter.toHexString());
       expect(shellBalanceAfter.sub(shellBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
 

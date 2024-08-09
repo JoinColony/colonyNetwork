@@ -324,8 +324,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
-  function createShellColony(uint256 _destinationChainId, bytes32 _salt) public {
-    IColonyNetwork(colonyNetworkAddress).createShellColony(_destinationChainId, _salt);
+  function createProxyColony(uint256 _destinationChainId, bytes32 _salt) public {
+    IColonyNetwork(colonyNetworkAddress).createProxyColony(_destinationChainId, _salt);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
