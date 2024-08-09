@@ -138,7 +138,7 @@ contract ColonyAuthority is CommonAuthority {
     // Colony ????
     addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayout(uint256,uint256,uint256,uint256,uint256,address,uint256)");
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
-
+    addRoleCapability(ROOT_ROLE, "makeProxyArbitraryTransaction(uint256,address,bytes)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
