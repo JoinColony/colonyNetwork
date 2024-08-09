@@ -89,4 +89,13 @@ contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
 
     emit TransferMade(_token, _recipient, _amount);
   }
+
+  function makeArbitraryTransaction(address _target, bytes memory _payload) public onlyColonyBridge() {
+    require(_target != address(this), "colony-cannot-target-self");
+    require(_target != ShellColonyNetwork(owner).colonyBridgeAddress(), "colony-cannot-target-bridge");
+    require(_target != owner, "colony-cannot-target-bridge");
+
+    (bool success, ) = _target.call(_payload);
+    require(success, "colony-arbitrary-transaction-failed");
+  }
 }
