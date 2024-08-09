@@ -33,30 +33,30 @@ contract ColonyNetworkShells is ColonyNetworkStorage, Multicall {
     require(callThroughBridgeWithGuards(payload), "colony-network-shell-deploy-failed");
   }
 
-  function ShellColonyTransfer(
-    address _colony,
-    address _token,
-    address _user,
-    uint256 _amount
-  ) public onlyColonyBridge {
-    ShellColony(_colony).transfer(_token, _user, _amount);
-  }
+  // function ShellColonyTransfer(
+  //   address _colony,
+  //   address _token,
+  //   address _user,
+  //   uint256 _amount
+  // ) public onlyColonyBridge {
+  //   ShellColony(_colony).transfer(_token, _user, _amount);
+  // }
 
-  function sendShellColonyTransfer(
-    address _token,
-    address _user,
-    uint256 _amount
-  ) public calledByColony {
-    bytes memory payload = abi.encodeWithSignature(
-      "ShellColonyTransfer(address,address,address,uint256)",
-      msgSender(),
-      _token,
-      _user,
-      _amount
-    );
+  // function sendShellColonyTransfer(
+  //   address _token,
+  //   address _user,
+  //   uint256 _amount
+  // ) public calledByColony {
+  //   bytes memory payload = abi.encodeWithSignature(
+  //     "ShellColonyTransfer(address,address,address,uint256)",
+  //     msgSender(),
+  //     _token,
+  //     _user,
+  //     _amount
+  //   );
 
-    require(callThroughBridgeWithGuards(payload), "colony-network-shell-transfer-failed");
-  }
+  //   require(callThroughBridgeWithGuards(payload), "colony-network-shell-transfer-failed");
+  // }
 
   // From shells
 
