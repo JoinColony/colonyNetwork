@@ -61,6 +61,8 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     bytes memory _action
   ) external returns (bool success);
 
+  function makeProxyArbitraryTransaction(uint256 chainId,address _to,bytes memory action) external;
+
   /// @notice Execute arbitrary transactions on behalf of the Colony in series
   /// @param _targets Array of addressed to be targeted
   /// @param _actions Array of Bytes arrays encoding the function calls and arguments
