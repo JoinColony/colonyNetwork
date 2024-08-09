@@ -106,6 +106,12 @@ task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(asyn
   await deployNetwork();
 });
 
+task("deploy-proxy-network", "Deploy Proxy Colony Network").setAction(async () => {
+  const deployProxyNetwork = require("./test/deploy-proxy-network-fixture"); // eslint-disable-line global-require
+
+  await deployProxyNetwork();
+});
+
 module.exports = {
   defaultNetwork: "hardhat",
   solidity: {
