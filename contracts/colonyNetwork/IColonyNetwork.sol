@@ -629,5 +629,5 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _colony The colony being queried
   function addPendingReputationUpdate(uint256 _chainId, address _colony) external;
 
-  function createShellColony(uint256 _destinationChainId, bytes32 _salt) external;
+  function createProxyColony(uint256 _destinationChainId, bytes32 _salt) external;
 }
