@@ -137,6 +137,9 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v??
     addRoleCapability(ROOT_ROLE, "editAllowedDomainTokenReceipt(uint256,address,uint256,bool)");
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayout(uint256,uint256,uint256,uint256,uint256,address,uint256)");
+    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
+
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

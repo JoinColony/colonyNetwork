@@ -38,7 +38,15 @@ const MetaTxToken = artifacts.require("MetaTxToken");
 // const { assert } = require("console");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
 
-const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION, CREATEX_ADDRESS } = require("../../helpers/constants");
+const {
+  MINING_CYCLE_DURATION,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  ROOT_ROLE,
+  CURR_VERSION,
+  CREATEX_ADDRESS,
+  UINT256_MAX,
+  WAD,
+} = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
@@ -296,9 +304,9 @@ contract("Cross-chain", (accounts) => {
   }
 
   afterEach(async () => {
-    await revert(web3HomeProvider, homeSnapshotId);
-    await revert(web3ForeignProvider, foreignSnapshotId);
-    await resetRelayer();
+    // await revert(web3HomeProvider, homeSnapshotId);
+    // await revert(web3ForeignProvider, foreignSnapshotId);
+    // await resetRelayer();
   });
 
   after(async () => {
@@ -1190,6 +1198,10 @@ contract("Cross-chain", (accounts) => {
 
       const tokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersForeignSigner);
       foreignToken = await tokenFactory.deploy("Test Token", "TT", 18);
+      await (await foreignToken.unlock()).wait();
+
+      await (await colony.setArbitrationRole(1, UINT256_MAX_ETHERS, accounts[0], 1, true)).wait();
+      await (await colony.setFundingRole(1, UINT256_MAX_ETHERS, accounts[0], 1, true)).wait();
     });
 
     it.only("Can track tokens received on the foreign chain", async () => {
@@ -1205,7 +1217,7 @@ contract("Cross-chain", (accounts) => {
       tx = await shellColony.claimTokens(foreignToken.address);
       await tx.wait();
 
-      let receipt = await p;
+      const receipt = await p;
       expect(receipt.status).to.equal(1);
 
       // Check bookkeeping on the home chain
@@ -1214,24 +1226,75 @@ contract("Cross-chain", (accounts) => {
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
     });
 
-    it.skip("Can track tokens sent on the foreign chain", async () => {
+    it.only("Can track tokens sent on the foreign chain", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
       let tx = await foreignToken["mint(address,uint256)"](shellColony.address, tokenAmount);
       await tx.wait();
 
       // Claim on the foreign chain
-      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
       tx = await shellColony.claimTokens(foreignToken.address);
       await tx.wait();
       await p;
 
-
       // Make a payment that pays out 30
 
+      const paymentAmount = ethers.utils.parseEther("30");
+      tx = await colony.makeExpenditure(1, UINT256_MAX_ETHERS, 1);
+      await tx.wait();
+      const expenditureId = await colony.getExpenditureCount();
+
+      tx = await colony.setExpenditureRecipient(expenditureId, 1, accounts[0]);
+      await tx.wait();
+
+      console.log("set recipient");
+
+      tx = await colony["setExpenditurePayout(uint256,uint256,uint256,uint256,uint256,address,uint256)"](
+        1,
+        UINT256_MAX_ETHERS,
+        expenditureId,
+        1,
+        foreignChainId,
+        foreignToken.address,
+        paymentAmount,
+      );
+      await tx.wait();
+      console.log("set payout");
+      const domain1 = await colony.getDomain(1);
+      const expenditure = await colony.getExpenditure(expenditureId);
+
+      tx = await colony["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        UINT256_MAX_ETHERS,
+        1,
+        UINT256_MAX_ETHERS,
+        UINT256_MAX_ETHERS,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        paymentAmount,
+        foreignChainId,
+        foreignToken.address,
+      );
+      await tx.wait();
+      tx = await colony.finalizeExpenditure(expenditureId);
+      await tx.wait();
+
+      p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      tx = await colony["claimExpenditurePayout(uint256,uint256,uint256,address)"](expenditureId, 1, foreignChainId, foreignToken.address);
+      await tx.wait();
+      await p;
       // Check bookkeeping on the home chain
 
+      const balance1 = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      expect(balance1.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
+
       // Check actually paid on foreign chain
+      const colonyBalance = await foreignToken.balanceOf(shellColony.address);
+      const recipientBalance = await foreignToken.balanceOf(accounts[0]);
+
+      expect(colonyBalance.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
+      expect(recipientBalance.toHexString()).to.equal(ethers.utils.parseEther("30").toHexString());
     });
   });
 

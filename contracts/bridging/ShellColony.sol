@@ -46,6 +46,11 @@ contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
 
   // Events
 
+  modifier onlyColonyBridge() {
+    require(ShellColonyNetwork(owner).colonyBridgeAddress() == msgSender(), "colony-only-bridge");
+    _;
+  }
+
   event ColonyFundsClaimed(address token, uint256 balance);
   event TransferMade(address token, address user, uint256 amount);
 
@@ -72,11 +77,16 @@ contract ShellColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
     emit ColonyFundsClaimed(_token, balance);
   }
 
-  function transfer(address _token, address _user, uint256 _amount) public auth {
+  // TODO: secure this function
+  function transferFromBridge(address _token, address _recipient, uint256 _amount) public onlyColonyBridge() {
     tokenBalances[_token] -= _amount;
 
-    require(ERC20Extended(_token).transfer(_user, _amount), "colony-shell-transfer-failed");
+    if (_token == address(0x0)) {
+      payable(_recipient).transfer(_amount);
+    } else {
+      require(ERC20Extended(_token).transfer(_recipient, _amount), "colony-shell-transfer-failed");
+    }
 
-    emit TransferMade(_token, _user, _amount);
+    emit TransferMade(_token, _recipient, _amount);
   }
 }

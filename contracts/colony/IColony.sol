@@ -594,6 +594,17 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _amount
   ) external;
 
+  function setExpenditurePayout(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  )
+    external;
+
   /// @notice @deprecated
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
@@ -662,6 +673,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _slot Number of the slot
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) external;
+  function claimExpenditurePayout(uint256 _id, uint256 _slot, uint256 _chainId, address _token) external;
 
   /// @notice Get the number of expenditures in the colony.
   /// @return count The expenditure count
@@ -821,6 +833,20 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _amount,
     address _token
   ) external;
+
+  function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    uint256 _chainId,
+    address _token
+  ) external;
+
 
   /// @notice @deprecated
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
