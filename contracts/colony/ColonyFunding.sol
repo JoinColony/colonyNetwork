@@ -43,6 +43,35 @@ contract ColonyFunding is
   )
     public
     stoppable
+  {
+    moveFundsBetweenPots(
+      _permissionDomainId,
+      _childSkillIndex,
+      _domainId,
+      _fromChildSkillIndex,
+      _toChildSkillIndex,
+      _fromPot,
+      _toPot,
+      _amount,
+      block.chainid,
+      _token
+    );
+  }
+
+  function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    uint256 _chainId,
+    address _token
+  )
+    public
+    stoppable
     domainNotDeprecated(getDomainFromFundingPot(_toPot))
     authDomain(_permissionDomainId, _childSkillIndex, _domainId)
     validFundingTransfer(_fromPot, _toPot)
@@ -56,7 +85,7 @@ contract ColonyFunding is
       "colony-invalid-domain-inheritance"
     );
 
-    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, block.chainid, _token);
+    moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, _chainId, _token);
   }
 
   function moveFundsBetweenPots(
@@ -220,6 +249,21 @@ contract ColonyFunding is
   )
     public
     stoppable
+  {
+    setExpenditurePayout(_permissionDomainId, _childSkillIndex, _id, _slot, block.chainid, _token, _amount);
+  }
+
+  function setExpenditurePayout(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  )
+    public
+    stoppable
     validExpenditure(_id)
     authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
@@ -227,7 +271,7 @@ contract ColonyFunding is
     slots[0] = _slot;
     uint256[] memory amounts = new uint256[](1);
     amounts[0] = _amount;
-    setExpenditurePayoutsInternal(_id, slots, block.chainid, _token, amounts);
+    setExpenditurePayoutsInternal(_id, slots, _chainId, _token, amounts);
   }
 
   /// @notice For owners to update payouts with one token and one slot
@@ -445,7 +489,7 @@ contract ColonyFunding is
         "colony-funding-expenditure-bad-state"
       );
 
-      uint256 fromPotPreviousAmount = fromPot.balance[_token] + _amount;
+      uint256 fromPotPreviousAmount = getFundingPotBalance(_fromPot, _chainId, _token) + _amount;
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _chainId, _token, fromPotPreviousAmount);
     }
 
@@ -492,20 +536,21 @@ contract ColonyFunding is
 
   function updatePayoutsWeCannotMakeAfterBudgetChange(
     uint256 _fundingPotId,
+    uint256 _chainId,
     address _token,
     uint256 _prev
   ) internal {
     FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
-    if (tokenPot.balance[_token] >= _prev) {
+    if (getFundingPotBalance(_fundingPotId, _chainId, _token) >= _prev) {
       // If the amount in the pot was enough to pay for the old budget...
-      if (tokenPot.balance[_token] < tokenPot.payouts[_token]) {
+      if (getFundingPotBalance(_fundingPotId, _chainId, _token) < getFundingPotPayout(_fundingPotId, _chainId, _token)) {
         // And the amount is not enough to pay for the new budget...
         tokenPot.payoutsWeCannotMake += 1; // Then this is a set of payouts we cannot make that we could before.
       }
     } else {
       // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
-      if (tokenPot.balance[_token] >= tokenPot.payouts[_token]) {
+      if (getFundingPotBalance(_fundingPotId, _chainId, _token) >= getFundingPotPayout(_fundingPotId, _chainId, _token)) {
         // And the amount is enough to pay for the new budget...
         tokenPot.payoutsWeCannotMake -= 1; // Then this is a set of payouts we can make that we could not before.
       }
@@ -538,9 +583,12 @@ contract ColonyFunding is
       emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
     }
 
-    fundingPot.payouts[_token] = runningTotal;
+    // fundingPot.payouts[_token] = runningTotal;
+    setFundingPotPayout(expenditures[_id].fundingPotId, _chainId, _token, runningTotal);
+
     updatePayoutsWeCannotMakeAfterBudgetChange(
       expenditures[_id].fundingPotId,
+      _chainId,
       _token,
       previousTotal
     );
@@ -597,7 +645,14 @@ contract ColonyFunding is
         }
       }
     } else {
-      // TODO: Shell colony payout
+        // TODO: Shell colony payout
+        bytes memory payload = abi.encodeWithSignature(
+          "transferFromBridge(address,address,uint256)",
+          _token,
+          _user,
+          _payout
+        );
+        IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
     }
 
     // slither-disable-next-line reentrancy-unlimited-gas

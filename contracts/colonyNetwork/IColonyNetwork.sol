@@ -529,6 +529,8 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return bridge The address of the bridge to the mining chain, if set
   function getColonyBridgeAddress() external view returns (address bridge);
 
+  function bridgeMessage(uint256 _chainId, bytes memory _payload) external;
+
   /// @notice Update the reputation on a foreign chain from the mining chain
   /// @dev Should error if called by anyone other than the known bridge from the mining chain
   /// @param newHash The new root hash
