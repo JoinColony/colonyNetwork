@@ -1332,13 +1332,36 @@ contract("Cross-chain", (accounts) => {
 
       const payload = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [shellColony.address, ethers.utils.parseEther("100")]);
 
-      const tx = await colony.makeProxyArbitraryTransaction(foreignChainId, foreignToken.address, payload);
+      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], [payload]);
       await tx.wait();
       await p;
 
       const balanceAfter = await foreignToken.balanceOf(shellColony.address);
       console.log(balanceBefore.toHexString(), balanceAfter.toHexString());
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
+    });
+
+    it.only("can make multiple arbitrary transactions on the foreign chain in one go", async () => {
+      const shellBalanceBefore = await foreignToken.balanceOf(shellColony.address);
+      const colonyBalanceBefore = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction(2);
+
+      const payload1 = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [shellColony.address, ethers.utils.parseEther("100")]);
+      const payload2 = shellColony.interface.encodeFunctionData("claimTokens(address)", [foreignToken.address]);
+
+      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address, shellColony.address], [payload1, payload2]);
+      await tx.wait();
+      await p;
+
+      const shellBalanceAfter = await foreignToken.balanceOf(shellColony.address);
+      console.log(shellBalanceBefore.toHexString(), shellBalanceAfter.toHexString());
+      expect(shellBalanceAfter.sub(shellBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
+
+      // Check that the second transaction was successful
+
+      const colonyBalanceAfter = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      expect(colonyBalanceAfter.sub(colonyBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
   });
 
