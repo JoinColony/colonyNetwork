@@ -1298,6 +1298,50 @@ contract("Cross-chain", (accounts) => {
     });
   });
 
+  describe("making arbitrary transactions on another chain", async () => {
+    let colony;
+    let shellColony;
+    let foreignToken;
+    beforeEach(async () => {
+      colony = await setupColony(homeColonyNetwork);
+
+      const events = await homeColonyNetwork.queryFilter(homeColonyNetwork.filters.ColonyAdded());
+      // homeColonyNetwork.fil
+      // Deploy a proxy colony on the foreign network
+
+      const colonyCreationSalt = await homeColonyNetwork.getColonyCreationSalt({ blockTag: events[events.length - 1].blockNumber });
+
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+
+      const tx = await colony.createShellColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
+      await tx.wait();
+
+      await p;
+      shellColony = new ethers.Contract(colony.address, ShellColony.abi, ethersForeignSigner);
+      // Deploy a token on the foreign network
+
+      const tokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersForeignSigner);
+      foreignToken = await tokenFactory.deploy("Test Token", "TT", 18);
+      await (await foreignToken.unlock()).wait();
+      await (await foreignToken.setOwner(shellColony.address)).wait();
+    });
+
+    it.only("can make arbitrary transactions on the foreign chain", async () => {
+      const balanceBefore = await foreignToken.balanceOf(shellColony.address);
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+
+      const payload = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [shellColony.address, ethers.utils.parseEther("100")]);
+
+      const tx = await colony.makeProxyArbitraryTransaction(foreignChainId, foreignToken.address, payload);
+      await tx.wait();
+      await p;
+
+      const balanceAfter = await foreignToken.balanceOf(shellColony.address);
+      console.log(balanceBefore.toHexString(), balanceAfter.toHexString());
+      expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
+    });
+  });
+
   describe("bridge functions are secure", async () => {
     it("only the configured colonyNetwork can call `sendMessage`", async () => {
       const tx = await foreignColonyBridge.sendMessage(1, "0x00000000", { gasLimit: 1000000 });
