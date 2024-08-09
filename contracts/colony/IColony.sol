@@ -908,7 +908,7 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     address _token
   ) external view returns (uint256);
 
-  function createShellColony(uint256 _destinationChainId, bytes32 _salt) external;
+  function createProxyColony(uint256 _destinationChainId, bytes32 _salt) external;
 
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
   /// @param _token Address of the token, `0x0` value indicates Ether

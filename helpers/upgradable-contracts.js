@@ -200,11 +200,11 @@ exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensR
   await ensRegistry.setSubnodeOwner(rootNode, COLONY_HASH, colonyNetwork.address);
 };
 
-exports.setupShellColonyNetwork = async function setupShellColonyNetwork(etherRouter, shellColonyNetwork, resolver) {
+exports.setupProxyColonyNetwork = async function setupProxyColonyNetwork(etherRouter, proxyColonyNetwork, resolver) {
   const deployedImplementations = {};
-  deployedImplementations.ShellColonyNetwork = shellColonyNetwork.address;
+  deployedImplementations.ProxyColonyNetwork = proxyColonyNetwork.address;
 
-  await exports.setupEtherRouter("bridging", "ShellColonyNetwork", deployedImplementations, resolver);
+  await exports.setupEtherRouter("bridging", "ProxyColonyNetwork", deployedImplementations, resolver);
   const txOrReceipt = await etherRouter.setResolver(resolver.address);
   if (txOrReceipt.wait) {
     await txOrReceipt.wait();
