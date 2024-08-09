@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
@@ -30,14 +30,14 @@ import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouter } from "./../common/EtherRouter.sol";
 import { IColonyBridge } from "./IColonyBridge.sol";
 
-contract ShellColonyNetwork is DSAuth, Multicall, CallWithGuards {
+contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards {
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
   address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
 
   address public colonyBridgeAddress;
   uint256 public homeChainId;
-  address public shellColonyResolverAddress;
+  address public proxyColonyResolverAddress;
   mapping(address => bool) public shellColonies;
 
   /// @notice Event logged when the colony network has data about a bridge contract set.
@@ -69,15 +69,15 @@ contract ShellColonyNetwork is DSAuth, Multicall, CallWithGuards {
     emit BridgeSet(_bridgeAddress);
   }
 
-  function setShellColonyResolverAddress(address _resolver) public auth {
-    shellColonyResolverAddress = _resolver;
+  function setProxyColonyResolverAddress(address _resolver) public auth {
+    proxyColonyResolverAddress = _resolver;
   }
 
   function setHomeChainId(uint256 _homeChainId) public auth {
     homeChainId = _homeChainId;
   }
 
-  function createShellColonyFromBridge(bytes32 _salt) public onlyColonyBridge {
+  function createProxyColonyFromBridge(bytes32 _salt) public onlyColonyBridge {
     EtherRouter etherRouter = EtherRouter(
       payable(
         ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
@@ -91,7 +91,7 @@ contract ShellColonyNetwork is DSAuth, Multicall, CallWithGuards {
 
     shellColonies[address(etherRouter)] = true;
 
-    etherRouter.setResolver(shellColonyResolverAddress); // ignore-swc-113
+    etherRouter.setResolver(proxyColonyResolverAddress); // ignore-swc-113
   }
 
   function bridgeMessage(bytes memory _payload) public onlyColony {

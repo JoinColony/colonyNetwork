@@ -650,6 +650,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     address _colonyAddress,
     uint256 _domainId
   ) external view returns (address domainTokenReceiverAddress);
+
   /// @notice Send the claimFunds transaction from the shell to the colony
   /// @param _token The token being held by the shell
   /// @param _balance The shell's current balance of the token
