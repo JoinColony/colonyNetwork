@@ -36,7 +36,7 @@ const ProxyColonyNetwork = artifacts.require("ProxyColonyNetwork");
 const ProxyColony = artifacts.require("ProxyColony");
 const MetaTxToken = artifacts.require("MetaTxToken");
 // const { assert } = require("console");
-const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
+const { setupBridging, deployBridge, setForeignBridgeData, setHomeBridgeData } = require("../../scripts/setup-bridging-contracts");
 
 const {
   MINING_CYCLE_DURATION,
@@ -107,41 +107,6 @@ contract("Cross-chain", (accounts) => {
   // const ethersHomeSigner = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner();
   const ethersForeignSigner2 = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl).getSigner(1);
   const ethersHomeSigner2 = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner(1);
-
-  async function setForeignBridgeData(foreignColonyBridgeForColony) {
-    const bridge = new ethers.Contract(foreignColonyBridge.address, WormholeBridgeForColony.abi, ethersForeignSigner);
-
-    let tx = await bridge.setColonyBridgeAddress(foreignChainId, foreignColonyBridge.address);
-    await tx.wait();
-    tx = await bridge.setColonyBridgeAddress(homeChainId, homeColonyBridge.address);
-    await tx.wait();
-
-    tx = await bridge.setColonyNetworkAddress(foreignColonyNetwork.address);
-    await tx.wait();
-
-    // TODO: Figure out a better way of setting / controlling this?
-    console.log("setting foreign colony bridge address", foreignColonyBridgeForColony);
-    tx = await foreignColonyNetwork.setColonyBridgeAddress(foreignColonyBridgeForColony);
-    await tx.wait();
-    tx = await foreignColonyNetwork.setHomeChainId(homeChainId);
-    await tx.wait();
-    console.log("done");
-  }
-
-  async function setHomeBridgeData(homeColonyBridgeAddressForColony) {
-    const bridge = new ethers.Contract(homeColonyBridge.address, WormholeBridgeForColony.abi, ethersHomeSigner);
-
-    let tx = await bridge.setColonyBridgeAddress(foreignChainId, foreignColonyBridge.address);
-    await tx.wait();
-    tx = await bridge.setColonyBridgeAddress(homeChainId, homeColonyBridge.address);
-    await tx.wait();
-
-    tx = await bridge.setColonyNetworkAddress(homeColonyNetwork.address);
-    await tx.wait();
-
-    tx = await homeMetacolony.setColonyBridgeAddress(homeColonyBridgeAddressForColony);
-    await tx.wait();
-  }
 
   before(async () => {
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
@@ -243,9 +208,8 @@ contract("Cross-chain", (accounts) => {
     console.log("got mc");
     homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
 
-    await setForeignBridgeData(foreignColonyBridge.address);
-    await setHomeBridgeData(homeColonyBridge.address);
-
+    await setForeignBridgeData(homeColonyBridge.address, foreignColonyBridge.address, ethersHomeSigner, ethersForeignSigner);
+    await setHomeBridgeData(homeColonyBridge.address, foreignColonyBridge.address, ethersHomeSigner, ethersForeignSigner);
     // Bridge over skills that have been created on the foreign chain
 
     // const latestSkillId = await foreignColonyNetwork.getSkillCount();

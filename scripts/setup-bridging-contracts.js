@@ -10,7 +10,7 @@ const fs = require("fs");
 const ethers = require("ethers"); // eslint-disable-line
 const { spawn } = require("child_process");
 const { TruffleLoader } = require("../packages/package-utils");
-const { WAD } = require("../helpers/constants");
+const { WAD, NETWORK_ADDRESS } = require("../helpers/constants");
 
 const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", `artifacts${process.env.SOLIDITY_COVERAGE ? "-coverage" : ""}`, "contracts"),
@@ -199,7 +199,70 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
   console.log(`Token address: ${token.address}`);
+
+  await setForeignBridgeData(homeColonyBridge.address, foreignColonyBridge.address, ethersHomeSigner, ethersForeignSigner);
+  await setHomeBridgeData(homeColonyBridge.address, foreignColonyBridge.address, ethersHomeSigner, ethersForeignSigner);
+
   return { gnosisSafe, resetRelayer, guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
+}
+
+async function setForeignBridgeData(homeColonyBridgeAddress, foreignColonyBridgeAddress, ethersHomeSigner, ethersForeignSigner) {
+  const contractDir = path.resolve(__dirname, "..", "artifacts", "contracts", "bridging");
+  const WormholeBridgeForColony = await loader.load({ contractDir, contractName: "WormholeBridgeForColony" });
+  const ProxyColonyNetwork = await loader.load({ contractDir, contractName: "ProxyColonyNetwork" });
+
+  const bridge = new ethers.Contract(foreignColonyBridgeAddress, WormholeBridgeForColony.abi, ethersForeignSigner);
+
+  const homeChainId = (await ethersHomeSigner.provider.getNetwork()).chainId;
+  const foreignChainId = (await ethersForeignSigner.provider.getNetwork()).chainId;
+
+  let tx = await bridge.setColonyBridgeAddress(foreignChainId, foreignColonyBridgeAddress);
+  await tx.wait();
+  tx = await bridge.setColonyBridgeAddress(homeChainId, homeColonyBridgeAddress);
+  await tx.wait();
+
+  tx = await bridge.setColonyNetworkAddress(NETWORK_ADDRESS);
+  await tx.wait();
+
+  // TODO: Figure out a better way of setting / controlling this?
+  console.log("setting foreign colony bridge address", foreignColonyBridgeAddress);
+  const foreignColonyNetwork = new ethers.Contract(NETWORK_ADDRESS, ProxyColonyNetwork.abi, ethersForeignSigner);
+  tx = await foreignColonyNetwork.setColonyBridgeAddress(foreignColonyBridgeAddress);
+  await tx.wait();
+  tx = await foreignColonyNetwork.setHomeChainId(homeChainId);
+  await tx.wait();
+  console.log("done");
+}
+
+async function setHomeBridgeData(homeColonyBridgeAddress, foreignColonyBridgeAddress, ethersHomeSigner, ethersForeignSigner) {
+  let contractDir = path.resolve(__dirname, "..", "artifacts", "contracts", "bridging");
+  const WormholeBridgeForColony = await loader.load({ contractDir, contractName: "WormholeBridgeForColony" });
+
+  contractDir = path.resolve(__dirname, "..", "artifacts", "contracts", "colonyNetwork");
+  const IColonyNetwork = await loader.load({ contractDir, contractName: "IColonyNetwork" });
+
+  const bridge = new ethers.Contract(homeColonyBridgeAddress, WormholeBridgeForColony.abi, ethersHomeSigner);
+  const homeChainId = (await ethersHomeSigner.provider.getNetwork()).chainId;
+  const foreignChainId = (await ethersForeignSigner.provider.getNetwork()).chainId;
+
+  let tx = await bridge.setColonyBridgeAddress(foreignChainId, foreignColonyBridgeAddress);
+  await tx.wait();
+  tx = await bridge.setColonyBridgeAddress(homeChainId, homeColonyBridgeAddress);
+  await tx.wait();
+
+  tx = await bridge.setColonyNetworkAddress(NETWORK_ADDRESS);
+  await tx.wait();
+
+  const homeColonyNetwork = new ethers.Contract(NETWORK_ADDRESS, IColonyNetwork.abi, ethersHomeSigner);
+  const mcAddress = await homeColonyNetwork.getMetaColony();
+
+  contractDir = path.resolve(__dirname, "..", "artifacts", "contracts", "colony");
+  const IMetaColony = await loader.load({ contractDir, contractName: "IMetaColony" });
+
+  const homeMetacolony = new ethers.Contract(mcAddress, IMetaColony.abi, ethersHomeSigner);
+
+  tx = await homeMetacolony.setColonyBridgeAddress(homeColonyBridgeAddress);
+  await tx.wait();
 }
 
 async function getSig(provider, account, dataHash) {
@@ -241,4 +304,4 @@ if (process.argv.includes("start-bridging-environment")) {
   setupBridging("http://127.0.0.1:8545", "http://127.0.0.1:8546");
 }
 
-module.exports = { setupBridging, deployBridge };
+module.exports = { setupBridging, deployBridge, setHomeBridgeData, setForeignBridgeData };
