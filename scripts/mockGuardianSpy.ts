@@ -90,11 +90,11 @@ class MockGuardianSpy {
     foreignColonyBridgeAddress: string,
   ) {
     this.homeRpc = homeRpc;
-    this.foreignRpc = foreignRpc;
+    this.foreignRpcs = foreignRpcs;
     this.homeBridgeAddress = homeBridgeAddress;
-    this.foreignBridgeAddress = foreignBridgeAddress;
+    this.foreignBridgeAddresses = foreignBridgeAddresses;
     this.homeColonyBridgeAddress = homeColonyBridgeAddress;
-    this.foreignColonyBridgeAddress = foreignColonyBridgeAddress;
+    this.foreignColonyBridgeAddresses = foreignColonyBridgeAddresses;
 
     this.setupListeners();
 
@@ -177,12 +177,51 @@ class MockGuardianSpy {
     return vaaHeader + vaaBody.toString("hex").slice(2);
   }
 
+  setupForeignBridges(foreignRpc, foreignBridgeAddress, foreignColonyBridgeAddress) {
+    const signerForeign = new RetryProvider(foreignRpc).getSigner();
+    const foreignBridge = new ethers.Contract(foreignBridgeAddress, bridgeAbi, signerForeign);
+    const foreignWormholeBridgeForColony = new ethers.Contract(foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, signerForeign);
+
+    this.foreignBridges.push(foreignBridge);
+    this.foreignWormholeBridgesForColony.push(foreignWormholeBridgeForColony);
+  }
+
+
+  async getColonyBridgeWithChainId(chainId) {
+    if ((await this.homeBridge.provider.getNetwork()).chainId === chainId) {
+      return this.homeBridge;
+    }
+    for (const foreignBridge of this.foreignWormholeBridgesForColony) {
+      if ((await foreignBridge.provider.getNetwork()).chainId === chainId) {
+        return foreignBridge;
+      }
+    }
+    throw new Error("No bridge found for chainId");
+  };
+
+  getWormholeChainId(chainId) {
+    // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
+    // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
+    // and for chainId 256669101, we use 10002 (which is really sepolia).
+    // This isn't ideal, but it's the best solution I have for now
+    if (chainId === 265669100) {
+      return 10003;
+    } else if (chainId === 265669101) {
+      return 10002;
+    } else if (chainId === 265669102) {
+      return 10005;
+    }
+    throw new Error("Unsupported chainId");
+  }
+
   setupListeners() {
     if (this.homeBridge) {
       this.homeBridge.removeAllListeners("LogMessagePublished");
     }
-    if (this.foreignBridge) {
-      this.foreignBridge.removeAllListeners("LogMessagePublished");
+    if (this.foreignBridges && this.foreignBridges.length > 0) {
+      for (const bridge of this.foreignBridges) {
+        bridge.removeAllListeners("LogMessagePublished");
+      }
     }
 
     this.signerHome = new RetryProvider(this.homeRpc).getSigner();
@@ -193,6 +232,15 @@ class MockGuardianSpy {
     this.homeWormholeBridgeForColony = new ethers.Contract(this.homeColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerHome);
     this.foreignWormholeBridgeForColony = new ethers.Contract(this.foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerForeign);
 
+    this.signerHome = new RetryProvider(this.homeRpc).getSigner();
+    // this.signerForeign = new RetryProvider(this.foreignRpc).getSigner();
+    this.homeBridge = new ethers.Contract(this.homeBridgeAddress, bridgeAbi, this.signerHome);
+    // this.foreignBridge = new ethers.Contract(this.foreignBridgeAddress, bridgeAbi, this.signerForeign);
+    this.homeWormholeBridgeForColony = new ethers.Contract(this.homeColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerHome);
+    // this.foreignWormholeBridgeForColony = new ethers.Contract(this.foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerForeign);
+    for (let i = 0; i < this.foreignRpcs.length; i++) {
+      this.setupForeignBridges(this.foreignRpcs[i], this.foreignBridgeAddresses[i], this.foreignColonyBridgeAddresses[i]);
+    }
     this.skipCount = 0;
 
     this.queue = [];
@@ -206,13 +254,20 @@ class MockGuardianSpy {
       // This isn't ideal, but it's the best solution I have for now
       const wormholeChainId = evmChainIdToWormholeChainId(chainId);
 
-      if (this.skipCount > 0) {
-        this.skipped.push([this.foreignWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
-        this.skipCount -= 1;
-        return;
+        const destinationBridge = await this.getColonyBridgeWithChainId(destinationEvmChainId.toNumber());
+        const wormholeChainId = this.getWormholeChainId(chainId);
+
+        if (this.skipCount > 0) {
+          this.skipped.push([destinationBridge, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
+          this.skipCount -= 1;
+          return;
+        }
+        this.queue.push([destinationBridge, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
+        await this.processQueue();
+      } catch (e) {
+        console.log("Error in LogMessagePublished listener");
+        console.log(e);
       }
-      this.queue.push([this.foreignWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
-      await this.processQueue();
     });
 
     this.foreignBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
@@ -223,19 +278,26 @@ class MockGuardianSpy {
       // This isn't ideal, but it's the best solution I have for now
       const wormholeChainId = evmChainIdToWormholeChainId(chainId);
 
-      if (this.skipCount > 0) {
-        this.skipped.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
-        this.skipCount -= 1;
-        return;
-      }
-      this.queue.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
+        if (destinationEvmChainId.toNumber() !== 265669100) {
+          throw new Error("Unsupported chainId - change assumptions in mockGuardianSpy.ts");
+        }
 
-      await this.processQueue();
-    });
+        const wormholeChainId = this.getWormholeChainId(chainId);
+
+        if (this.skipCount > 0) {
+          this.skipped.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
+          this.skipCount -= 1;
+          return;
+        }
+        this.queue.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
+
+        await this.processQueue();
+      });
+    }
 
     console.log("Mock Bridge Monitor running");
     console.log("Home bridge address: ", this.homeBridgeAddress);
-    console.log("Foreign bridge address: ", this.foreignBridgeAddress);
+    console.log("Foreign bridge addresses: ", this.foreignBridgeAddresses);
   }
 
   close() {} // eslint-disable-line class-methods-use-this
@@ -275,7 +337,6 @@ class MockGuardianSpy {
     }
 
     this.bridgingPromiseCount -= 1;
-
     if (this.bridgingPromiseCount === 0) {
       const receipt = await bridge.provider.getTransactionReceipt(tx.hash);
       this.resolveBridgingPromise(receipt);

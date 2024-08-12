@@ -19,18 +19,22 @@ const loader = new TruffleLoader({
 const ADDRESS_ZERO = ethers.constants.AddressZero;
 const MockGuardianSpy = require("./mockGuardianSpy").default;
 
-async function setupBridging(homeRpcUrl, foreignRpcUrl) {
+async function setupBridging(homeRpcUrl, foreignRpcUrls) {
   console.log("setup-bridging-contracts: Not to be used in production");
   if (process.env.NODE_ENV === "production") {
     process.exit(1);
   }
-
-  const ethersForeignProvider = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl);
-  const ethersForeignSigner = ethersForeignProvider.getSigner();
+  const ethersForeignProviders = foreignRpcUrls.map((foreignRpcUrl) => new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl));
+  // const ethersForeignProvider = new ethers.providers.StaticJsonRpcProvider(foreignRpcUrl);
+  const ethersForeignSigners = ethersForeignProviders.map((provider) => provider.getSigner());
+  // const ethersForeignSigner = ethersForeignProvider.getSigner();
   const ethersHomeProvider = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl);
   const ethersHomeSigner = ethersHomeProvider.getSigner();
+  const homeChainId = (await ethersHomeSigner.provider.getNetwork()).chainId;
+  const foreignChainIds = await Promise.all(ethersForeignProviders.map((provider) => provider.getNetwork().then((network) => network.chainId)));
+  // const foreignChainId = (await ethersForeignSigner.provider.getNetwork()).chainId;
 
-  const accounts = await ethersForeignProvider.listAccounts();
+  const accounts = await ethersHomeProvider.listAccounts();
 
   let contractDir;
   contractDir = path.resolve(__dirname, "..", "artifacts", "lib", "safe-contracts", "contracts");
@@ -46,99 +50,129 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   contractDir = path.resolve(__dirname, "..", "artifacts", "colonyToken");
   const Token = await loader.load({ contractDir, contractName: "Token" });
 
-  // This is the address that the gnosis safe proxy factory should have been deployed to by the deploy command using hardhat in their repo
-  const gspf = new ethers.Contract("0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", GnosisSafeProxyFactory.abi, ethersForeignSigner);
+  const foreignBridgeAddresses = [];
+  const foreignColonyBridgeAddresses = [];
+  const foreignBridges = [];
+  const foreignColonyBridges = [];
+  const gnosisSafes = [];
+  const zodiacBridges = [];
 
-  // 0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552 is the address the gnosis safe implementation should have been deployed at
-  let receipt = await gspf.createProxy("0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552", "0x");
-  let tx = await receipt.wait();
+  // eslint-disable-next-line no-restricted-syntax
+  for (const ethersForeignSigner of ethersForeignSigners) {
+    // This is the address that the gnosis safe proxy factory should have been deployed to by the deploy command using hardhat in their repo
+    const gspf = new ethers.Contract("0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", GnosisSafeProxyFactory.abi, ethersForeignSigner);
 
-  const safeAddress = tx.events[0].args.proxy;
-  const gnosisSafe = new ethers.Contract(safeAddress, GnosisSafe.abi, ethersForeignSigner);
-  console.log("Gnosis Safe address: ", gnosisSafe.address);
+    // 0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552 is the address the gnosis safe implementation should have been deployed at
+    let receipt = await gspf.createProxy("0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552", "0x");
+    let tx = await receipt.wait();
 
-  receipt = await gnosisSafe.setup([accounts[0]], 1, ADDRESS_ZERO, "0x", ADDRESS_ZERO, ADDRESS_ZERO, 0, ADDRESS_ZERO);
-  await receipt.wait();
+    const safeAddress = tx.events[0].args.proxy;
+    const gnosisSafe = new ethers.Contract(safeAddress, GnosisSafe.abi, ethersForeignSigner);
+    console.log("Gnosis Safe address: ", gnosisSafe.address);
 
-  const zodiacBridgeFactory = new ethers.ContractFactory(ZodiacBridgeModuleMock.abi, ZodiacBridgeModuleMock.bytecode, ethersForeignSigner);
-  const zodiacBridge = await zodiacBridgeFactory.deploy(safeAddress);
-  await zodiacBridge.deployTransaction.wait();
-  console.log("Bridge module address: ", zodiacBridge.address);
+    receipt = await gnosisSafe.setup([accounts[0]], 1, ADDRESS_ZERO, "0x", ADDRESS_ZERO, ADDRESS_ZERO, 0, ADDRESS_ZERO);
+    await receipt.wait();
 
-  const erc721MockFactory = new ethers.ContractFactory(Erc721Mock.abi, Erc721Mock.bytecode, ethersForeignSigner);
-  const erc721 = await erc721MockFactory.deploy();
-  await erc721.deployTransaction.wait();
-  console.log("ERC721 address: ", erc721.address);
+    const zodiacBridgeFactory = new ethers.ContractFactory(ZodiacBridgeModuleMock.abi, ZodiacBridgeModuleMock.bytecode, ethersForeignSigner);
+    const zodiacBridge = await zodiacBridgeFactory.deploy(safeAddress);
+    await zodiacBridge.deployTransaction.wait();
+    console.log("Bridge module address: ", zodiacBridge.address);
 
-  const tokenId = 1;
-  const mintTx = await erc721.mint(gnosisSafe.address, tokenId);
-  await mintTx.wait();
-  const inventory = await erc721.balanceOf(gnosisSafe.address);
+    const erc721MockFactory = new ethers.ContractFactory(Erc721Mock.abi, Erc721Mock.bytecode, ethersForeignSigner);
+    const erc721 = await erc721MockFactory.deploy();
+    await erc721.deployTransaction.wait();
+    console.log("ERC721 address: ", erc721.address);
 
-  console.log(`Safe ${gnosisSafe.address} contains ${inventory} NFT.`); // Should eq 1.
-  if (inventory.toString() !== "1") {
-    console.log("Safe did not contain exactly 1 NFT");
-    process.exit();
+    const tokenId = 1;
+    const mintTx = await erc721.mint(gnosisSafe.address, tokenId);
+    await mintTx.wait();
+    const inventory = await erc721.balanceOf(gnosisSafe.address);
+
+    console.log(`Safe ${gnosisSafe.address} contains ${inventory} NFT.`); // Should eq 1.
+    if (inventory.toString() !== "1") {
+      console.log("Safe did not contain exactly 1 NFT");
+      process.exit();
+    }
+
+    const TokenFactory = new ethers.ContractFactory(Token.abi, Token.bytecode, ethersForeignSigner);
+    const token = await TokenFactory.deploy("Test", "TST", 18);
+    await token.deployTransaction.wait();
+    console.log("Token address: ", Token.address);
+
+    await token.unlock();
+    const mintTokensTx = await token["mint(address,uint256)"](gnosisSafe.address, WAD.muln(100).toString());
+    await mintTokensTx.wait();
+    const safeBalance = await token.balanceOf(gnosisSafe.address);
+
+    console.log(`Safe ${gnosisSafe.address} contains ${safeBalance} tokens.`); // Should eq 100000000000000000000.
+    if (safeBalance.toString() !== "100000000000000000000") {
+      console.log("Safe did not contain exactly 100000000000000000000 tokens after minting");
+      process.exit();
+    }
+
+    // Add bridge module to safe
+
+    const nonce = await gnosisSafe.nonce();
+
+    const data = gnosisSafe.interface.encodeFunctionData("enableModule(address)", [zodiacBridge.address]);
+    const safeTxArgs = [safeAddress, 0, data, 0, 100000, 100000, 0, ADDRESS_ZERO, ADDRESS_ZERO, nonce];
+    const safeData = await gnosisSafe.encodeTransactionData(...safeTxArgs);
+    const safeDataHash = await gnosisSafe.getTransactionHash(...safeTxArgs);
+
+    const sig = await getSig(ethersForeignSigner.provider, accounts[0], safeDataHash);
+
+    await gnosisSafe.checkNSignatures(safeDataHash, safeData, sig, 1);
+
+    tx = await gnosisSafe.execTransaction(...safeTxArgs.slice(0, -1), sig);
+
+    const enabled = await gnosisSafe.isModuleEnabled(zodiacBridge.address);
+
+    if (!enabled) {
+      console.log("Gnosis safe did not have bridge module enabled, exiting");
+      process.exit(1);
+    }
+
+    // Deploy a foreign bridge
+    const [foreignBridge, foreignColonyBridge] = await deployBridge(ethersForeignSigner);
+    const foreignChainId = (await ethersForeignSigner.provider.getNetwork()).chainId;
+
+    foreignBridgeAddresses.push(foreignBridge.address);
+    foreignColonyBridgeAddresses.push(foreignColonyBridge.address);
+
+    console.log(`On chain ${foreignChainId}:`);
+    console.log(`foreign bridge address: ${foreignBridge.address}`);
+    console.log(`foreign colony bridge address: ${foreignColonyBridge.address}`);
+    console.log(`foreign rpc url: ${foreignRpcUrls[0]}`);
+    console.log(`gnosis safe address: ${gnosisSafe.address}`);
+    console.log(`zodiac bridge module address: ${zodiacBridge.address}`);
+    console.log(`erc721 address: ${erc721.address}`);
+    console.log(`token address: ${token.address}`);
+
+    foreignBridges.push(foreignBridge);
+    foreignColonyBridges.push(foreignColonyBridge);
+    gnosisSafes.push(gnosisSafe);
+    zodiacBridges.push(zodiacBridge);
   }
-
-  const TokenFactory = new ethers.ContractFactory(Token.abi, Token.bytecode, ethersForeignSigner);
-  const token = await TokenFactory.deploy("Test", "TST", 18);
-  await token.deployTransaction.wait();
-  console.log("Token address: ", Token.address);
-
-  await token.unlock();
-  const mintTokensTx = await token["mint(address,uint256)"](gnosisSafe.address, WAD.muln(100).toString());
-  await mintTokensTx.wait();
-  const safeBalance = await token.balanceOf(gnosisSafe.address);
-
-  console.log(`Safe ${gnosisSafe.address} contains ${safeBalance} tokens.`); // Should eq 100000000000000000000.
-  if (safeBalance.toString() !== "100000000000000000000") {
-    console.log("Safe did not contain exactly 100000000000000000000 tokens after minting");
-    process.exit();
-  }
-
-  // Add bridge module to safe
-
-  const nonce = await gnosisSafe.nonce();
-
-  const data = gnosisSafe.interface.encodeFunctionData("enableModule(address)", [zodiacBridge.address]);
-  const safeTxArgs = [safeAddress, 0, data, 0, 100000, 100000, 0, ADDRESS_ZERO, ADDRESS_ZERO, nonce];
-  const safeData = await gnosisSafe.encodeTransactionData(...safeTxArgs);
-  const safeDataHash = await gnosisSafe.getTransactionHash(...safeTxArgs);
-
-  const sig = await getSig(ethersForeignProvider, accounts[0], safeDataHash);
-
-  await gnosisSafe.checkNSignatures(safeDataHash, safeData, sig, 1);
-
-  tx = await gnosisSafe.execTransaction(...safeTxArgs.slice(0, -1), sig);
-
-  const enabled = await gnosisSafe.isModuleEnabled(zodiacBridge.address);
-
-  if (!enabled) {
-    console.log("Gnosis safe did not have bridge module enabled, exiting");
-    process.exit(1);
-  }
-
-  // Deploy a foreign bridge
-  const [foreignBridge, foreignColonyBridge] = await deployBridge(ethersForeignSigner);
 
   // Deploy a home bridge
   const [homeBridge, homeColonyBridge] = await deployBridge(ethersHomeSigner);
 
   // Start the bridge service
   console.log(`Home RPC Url: ${homeRpcUrl}`);
-  console.log(`Foreign RPC Url: ${foreignRpcUrl}`);
+  // console.log(`Foreign RPC Url: ${foreignRpcUrl}`);
   const guardianSpy = new MockGuardianSpy(
     homeRpcUrl,
-    foreignRpcUrl,
+    foreignRpcUrls,
     homeBridge.address,
-    foreignBridge.address,
+    foreignBridgeAddresses,
     homeColonyBridge.address,
-    foreignColonyBridge.address,
+    foreignColonyBridgeAddresses,
   ); // eslint-disable-line no-unused-vars
 
   // TODO: Start the bridge monitor
   console.log("Starting bridge monitor");
+
+  const foreignWormholeChainIds = ["wormhole.CHAIN_ID_SEPOLIA", "wormhole.CHAIN_ID_OPTIMISM_SEPOLIA"];
 
   // Write config file
   const config = `
@@ -149,12 +183,20 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
         [wormhole.CHAIN_ID_ARBITRUM_SEPOLIA]: {
           endpoints: ["${homeRpcUrl}"],
           colonyBridgeAddress: "${homeColonyBridge.address}",
-        },
-        [wormhole.CHAIN_ID_SEPOLIA]: {
+          payForGas: true,
+          evmChainId: ${homeChainId}
+        },${foreignRpcUrls
+          .map(
+            (foreignRpcUrl, index) => `
+        [${foreignWormholeChainIds[index]}]: {
           endpoints: ["${foreignRpcUrl}"],
-          colonyBridgeAddress: "${foreignColonyBridge.address}",
-        },
-      },
+          colonyBridgeAddress: "${foreignColonyBridgeAddresses[index]}",
+          payForGas: ${index % 2 === 0},
+          evmChainId: ${foreignChainIds[index]}
+        },`,
+          )
+          .join("")}
+     },
     };
   `;
   fs.writeFileSync(path.resolve(__dirname, "..", "packages", "wormhole-relayer", "config.js"), config);
@@ -192,16 +234,18 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   }
 
   console.log(`Home bridge address: ${homeBridge.address}`);
-  console.log(`Foreign bridge address: ${foreignBridge.address}`);
-  console.log(`Home colony bridge address: ${homeColonyBridge.address}`);
-  console.log(`Foreign colony bridge address: ${foreignColonyBridge.address}`);
-  console.log(`Gnosis Safe address: ${gnosisSafe.address}`);
-  console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
-  console.log(`ERC721 address: ${erc721.address}`);
-  console.log(`Token address: ${token.address}`);
+  console.log(`Foreign bridge addresses: ${foreignBridgeAddresses.join(", ")}`);
+  console.log(`Home colony bridge addresses: ${homeColonyBridge.address}`);
+  console.log(`Foreign colony bridge addresses: ${foreignColonyBridgeAddresses.join(", ")}`);
+  // console.log(`Gnosis Safe addresses: ${gnosisSafe.address}`);
+  // console.log(`Zodiac Bridge module addresses: ${zodiacBridge.address}`);
+  // console.log(`ERC721 addresses: ${erc721.address}`);
+  // console.log(`Token addresses: ${token.address}`);
 
-  await setForeignBridgeData(homeColonyBridge.address, foreignColonyBridge.address, ethersHomeSigner, ethersForeignSigner);
-  await setHomeBridgeData(homeColonyBridge.address, foreignColonyBridge.address, ethersHomeSigner, ethersForeignSigner);
+  for (let i = 0; i < ethersForeignSigners.length; i += 1) {
+    await setForeignBridgeData(homeColonyBridge.address, foreignColonyBridgeAddresses[i], ethersHomeSigner, ethersForeignSigners[i]);
+    await setHomeBridgeData(homeColonyBridge.address, foreignColonyBridgeAddresses[i], ethersHomeSigner, ethersForeignSigners[i]);
+  }
 
   return { gnosisSafe, resetRelayer, guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
 }
@@ -294,7 +338,9 @@ async function deployBridge(signer) {
 
   let tx = await bridge.setWormholeAddress(wormhole.address);
   await tx.wait();
-  tx = await bridge.setChainIdMapping([265669100, 265669101], [10003, 10002]);
+
+  // TODO: These aren't all needed on every bridge
+  tx = await bridge.setChainIdMapping([265669100, 265669101, 265669102], [10003, 10002, 10005]);
   await tx.wait();
 
   return [wormhole, bridge];
