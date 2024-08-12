@@ -215,6 +215,11 @@ module.exports = {
             cancun: 0,
           },
         },
+        265669101: {
+          hardforkHistory: {
+            cancun: 0,
+          },
+        },
       },
     },
   },
