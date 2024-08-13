@@ -199,6 +199,15 @@ contract("Multisig Permissions", (accounts) => {
       await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [], []), "multisig-invalid-motion-no-data");
     });
 
+    it("can't propose an action with the target's address explicitly set to the colony contract", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [colony.address], [action]),
+        "multisig-passed-target-cannot-be-base-colony",
+      );
+    });
+
     it("can't propose an action requiring multiple different permissions", async () => {
       const action = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]); // Requires architecture
       const action2 = "0x12345678"; // Will be flagged as requiring root, but is also the special 'NO_ACTION' sig used by voting reputation.
@@ -241,6 +250,16 @@ contract("Multisig Permissions", (accounts) => {
         multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }),
         "colony-action-summary-inconsistent-domain-skill-id",
       );
+    });
+
+    it("can propose an action requiring the same permissions for multiple actions in the same domain", async () => {
+      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARCHITECTURE_ROLE]));
+
+      // Actions to award core funding in domain 2
+      const action1 = await encodeTxData(colony, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
+      const action2 = await encodeTxData(colony, "setUserRoles", [1, 0, USER3, 2, rolesToBytes32([FUNDING_ROLE])]);
+
+      multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO], [action1, action2], { from: USER2 });
     });
 
     it("can propose an action that's a multicall, with the contents requiring root permissions only if you have root permissions", async () => {
@@ -324,9 +343,7 @@ contract("Multisig Permissions", (accounts) => {
       );
 
       // Try to award multisig FUNDING in a child domain
-      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([FUNDING_ROLE]), {
-        from: USER2,
-      });
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE]));
     });
 
     it("multisig architecture can award core funding only in subdomains", async () => {
@@ -435,6 +452,17 @@ contract("Multisig Permissions", (accounts) => {
       expect(res).to.eq.BN(4);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(0);
+    });
+
+    it("Cannot award root in a non-root domain", async () => {
+      await checkErrorRevert(multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([ROOT_ROLE])), "multisig-bad-domain-for-role");
+    });
+
+    it("Domain inheritance is checked correctly when awarding permissions", async () => {
+      await checkErrorRevert(
+        multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 2, rolesToBytes32([FUNDING_ROLE])),
+        "multisig-invalid-domain-inheritance",
+      );
     });
   });
 
@@ -872,6 +900,8 @@ contract("Multisig Permissions", (accounts) => {
       await checkErrorRevert(multisigPermissions.execute(motionId), "multisig-motion-already-rejected");
       // Can't reject again
       await checkErrorRevert(multisigPermissions.cancel(motionId), "multisig-motion-already-rejected");
+      // Can't change vote
+      await checkErrorRevert(multisigPermissions.changeVote(1, 0, motionId, APPROVAL), "multisig-motion-already-rejected");
     });
 
     it("anyone can cancel a motion that was created more than a week ago", async () => {
@@ -892,11 +922,34 @@ contract("Multisig Permissions", (accounts) => {
 
       await makeTxAtTimestamp(multisigPermissions.cancel, [motionId, { from: USER3, gasLimit: 1000000 }], oneWeek + 1, this);
     });
+
+    it("the creator can cancel a motion at any time", async () => {
+      const action = "0x12345678";
+
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+      await multisigPermissions.cancel(motionId);
+
+      const motion = await multisigPermissions.getMotion(motionId);
+      expect(motion.rejected).to.be.true;
+    });
+
+    it("a motion that hits the rejection threshold will be cancelled, even if it hasn't been a week", async () => {
+      const action = "0x12345678";
+
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+      await multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER0 });
+      await multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER1 });
+
+      const motion = await multisigPermissions.getMotion(motionId);
+      expect(motion.rejected).to.be.true;
+    });
   });
 
   describe("Executing motions", async () => {
     it("can't execute a nonexistent motion", async () => {
-      await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, 1, APPROVAL), "multisig-motion-nonexistent");
+      await checkErrorRevert(multisigPermissions.execute(100), "multisig-motion-nonexistent");
     });
 
     it("can't execute an action requiring root permissions without approvals", async () => {
@@ -927,6 +980,17 @@ contract("Multisig Permissions", (accounts) => {
       await forwardTime(7 * 3600 * 24 + 1, this);
 
       await multisigPermissions.execute(motionId);
+    });
+
+    it("can't accidentally execute a motion that fails, even after a week, if using executeWithoutFailure", async () => {
+      const action = "0x12345678";
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+      await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
+
+      await forwardTime(7 * 3600 * 24 + 1, this);
+
+      await checkErrorRevert(multisigPermissions.executeWithoutFailure(motionId), "multisig-failed-not-one-week");
     });
 
     it("anyone can execute a motion so long as it has approvals", async () => {
@@ -972,6 +1036,39 @@ contract("Multisig Permissions", (accounts) => {
       await checkErrorRevert(multisigPermissions.changeVote(2, UINT256_MAX, motionId, APPROVAL, { from: USER1 }), "multisig-motion-already-executed");
 
       await checkErrorRevert(multisigPermissions.cancel(motionId, { from: USER1 }), "multisig-motion-already-executed");
+    });
+
+    it("if permission thresholds change to approve a motion, the first execution only sets the approval timestamp", async () => {
+      await setRootRoles(multisigPermissions, USER3, rolesToBytes32([ROOT_ROLE]));
+
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
+
+      const motionId = await multisigPermissions.getMotionCount();
+
+      // await multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER1 });
+
+      const motion = await multisigPermissions.getMotion(motionId);
+
+      const firstTimestamp = motion.overallApprovalTimestamp;
+      expect(firstTimestamp).to.be.eq.BN(0);
+
+      const domain = await colony.getDomain(1);
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 1);
+
+      await multisigPermissions.execute(motionId, { from: USER2 });
+
+      const updatedMotion = await multisigPermissions.getMotion(motionId);
+
+      expect(updatedMotion.overallApprovalTimestamp).to.be.gt.BN(firstTimestamp);
+      expect(updatedMotion.executed).to.be.false;
+
+      await multisigPermissions.execute(motionId, { from: USER2 });
+
+      const finalMotion = await multisigPermissions.getMotion(motionId);
+
+      expect(finalMotion.overallApprovalTimestamp).to.be.eq.BN(updatedMotion.overallApprovalTimestamp);
+      expect(finalMotion.executed).to.be.true;
     });
   });
 });
