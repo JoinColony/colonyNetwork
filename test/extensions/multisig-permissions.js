@@ -343,7 +343,19 @@ contract("Multisig Permissions", (accounts) => {
       );
 
       // Try to award multisig FUNDING in a child domain
-      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE]));
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE], { from: USER2 }));
+
+      // Try to award multisig FUNDING in a child domain without permissions
+      await checkErrorRevert(
+        multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE]), { from: USER3 }),
+        "multisig-caller-not-correct-permissions",
+      );
+
+      // Try to award multisig FUNDING in a root domain without permissions
+      await checkErrorRevert(
+        multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE]), { from: USER3 }),
+        "multisig-caller-not-correct-permissions",
+      );
     });
 
     it("multisig architecture can award core funding only in subdomains", async () => {
@@ -941,6 +953,22 @@ contract("Multisig Permissions", (accounts) => {
       const motionId = await multisigPermissions.getMotionCount();
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER0 });
       await multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER1 });
+
+      const motion = await multisigPermissions.getMotion(motionId);
+      expect(motion.rejected).to.be.true;
+    });
+
+    it("anyone can cancel a motion that is at the cancellation threshold, even if it wasn't when it was rejected", async () => {
+      const action = "0x12345678";
+
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+      await multisigPermissions.changeVote(1, UINT256_MAX, motionId, REJECTION, { from: USER0 });
+
+      const domain = await colony.getDomain(1);
+      await multisigPermissions.setDomainSkillThreshold(domain.skillId, 1);
+
+      await multisigPermissions.cancel(motionId, { from: USER3 });
 
       const motion = await multisigPermissions.getMotion(motionId);
       expect(motion.rejected).to.be.true;
