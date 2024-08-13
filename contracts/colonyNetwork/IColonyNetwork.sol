@@ -101,8 +101,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @dev Deprecated and will revert if called
   /// @param _skillId Id of the skill
   /// @param _deprecated Deprecation status
-  /// @return _changed Whether the deprecated state was changed
-  function deprecateSkill(uint256 _skillId, bool _deprecated) external returns (bool _changed);
+  function deprecateSkill(uint256 _skillId, bool _deprecated) external;
 
   /// @notice Initialise the local skills tree for a colony
   /// @return _rootLocalSkillId The root local skill

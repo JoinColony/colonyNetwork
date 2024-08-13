@@ -21,7 +21,7 @@ const {
   fundColonyWithTokens,
   setupColony,
 } = require("../../helpers/test-data-generator");
-const { deployColonyVersionGLWSS4, deployColonyVersionHMWSS } = require("../../scripts/deployOldUpgradeableVersion");
+const { downgradeColony, deployColonyVersionGLWSS4, deployColonyVersionHMWSS } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -189,6 +189,16 @@ contract("Colony", (accounts) => {
 
       const tx = await colony.deprecateLocalSkill(skillCount, true);
       await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
+    });
+
+    it("should not be able to deprecate a skill on the network", async () => {
+      await deployColonyVersionHMWSS(colonyNetwork);
+      await downgradeColony(colonyNetwork, colony, "hmwss");
+
+      const version = await colony.version();
+      expect(version).to.eq.BN(14);
+
+      await checkErrorRevert(colony.deprecateLocalSkill(0, true), "colony-network-deprecate-skill-disabled");
     });
   });
 
