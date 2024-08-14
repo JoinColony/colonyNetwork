@@ -343,7 +343,7 @@ contract("Multisig Permissions", (accounts) => {
       );
 
       // Try to award multisig FUNDING in a child domain
-      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE], { from: USER2 }));
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE]), { from: USER2 });
 
       // Try to award multisig FUNDING in a child domain without permissions
       await checkErrorRevert(
