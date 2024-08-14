@@ -393,7 +393,7 @@ Set the deprecation of an extension in a colony. Can only be called by a Colony.
 |_deprecated|bool|Whether to deprecate the extension or not
 
 
-### ▸ `deprecateSkill(uint256 _skillId, bool _deprecated)`
+### ▸ `deprecateSkill(uint256 _skillId, bool _deprecated):bool _changed`
 
 DEPRECATED Set deprecation status for a skill
 
@@ -406,6 +406,11 @@ DEPRECATED Set deprecation status for a skill
 |_skillId|uint256|Id of the skill
 |_deprecated|bool|Deprecation status
 
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_changed|bool|Whether the deprecated state was changed
 
 ### ▸ `getBridgedReputationUpdateCount(uint256 _chainId, address _colony):uint256 bridgedReputationCount`
 
