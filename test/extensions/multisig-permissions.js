@@ -502,6 +502,29 @@ contract("Multisig Permissions", (accounts) => {
       await checkErrorRevert(multisigPermissions.changeVote(1, UINT256_MAX, motionId, APPROVAL, { from: USER2 }), "multisig-no-permissions");
     });
 
+    it("if you only have architecture in a subdomain, you cannot create a motion to award a permission in that subdomain", async () => {
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([ARCHITECTURE_ROLE]));
+      const action = await encodeTxData(colony, "setUserRoles", [1, 0, USER3, 2, rolesToBytes32([FUNDING_ROLE])]);
+      await checkErrorRevert(
+        multisigPermissions.createMotion(2, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 }),
+        "multisig-architecture-only-in-subdomains",
+      );
+    });
+
+    it("if you only have architecture in a subdomain, you cannot approve a motion to award a permission in that subdomain", async () => {
+      await setRootRoles(multisigPermissions, USER0, rolesToBytes32([ARCHITECTURE_ROLE]));
+      const action = await encodeTxData(colony, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
+      await multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([ARCHITECTURE_ROLE]));
+
+      await checkErrorRevert(
+        multisigPermissions.changeVote(2, UINT256_MAX, motionId, APPROVAL, { from: USER2 }),
+        "multisig-architecture-only-in-subdomains",
+      );
+    });
+
     it("if you don't show the right permissions, you cannot approve", async () => {
       const action = await encodeTxData(colony, "mintTokens", [WAD]);
       await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);

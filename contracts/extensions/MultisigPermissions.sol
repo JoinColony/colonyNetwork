@@ -503,6 +503,15 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
 
   function validateUserPermissions(uint256 _permissionDomainId, uint256 _motionId) internal view {
     bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
+    Motion storage motion = motions[_motionId];
+
+    if ((motion.requiredPermissions & bytes32(1 << uint256(ColonyRole.Architecture))) != 0) {
+      require(
+        colony.getDomain(_permissionDomainId).skillId != motion.domainSkillId,
+        "multisig-architecture-only-in-subdomains"
+      );
+    }
+
     require(
       userPermissions & motions[_motionId].requiredPermissions > 0,
       "multisig-no-permissions"
