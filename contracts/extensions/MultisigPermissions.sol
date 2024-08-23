@@ -60,6 +60,12 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     Reject
   }
 
+  // Constants
+  bytes4 constant OLD_MOVE_FUNDS =
+    bytes4(
+      keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)")
+    );
+
   // Storage
 
   // User Address => Domain Id => Roles
@@ -164,12 +170,18 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
 
     for (uint256 i = 0; i < _data.length; i += 1) {
       require(_targets[i] != address(colony), "multisig-passed-target-cannot-be-base-colony");
+      bytes4[] memory domainantSigs; // Empty array
+
+      bytes4[] memory forbiddenSigs = new bytes4[](1);
+      forbiddenSigs[0] = OLD_MOVE_FUNDS;
 
       ActionSummary memory actionSummary = getActionSummary(
         address(colonyNetwork),
         address(colony),
         _data[i],
-        _targets[i]
+        _targets[i],
+        forbiddenSigs,
+        domainantSigs
       );
 
       // slither-disable-next-line incorrect-equality

@@ -45,6 +45,11 @@ contract VotingReputationStorage is
   uint256 constant REVEAL_END = 2;
 
   uint256 constant LOCK_DELAY = 10 * 365 days;
+  bytes4 constant NO_ACTION = 0x12345678;
+  bytes4 constant OLD_MOVE_FUNDS =
+    bytes4(
+      keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)")
+    );
 
   // Initialization data
   ExtensionState state;
@@ -143,7 +148,20 @@ contract VotingReputationStorage is
     bytes memory _action,
     address _altTarget
   ) public view returns (ActionSummary memory) {
-    return getActionSummary(address(colonyNetwork), address(colony), _action, _altTarget);
+    bytes4[] memory forbiddenSigs = new bytes4[](1);
+    forbiddenSigs[0] = OLD_MOVE_FUNDS;
+    bytes4[] memory dominantSigs = new bytes4[](1);
+    dominantSigs[0] = NO_ACTION;
+
+    return
+      getActionSummary(
+        address(colonyNetwork),
+        address(colony),
+        _action,
+        _altTarget,
+        forbiddenSigs,
+        dominantSigs
+      );
   }
 
   function getMotionState(uint256 _motionId) public view returns (MotionState _motionState) {
@@ -202,10 +220,7 @@ contract VotingReputationStorage is
       try this.getActionSummary(motion.action, motion.altTarget) returns (
         ActionSummary memory actionSummary
       ) {
-        return
-          (actionSummary.sig == NO_ACTION || actionSummary.sig == OLD_MOVE_FUNDS)
-            ? MotionState.Finalized
-            : MotionState.Finalizable;
+        return (actionSummary.sig == NO_ACTION) ? MotionState.Finalized : MotionState.Finalizable;
       } catch {
         return MotionState.Finalized;
       }

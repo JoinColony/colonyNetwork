@@ -78,19 +78,7 @@ contract VotingReputation is VotingReputationStorage {
     require(state == ExtensionState.Active, "voting-rep-not-active");
     require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
 
-    ActionSummary memory actionSummary = getActionSummary(
-      address(colonyNetwork),
-      address(colony),
-      _action,
-      _altTarget
-    );
-
-    require(actionSummary.sig != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
-    require(
-      actionSummary.domainSkillId != type(uint256).max &&
-        actionSummary.expenditureId != type(uint256).max,
-      "voting-rep-invalid-multicall"
-    );
+    ActionSummary memory actionSummary = getActionSummary(_action, _altTarget);
 
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
 
@@ -243,12 +231,8 @@ contract VotingReputation is VotingReputationStorage {
       }
     } else {
       // Backwards compatibility for versions 9 and below
-      ActionSummary memory actionSummary = getActionSummary(
-        address(colonyNetwork),
-        address(colony),
-        motion.action,
-        motion.altTarget
-      );
+
+      ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
       if (
         isExpenditureSig(actionSummary.sig) &&
         getTarget(motion.altTarget, address(colony)) == address(colony)

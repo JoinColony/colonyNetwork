@@ -33,11 +33,6 @@ struct ActionSummary {
 
 contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
-  bytes4 constant NO_ACTION = 0x12345678;
-  bytes4 constant OLD_MOVE_FUNDS =
-    bytes4(
-      keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)")
-    );
   bytes4 constant SET_EXPENDITURE_STATE =
     bytes4(
       keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
@@ -114,7 +109,9 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     address colonyNetworkAddress,
     address colonyAddress,
     bytes memory _action,
-    address _altTarget
+    address _altTarget,
+    bytes4[] memory _forbiddenSigs,
+    bytes4[] memory _dominantSigs
   ) internal view returns (ActionSummary memory) {
     address target = getTarget(_altTarget, colonyAddress);
     bytes[] memory actions;
@@ -147,17 +144,16 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         totalSummary.domainSkillId = actionSummary.domainSkillId;
       }
 
-      if (isSpecialFunction(actionSummary.sig)) {
-        // If any of the actions are NO_ACTION or OLD_MOVE_FUNDS,
+      if (sigInArray(actionSummary.sig, _dominantSigs)) {
+        // If any of the actions are classed as 'dominant',
         //   the entire multicall is such
-        totalSummary.sig = actionSummary.sig;
+        return actionSummary;
+      } else if (sigInArray(actionSummary.sig, _forbiddenSigs)) {
+        revert("colony-action-summary-forbidden-sig");
       } else if (isExpenditureSig(actionSummary.sig)) {
         // If it is an expenditure action, we record the expenditure ids
         //  and ensure it is consistent throughout the multicall.
-        //  If not, we return UINT256_MAX which represents an invalid multicall
-        if (!isSpecialFunction(totalSummary.sig)) {
-          totalSummary.sig = actionSummary.sig;
-        }
+        totalSummary.sig = actionSummary.sig;
 
         if (
           totalSummary.expenditureId > 0 &&
@@ -170,10 +166,8 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         }
       } else {
         // If no expenditure signatures have been seen, we record the latest signature
-        // unless we're already flagged as a NO_ACTION or OLD_MOVE_FUNDS
         // Also, we aggregate the permissions as we go
-
-        if (!isExpenditureSig(totalSummary.sig) && !isSpecialFunction(totalSummary.sig)) {
+        if (!isExpenditureSig(totalSummary.sig)) {
           totalSummary.sig = actionSummary.sig;
         }
       }
@@ -194,8 +188,13 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     return sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT;
   }
 
-  function isSpecialFunction(bytes4 sig) internal pure returns (bool) {
-    return sig == NO_ACTION || sig == OLD_MOVE_FUNDS;
+  function sigInArray(bytes4 sig, bytes4[] memory sigs) internal pure returns (bool) {
+    for (uint256 i; i < sigs.length; i++) {
+      if (sigs[i] == sig) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function getTarget(address _target, address colonyAddress) internal pure returns (address) {

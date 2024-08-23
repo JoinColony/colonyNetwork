@@ -1864,7 +1864,7 @@ contract("Voting Reputation", (accounts) => {
       // Blacklisted function
       multicall = await encodeTxData(colony, "multicall", [[OLD_MOVE_FUNDS_CALL, action14]]);
       summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.sig).to.equal(OLD_MOVE_FUNDS_SIG);
+      await checkErrorRevertEstimateGas(voting.getActionSummary.estimateGas(multicall, ADDRESS_ZERO), "colony-action-summary-forbidden-sig");
 
       // Special NO_ACTION
       multicall = await encodeTxData(colony, "multicall", [[action9, NO_ACTION]]);

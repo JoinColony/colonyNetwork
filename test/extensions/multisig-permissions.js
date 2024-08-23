@@ -252,6 +252,11 @@ contract("Multisig Permissions", (accounts) => {
       );
     });
 
+    it("can't propose an action that summarises to a forbidden action", async () => {
+      const action = await encodeTxData(colony, "moveFundsBetweenPots", [1, 2, 3, 4, 5, 6, ADDRESS_ZERO]);
+      await checkErrorRevert(multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]), "colony-action-summary-forbidden-sig");
+    });
+
     it("can propose an action requiring the same permissions for multiple actions in the same domain", async () => {
       await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARCHITECTURE_ROLE]));
 
