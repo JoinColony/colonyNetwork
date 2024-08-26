@@ -14,6 +14,11 @@ import {
 
   const NonceManager = require("./../metatransaction-broadcaster/ExtendedNonceManager");
   const { RetryProvider } = require("../package-utils")
+  const { TruffleLoader } = require("../package-utils");
+  const path = require("path");
+  const loader = new TruffleLoader({
+    contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts")
+  });
 
   export class TestStorage extends RedisStorage {
     // startWorker(cb: onJobHandler): void {
@@ -86,11 +91,6 @@ import {
     //   [CHAIN_ID_SEPOLIA]: "0x161944B5601a7d3004E20d4Ca823F710838Ea1be",
     // };
 
-    const { TruffleLoader } = require("../package-utils");
-    const path = require("path");
-    const loader = new TruffleLoader({
-      contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts")
-    });
 
     const colonyBridges = {};
     const colonyBridgeContractDef = await loader.load({ contractDir: "bridging", contractName: "WormholeBridgeForColony" });
