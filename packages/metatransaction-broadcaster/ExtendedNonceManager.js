@@ -24,18 +24,15 @@ class ExtendedNonceManager extends NonceManager {
   async sendTransaction(transactionRequest) {
     // What nonce are we going to attach to this?
     // Definitely not any we've sent and are pending
-    // const pendingNonces = Object.keys(this.signedTransactions).map((txhash) => this.signedTransactions[txhash].nonce);
+    const pendingNonces = Object.keys(this.signedTransactions).map((txhash) => this.signedTransactions[txhash].nonce);
+
     // At least whatever the endpoint says, or whatever we've already sent if higher
-    const endpointNonce = await this.signer.getTransactionCount();
-    let nonce = Math.max(endpointNonce);
+    let nonce = await this.signer.getTransactionCount();
+
     // Note the order we did the above two lines in - if a tx is mined between these two lines,
     // and got removed by the `on block` handler above, by doing it in this order we won't be tripped up
     // And we'll skip any nonces we've already used
-    while (
-      Object.keys(this.signedTransactions)
-        .map((txhash) => this.signedTransactions[txhash].nonce)
-        .includes(nonce)
-    ) {
+    while (pendingNonces.includes(nonce)) {
       nonce += 1;
     }
     transactionRequest.nonce = nonce; // eslint-disable-line no-param-reassign
