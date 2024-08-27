@@ -535,8 +535,21 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return bridge The address of the bridge to the mining chain, if set
   function getColonyBridgeAddress() external view returns (address bridge);
 
+  /// @notice Bridge a message to another chain
+  /// @param _chainId The chainId of the chain to bridge to
+  /// @param _payload The message to bridge
+  /// @dev This will bridge the message to the same address that requested the bridge on the other chain
   function bridgeMessage(uint256 _chainId, bytes memory _payload) external;
+
+  /// @notice Bridge a message to the ProxyNetwork on another chain
+  /// @param _chainId The chainId of the chain to bridge to
+  /// @param _payload The message to bridge
+  /// @dev This should only be able to be called by the metacolony
   function bridgeMessageToNetwork(uint256 _chainId, bytes memory _payload) external;
 
+  /// @notice Handles calls to create a new colony on another chain
+  /// @dev Should only be called by a colony, if you're trying to call this directly you're doing something wrong
+  /// @param _destinationChainId The chainId of the chain to create the colony on
+  /// @param _salt The salt to use for the colony creation
   function createProxyColony(uint256 _destinationChainId, bytes32 _salt) external;
 }

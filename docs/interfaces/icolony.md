@@ -156,6 +156,20 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 
 ### ▸ `claimExpenditurePayout(uint256 _id, uint256 _slot, address _token)`
 
+This function is deprecated and will be removed in a future version
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Expenditure identifier
+|_slot|uint256|Number of the slot
+|_token|address|Address of the token, `0x0` value indicates Ether
+
+
+### ▸ `claimExpenditurePayout(uint256 _id, uint256 _slot, uint256 _chainId, address _token)`
+
 Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
 
 
@@ -165,6 +179,7 @@ Claim the payout for an expenditure slot. Here the network receives a fee from e
 |---|---|---|
 |_id|uint256|Expenditure identifier
 |_slot|uint256|Number of the slot
+|_chainId|uint256|The chainId of the token
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
@@ -185,17 +200,17 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |siblings|bytes32[]|The siblings of the proof
 
 
-### ▸ `createShellColony(uint256 _destinationChainId, bytes32 _salt)`
+### ▸ `createProxyColony(uint256 _destinationChainId, bytes32 _salt)`
 
-
+Create a proxy colony on another chain
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_destinationChainId|uint256|
-|_salt|bytes32|
+|_destinationChainId|uint256|Chain id of the destination chain
+|_salt|bytes32|The colony creation salt that was used on creation of the colony
 
 
 ### ▸ `deobligateStake(address _user, uint256 _domainId, uint256 _amount)`
@@ -625,24 +640,24 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |---|---|---|
 |payout|uint256|Funding pot payout amount
 
-### ▸ `getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token):uint256 uint256`
+### ▸ `getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token):uint256 balance`
 
-
+Get the balance of a funding pot for a specific token on a specific chain
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_potId|uint256|
-|_chainId|uint256|
-|_token|address|
+|_potId|uint256|Id of the funding pot
+|_chainId|uint256|Chain id of the token
+|_token|address|Address of the token, `0x0` value indicates Ether
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|balance|uint256|Balance of the funding pot
 
 ### ▸ `getNonRewardPotsTotal(address _token):uint256 amount`
 
@@ -1076,6 +1091,21 @@ Add a new expenditure in the colony. Secured function to authorised members.
 |---|---|---|
 |expenditureId|uint256|Identifier of the newly created expenditure
 
+### ▸ `makeProxyArbitraryTransactions(uint256 chainId, address[] memory _destinations, bytes[] memory _actions)`
+
+Execute arbitrary transactions on behalf of the Colony via a proxy colony on another chain
+
+*Note: If proxy colony not already deployed, will do nothing*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|chainId|uint256|The chainId of the proxy colony
+|_destinations|address[]|Array of addresses to be targeted
+|_actions|bytes[]|Array of Bytes arrays encoding the function calls and arguments
+
+
 ### ▸ `makeSingleArbitraryTransaction(address _target, bytes memory _action):bool success`
 
 Executes a single arbitrary transaction
@@ -1140,6 +1170,27 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
+### ▸ `moveFundsBetweenPots(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _fromPot, uint256 _toPot, uint256 _amount, uint256 _chainId, address _token)`
+
+Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The child index in _permissionDomainId where I will be taking this action
+|_domainId|uint256|The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
+|_fromChildSkillIndex|uint256|In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,         the index of the skill associated with the domain that contains _fromPot
+|_toChildSkillIndex|uint256|The same, but for the _toPot which the funds are being moved to
+|_fromPot|uint256|Funding pot id providing the funds
+|_toPot|uint256|Funding pot id receiving the funds
+|_amount|uint256|Amount of funds
+|_chainId|uint256|The chainId of the token
+|_token|address|Address of the token, `0x0` value indicates Ether
+
+
 ### ▸ `moveFundsBetweenPots(uint256 _permissionDomainId, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token)`
 
 Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
@@ -1187,16 +1238,16 @@ Get the colony `owner` address. This should be address(0x0) at all times.
 
 ### ▸ `recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount)`
 
-
+Used by the bridge to indicate that funds have been claimed on another chain.
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_chainId|uint256|
-|_token|address|
-|_amount|uint256|
+|_chainId|uint256|Chain id of the chain where the funds were claimed
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amount|uint256|Amount of funds claimed
 
 
 ### ▸ `registerColonyLabel(string memory colonyName, string memory orbitdb)`
@@ -1347,6 +1398,23 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 
 ### ▸ `setExpenditurePayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _slot, address _token, uint256 _amount)`
 
+This function is deprecated and will be removed in a future version
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
+|_id|uint256|Id of the expenditure
+|_slot|uint256|The slot to set the payout
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amount|uint256|Payout amount
+
+
+### ▸ `setExpenditurePayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _slot, uint256 _chainId, address _token, uint256 _amount)`
+
 Set the token payout in a given expenditure slot. Can only be called by an Arbitration user.
 
 
@@ -1358,6 +1426,7 @@ Set the token payout in a given expenditure slot. Can only be called by an Arbit
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`
 |_id|uint256|Id of the expenditure
 |_slot|uint256|The slot to set the payout
+|_chainId|uint256|The chainId of the token
 |_token|address|Address of the token, `0x0` value indicates Ether
 |_amount|uint256|Payout amount
 

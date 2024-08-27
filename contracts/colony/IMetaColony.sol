@@ -67,8 +67,8 @@ interface IMetaColony is IColony {
     uint256 newNLeaves
   ) external;
 
-  function callProxyNetwork(
-    uint256 _chainId,
-    bytes[] memory _actions
-  ) external;
+  /// @notice Call (a) function(s) on the proxyColonyNetwork on a different chain
+  /// @param _chainId The chainId of the chain the function is being called on
+  /// @param _actions The actions to be called
+  function callProxyNetwork(uint256 _chainId, bytes[] memory _actions) external;
 }
