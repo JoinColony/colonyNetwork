@@ -54,6 +54,18 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
   }
 
+  function callProxyNetwork(
+    uint256 _chainId,
+    bytes[] memory _actions
+  ) public stoppable auth returns (bool) {
+    bytes memory payload = abi.encodeWithSignature(
+      "multicall(bytes[])",
+      _actions
+    );
+
+    IColonyNetwork(colonyNetworkAddress).bridgeMessageToNetwork(_chainId, payload);
+  }
+
   function makeArbitraryTransactions(
     address[] memory _targets,
     bytes[] memory _actions,
