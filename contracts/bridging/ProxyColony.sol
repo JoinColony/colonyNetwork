@@ -78,7 +78,11 @@ contract ProxyColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
   }
 
   // TODO: secure this function
-  function transferFromBridge(address _token, address _recipient, uint256 _amount) public onlyColonyBridge() {
+  function transferFromBridge(
+    address _token,
+    address _recipient,
+    uint256 _amount
+  ) public onlyColonyBridge {
     tokenBalances[_token] -= _amount;
 
     if (_token == address(0x0)) {
@@ -90,7 +94,10 @@ contract ProxyColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
     emit TransferMade(_token, _recipient, _amount);
   }
 
-  function makeArbitraryTransactions(address[] memory _targets, bytes[] memory _payloads) public onlyColonyBridge() {
+  function makeArbitraryTransactions(
+    address[] memory _targets,
+    bytes[] memory _payloads
+  ) public onlyColonyBridge {
     require(_targets.length == _payloads.length, "colony-targets-and-payloads-length-mismatch");
     address bridgeAddress = ProxyColonyNetwork(owner).colonyBridgeAddress();
     for (uint256 i; i < _targets.length; i += 1) {
@@ -102,5 +109,4 @@ contract ProxyColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
       require(success, "colony-arbitrary-transaction-failed");
     }
   }
-
 }
