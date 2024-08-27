@@ -77,7 +77,7 @@ contract("Cross-chain", (accounts) => {
   let resetRelayer;
 
   let homeMetacolony;
-  let foreignMetacolony;
+  let proxyMetacolony;
 
   let web3HomeProvider;
   let web3ForeignProvider;
@@ -201,8 +201,8 @@ contract("Cross-chain", (accounts) => {
     tx = await homeBridge.setBridgeEnabled(true);
     await tx.wait();
 
-    // const foreignMCAddress = await foreignColonyNetwork.getMetaColony();
-    // foreignMetacolony = await new ethers.Contract(foreignMCAddress, IMetaColony.abi, ethersForeignSigner);
+    const proxyMCAddress = await homeColonyNetwork.getMetaColony(); // Not a mistake - they have the same address, and .getMetaColony doesn't exist on ProxyColonyNetwork
+    proxyMetacolony = await new ethers.Contract(proxyMCAddress, IMetaColony.abi, ethersForeignSigner);
     console.log("get mc");
     const homeMCAddress = await homeColonyNetwork.getMetaColony();
     console.log("got mc");
@@ -278,7 +278,7 @@ contract("Cross-chain", (accounts) => {
   });
 
   describe("administrating cross-network bridges", async () => {
-    it.only("colonyNetwork should have the same address on each chain", async () => {
+    it("colonyNetwork should have the same address on each chain", async () => {
       expect(homeColonyNetwork.address).to.equal(foreignColonyNetwork.address);
       // Check we have colony Network there - this equality is expected because of how we set up the addresses
       const homeVersionResolver = await homeColonyNetwork.getColonyVersionResolver(CURR_VERSION);
@@ -289,7 +289,7 @@ contract("Cross-chain", (accounts) => {
       expect(proxyColonyResolver).to.not.equal(ADDRESS_ZERO);
     });
 
-    it.only("colonies deployed on different chains can have same address", async () => {
+    it("colonies deployed on different chains can have same address", async () => {
       // Deploy a colony only on one chain, so that normal contract creations wouldn't have the same address
       await setupColony(homeColonyNetwork);
 
@@ -347,19 +347,74 @@ contract("Cross-chain", (accounts) => {
       expect(foreignColonyBridgeAddress).to.equal(foreignColonyBridge.address);
     });
 
-    it("setColonyBridgeAddress on Network can only be called by the metacolony", async () => {
-      const tx = await foreignColonyNetwork.setColonyBridgeAddress(foreignColonyBridge.address, { gasLimit: 1000000 });
+    it("setColonyBridgeAddress on proxy Network can be called directly by the owner (and not a random address)", async () => {
+      const owner = await foreignColonyNetwork.owner();
+      expect(await foreignColonyNetwork.signer.getAddress()).to.equal(owner);
+      let tx = await foreignColonyNetwork.setColonyBridgeAddress(foreignColonyBridge.address, { gasLimit: 1000000 });
+      await tx.wait();
+
+      const foreignColonyNetwork2 = new ethers.Contract(foreignColonyNetwork.address, IColonyNetwork.abi, ethersForeignSigner2);
+      expect(await foreignColonyNetwork2.signer.getAddress()).to.not.equal(owner);
+      tx = await foreignColonyNetwork2.setColonyBridgeAddress(foreignColonyBridge.address, { gasLimit: 1000000, from: accounts[1] });
+      await checkErrorRevertEthers(tx.wait(), "colony-network-caller-must-be-owner-or-bridge");
+    });
+
+    it("setColonyBridgeAddress on Home Network can only be called by the meta colony", async () => {
+      const tx = await homeColonyNetwork.setColonyBridgeAddress(homeColonyBridge.address, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
     });
 
-    it("setColonyBridgeAddress on Metacolony can't be called by an address without root permissions", async () => {
-      const foreignMetacolony2 = new ethers.Contract(foreignMetacolony.address, IColonyNetwork.abi, ethersForeignSigner2);
-
-      let tx = await foreignMetacolony2.setColonyBridgeAddress(ADDRESS_ZERO, { gasLimit: 1000000 });
+    it("callProxyNetwork can only be called by root permissions on the metacolony", async () => {
+      const payload = foreignColonyNetwork.interface.encodeFunctionData("setColonyBridgeAddress", [ADDRESS_ZERO]);
+      const homeMetacolony2 = new ethers.Contract(homeMetacolony.address, IMetaColony.abi, ethersHomeSigner2);
+      let tx = await homeMetacolony2.callProxyNetwork(foreignChainId, [payload], { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
 
       // Add root permissions
-      tx = await foreignMetacolony.setUserRoles(
+      tx = await homeMetacolony.setUserRoles(
+        1,
+        UINT256_MAX_ETHERS,
+        accounts[1],
+        1,
+        ethers.utils.hexZeroPad(ethers.BigNumber.from(ethers.BigNumber.from(2).pow(ROOT_ROLE)).toHexString(), 32),
+      );
+
+      await tx.wait();
+
+      // Can now call
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      const tx3 = await homeMetacolony2.callProxyNetwork(foreignChainId, [payload]);
+      await tx3.wait();
+      await p;
+
+      // Check call was successful
+      const bridgeAddressAfter = await foreignColonyNetwork.colonyBridgeAddress();
+      expect(bridgeAddressAfter).to.equal(ADDRESS_ZERO);
+
+      // Reset permissions
+      tx = await homeMetacolony.setUserRoles(1, UINT256_MAX_ETHERS, accounts[1], 1, ethers.utils.hexZeroPad("0x00", 32));
+      await tx.wait();
+    });
+
+    it("setColonyBridgeAddress on Proxy Network can be used across the bridge", async () => {
+      const bridgeAddress = await foreignColonyNetwork.colonyBridgeAddress();
+      const payload = foreignColonyNetwork.interface.encodeFunctionData("setColonyBridgeAddress", [ADDRESS_ZERO]);
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      const tx = await homeMetacolony.callProxyNetwork(foreignChainId, [payload]);
+      await tx.wait();
+      await p;
+      const bridgeAddressAfter = await foreignColonyNetwork.colonyBridgeAddress();
+      expect(bridgeAddressAfter).to.not.equal(bridgeAddress);
+    });
+
+    it("setColonyBridgeAddress on Metacolony can't be called by an address without root permissions", async () => {
+      const homeMetacolony2 = new ethers.Contract(proxyMetacolony.address, IColonyNetwork.abi, ethersHomeSigner2);
+
+      let tx = await homeMetacolony2.setColonyBridgeAddress(ADDRESS_ZERO, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
+
+      // Add root permissions
+      tx = await homeMetacolony.setUserRoles(
         1,
         UINT256_MAX_ETHERS,
         accounts[1],
@@ -369,13 +424,13 @@ contract("Cross-chain", (accounts) => {
       await tx.wait();
 
       // Can now call
-      tx = await foreignMetacolony2.setColonyBridgeAddress(ADDRESS_ZERO, {
+      tx = await homeMetacolony2.setColonyBridgeAddress(ADDRESS_ZERO, {
         gasLimit: 1000000,
       });
       await tx.wait();
 
       // Reset permissions
-      tx = await foreignMetacolony.setUserRoles(1, UINT256_MAX_ETHERS, accounts[1], 1, ethers.utils.hexZeroPad("0x00", 32));
+      tx = await proxyMetacolony.setUserRoles(1, UINT256_MAX_ETHERS, accounts[1], 1, ethers.utils.hexZeroPad("0x00", 32));
       await tx.wait();
     });
 
@@ -384,22 +439,6 @@ contract("Cross-chain", (accounts) => {
         gasLimit: 1000000,
       });
       await checkErrorRevertEthers(tx.wait(), "colony-bridge-chainid-too-large");
-    });
-
-    it("updating the bridge for a chain does not reset the bridged skill count", async () => {
-      const countBefore = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
-      const tx = await homeMetacolony.setColonyBridgeAddress(ADDRESS_ZERO);
-      await tx.wait();
-
-      const countAfter = await homeColonyNetwork.getBridgedSkillCounts(foreignChainId);
-      expect(countAfter).to.not.equal(0);
-      expect(countAfter.sub(countBefore).toNumber()).to.equal(0);
-    });
-
-    it("the bridged skill count has a sensible default", async () => {
-      const unsetChainId = ethers.BigNumber.from(123456789);
-      const count = await homeColonyNetwork.getBridgedSkillCounts(unsetChainId);
-      expect(count.toString()).to.equal(unsetChainId.shl(128).toString());
     });
 
     it("only owners can set properties on the ColonyBridge", async () => {
@@ -1168,7 +1207,7 @@ contract("Cross-chain", (accounts) => {
       await (await colony.setFundingRole(1, UINT256_MAX_ETHERS, accounts[0], 1, true)).wait();
     });
 
-    it.only("Can track tokens received on the foreign chain", async () => {
+    it("Can track tokens received on the foreign chain", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
       let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
@@ -1190,7 +1229,7 @@ contract("Cross-chain", (accounts) => {
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
     });
 
-    it.only("Can track tokens sent on the foreign chain", async () => {
+    it("Can track tokens sent on the foreign chain", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
       let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
@@ -1290,7 +1329,7 @@ contract("Cross-chain", (accounts) => {
       await (await foreignToken.setOwner(proxyColony.address)).wait();
     });
 
-    it.only("can make arbitrary transactions on the foreign chain", async () => {
+    it("can make arbitrary transactions on the foreign chain", async () => {
       const balanceBefore = await foreignToken.balanceOf(proxyColony.address);
       const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
 
@@ -1305,7 +1344,7 @@ contract("Cross-chain", (accounts) => {
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
 
-    it.only("can make multiple arbitrary transactions on the foreign chain in one go", async () => {
+    it("can make multiple arbitrary transactions on the foreign chain in one go", async () => {
       const shellBalanceBefore = await foreignToken.balanceOf(proxyColony.address);
       const colonyBalanceBefore = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
 
@@ -1331,7 +1370,7 @@ contract("Cross-chain", (accounts) => {
 
   describe("bridge functions are secure", async () => {
     it("only the configured colonyNetwork can call `sendMessage`", async () => {
-      const tx = await foreignColonyBridge.sendMessage(1, "0x00000000", { gasLimit: 1000000 });
+      const tx = await foreignColonyBridge.sendMessage(1, ADDRESS_ZERO, "0x00000000", { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "wormhole-bridge-only-colony-network");
     });
 
@@ -1606,7 +1645,7 @@ contract("Cross-chain", (accounts) => {
         homeColonyBridge.address,
         0,
         0,
-        foreignColonyNetwork.interface.encodeFunctionData("setReputationRootHashFromBridge", [ethers.utils.hexZeroPad("0xdeadbeef", 32), 0, 1]),
+        foreignColonyNetwork.interface.encodeFunctionData("setProxyColonyResolverAddress", [ADDRESS_ZERO]),
         100,
         wormholeHomeChainId,
       );
