@@ -98,40 +98,6 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   // Well this is a weird hack to need
   function newAddressArray() internal pure returns (address[] memory) {}
 
-  function setReputationRootHashFromBridge(
-    bytes32 _newHash,
-    uint256 _newNLeaves,
-    uint256 _nonce
-  ) public stoppable onlyNotMiningChain onlyColonyBridge {
-    require(
-      _nonce >= bridgeCurrentRootHashNonces[block.chainid],
-      "colony-mining-bridge-invalid-nonce"
-    );
-    bridgeCurrentRootHashNonces[block.chainid] = _nonce;
-    reputationRootHash = _newHash;
-    reputationRootHashNLeaves = _newNLeaves;
-
-    emit ReputationRootHashSet(_newHash, _newNLeaves, newAddressArray(), 0);
-  }
-
-  function bridgeCurrentRootHash(uint256 _chainId) public onlyMiningChain stoppable {
-    require(colonyBridgeAddress != address(0x0), "colony-network-bridge-not-set");
-
-    bridgeCurrentRootHashNonces[_chainId] += 1;
-
-    bytes memory payload = abi.encodeWithSignature(
-      "setReputationRootHashFromBridge(bytes32,uint256,uint256)",
-      reputationRootHash,
-      reputationRootHashNLeaves,
-      bridgeCurrentRootHashNonces[_chainId]
-    );
-
-    // slither-disable-next-line unchecked-lowlevel
-    // bool success = IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, payload);
-    // We require success so estimation calls can tell us if bridging is going to work
-    // require(success, "colony-mining-bridge-call-failed");
-  }
-
   function setReputationRootHash(
     bytes32 newHash,
     uint256 newNLeaves,
