@@ -1,0 +1,784 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColony",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder00",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder01",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder02",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder03",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder04",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder05",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder06",
+      "offset": 0,
+      "slot": "11",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder07",
+      "offset": 0,
+      "slot": "12",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder08",
+      "offset": 0,
+      "slot": "13",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder09",
+      "offset": 0,
+      "slot": "14",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder10",
+      "offset": 0,
+      "slot": "15",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder11",
+      "offset": 0,
+      "slot": "16",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder12",
+      "offset": 0,
+      "slot": "17",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder13",
+      "offset": 0,
+      "slot": "18",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder14",
+      "offset": 0,
+      "slot": "19",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder15",
+      "offset": 0,
+      "slot": "20",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder16",
+      "offset": 0,
+      "slot": "21",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder17",
+      "offset": 0,
+      "slot": "22",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder18",
+      "offset": 0,
+      "slot": "23",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder19",
+      "offset": 0,
+      "slot": "24",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder20",
+      "offset": 0,
+      "slot": "25",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder21",
+      "offset": 0,
+      "slot": "26",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder22",
+      "offset": 0,
+      "slot": "27",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder23",
+      "offset": 0,
+      "slot": "28",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder24",
+      "offset": 0,
+      "slot": "29",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder25",
+      "offset": 0,
+      "slot": "30",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder26",
+      "offset": 0,
+      "slot": "31",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder27",
+      "offset": 0,
+      "slot": "32",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder28",
+      "offset": 0,
+      "slot": "33",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder29",
+      "offset": 0,
+      "slot": "34",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder30",
+      "offset": 0,
+      "slot": "35",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "placeholder31",
+      "offset": 0,
+      "slot": "36",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "userDomainRoles",
+      "offset": 0,
+      "slot": "37",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(uint256 => bytes32))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => bytes32)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "38",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColonyNetwork",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "globalThreshold",
+      "offset": 0,
+      "slot": "39",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "domainSkillRoleCounts",
+      "offset": 0,
+      "slot": "40",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(uint8 => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint8",
+            "numberOfBytes": "1"
+          },
+          "label": "mapping(uint8 => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "domainSkillThreshold",
+      "offset": 0,
+      "slot": "41",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "motionCount",
+      "offset": 0,
+      "slot": "42",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "motions",
+      "offset": 0,
+      "slot": "43",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct MultisigPermissions.Motion)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct MultisigPermissions.Motion",
+          "members": [
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "targets",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "address",
+                  "numberOfBytes": "20"
+                },
+                "encoding": "dynamic_array",
+                "label": "address[]",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "data",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "base": {
+                  "encoding": "bytes",
+                  "label": "bytes",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "dynamic_array",
+                "label": "bytes[]",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "approvalCount",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "rejectionCount",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "domainSkillId",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "requiredPermissions",
+              "offset": 0,
+              "slot": "5",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes32",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "overallApprovalTimestamp",
+              "offset": 0,
+              "slot": "6",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "creationTimestamp",
+              "offset": 0,
+              "slot": "7",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "creator",
+              "offset": 0,
+              "slot": "8",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "executed",
+              "offset": 20,
+              "slot": "8",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "rejected",
+              "offset": 21,
+              "slot": "8",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            }
+          ],
+          "numberOfBytes": "288"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "motionVotes",
+      "offset": 0,
+      "slot": "44",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(address => mapping(enum MultisigPermissions.Vote => bytes32)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => mapping(enum MultisigPermissions.Vote => bytes32))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "enum MultisigPermissions.Vote",
+              "numberOfBytes": "1"
+            },
+            "label": "mapping(enum MultisigPermissions.Vote => bytes32)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "bytes32",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+      "label": "motionVoteCount",
+      "offset": 0,
+      "slot": "45",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(enum MultisigPermissions.Vote => mapping(uint8 => uint256)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "enum MultisigPermissions.Vote",
+            "numberOfBytes": "1"
+          },
+          "label": "mapping(enum MultisigPermissions.Vote => mapping(uint8 => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "uint8",
+              "numberOfBytes": "1"
+            },
+            "label": "mapping(uint8 => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
