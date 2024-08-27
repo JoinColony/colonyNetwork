@@ -60,7 +60,10 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards {
   }
 
   modifier ownerOrBridge() {
-    require(msgSender() == colonyBridgeAddress || msgSender() == owner, "colony-network-caller-must-be-owner-or-bridge");
+    require(
+      msgSender() == colonyBridgeAddress || msgSender() == owner,
+      "colony-network-caller-must-be-owner-or-bridge"
+    );
     _;
   }
 

@@ -58,10 +58,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     uint256 _chainId,
     bytes[] memory _actions
   ) public stoppable auth returns (bool) {
-    bytes memory payload = abi.encodeWithSignature(
-      "multicall(bytes[])",
-      _actions
-    );
+    bytes memory payload = abi.encodeWithSignature("multicall(bytes[])", _actions);
 
     IColonyNetwork(colonyNetworkAddress).bridgeMessageToNetwork(_chainId, payload);
   }

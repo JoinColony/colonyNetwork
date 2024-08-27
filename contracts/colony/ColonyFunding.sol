@@ -40,10 +40,7 @@ contract ColonyFunding is
     uint256 _toPot,
     uint256 _amount,
     address _token
-  )
-    public
-    stoppable
-  {
+  ) public stoppable {
     moveFundsBetweenPots(
       _permissionDomainId,
       _childSkillIndex,
@@ -246,11 +243,16 @@ contract ColonyFunding is
     uint256 _slot,
     address _token,
     uint256 _amount
-  )
-    public
-    stoppable
-  {
-    setExpenditurePayout(_permissionDomainId, _childSkillIndex, _id, _slot, block.chainid, _token, _amount);
+  ) public stoppable {
+    setExpenditurePayout(
+      _permissionDomainId,
+      _childSkillIndex,
+      _id,
+      _slot,
+      block.chainid,
+      _token,
+      _amount
+    );
   }
 
   function setExpenditurePayout(
@@ -544,13 +546,19 @@ contract ColonyFunding is
 
     if (getFundingPotBalance(_fundingPotId, _chainId, _token) >= _prev) {
       // If the amount in the pot was enough to pay for the old budget...
-      if (getFundingPotBalance(_fundingPotId, _chainId, _token) < getFundingPotPayout(_fundingPotId, _chainId, _token)) {
+      if (
+        getFundingPotBalance(_fundingPotId, _chainId, _token) <
+        getFundingPotPayout(_fundingPotId, _chainId, _token)
+      ) {
         // And the amount is not enough to pay for the new budget...
         tokenPot.payoutsWeCannotMake += 1; // Then this is a set of payouts we cannot make that we could before.
       }
     } else {
       // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
-      if (getFundingPotBalance(_fundingPotId, _chainId, _token) >= getFundingPotPayout(_fundingPotId, _chainId, _token)) {
+      if (
+        getFundingPotBalance(_fundingPotId, _chainId, _token) >=
+        getFundingPotPayout(_fundingPotId, _chainId, _token)
+      ) {
         // And the amount is enough to pay for the new budget...
         tokenPot.payoutsWeCannotMake -= 1; // Then this is a set of payouts we can make that we could not before.
       }
@@ -645,14 +653,14 @@ contract ColonyFunding is
         }
       }
     } else {
-        // TODO: Shell colony payout
-        bytes memory payload = abi.encodeWithSignature(
-          "transferFromBridge(address,address,uint256)",
-          _token,
-          _user,
-          _payout
-        );
-        IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
+      // TODO: Shell colony payout
+      bytes memory payload = abi.encodeWithSignature(
+        "transferFromBridge(address,address,uint256)",
+        _token,
+        _user,
+        _payout
+      );
+      IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
     }
 
     // slither-disable-next-line reentrancy-unlimited-gas
