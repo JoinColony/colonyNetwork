@@ -507,7 +507,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
 
     if ((motion.requiredPermissions & bytes32(1 << uint256(ColonyRole.Architecture))) != 0) {
       require(
-        colony.getDomain(_permissionDomainId).skillId != motion.domainSkillId,
+        colony.getDomain(_permissionDomainId).skillId < motion.domainSkillId,
         "multisig-architecture-only-in-subdomains"
       );
     }

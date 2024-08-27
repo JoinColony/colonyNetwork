@@ -32,6 +32,8 @@ struct ActionSummary {
 }
 
 contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
+  using Bytes4Includes for bytes4[];
+
   bytes4 constant MULTICALL = bytes4(keccak256("multicall(bytes[])"));
   bytes4 constant SET_EXPENDITURE_STATE =
     bytes4(
@@ -133,37 +135,24 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         target
       );
 
-      // In every case, we record the domain id
-      //  and ensure it is consistent throughout the multicall.
-      if (
-        totalSummary.domainSkillId > 0 && totalSummary.domainSkillId != actionSummary.domainSkillId
-      ) {
-        // Invalid multicall
-        revert("colony-action-summary-inconsistent-domain-skill-id");
-      } else {
-        totalSummary.domainSkillId = actionSummary.domainSkillId;
-      }
-
-      if (sigInArray(actionSummary.sig, _dominantSigs)) {
+      if (_forbiddenSigs.includes(actionSummary.sig)) {
+        revert("colony-action-summary-forbidden-sig");
+      } else if (_dominantSigs.includes(actionSummary.sig)) {
         // If any of the actions are classed as 'dominant',
         //   the entire multicall is such
         return actionSummary;
-      } else if (sigInArray(actionSummary.sig, _forbiddenSigs)) {
-        revert("colony-action-summary-forbidden-sig");
       } else if (isExpenditureSig(actionSummary.sig)) {
         // If it is an expenditure action, we record the expenditure ids
         //  and ensure it is consistent throughout the multicall.
         totalSummary.sig = actionSummary.sig;
 
-        if (
-          totalSummary.expenditureId > 0 &&
-          totalSummary.expenditureId != actionSummary.expenditureId
-        ) {
-          // Invalid multicall
-          revert("colony-action-summary-inconsistent-expenditure-id");
-        } else {
-          totalSummary.expenditureId = actionSummary.expenditureId;
-        }
+        require(
+          totalSummary.expenditureId == 0 ||
+            totalSummary.expenditureId == actionSummary.expenditureId,
+          "colony-action-summary-inconsistent-expenditure-id"
+        );
+
+        totalSummary.expenditureId = actionSummary.expenditureId;
       } else {
         // If no expenditure signatures have been seen, we record the latest signature
         // Also, we aggregate the permissions as we go
@@ -172,14 +161,23 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         }
       }
 
-      if (
-        totalSummary.requiredPermissions > 0 &&
-        totalSummary.requiredPermissions != actionSummary.requiredPermissions
-      ) {
-        revert("colony-action-summary-inconsistent-permissions");
-      } else {
-        totalSummary.requiredPermissions = actionSummary.requiredPermissions;
-      }
+      // In every case, ensure domainId is consistent throughout the multicall.
+      require(
+        totalSummary.domainSkillId == 0 ||
+          totalSummary.domainSkillId == actionSummary.domainSkillId,
+        "colony-action-summary-inconsistent-domain-skill-id"
+      );
+
+      totalSummary.domainSkillId = actionSummary.domainSkillId;
+
+      // Similarly, ensure required permissions are consistent throughout the multicall.
+      require(
+        totalSummary.requiredPermissions == 0 ||
+          totalSummary.requiredPermissions == actionSummary.requiredPermissions,
+        "colony-action-summary-inconsistent-permissions"
+      );
+
+      totalSummary.requiredPermissions = actionSummary.requiredPermissions;
     }
     return totalSummary;
   }
@@ -205,5 +203,16 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     assembly {
       sig := mload(add(action, 0x20))
     }
+  }
+}
+
+library Bytes4Includes {
+  function includes(bytes4[] memory array, bytes4 value) internal pure returns (bool) {
+    for (uint256 i = 0; i < array.length; i++) {
+      if (array[i] == value) {
+        return true;
+      }
+    }
+    return false;
   }
 }
