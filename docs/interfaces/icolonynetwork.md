@@ -268,17 +268,18 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
-### ▸ `createShellColony(uint256 _destinationChainId, bytes32 _salt)`
+### ▸ `createProxyColony(uint256 _destinationChainId, bytes32 _salt)`
 
+Handles calls to create a new colony on another chain
 
-
+*Note: Should only be called by a colony, if you're trying to call this directly you're doing something wrong*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_destinationChainId|uint256|
-|_salt|bytes32|
+|_destinationChainId|uint256|The chainId of the chain to create the colony on
+|_salt|bytes32|The salt to use for the colony creation
 
 
 ### ▸ `deployTokenAuthority(address _token, address _colony, address[] memory _allowedToTransfer):address _tokenAuthority`
@@ -1085,19 +1086,6 @@ Used to track that a user is eligible to claim a reward
 |---|---|---|
 |_recipient|address|The address receiving the award
 |_amount|uint256|The amount of CLNY to be awarded
-
-
-### ▸ `sendClaimShellColonyFunds(address _token, uint256 _balance)`
-
-Send the claimFunds transaction from the shell to the colony
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|The token being held by the shell
-|_balance|uint256|The shell's current balance of the token
 
 
 ### ▸ `setColonyBridgeAddress(address _bridgeAddress)`
