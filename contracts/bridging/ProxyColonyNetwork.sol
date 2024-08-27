@@ -59,7 +59,12 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards {
     _;
   }
 
-  function setColonyBridgeAddress(address _bridgeAddress) public auth {
+  modifier ownerOrBridge() {
+    require(msgSender() == colonyBridgeAddress || msgSender() == owner, "colony-network-caller-must-be-owner-or-bridge");
+    _;
+  }
+
+  function setColonyBridgeAddress(address _bridgeAddress) public ownerOrBridge {
     // TODO: Move this somewhere else to guard against unsupported chainids
     // require(_chainId <= type(uint128).max, "colony-network-chainid-too-large");
 
