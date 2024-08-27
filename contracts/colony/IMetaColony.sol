@@ -66,4 +66,9 @@ interface IMetaColony is IColony {
     bytes32 newHash,
     uint256 newNLeaves
   ) external;
+
+  function callProxyNetwork(
+    uint256 _chainId,
+    bytes[] memory _actions
+  ) external;
 }
