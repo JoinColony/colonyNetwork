@@ -112,7 +112,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     emit ColonyNetworkInitialised(_resolver);
   }
 
-  function bridgeMessage(uint256 _chainId, bytes memory _payload) public calledByColony {
+  function bridgeMessage(uint256 _chainId, bytes memory _payload) public stoppable calledByColony {
     require(
       IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, msg.sender, _payload),
       "colony-network-bridge-message-failed"
@@ -122,7 +122,7 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
   function bridgeMessageToNetwork(
     uint256 _chainId,
     bytes memory _payload
-  ) public calledByMetaColony {
+  ) public stoppable calledByMetaColony {
     require(
       IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, address(this), _payload),
       "colony-network-bridge-message-failed"

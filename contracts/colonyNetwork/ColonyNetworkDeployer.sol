@@ -132,10 +132,16 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
-  function createProxyColony(uint256 _destinationChainId, bytes32 _salt) public calledByColony {
+  function createProxyColony(
+    uint256 _destinationChainId,
+    bytes32 _salt
+  ) public stoppable calledByColony {
     // TODO: Check if the colony is allowed to use the salt
     bytes memory payload = abi.encodeWithSignature("createProxyColonyFromBridge(bytes32)", _salt);
-    IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, address(this), payload);
+    require(
+      IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, address(this), payload),
+      "colony-network-create-proxy-colony-failed"
+    );
   }
 
   /**
