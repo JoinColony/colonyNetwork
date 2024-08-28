@@ -86,17 +86,6 @@
           "numberOfBytes": "1"
         }
       }
-    },
-    {
-      "contract": "contracts/bridging/ProxyColonyNetwork.sol:ProxyColonyNetwork",
-      "label": "domainTokenReceiverResolver",
-      "offset": 0,
-      "slot": "7",
-      "type": {
-        "encoding": "inplace",
-        "label": "address",
-        "numberOfBytes": "20"
-      }
     }
   ]
 }

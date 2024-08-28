@@ -506,9 +506,71 @@
                 "label": "uint256",
                 "numberOfBytes": "32"
               }
+            },
+            {
+              "contract": "contracts/testHelpers/NoLimitSubdomains.sol:NoLimitSubdomains",
+              "label": "chainBalances",
+              "offset": 0,
+              "slot": "5",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "label": "mapping(uint256 => mapping(address => uint256))",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "mapping",
+                  "key": {
+                    "encoding": "inplace",
+                    "label": "address",
+                    "numberOfBytes": "20"
+                  },
+                  "label": "mapping(address => uint256)",
+                  "numberOfBytes": "32",
+                  "value": {
+                    "encoding": "inplace",
+                    "label": "uint256",
+                    "numberOfBytes": "32"
+                  }
+                }
+              }
+            },
+            {
+              "contract": "contracts/testHelpers/NoLimitSubdomains.sol:NoLimitSubdomains",
+              "label": "chainPayouts",
+              "offset": 0,
+              "slot": "6",
+              "type": {
+                "encoding": "mapping",
+                "key": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "label": "mapping(uint256 => mapping(address => uint256))",
+                "numberOfBytes": "32",
+                "value": {
+                  "encoding": "mapping",
+                  "key": {
+                    "encoding": "inplace",
+                    "label": "address",
+                    "numberOfBytes": "20"
+                  },
+                  "label": "mapping(address => uint256)",
+                  "numberOfBytes": "32",
+                  "value": {
+                    "encoding": "inplace",
+                    "label": "uint256",
+                    "numberOfBytes": "32"
+                  }
+                }
+              }
             }
           ],
-          "numberOfBytes": "160"
+          "numberOfBytes": "224"
         }
       }
     },
@@ -1437,6 +1499,57 @@
             "encoding": "inplace",
             "label": "uint256",
             "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/NoLimitSubdomains.sol:NoLimitSubdomains",
+      "label": "expenditureSlotChainPayouts",
+      "offset": 0,
+      "slot": "40",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(address => uint256))))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => mapping(uint256 => mapping(address => uint256)))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            },
+            "label": "mapping(uint256 => mapping(address => uint256))",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "mapping",
+              "key": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              },
+              "label": "mapping(address => uint256)",
+              "numberOfBytes": "32",
+              "value": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            }
           }
         }
       }
