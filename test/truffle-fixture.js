@@ -92,6 +92,12 @@ module.exports = async () => {
     return;
   }
 
+  const chainId = await getChainId();
+  if (chainId !== FORKED_XDAI_CHAINID) {
+    console.log("Skipping deployment of contracts on non-home chain");
+    return;
+  }
+
   await deployContracts();
   await setupColonyNetwork();
   await setupColony();

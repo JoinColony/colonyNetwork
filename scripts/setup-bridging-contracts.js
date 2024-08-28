@@ -270,12 +270,15 @@ async function setForeignBridgeData(homeColonyBridgeAddress, foreignColonyBridge
 
   // TODO: Figure out a better way of setting / controlling this?
   console.log("setting foreign colony bridge address", foreignColonyBridgeAddress);
+
+  console.log(ethersForeignSigner);
+  // process.exit(1);
   const foreignColonyNetwork = new ethers.Contract(NETWORK_ADDRESS, ProxyColonyNetwork.abi, ethersForeignSigner);
   tx = await foreignColonyNetwork.setColonyBridgeAddress(foreignColonyBridgeAddress);
   await tx.wait();
+
   tx = await foreignColonyNetwork.setHomeChainId(homeChainId);
   await tx.wait();
-  console.log("done");
 }
 
 async function setHomeBridgeData(homeColonyBridgeAddress, foreignColonyBridgeAddress, ethersHomeSigner, ethersForeignSigner) {

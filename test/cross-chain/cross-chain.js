@@ -30,13 +30,11 @@ const Resolver = artifacts.require("Resolver");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 const ICreateX = artifacts.require("ICreateX");
-const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
 const ProxyColonyNetwork = artifacts.require("ProxyColonyNetwork");
 const ProxyColony = artifacts.require("ProxyColony");
 const MetaTxToken = artifacts.require("MetaTxToken");
 // const { assert } = require("console");
-const { setupBridging, deployBridge, setForeignBridgeData, setHomeBridgeData } = require("../../scripts/setup-bridging-contracts");
+const { setupBridging, setForeignBridgeData, setHomeBridgeData } = require("../../scripts/setup-bridging-contracts");
 
 const {
   MINING_CYCLE_DURATION,
@@ -44,8 +42,8 @@ const {
   ROOT_ROLE,
   CURR_VERSION,
   CREATEX_ADDRESS,
-  UINT256_MAX,
-  WAD,
+  FORKED_XDAI_CHAINID,
+  NETWORK_ADDRESS,
 } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -60,7 +58,6 @@ const contractLoader = new TruffleLoader({
 
 contract("Cross-chain", (accounts) => {
   let homeColony;
-  let foreignColony;
   let homeColonyNetwork;
   let foreignColonyNetwork;
   let homeBridge;
@@ -73,7 +70,6 @@ contract("Cross-chain", (accounts) => {
   let homeChainId;
   let foreignChainId;
   let wormholeHomeChainId;
-  let wormholeForeignChainId;
   let resetRelayer;
 
   let homeMetacolony;
@@ -109,12 +105,24 @@ contract("Cross-chain", (accounts) => {
   const ethersHomeSigner2 = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner(1);
 
   before(async () => {
+    if (process.env.HARDHAT_FOREIGN === "true") {
+      // Then we need to deploy the network to the 'home' chain
+      try {
+        await exec(`CHAIN_ID=${FORKED_XDAI_CHAINID} npx hardhat deploy --network development2`);
+      } catch (err) {
+        console.log(err);
+        process.exit(1);
+      }
+    }
+
+    console.log("execing");
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
     ({ guardianSpy, resetRelayer, gnosisSafe, zodiacBridge, homeBridge, foreignBridge, foreignColonyBridge, homeColonyBridge } = await setupBridging(
       homeRpcUrl,
       foreignRpcUrl,
     ));
 
+    console.log("asdf");
     // Add bridge to the foreign colony network
     // const homeNetworkId = await ethersHomeSigner.provider.send("net_version", []);
     // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
@@ -130,7 +138,11 @@ contract("Cross-chain", (accounts) => {
 
     // Deploy shell colonyNetwork to whichever chain truffle hasn't already deployed to.
     try {
-      await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development2`);
+      if (process.env.HARDHAT_FOREIGN === "true") {
+        await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development`);
+      } else {
+        await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development2`);
+      }
 
       const createX = await new ethers.Contract(CREATEX_ADDRESS, ICreateX.abi, ethersForeignSigner);
 
@@ -181,11 +193,11 @@ contract("Cross-chain", (accounts) => {
     // in to a different location. If we see another chain id, we assume it's non-coverage
     // truffle and look for the build artifacts in the normal place.
 
-    const homeEtherRouterAddress = (await EtherRouter.deployed()).address;
-    homeColonyNetwork = await new ethers.Contract(homeEtherRouterAddress, IColonyNetwork.abi, ethersHomeSigner);
+    // const homeEtherRouterAddress = (await EtherRouter.deployed()).address;
+    homeColonyNetwork = await new ethers.Contract(NETWORK_ADDRESS, IColonyNetwork.abi, ethersHomeSigner);
 
-    const foreignEtherRouterAddress = homeEtherRouterAddress;
-    foreignColonyNetwork = await new ethers.Contract(foreignEtherRouterAddress, ProxyColonyNetwork.abi, ethersForeignSigner);
+    // const foreignEtherRouterAddress = homeEtherRouterAddress;
+    foreignColonyNetwork = await new ethers.Contract(NETWORK_ADDRESS, ProxyColonyNetwork.abi, ethersForeignSigner);
   });
 
   beforeEach(async () => {
