@@ -41,7 +41,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     _;
   }
 
-  function setMiningDelegate(address _delegate, bool _allowed) public onlyMiningChain stoppable {
+  function setMiningDelegate(address _delegate, bool _allowed) public stoppable miningInitialised {
     if (miningDelegators[_delegate] != address(0x00)) {
       require(
         miningDelegators[_delegate] == msgSender(),
@@ -69,7 +69,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     address _colony,
     uint128 _nUpdates,
     uint128 _nPreviousUpdates
-  ) public onlyMiningChain recovery auth {
+  ) public recovery auth miningInitialised {
     replacementReputationUpdateLogsExist[_reputationMiningCycle] = true;
 
     replacementReputationUpdateLog[_reputationMiningCycle][_id] = ReputationLogEntry(
@@ -102,7 +102,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     bytes32 newHash,
     uint256 newNLeaves,
     address[] memory stakers
-  ) public onlyMiningChain stoppable onlyReputationMiningCycle {
+  ) public stoppable miningInitialised onlyReputationMiningCycle {
     reputationRootHash = newHash;
     reputationRootHashNLeaves = newNLeaves;
     // Reward stakers
@@ -163,7 +163,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   // slither-disable-next-line reentrancy-no-eth
-  function startNextCycle() public onlyMiningChain stoppable {
+  function startNextCycle() public stoppable miningInitialised {
     address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
     require(activeReputationMiningCycle == address(0x0), "colony-reputation-mining-still-active");
@@ -263,7 +263,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   function punishStakers(
     address[] memory _stakers,
     uint256 _amount
-  ) public onlyMiningChain stoppable onlyReputationMiningCycle {
+  ) public stoppable miningInitialised onlyReputationMiningCycle {
     address clnyToken = IMetaColony(metaColony).getToken();
     uint256 lostStake;
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
@@ -285,19 +285,19 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   function reward(
     address _recipient,
     uint256 _amount
-  ) public onlyMiningChain stoppable onlyReputationMiningCycle {
+  ) public stoppable miningInitialised onlyReputationMiningCycle {
     // TODO: Gain rep?
     pendingMiningRewards[_recipient] += _amount;
   }
 
-  function claimMiningReward(address _recipient) public onlyMiningChain stoppable {
+  function claimMiningReward(address _recipient) public miningInitialised stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
     uint256 amount = pendingMiningRewards[_recipient];
     pendingMiningRewards[_recipient] = 0;
     ITokenLocking(tokenLocking).transfer(clnyToken, amount, _recipient, true);
   }
 
-  function stakeForMining(uint256 _amount) public onlyMiningChainOrDuringSetup stoppable {
+  function stakeForMining(uint256 _amount) public stoppable miningInitialisedOrDuringSetup {
     address clnyToken = IMetaColony(metaColony).getToken();
 
     ITokenLocking(tokenLocking).approveStake(msgSender(), _amount, clnyToken);
@@ -312,7 +312,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     miningStakes[msgSender()].amount += _amount;
   }
 
-  function unstakeForMining(uint256 _amount) public onlyMiningChain stoppable {
+  function unstakeForMining(uint256 _amount) public stoppable miningInitialised {
     address clnyToken = IMetaColony(metaColony).getToken();
     // Prevent those involved in a mining cycle withdrawing stake during the mining process.
     require(
@@ -329,7 +329,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function burnUnneededRewards(
     uint256 _amount
-  ) public onlyMiningChain stoppable onlyReputationMiningCycle {
+  ) public stoppable miningInitialised onlyReputationMiningCycle {
     // If there are no rewards to burn, no need to do anything
     if (_amount == 0) {
       return;
@@ -346,7 +346,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function setReputationMiningCycleReward(
     uint256 _amount
-  ) public onlyMiningChain stoppable calledByMetaColony {
+  ) public stoppable miningInitialised calledByMetaColony {
     totalMinerRewardPerCycle = _amount;
 
     emit ReputationMiningRewardSet(_amount);
@@ -380,7 +380,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function setMiningResolver(
     address _miningResolver
-  ) public stoppable onlyMiningChainOrDuringSetup auth {
+  ) public stoppable auth miningInitialisedOrDuringSetup {
     require(_miningResolver != address(0x0), "colony-mining-resolver-cannot-be-zero");
 
     miningCycleResolver = _miningResolver;
