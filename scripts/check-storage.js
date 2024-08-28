@@ -17,6 +17,8 @@ walkSync("./contracts/").forEach((contractName) => {
   if (
     [
       "contracts/bridging/WormholeBridgeForColony.sol",
+      "contracts/bridging/ProxyColony.sol",
+      "contracts/bridging/ProxyColonyNetwork.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colonyNetwork/ColonyNetworkAuthority.sol",
