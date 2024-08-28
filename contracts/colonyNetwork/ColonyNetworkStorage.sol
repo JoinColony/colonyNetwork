@@ -172,27 +172,19 @@ contract ColonyNetworkStorage is
     _;
   }
 
-  modifier onlyMiningChain() {
-    if (getMiningChainId() == block.chainid) {
-      require(
-        inactiveReputationMiningCycle != address(0x0),
-        "colony-reputation-mining-not-initialised"
-      );
-    }
-    require(isMiningChain(), "colony-only-valid-on-mining-chain");
-    _;
-  }
-
-  modifier onlyMiningChainOrDuringSetup() {
+  modifier miningInitialised() {
     require(
-      isMiningChain() || getMiningChainId() == 0,
-      "colony-only-valid-on-mining-chain-or-during-setup"
+      inactiveReputationMiningCycle != address(0x0),
+      "colony-reputation-mining-not-initialised"
     );
     _;
   }
 
-  modifier onlyNotMiningChain() {
-    require(!isMiningChain(), "colony-only-valid-not-on-mining-chain");
+  modifier miningInitialisedOrDuringSetup() {
+    require(
+      inactiveReputationMiningCycle != address(0x0) || getMiningChainId() == 0,
+      "colony-only-valid-on-mining-chain-or-during-setup"
+    );
     _;
   }
 
@@ -212,9 +204,6 @@ contract ColonyNetworkStorage is
   }
 
   function getMiningChainId() public view returns (uint256) {
-    if (reputationMiningChainId == 0 && isXdai()) {
-      return block.chainid;
-    }
     return reputationMiningChainId;
   }
 

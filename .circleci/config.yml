@@ -310,31 +310,13 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
-          name: "Running chainid tests with coverage for mainnet"
-          command: CHAIN_ID=1 pnpm run test:contracts:chainid:coverage
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Running chainid tests with coverage for goerli"
-          command: CHAIN_ID=5 pnpm run test:contracts:chainid:coverage
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Running chainid tests with coverage for xDai"
-          command: CHAIN_ID=100 pnpm run test:contracts:chainid:coverage
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - run:
-          name: "Running chainid tests with coverage for an unsupported network"
+          name: "Running chainid tests with for network where mining takes place"
           command: CHAIN_ID=777 pnpm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
-            - coverage-chainid-1
-            - coverage-chainid-5
-            - coverage-chainid-100
             - coverage-chainid-777
   coverage-test-bridging:
     <<: *job_common
