@@ -140,7 +140,8 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     // For wormhole, we prefix the supplied payload with the _evmChainId
     // This is because wormhole is a generic bridge, and we need to tell it which chain to send to
 
-    // We also prefix with the destination chain Id, which we assume is the same as the sender.
+    // We also prefix with the destination address, which we assume is the same as the sender.
+    // slither-disable-next-line unused-return
     try wormhole.publishMessage(0, abi.encode(_evmChainId, _destination, _payload), 0) {
       return true;
     } catch {
