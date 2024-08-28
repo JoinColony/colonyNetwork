@@ -42,6 +42,8 @@ module.exports = async () => {
 
   let resolver = await Resolver.new();
 
+  await Resolver.setAsDeployed(resolver);
+
   await setupProxyColonyNetwork(etherRouter, proxyColonyNetworkImplementation, resolver);
 
   // Set up the resolver for shell colonies and register it with the network
