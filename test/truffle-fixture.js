@@ -93,8 +93,11 @@ module.exports = async () => {
   }
 
   const chainId = await getChainId();
-  if (chainId !== FORKED_XDAI_CHAINID) {
-    console.log("Skipping deployment of contracts on non-home chain");
+  const miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10) || chainId;
+
+  if (chainId !== miningChainId) {
+    console.log("On non-mining chain, so deploy proxy infrastructure");
+    await hre.run("deploy-proxy-network");
     return;
   }
 

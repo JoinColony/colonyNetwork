@@ -23,13 +23,10 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
-const Resolver = artifacts.require("Resolver");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
-const ICreateX = artifacts.require("ICreateX");
 const ProxyColonyNetwork = artifacts.require("ProxyColonyNetwork");
 const ProxyColony = artifacts.require("ProxyColony");
 const MetaTxToken = artifacts.require("MetaTxToken");
@@ -48,7 +45,6 @@ const {
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
-const { setupProxyColonyNetwork, setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
 const UINT256_MAX_ETHERS = ethers.BigNumber.from(2).pow(256).sub(1);
 
@@ -137,56 +133,56 @@ contract("Cross-chain", (accounts) => {
     wormholeForeignChainId = evmChainIdToWormholeChainId(foreignChainId);
 
     // Deploy shell colonyNetwork to whichever chain truffle hasn't already deployed to.
-    try {
-      if (process.env.HARDHAT_FOREIGN === "true") {
-        await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development`);
-      } else {
-        await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development2`);
-      }
+    // try {
+    //   if (process.env.HARDHAT_FOREIGN === "true") {
+    //     await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development`);
+    //   } else {
+    //     await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development2`);
+    //   }
 
-      const createX = await new ethers.Contract(CREATEX_ADDRESS, ICreateX.abi, ethersForeignSigner);
+    //   const createX = await new ethers.Contract(CREATEX_ADDRESS, ICreateX.abi, ethersForeignSigner);
 
-      // This is a fake instance of an etherRouter, just so we can call encodeABs
-      const fakeEtherRouter = await EtherRouterCreate3.at(CREATEX_ADDRESS);
-      const setOwnerData = fakeEtherRouter.contract.methods.setOwner(accounts[0]).encodeABI();
+    //   // This is a fake instance of an etherRouter, just so we can call encodeABs
+    //   const fakeEtherRouter = await EtherRouterCreate3.at(CREATEX_ADDRESS);
+    //   const setOwnerData = fakeEtherRouter.contract.methods.setOwner(accounts[0]).encodeABI();
 
-      const tx = await createX["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
-        `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e9`,
-        EtherRouterCreate3.bytecode,
-        setOwnerData,
-        [0, 0],
-        { from: accounts[0] },
-      );
+    //   const tx = await createX["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
+    //     `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e9`,
+    //     EtherRouterCreate3.bytecode,
+    //     setOwnerData,
+    //     [0, 0],
+    //     { from: accounts[0] },
+    //   );
 
-      const receipt = await tx.wait();
+    //   const receipt = await tx.wait();
 
-      const etherRouter = await new ethers.Contract(
-        receipt.events.filter((log) => log.event === "ContractCreation")[0].args.newContract,
-        EtherRouter.abi,
-        ethersForeignSigner,
-      );
-      let resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
-      const proxyColonyNetworkImplementation = await new ethers.ContractFactory(
-        ProxyColonyNetwork.abi,
-        ProxyColonyNetwork.bytecode,
-        ethersForeignSigner,
-      ).deploy();
+    //   const etherRouter = await new ethers.Contract(
+    //     receipt.events.filter((log) => log.event === "ContractCreation")[0].args.newContract,
+    //     EtherRouter.abi,
+    //     ethersForeignSigner,
+    //   );
+    //   let resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
+    //   const proxyColonyNetworkImplementation = await new ethers.ContractFactory(
+    //     ProxyColonyNetwork.abi,
+    //     ProxyColonyNetwork.bytecode,
+    //     ethersForeignSigner,
+    //   ).deploy();
 
-      await setupProxyColonyNetwork(etherRouter, proxyColonyNetworkImplementation, resolver);
-      console.log("**** shell colony network set up");
+    //   await setupProxyColonyNetwork(etherRouter, proxyColonyNetworkImplementation, resolver);
+    //   console.log("**** shell colony network set up");
 
-      // Set up the resolver for shell colonies
-      resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
-      const proxyColonyImplementation = await new ethers.ContractFactory(ProxyColony.abi, ProxyColony.bytecode, ethersForeignSigner).deploy();
+    //   // Set up the resolver for shell colonies
+    //   resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
+    //   const proxyColonyImplementation = await new ethers.ContractFactory(ProxyColony.abi, ProxyColony.bytecode, ethersForeignSigner).deploy();
 
-      await setupEtherRouter("bridging", "ProxyColony", { ProxyColony: proxyColonyImplementation.address }, resolver);
-      const proxyColonyNetwork = new ethers.Contract(etherRouter.address, ProxyColonyNetwork.abi, ethersForeignSigner);
+    //   await setupEtherRouter("bridging", "ProxyColony", { ProxyColony: proxyColonyImplementation.address }, resolver);
+    //   const proxyColonyNetwork = new ethers.Contract(etherRouter.address, ProxyColonyNetwork.abi, ethersForeignSigner);
 
-      await proxyColonyNetwork.setProxyColonyResolverAddress(resolver.address);
-    } catch (err) {
-      console.log(err);
-      process.exit(1);
-    }
+    //   await proxyColonyNetwork.setProxyColonyResolverAddress(resolver.address);
+    // } catch (err) {
+    //   console.log(err);
+    //   process.exit(1);
+    // }
 
     // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
     // we see it in our tests that's the coverage chain, which builds the contract artifacts
