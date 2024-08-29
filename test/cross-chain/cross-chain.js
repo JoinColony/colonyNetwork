@@ -103,9 +103,6 @@ contract("Cross-chain", (accounts) => {
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
 
-    console.log("home chain id", homeChainId);
-    console.log("foreign chain id", foreignChainId);
-    console.log(process.env.HARDHAT_FOREIGN);
     // We need to deploy the network to the other chain
     try {
       await exec(
@@ -118,7 +115,6 @@ contract("Cross-chain", (accounts) => {
       process.exit(1);
     }
 
-    console.log("execing");
     await exec(`PORT=${FOREIGN_PORT} bash ./scripts/setup-foreign-chain.sh`);
     ({ guardianSpy, resetRelayer, gnosisSafe, zodiacBridge, homeBridge, foreignBridge, foreignColonyBridge, homeColonyBridge } = await setupBridging(
       homeRpcUrl,
@@ -218,9 +214,8 @@ contract("Cross-chain", (accounts) => {
 
     const proxyMCAddress = await homeColonyNetwork.getMetaColony(); // Not a mistake - they have the same address, and .getMetaColony doesn't exist on ProxyColonyNetwork
     proxyMetacolony = await new ethers.Contract(proxyMCAddress, IMetaColony.abi, ethersForeignSigner);
-    console.log("get mc");
+
     const homeMCAddress = await homeColonyNetwork.getMetaColony();
-    console.log("got mc");
     homeMetacolony = await new ethers.Contract(homeMCAddress, IMetaColony.abi, ethersHomeSigner);
 
     await setForeignBridgeData(homeColonyBridge.address, foreignColonyBridge.address, ethersHomeSigner, ethersForeignSigner);
@@ -297,9 +292,8 @@ contract("Cross-chain", (accounts) => {
       expect(homeColonyNetwork.address).to.equal(foreignColonyNetwork.address);
       // Check we have colony Network there - this equality is expected because of how we set up the addresses
       const homeVersionResolver = await homeColonyNetwork.getColonyVersionResolver(CURR_VERSION);
-      console.log(foreignColonyNetwork.address);
-      console.log(await ethersForeignProvider.getBlockNumber());
       const proxyColonyResolver = await foreignColonyNetwork.proxyColonyResolverAddress();
+
       expect(homeVersionResolver).to.not.equal(ADDRESS_ZERO);
       expect(proxyColonyResolver).to.not.equal(ADDRESS_ZERO);
     });
@@ -1244,6 +1238,29 @@ contract("Cross-chain", (accounts) => {
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
     });
 
+    it("Can track native tokens received on foreign chains", async () => {
+      const tokenAmount = ethers.utils.parseEther("1");
+
+      await ethersForeignSigner.sendTransaction({
+        to: proxyColony.address,
+        value: tokenAmount,
+      });
+
+      // Claim on foreign chain
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+
+      const tx = await proxyColony.claimTokens(ADDRESS_ZERO);
+      await tx.wait();
+
+      const receipt = await p;
+      expect(receipt.status).to.equal(1);
+
+      // Check bookkeeping on the home chain
+
+      const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, ADDRESS_ZERO);
+      expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
+    });
+
     it("Can track tokens sent on the foreign chain", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
@@ -1266,8 +1283,6 @@ contract("Cross-chain", (accounts) => {
       tx = await colony.setExpenditureRecipient(expenditureId, 1, accounts[0]);
       await tx.wait();
 
-      console.log("set recipient");
-
       tx = await colony["setExpenditurePayout(uint256,uint256,uint256,uint256,uint256,address,uint256)"](
         1,
         UINT256_MAX_ETHERS,
@@ -1278,7 +1293,7 @@ contract("Cross-chain", (accounts) => {
         paymentAmount,
       );
       await tx.wait();
-      console.log("set payout");
+
       const domain1 = await colony.getDomain(1);
       const expenditure = await colony.getExpenditure(expenditureId);
 
@@ -1314,6 +1329,80 @@ contract("Cross-chain", (accounts) => {
       expect(colonyBalance.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
       expect(recipientBalance.toHexString()).to.equal(ethers.utils.parseEther("30").toHexString());
     });
+
+    it("Can track native tokens sent on the foreign chain", async () => {
+      const tokenAmount = ethers.utils.parseEther("1");
+
+      let tx = await ethersForeignSigner.sendTransaction({
+        to: proxyColony.address,
+        value: tokenAmount,
+      });
+      await tx.wait();
+
+      // Claim on the foreign chain
+      let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      tx = await proxyColony.claimTokens(ADDRESS_ZERO);
+      await tx.wait();
+      await p;
+
+      // Make a payment that pays out 0.3
+
+      const paymentAmount = ethers.utils.parseEther("0.3");
+      tx = await colony.makeExpenditure(1, UINT256_MAX_ETHERS, 1);
+      await tx.wait();
+      const expenditureId = await colony.getExpenditureCount();
+
+      tx = await colony.setExpenditureRecipient(expenditureId, 1, accounts[0]);
+      await tx.wait();
+
+      tx = await colony["setExpenditurePayout(uint256,uint256,uint256,uint256,uint256,address,uint256)"](
+        1,
+        UINT256_MAX_ETHERS,
+        expenditureId,
+        1,
+        foreignChainId,
+        ADDRESS_ZERO,
+        paymentAmount,
+      );
+      await tx.wait();
+
+      const domain1 = await colony.getDomain(1);
+      const expenditure = await colony.getExpenditure(expenditureId);
+
+      tx = await colony["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        UINT256_MAX_ETHERS,
+        1,
+        UINT256_MAX_ETHERS,
+        UINT256_MAX_ETHERS,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        paymentAmount,
+        foreignChainId,
+        ADDRESS_ZERO,
+      );
+      await tx.wait();
+      tx = await colony.finalizeExpenditure(expenditureId);
+      await tx.wait();
+
+      const receipientBalanceBefore = await ethersForeignProvider.getBalance(accounts[0]);
+
+      p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      tx = await colony["claimExpenditurePayout(uint256,uint256,uint256,address)"](expenditureId, 1, foreignChainId, ADDRESS_ZERO);
+      await tx.wait();
+      await p;
+      // Check bookkeeping on the home chain
+
+      const balance1 = await colony.getFundingPotProxyBalance(1, foreignChainId, ADDRESS_ZERO);
+      expect(balance1.toHexString()).to.equal(ethers.utils.parseEther("0.7").toHexString());
+
+      // Check actually paid on foreign chain
+      const colonyBalance = await ethersForeignProvider.getBalance(proxyColony.address);
+      const recipientBalanceAfter = await ethersForeignProvider.getBalance(accounts[0]);
+
+      expect(colonyBalance.toHexString()).to.equal(ethers.utils.parseEther("0.7").toHexString());
+      expect(recipientBalanceAfter.sub(receipientBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("0.3").toHexString());
+    });
   });
 
   describe("making arbitrary transactions on another chain", async () => {
@@ -1324,7 +1413,6 @@ contract("Cross-chain", (accounts) => {
       colony = await setupColony(homeColonyNetwork);
 
       const events = await homeColonyNetwork.queryFilter(homeColonyNetwork.filters.ColonyAdded());
-      // homeColonyNetwork.fil
       // Deploy a proxy colony on the foreign network
 
       const colonyCreationSalt = await homeColonyNetwork.getColonyCreationSalt({ blockTag: events[events.length - 1].blockNumber });
@@ -1355,7 +1443,6 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       const balanceAfter = await foreignToken.balanceOf(proxyColony.address);
-      console.log(balanceBefore.toHexString(), balanceAfter.toHexString());
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
 
@@ -1373,7 +1460,6 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       const shellBalanceAfter = await foreignToken.balanceOf(proxyColony.address);
-      console.log(shellBalanceBefore.toHexString(), shellBalanceAfter.toHexString());
       expect(shellBalanceAfter.sub(shellBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
 
       // Check that the second transaction was successful
@@ -1667,6 +1753,36 @@ contract("Cross-chain", (accounts) => {
       const tx = await homeColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "some-good-reason");
       await homeBridge.setVerifyVMResult(true, "");
+    });
+  });
+
+  describe("ProxyColony functions are secure", async () => {
+    let colony;
+    let proxyColony;
+    beforeEach(async () => {
+      colony = await setupColony(homeColonyNetwork);
+
+      const events = await homeColonyNetwork.queryFilter(homeColonyNetwork.filters.ColonyAdded());
+      // Deploy a proxy colony on the foreign network
+      const colonyCreationSalt = await homeColonyNetwork.getColonyCreationSalt({ blockTag: events[events.length - 1].blockNumber });
+
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+
+      const tx = await colony.createProxyColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
+      await tx.wait();
+
+      await p;
+      proxyColony = new ethers.Contract(colony.address, ProxyColony.abi, ethersForeignSigner);
+    });
+
+    it("a non-bridge address cannot call transferFromBridge", async () => {
+      const tx = await proxyColony.transferFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-only-bridge");
+    });
+
+    it("a non-bridge address cannot call makeArbitraryTransactions", async () => {
+      const tx = await proxyColony.makeArbitraryTransactions([], [], { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-only-bridge");
     });
   });
 });
