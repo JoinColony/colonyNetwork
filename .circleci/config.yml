@@ -310,14 +310,20 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
-          name: "Running chainid tests with for network where mining takes place"
-          command: CHAIN_ID=777 pnpm run test:contracts:chainid:coverage
+          name: "Running chainid tests for Arbitrum One"
+          command: CHAIN_ID=42161 pnpm run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - run:
+          name: "Running chainid tests for Xdai"
+          command: CHAIN_ID=100 pnpm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
-            - coverage-chainid-777
+            - coverage-chainid-100
+            - coverage-chainid-42161
   coverage-test-bridging:
     <<: *job_common
     resource_class: large
