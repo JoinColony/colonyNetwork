@@ -36,6 +36,7 @@ const {
   deployColonyVersionGLWSS4,
   deployColonyNetworkVersionGLWSS4,
   deployColonyVersionHMWSS,
+  deployColonyVersionIMWSS,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 contract("One transaction payments", (accounts) => {
@@ -575,6 +576,7 @@ contract("One transaction payments", (accounts) => {
       await deployColonyNetworkVersionGLWSS4();
       await deployColonyVersionGLWSS4(colonyNetwork);
       await deployColonyVersionHMWSS(colonyNetwork);
+      await deployColonyVersionIMWSS(colonyNetwork);
     });
 
     beforeEach(async () => {
@@ -612,17 +614,27 @@ contract("One transaction payments", (accounts) => {
       expect(await colony.hasUserRole(oneTxPayment.address, 1, ARBITRATION_ROLE)).to.be.false;
     });
 
-    it("a colony can still upgrade even if Voting Reputation not installed", async () => {
+    it("a colony can still upgrade even if OneTxPayment not installed", async () => {
       await colony.uninstallExtension(ONE_TX_PAYMENT);
       expect(await colony.version()).to.eq.BN(13);
       await colony.upgrade(14);
       expect(await colony.version()).to.eq.BN(14);
     });
 
-    it("a colony can still upgrade even if Voting Reputation is more up-to-date than we might expect", async () => {
+    it("a colony can still upgrade even if OneTxPayment is more up-to-date than we might expect", async () => {
       await colony.uninstallExtension(ONE_TX_PAYMENT);
       await colony.installExtension(ONE_TX_PAYMENT, 6);
       await colony.upgrade(14);
+    });
+
+    it.only("can call getDomain() without an error", async () => {
+      await colony.uninstallExtension(ONE_TX_PAYMENT);
+      await colony.installExtension(ONE_TX_PAYMENT, 6);
+      await colony.upgrade(14);
+      await colony.upgrade(15);
+      await colony.upgrade(16);
+
+      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId);
     });
   });
 });

@@ -362,14 +362,8 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
       await exec(`${cmdBase} && npm run provision:token:contracts`);
     } else {
       console.log("Installing the network...");
-      let packageManagerCommand;
-      if (fs.existsSync(`./colonyNetwork-${versionTag}/pnpm-lock.yaml`)) {
-        packageManagerCommand = "pnpm";
-      } else {
-        packageManagerCommand = "npm";
-      }
-
-      await exec(`cd colonyNetwork-${versionTag} && ${packageManagerCommand} install`);
+      const installCmd = `${fs.existsSync(`./colonyNetwork-${versionTag}/pnpm-lock.yaml`) ? "pnpm" : "npm"} install`;
+      await exec(`${cmdBase} && ${installCmd}`);
     }
   } else {
     versionUsesTruffle = fs.existsSync(`./colonyNetwork-${versionTag}/truffle.js`);
@@ -388,7 +382,7 @@ module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName,
 };
 
 async function deployViaTruffle(versionTag, cmdBase, interfaceName, implementationNames) {
-  console.log("Deploying upgradable version...");
+  console.log("Deploying upgradable version via truffle...");
   await exec(`cp ./scripts/setupOldUpgradeableVersion.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersion.js`);
 
   const network = hre.__SOLIDITY_COVERAGE_RUNNING ? "coverage" : "development";
@@ -406,13 +400,14 @@ async function deployViaTruffle(versionTag, cmdBase, interfaceName, implementati
 }
 
 async function deployViaHardhat(versionTag, cmdBase, interfaceName, implementationNames) {
-  console.log("Deploying upgradable version...");
+  console.log("Deploying upgradable version via hardhat...");
   await exec(`cp ./scripts/setupOldUpgradeableVersionHardhat.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersionHardhat.js`);
+  await exec(`${cmdBase} && npx hardhat compile`);
 
   const network = hre.__SOLIDITY_COVERAGE_RUNNING ? "coverage" : "development";
 
   const res = await exec(
-    `${cmdBase} ` +
+    `cd colonyNetwork-${versionTag} ` +
       `&& INTERFACE_NAME=${interfaceName} IMPLEMENTATION_NAMES=${implementationNames.join(
         ",",
       )} npx hardhat run ./scripts/setupOldUpgradeableVersionHardhat.js ` +
