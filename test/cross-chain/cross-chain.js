@@ -39,7 +39,6 @@ const {
   ROOT_ROLE,
   CURR_VERSION,
   CREATEX_ADDRESS,
-  FORKED_XDAI_CHAINID,
   NETWORK_ADDRESS,
 } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
@@ -101,14 +100,22 @@ contract("Cross-chain", (accounts) => {
   const ethersHomeSigner2 = new ethers.providers.StaticJsonRpcProvider(homeRpcUrl).getSigner(1);
 
   before(async () => {
-    if (process.env.HARDHAT_FOREIGN === "true") {
-      // Then we need to deploy the network to the 'home' chain
-      try {
-        await exec(`CHAIN_ID=${FORKED_XDAI_CHAINID} npx hardhat deploy --network development2`);
-      } catch (err) {
-        console.log(err);
-        process.exit(1);
-      }
+    homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
+    foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
+
+    console.log("home chain id", homeChainId);
+    console.log("foreign chain id", foreignChainId);
+    console.log(process.env.HARDHAT_FOREIGN);
+    // We need to deploy the network to the other chain
+    try {
+      await exec(
+        `CHAIN_ID=${
+          process.env.HARDHAT_FOREIGN === "true" ? parseInt(homeChainId, 16) : parseInt(foreignChainId, 16)
+        } npx hardhat deploy --network development2`,
+      );
+    } catch (err) {
+      console.log(err);
+      process.exit(1);
     }
 
     console.log("execing");
