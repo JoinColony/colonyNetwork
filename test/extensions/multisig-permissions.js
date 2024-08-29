@@ -392,7 +392,15 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, 0, [multisigPermissions.address], [action], { from: USER2 });
     });
 
-    it(`multisig root can create motions to award multisig root and cannot award those permissions directly`, async () => {
+    it("multisig architecture can create motions to create domains in the domain they hold the role in", async () => {
+      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARCHITECTURE_ROLE]));
+
+      const action = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
+
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action], { from: USER2 });
+    });
+
+    it("multisig root can create motions to award multisig root and cannot award those permissions directly", async () => {
       await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ROOT_ROLE]));
 
       await checkErrorRevert(
