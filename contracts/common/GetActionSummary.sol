@@ -153,12 +153,10 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         );
 
         totalSummary.expenditureId = actionSummary.expenditureId;
-      } else {
+      } else if (!isExpenditureSig(totalSummary.sig)) {
         // If no expenditure signatures have been seen, we record the latest signature
         // Also, we aggregate the permissions as we go
-        if (!isExpenditureSig(totalSummary.sig)) {
-          totalSummary.sig = actionSummary.sig;
-        }
+        totalSummary.sig = actionSummary.sig;
       }
 
       // In every case, ensure domainId is consistent throughout the multicall.
@@ -184,15 +182,6 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
 
   function isExpenditureSig(bytes4 sig) internal pure returns (bool) {
     return sig == SET_EXPENDITURE_STATE || sig == SET_EXPENDITURE_PAYOUT;
-  }
-
-  function sigInArray(bytes4 sig, bytes4[] memory sigs) internal pure returns (bool) {
-    for (uint256 i; i < sigs.length; i++) {
-      if (sigs[i] == sig) {
-        return true;
-      }
-    }
-    return false;
   }
 
   function getTarget(address _target, address colonyAddress) internal pure returns (address) {
