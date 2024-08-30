@@ -630,11 +630,18 @@ contract("One transaction payments", (accounts) => {
     it.only("can call getDomain() without an error", async () => {
       await colony.uninstallExtension(ONE_TX_PAYMENT);
       await colony.installExtension(ONE_TX_PAYMENT, 6);
+      const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+      oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
+
+      await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, ROLES);
+      await token.mint(colony.address, INITIAL_FUNDING);
+      await colony.claimColonyFunds(token.address);
+
       await colony.upgrade(14);
       await colony.upgrade(15);
       await colony.upgrade(16);
 
-      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, localSkillId);
+      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 0);
     });
   });
 });

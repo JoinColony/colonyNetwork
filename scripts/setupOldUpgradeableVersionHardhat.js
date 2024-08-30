@@ -3,7 +3,7 @@
 const Resolver = artifacts.require("./Resolver");
 const { setupEtherRouter } = require("../helpers/upgradable-contracts");
 
-module.exports = async (callback) => {
+async function main() {
   const interfaceName = process.env.INTERFACE_NAME;
   const implementationNames = process.env.IMPLEMENTATION_NAMES.split(",");
   const implementations = implementationNames.map((x) => artifacts.require(x));
@@ -23,5 +23,7 @@ module.exports = async (callback) => {
 
   await setupEtherRouter("colony", interfaceName, deployedImplementations, resolver);
   console.log(resolver.address); // This returns the address to the caller
-  callback();
-};
+  process.exit(0);
+}
+
+main();
