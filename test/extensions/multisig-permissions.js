@@ -413,6 +413,52 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.createMotion(1, UINT256_MAX, [multisigPermissions.address], [action], { from: USER2 });
     });
 
+    it("'disguising' motions that should be invalid with multiple actions doesn't work", async () => {
+      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARCHITECTURE_ROLE]));
+      const action = await encodeTxData(multisigPermissions, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE])]);
+      const action2 = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO, ADDRESS_ZERO], [action, action2, action2], { from: USER2 }),
+        "multisig-invalid-motion-inconsistent",
+      );
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO, ADDRESS_ZERO], [action2, action, action2], { from: USER2 }),
+        "multisig-invalid-motion-inconsistent",
+      );
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO, ADDRESS_ZERO], [action2, action2, action], { from: USER2 }),
+        "multisig-invalid-motion-inconsistent",
+      );
+
+      let multicallAction = await encodeTxData(colony, "multicall", [[action, action2, action2]]);
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction], { from: USER2 }),
+        "colony-action-summary-inconsistent-permissions",
+      );
+
+      multicallAction = await encodeTxData(colony, "multicall", [[action2, action, action2]]);
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction], { from: USER2 }),
+        "colony-action-summary-inconsistent-permissions",
+      );
+
+      multicallAction = await encodeTxData(colony, "multicall", [[action2, action2, action]]);
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction], { from: USER2 }),
+        "colony-action-summary-inconsistent-permissions",
+      );
+
+      const singleMulticall1 = await encodeTxData(colony, "multicall", [[action]]);
+      const singleMulticall2 = await encodeTxData(colony, "multicall", [[action2]]);
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO], [singleMulticall1, singleMulticall2], { from: USER2 }),
+        "multisig-invalid-motion-inconsistent",
+      );
+    });
+
     it("The domain skill threshold for execution changes as expected", async () => {
       await multisigPermissions.setGlobalThreshold(2);
       // By default, it's the global threshold
