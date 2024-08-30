@@ -627,7 +627,7 @@ contract("One transaction payments", (accounts) => {
       await colony.upgrade(14);
     });
 
-    it.only("can call getDomain() without an error", async () => {
+    it("can call getDomain() without an error", async () => {
       await colony.uninstallExtension(ONE_TX_PAYMENT);
       await colony.installExtension(ONE_TX_PAYMENT, 6);
       const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);

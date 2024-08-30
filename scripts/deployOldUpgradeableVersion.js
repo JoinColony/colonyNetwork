@@ -402,12 +402,11 @@ async function deployViaTruffle(versionTag, cmdBase, interfaceName, implementati
 async function deployViaHardhat(versionTag, cmdBase, interfaceName, implementationNames) {
   console.log("Deploying upgradable version via hardhat...");
   await exec(`cp ./scripts/setupOldUpgradeableVersionHardhat.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersionHardhat.js`);
-  await exec(`${cmdBase} && npx hardhat compile`);
 
   const network = hre.__SOLIDITY_COVERAGE_RUNNING ? "coverage" : "development";
 
   const res = await exec(
-    `cd colonyNetwork-${versionTag} ` +
+    `${cmdBase} ` +
       `&& INTERFACE_NAME=${interfaceName} IMPLEMENTATION_NAMES=${implementationNames.join(
         ",",
       )} npx hardhat run ./scripts/setupOldUpgradeableVersionHardhat.js ` +
