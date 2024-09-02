@@ -191,7 +191,6 @@ const loader = new TruffleLoader({
 
       colonyBridges[chainId] = new ethers.Contract(colonyBridgeAddress, colonyBridgeContractDef.abi, nonceManager);
       const networkDetails = await wallet.provider.getNetwork();
-      console.log('networkDetails', networkDetails)
       if (networkDetails.chainId !== config.chains[chainId].evmChainId) {
         console.log('Network details do not match config for chain', chainId);
         console.log('Got an evmChainId of', networkDetails.chainId, 'but expected', config.chains[chainId].evmChainId);
@@ -311,10 +310,6 @@ const loader = new TruffleLoader({
         }
         const hash = ctx.sourceTxHash;
         const [destinationEvmChainId, destinationAddress, payload] = (new ethers.utils.AbiCoder).decode(['uint256', 'address', 'bytes'],`0x${vaa.payload.toString('hex')}`);
-        console.log('destinationEvmChainId', destinationEvmChainId);
-        console.log('destinationAddress', destinationAddress);
-        console.log('payload', payload);
-
 
         console.log(
           `Got a VAA with sequence: ${vaa.sequence} from with txhash: ${hash}`,

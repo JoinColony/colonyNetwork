@@ -19,7 +19,6 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { CallWithGuards } from "../common/CallWithGuards.sol";
 import { DSAuth } from "./../../lib/dappsys/auth.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
@@ -27,7 +26,7 @@ import { Multicall } from "./../common/Multicall.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ProxyColonyNetwork } from "./ProxyColonyNetwork.sol";
 
-contract ProxyColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards {
+contract ProxyColony is DSAuth, Multicall, CallWithGuards {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
@@ -35,14 +34,6 @@ contract ProxyColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
 
   // Token address => known balance
   mapping(address => uint256) tokenBalances;
-
-  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
-    return metatransactionNonces[_user];
-  }
-
-  function incrementMetatransactionNonce(address _user) internal override {
-    metatransactionNonces[_user] += 1;
-  }
 
   // Events
 
@@ -105,7 +96,8 @@ contract ProxyColony is DSAuth, BasicMetaTransaction, Multicall, CallWithGuards 
       require(_targets[i] != bridgeAddress, "colony-cannot-target-bridge");
       require(_targets[i] != owner, "colony-cannot-target-network");
 
-      (bool success, ) = _targets[i].call(_payloads[i]);
+      (bool success, ) = callWithGuards(_targets[i], _payloads[i]);
+
       require(success, "colony-arbitrary-transaction-failed");
     }
   }
