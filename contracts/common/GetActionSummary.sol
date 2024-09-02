@@ -20,6 +20,7 @@ import { ExtractCallData } from "./ExtractCallData.sol";
 import { GetActionDomainSkillId } from "./GetActionDomainSkillId.sol";
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
+import { Bytes4Includes } from "./Bytes4Includes.sol";
 
 pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
@@ -92,9 +93,9 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
       }
     } else {
       summary.domainSkillId = getActionDomainSkillId(_action, colonyNetworkAddress, colonyAddress);
-      // A special case for setUserRoles, which can be called by root (in root) and
+      // A special case for permission-setting functions, which can be called by root (in root) and
       // by architecture (if being used in a child domain of where you have the permission)
-      if (sig == SET_USER_ROLES) {
+      if (permissionMask == (ONLY_ARCHITECTURE_ROLE_MASK | ONLY_ROOT_ROLE_MASK)) {
         // slither-disable-next-line incorrect-equality
         if (summary.domainSkillId == IColony(colonyAddress).getDomain(1).skillId) {
           permissionMask = ONLY_ROOT_ROLE_MASK;
@@ -126,6 +127,7 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     }
 
     ActionSummary memory totalSummary;
+    bool domainantSigSeen = false;
 
     for (uint256 i; i < actions.length; i++) {
       ActionSummary memory actionSummary = getSingleActionSummary(
@@ -140,12 +142,15 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
       } else if (_dominantSigs.includes(actionSummary.sig)) {
         // If any of the actions are classed as 'dominant',
         //   the entire multicall is such
-        return actionSummary;
+        totalSummary.sig = actionSummary.sig;
+        domainantSigSeen = true;
       } else if (isExpenditureSig(actionSummary.sig)) {
+        if (!domainantSigSeen) {
+          totalSummary.sig = actionSummary.sig;
+        }
+
         // If it is an expenditure action, we record the expenditure ids
         //  and ensure it is consistent throughout the multicall.
-        totalSummary.sig = actionSummary.sig;
-
         require(
           totalSummary.expenditureId == 0 ||
             totalSummary.expenditureId == actionSummary.expenditureId,
@@ -156,7 +161,9 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
       } else if (!isExpenditureSig(totalSummary.sig)) {
         // If no expenditure signatures have been seen, we record the latest signature
         // Also, we aggregate the permissions as we go
-        totalSummary.sig = actionSummary.sig;
+        if (!domainantSigSeen) {
+          totalSummary.sig = actionSummary.sig;
+        }
       }
 
       // In every case, ensure domainId is consistent throughout the multicall.
@@ -192,16 +199,5 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     assembly {
       sig := mload(add(action, 0x20))
     }
-  }
-}
-
-library Bytes4Includes {
-  function includes(bytes4[] memory array, bytes4 value) internal pure returns (bool) {
-    for (uint256 i = 0; i < array.length; i++) {
-      if (array[i] == value) {
-        return true;
-      }
-    }
-    return false;
   }
 }

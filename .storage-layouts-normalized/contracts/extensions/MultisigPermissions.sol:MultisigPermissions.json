@@ -692,6 +692,17 @@
                 "label": "bool",
                 "numberOfBytes": "1"
               }
+            },
+            {
+              "contract": "contracts/extensions/MultisigPermissions.sol:MultisigPermissions",
+              "label": "sig",
+              "offset": 22,
+              "slot": "8",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes4",
+                "numberOfBytes": "4"
+              }
             }
           ],
           "numberOfBytes": "288"

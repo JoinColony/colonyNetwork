@@ -23,10 +23,13 @@ import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
+import { Bytes4Includes } from "./../common/Bytes4Includes.sol";
 
 // ignore-file-swc-108
 
 contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionSummary {
+  using Bytes4Includes for bytes4[];
+
   // Events
 
   event MultisigRoleSet(address agent, address user, uint256 domainId, uint256 roleId, bool setTo);
@@ -52,6 +55,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     address creator;
     bool executed;
     bool rejected;
+    bytes4 sig;
   }
 
   enum Vote {
@@ -152,6 +156,27 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     emit DomainSkillThresholdSet(_domainSkillId, _threshold);
   }
 
+  bytes4 constant SET_ARCHITECTURE_ROLE_SIG =
+    bytes4(keccak256("setArchitectureRole(uint256,uint256,address,uint256,bool)"));
+  bytes4 constant SET_FUNDING_ROLE_SIG =
+    bytes4(keccak256("setFundingRole(uint256,uint256,address,uint256,bool)"));
+  bytes4 constant SET_ADMINISTRATION_ROLE_SIG =
+    bytes4(keccak256("setAdministrationRole(uint256,uint256,address,uint256,bool)"));
+  bytes4 constant SET_ARBITRATION_ROLE_SIG =
+    bytes4(keccak256("setArbitrationRole(uint256,uint256,address,uint256,bool)"));
+  bytes4 constant SET_USER_ROLES_SIG =
+    bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
+
+  function getDominantSigs() private pure returns (bytes4[] memory) {
+    bytes4[] memory dominantSigs = new bytes4[](5);
+    dominantSigs[0] = SET_ARCHITECTURE_ROLE_SIG;
+    dominantSigs[1] = SET_FUNDING_ROLE_SIG;
+    dominantSigs[2] = SET_ADMINISTRATION_ROLE_SIG;
+    dominantSigs[3] = SET_ARBITRATION_ROLE_SIG;
+    dominantSigs[4] = SET_USER_ROLES_SIG;
+    return dominantSigs;
+  }
+
   function createMotion(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -168,12 +193,13 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     motion.creator = msgSender();
     motion.creationTimestamp = block.timestamp;
 
+    bytes4[] memory forbiddenSigs = new bytes4[](1);
+    forbiddenSigs[0] = OLD_MOVE_FUNDS;
+
+    bytes4[] memory dominantSigs = getDominantSigs();
+
     for (uint256 i = 0; i < _data.length; i += 1) {
       require(_targets[i] != address(colony), "multisig-passed-target-cannot-be-base-colony");
-      bytes4[] memory domainantSigs; // Empty array
-
-      bytes4[] memory forbiddenSigs = new bytes4[](1);
-      forbiddenSigs[0] = OLD_MOVE_FUNDS;
 
       ActionSummary memory actionSummary = getActionSummary(
         address(colonyNetwork),
@@ -181,8 +207,12 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
         _data[i],
         _targets[i],
         forbiddenSigs,
-        domainantSigs
+        dominantSigs
       );
+
+      if (dominantSigs.includes(actionSummary.sig)) {
+        motion.sig = actionSummary.sig;
+      }
 
       // slither-disable-next-line incorrect-equality
       if (motion.domainSkillId == 0 && motion.requiredPermissions == 0) {
@@ -508,7 +538,10 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
     Motion storage motion = motions[_motionId];
 
-    if ((motion.requiredPermissions & ROOT_AND_ARCHITECTURE) == ROOT_AND_ARCHITECTURE) {
+    if (
+      getDominantSigs().includes(motion.sig) &&
+      motion.requiredPermissions == bytes32(1 << uint256(ColonyRole.Architecture))
+    ) {
       require(
         colony.getDomain(_permissionDomainId).skillId < motion.domainSkillId,
         "multisig-architecture-only-in-subdomains"

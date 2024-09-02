@@ -414,7 +414,8 @@ contract("Multisig Permissions", (accounts) => {
     });
 
     it("'disguising' motions that should be invalid with multiple actions doesn't work", async () => {
-      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARCHITECTURE_ROLE]));
+      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ROOT_ROLE, ARCHITECTURE_ROLE]));
+
       const action = await encodeTxData(multisigPermissions, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE])]);
       const action2 = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
 
