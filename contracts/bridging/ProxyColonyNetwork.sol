@@ -44,13 +44,8 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards {
   /// @param bridgeAddress The address of the bridge contract that will be interacted with
   event BridgeSet(address bridgeAddress);
 
-  modifier self() {
-    require(address(this) == msgSender(), "colony-not-self");
-    _;
-  }
-
   modifier onlyColony() {
-    require(shellColonies[msgSender()], "colony-network-caller-must-be-shell-colony");
+    require(shellColonies[msgSender()], "colony-network-caller-must-be-proxy-colony");
     _;
   }
 

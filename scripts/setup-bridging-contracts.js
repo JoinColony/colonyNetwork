@@ -51,9 +51,9 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
   const Token = await loader.load({ contractDir, contractName: "Token" });
 
   const foreignBridgeAddresses = [];
-  const foreignColonyBridgeAddresses = [];
+  const remoteColonyBridgeAddresses = [];
   const foreignBridges = [];
-  const foreignColonyBridges = [];
+  const remoteColonyBridges = [];
   const gnosisSafes = [];
   const zodiacBridges = [];
 
@@ -133,15 +133,15 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
     }
 
     // Deploy a foreign bridge
-    const [foreignBridge, foreignColonyBridge] = await deployBridge(ethersForeignSigner);
+    const [foreignBridge, remoteColonyBridge] = await deployBridge(ethersForeignSigner);
     const foreignChainId = (await ethersForeignSigner.provider.getNetwork()).chainId;
 
     foreignBridgeAddresses.push(foreignBridge.address);
-    foreignColonyBridgeAddresses.push(foreignColonyBridge.address);
+    remoteColonyBridgeAddresses.push(remoteColonyBridge.address);
 
     console.log(`On chain ${foreignChainId}:`);
     console.log(`foreign bridge address: ${foreignBridge.address}`);
-    console.log(`foreign colony bridge address: ${foreignColonyBridge.address}`);
+    console.log(`foreign colony bridge address: ${remoteColonyBridge.address}`);
     console.log(`foreign rpc url: ${foreignRpcUrls[0]}`);
     console.log(`gnosis safe address: ${gnosisSafe.address}`);
     console.log(`zodiac bridge module address: ${zodiacBridge.address}`);
@@ -149,7 +149,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
     console.log(`token address: ${token.address}`);
 
     foreignBridges.push(foreignBridge);
-    foreignColonyBridges.push(foreignColonyBridge);
+    remoteColonyBridges.push(remoteColonyBridge);
     gnosisSafes.push(gnosisSafe);
     zodiacBridges.push(zodiacBridge);
   }
@@ -166,7 +166,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
     homeBridge.address,
     foreignBridgeAddresses,
     homeColonyBridge.address,
-    foreignColonyBridgeAddresses,
+    remoteColonyBridgeAddresses,
   ); // eslint-disable-line no-unused-vars
 
   // TODO: Start the bridge monitor
@@ -190,7 +190,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
             (foreignRpcUrl, index) => `
         [${foreignWormholeChainIds[index]}]: {
           endpoints: ["${foreignRpcUrl}"],
-          colonyBridgeAddress: "${foreignColonyBridgeAddresses[index]}",
+          colonyBridgeAddress: "${remoteColonyBridgeAddresses[index]}",
           payForGas: ${index % 2 === 0},
           evmChainId: ${foreignChainIds[index]}
         },`,
@@ -236,31 +236,41 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
   console.log(`Home bridge address: ${homeBridge.address}`);
   console.log(`Foreign bridge addresses: ${foreignBridgeAddresses.join(", ")}`);
   console.log(`Home colony bridge addresses: ${homeColonyBridge.address}`);
-  console.log(`Foreign colony bridge addresses: ${foreignColonyBridgeAddresses.join(", ")}`);
+  console.log(`Foreign colony bridge addresses: ${remoteColonyBridgeAddresses.join(", ")}`);
   // console.log(`Gnosis Safe addresses: ${gnosisSafe.address}`);
   // console.log(`Zodiac Bridge module addresses: ${zodiacBridge.address}`);
   // console.log(`ERC721 addresses: ${erc721.address}`);
   // console.log(`Token addresses: ${token.address}`);
 
   for (let i = 0; i < ethersForeignSigners.length; i += 1) {
-    await setForeignBridgeData(homeColonyBridge.address, foreignColonyBridgeAddresses[i], ethersHomeSigner, ethersForeignSigners[i]);
-    await setHomeBridgeData(homeColonyBridge.address, foreignColonyBridgeAddresses[i], ethersHomeSigner, ethersForeignSigners[i]);
+    await setForeignBridgeData(homeColonyBridge.address, remoteColonyBridgeAddresses[i], ethersHomeSigner, ethersForeignSigners[i]);
+    await setHomeBridgeData(homeColonyBridge.address, remoteColonyBridgeAddresses[i], ethersHomeSigner, ethersForeignSigners[i]);
   }
 
-  return { gnosisSafe, resetRelayer, guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
+  // TODO: Return all, and handle appropriately where this is called.
+  return {
+    gnosisSafe: gnosisSafes[0],
+    resetRelayer,
+    guardianSpy,
+    zodiacBridge: zodiacBridges[0],
+    homeBridge,
+    foreignBridge: foreignBridges[0],
+    homeColonyBridge,
+    remoteColonyBridge: remoteColonyBridges[0],
+  };
 }
 
-async function setForeignBridgeData(homeColonyBridgeAddress, foreignColonyBridgeAddress, ethersHomeSigner, ethersForeignSigner) {
+async function setForeignBridgeData(homeColonyBridgeAddress, remoteColonyBridgeAddress, ethersHomeSigner, ethersForeignSigner) {
   const contractDir = path.resolve(__dirname, "..", "artifacts", "contracts", "bridging");
   const WormholeBridgeForColony = await loader.load({ contractDir, contractName: "WormholeBridgeForColony" });
   const ProxyColonyNetwork = await loader.load({ contractDir, contractName: "ProxyColonyNetwork" });
 
-  const bridge = new ethers.Contract(foreignColonyBridgeAddress, WormholeBridgeForColony.abi, ethersForeignSigner);
+  const bridge = new ethers.Contract(remoteColonyBridgeAddress, WormholeBridgeForColony.abi, ethersForeignSigner);
 
   const homeChainId = (await ethersHomeSigner.provider.getNetwork()).chainId;
   const foreignChainId = (await ethersForeignSigner.provider.getNetwork()).chainId;
 
-  let tx = await bridge.setColonyBridgeAddress(foreignChainId, foreignColonyBridgeAddress);
+  let tx = await bridge.setColonyBridgeAddress(foreignChainId, remoteColonyBridgeAddress);
   await tx.wait();
   tx = await bridge.setColonyBridgeAddress(homeChainId, homeColonyBridgeAddress);
   await tx.wait();
@@ -269,19 +279,17 @@ async function setForeignBridgeData(homeColonyBridgeAddress, foreignColonyBridge
   await tx.wait();
 
   // TODO: Figure out a better way of setting / controlling this?
-  console.log("setting foreign colony bridge address", foreignColonyBridgeAddress);
+  console.log("setting foreign colony bridge address", remoteColonyBridgeAddress);
 
-  console.log(ethersForeignSigner);
-  // process.exit(1);
-  const foreignColonyNetwork = new ethers.Contract(NETWORK_ADDRESS, ProxyColonyNetwork.abi, ethersForeignSigner);
-  tx = await foreignColonyNetwork.setColonyBridgeAddress(foreignColonyBridgeAddress);
+  const remoteColonyNetwork = new ethers.Contract(NETWORK_ADDRESS, ProxyColonyNetwork.abi, ethersForeignSigner);
+  tx = await remoteColonyNetwork.setColonyBridgeAddress(remoteColonyBridgeAddress);
   await tx.wait();
 
-  tx = await foreignColonyNetwork.setHomeChainId(homeChainId);
+  tx = await remoteColonyNetwork.setHomeChainId(homeChainId);
   await tx.wait();
 }
 
-async function setHomeBridgeData(homeColonyBridgeAddress, foreignColonyBridgeAddress, ethersHomeSigner, ethersForeignSigner) {
+async function setHomeBridgeData(homeColonyBridgeAddress, remoteColonyBridgeAddress, ethersHomeSigner, ethersForeignSigner) {
   let contractDir = path.resolve(__dirname, "..", "artifacts", "contracts", "bridging");
   const WormholeBridgeForColony = await loader.load({ contractDir, contractName: "WormholeBridgeForColony" });
 
@@ -292,7 +300,7 @@ async function setHomeBridgeData(homeColonyBridgeAddress, foreignColonyBridgeAdd
   const homeChainId = (await ethersHomeSigner.provider.getNetwork()).chainId;
   const foreignChainId = (await ethersForeignSigner.provider.getNetwork()).chainId;
 
-  let tx = await bridge.setColonyBridgeAddress(foreignChainId, foreignColonyBridgeAddress);
+  let tx = await bridge.setColonyBridgeAddress(foreignChainId, remoteColonyBridgeAddress);
   await tx.wait();
   tx = await bridge.setColonyBridgeAddress(homeChainId, homeColonyBridgeAddress);
   await tx.wait();
