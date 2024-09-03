@@ -1488,6 +1488,36 @@ contract("Cross-chain", (accounts) => {
       const colonyBalanceAfter = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
       expect(colonyBalanceAfter.sub(colonyBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
+
+    it("invalid cross-chain arbitrary transactions are rejected", async () => {
+      let p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+
+      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000", "0x00000000"]);
+      await tx.wait();
+
+      await checkErrorRevertEthers(p, "colony-targets-and-payloads-length-mismatch");
+
+      // Check can't target Network
+      p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      const tx2 = await colony.makeProxyArbitraryTransactions(foreignChainId, [remoteColonyNetwork.address], ["0x00000000"]);
+      await tx2.wait();
+
+      await checkErrorRevertEthers(p, "colony-cannot-target-network");
+
+      // Check can't target the bridge
+      p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      const tx3 = await colony.makeProxyArbitraryTransactions(foreignChainId, [remoteColonyBridge.address], ["0x00000000"]);
+      await tx3.wait();
+
+      await checkErrorRevertEthers(p, "colony-cannot-target-bridge");
+
+      // Otherwise valid transaction, it just fails
+      p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      const tx4 = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000"]);
+      await tx4.wait();
+
+      await checkErrorRevertEthers(p, "colony-arbitrary-transaction-failed");
+    });
   });
 
   describe("bridge functions are secure", async () => {
@@ -1839,6 +1869,43 @@ contract("Cross-chain", (accounts) => {
     it("a non-proxy-colony address cannot call bridgeMessage", async () => {
       const tx = await remoteColonyNetwork.bridgeMessage(HASHZERO, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-caller-must-be-proxy-colony");
+    });
+  });
+
+  describe("Invalid interactions with bridging system are handled appropriately", async () => {
+    it("Can't bridge to a chain that's not supported", async () => {
+      const tx = await homeColony.makeProxyArbitraryTransactions(111, [ADDRESS_ZERO], ["0x00000000"], { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-bridge-not-known-chain");
+    });
+
+    it("Valid VAAs that aren't from a colony bridge are rejected", async () => {
+      const vaa = await bridgeMonitor.encodeMockVAA(
+        homeColonyBridge.address,
+        0,
+        0,
+        remoteColonyNetwork.interface.encodeFunctionData("setProxyColonyResolverAddress", [ADDRESS_ZERO]),
+        100,
+        1,
+      );
+      const tx = await remoteColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-bridge-bridged-tx-only-from-colony-bridge");
+    });
+
+    it("Valid VAAs that aren't for the right chain are rejected", async () => {
+      const vaa = await bridgeMonitor.encodeMockVAA(
+        homeColonyBridge.address,
+        0,
+        0,
+        new ethers.utils.AbiCoder().encode(
+          ["uint256", "address", "bytes"],
+          [7777, ADDRESS_ZERO, remoteColonyNetwork.interface.encodeFunctionData("setProxyColonyResolverAddress", [ADDRESS_ZERO])],
+        ),
+        100,
+        wormholeHomeChainId,
+      );
+      const tx = await remoteColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
+      // await tx.wait();
+      await checkErrorRevertEthers(tx.wait(), "colony-bridge-destination-chain-id-mismatch");
     });
   });
 });
