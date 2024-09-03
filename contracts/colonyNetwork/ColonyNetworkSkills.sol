@@ -58,11 +58,17 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
       return;
     }
 
-    if (isMiningChain()) {
-      appendReputationUpdateLogInternal(_user, _amount, _skillId, msgSender());
-    } else {
-      bridgeReputationUpdateLog(_user, _amount, _skillId);
-    }
+    uint128 nParents = skills[_skillId].nParents;
+    // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
+    uint128 nChildren = (_amount < 0) ? skills[_skillId].nChildren : 0;
+    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
+      _user,
+      _amount,
+      _skillId,
+      msgSender(),
+      nParents,
+      nChildren
+    );
   }
 
   // Bridging (sending)
@@ -109,14 +115,6 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   // Internal
 
   function addSkillToChainTree(uint256 _parentSkillId, uint256 _skillId) private {
-    // This indicates a new root local skill bridged from another chain, i.e. 0x{chainId}{0}
-    // We don't do anything to the tree in this scenario, other than incrementing the skill count,
-    // which should be/is done where this function is called.
-    //  (this mirrors the behaviour of not calling addSkill() in initialiseRootLocalSkill)
-    if (_parentSkillId != 0 && _parentSkillId << 128 == 0) {
-      return;
-    }
-
     require(_parentSkillId > 0, "colony-network-invalid-parent-skill");
 
     Skill storage parentSkill = skills[_parentSkillId];
@@ -177,95 +175,5 @@ contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
         return ascendSkillTree(_newSkillId, _newParentSkillNumber);
       }
     }
-  }
-
-  function appendReputationUpdateLogInternal(
-    address _user,
-    int256 _amount,
-    uint256 _skillId,
-    address _colony
-  ) internal {
-    uint128 nParents = skills[_skillId].nParents;
-    // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
-    uint128 nChildren = (_amount < 0) ? skills[_skillId].nChildren : 0;
-    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
-      _user,
-      _amount,
-      _skillId,
-      _colony,
-      nParents,
-      nChildren
-    );
-  }
-
-  function bridgeReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) internal {
-    // TODO: Maybe force to be set on deployment?
-    require(colonyBridgeAddress != address(0x0), "colony-network-foreign-bridge-not-set");
-    address colonyAddress = msgSender();
-    reputationUpdateCount[block.chainid][colonyAddress] += 1;
-    // Build the transaction we're going to send to the bridge
-    bytes memory payload = abi.encodeWithSignature(
-      "addReputationUpdateLogFromBridge(address,address,int256,uint256,uint256)",
-      colonyAddress,
-      _user,
-      _amount,
-      _skillId,
-      reputationUpdateCount[block.chainid][colonyAddress]
-    );
-
-    bool success = callThroughBridgeWithGuards(payload);
-
-    if (success) {
-      emit ReputationUpdateSentToBridge(
-        colonyAddress,
-        reputationUpdateCount[block.chainid][colonyAddress]
-      );
-      return;
-    }
-
-    // Store to resend later
-    PendingReputationUpdate memory pendingReputationUpdate = PendingReputationUpdate(
-      _user,
-      _amount,
-      _skillId,
-      msgSender(),
-      block.timestamp
-    );
-    pendingReputationUpdates[block.chainid][colonyAddress][
-      reputationUpdateCount[block.chainid][colonyAddress]
-    ] = pendingReputationUpdate;
-
-    emit ReputationUpdateStored(colonyAddress, reputationUpdateCount[block.chainid][colonyAddress]);
-  }
-
-  // Mining cycle decay constants
-  // Note that these values and the mining window size (defined in ReputationMiningCycleCommon)
-  // need to be consistent with each other, but are not checked, in order for the decay
-  // rate to be as-expected.
-  int256 constant DECAY_NUMERATOR = 999679150010889; // 1-hr mining cycle
-  int256 constant DECAY_DENOMINATOR = 1000000000000000;
-  uint256 constant DECAY_PERIOD = 1 hours;
-
-  function decayReputation(
-    int256 _reputation,
-    uint256 _since
-  ) internal view returns (int256 decayedReputation) {
-    uint256 decayEpochs = (block.timestamp - _since) / DECAY_PERIOD;
-    int256 adjustedNumerator = DECAY_NUMERATOR;
-
-    // This algorithm successively doubles the decay factor while halving the number of epochs
-    // This allows us to perform the decay in O(log(n)) time
-    // For example, a decay of 50 epochs would be applied as (k**2)(k**16)(k**32)
-    while (decayEpochs > 0) {
-      // slither-disable-next-line weak-prng
-      if (decayEpochs % 2 >= 1) {
-        // slither-disable-next-line divide-before-multiply
-        _reputation = (_reputation * adjustedNumerator) / DECAY_DENOMINATOR;
-      }
-      // slither-disable-next-line divide-before-multiply
-      adjustedNumerator = (adjustedNumerator * adjustedNumerator) / DECAY_DENOMINATOR;
-      decayEpochs >>= 1;
-    }
-    return _reputation;
   }
 }
