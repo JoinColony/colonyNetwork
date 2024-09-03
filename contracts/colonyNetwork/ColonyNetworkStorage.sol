@@ -166,11 +166,6 @@ contract ColonyNetworkStorage is
     _;
   }
 
-  modifier onlyColonyBridge() {
-    require(msgSender() == colonyBridgeAddress, "colony-network-caller-must-be-colony-bridge");
-    _;
-  }
-
   modifier miningInitialised() {
     require(
       inactiveReputationMiningCycle != address(0x0),
@@ -204,29 +199,5 @@ contract ColonyNetworkStorage is
 
   function getMiningChainId() public view returns (uint256) {
     return reputationMiningChainId;
-  }
-
-  function getAndCacheReputationMiningChainId() internal returns (uint256) {
-    if (reputationMiningChainId == 0 && isXdai()) {
-      reputationMiningChainId = block.chainid;
-    }
-    return reputationMiningChainId;
-  }
-
-  function callThroughBridgeWithGuards(bytes memory payload) internal returns (bool) {
-    bytes memory bridgePayload = abi.encodeWithSignature(
-      "sendMessage(uint256,bytes)",
-      getAndCacheReputationMiningChainId(),
-      payload
-    );
-
-    (bool success, bytes memory returnData) = callWithGuards(colonyBridgeAddress, bridgePayload);
-
-    // If the function call was a success, and it returned true
-    if (success) {
-      bool res = abi.decode(returnData, (bool));
-      return res;
-    }
-    return false;
   }
 }
