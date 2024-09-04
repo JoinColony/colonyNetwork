@@ -24,18 +24,11 @@ import { CommonStorage } from "./../common/CommonStorage.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
-import { CallWithGuards } from "../common/CallWithGuards.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyNetworkStorage is
-  ColonyNetworkDataTypes,
-  DSMath,
-  CommonStorage,
-  MultiChain,
-  CallWithGuards
-{
+contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -192,10 +185,6 @@ contract ColonyNetworkStorage is
 
   function toChainId(uint256 _skillId) internal pure returns (uint256) {
     return _skillId >> 128;
-  }
-
-  function isMiningChain() internal view returns (bool) {
-    return block.chainid == getMiningChainId();
   }
 
   function getMiningChainId() public view returns (uint256) {
