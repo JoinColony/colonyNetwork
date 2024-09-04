@@ -403,14 +403,13 @@ async function deployViaHardhat(versionTag, cmdBase, interfaceName, implementati
   console.log("Deploying upgradable version via hardhat...");
   await exec(`cp ./scripts/setupOldUpgradeableVersionHardhat.js ./colonyNetwork-${versionTag}/scripts/setupOldUpgradeableVersionHardhat.js`);
 
-  const network = hre.__SOLIDITY_COVERAGE_RUNNING ? "coverage" : "development";
+  // Hardhat coverage runs on port 8545, so we we can hard-code the network
 
   const res = await exec(
     `${cmdBase} ` +
       `&& INTERFACE_NAME=${interfaceName} IMPLEMENTATION_NAMES=${implementationNames.join(
         ",",
-      )} npx hardhat run ./scripts/setupOldUpgradeableVersionHardhat.js ` +
-      `--network ${network}`,
+      )} npx hardhat run ./scripts/setupOldUpgradeableVersionHardhat.js --network development`,
     { maxBuffer: 1024 * 5000 },
   );
 
