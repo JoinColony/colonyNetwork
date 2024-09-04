@@ -99,13 +99,23 @@ contract("Contract Storage", (accounts) => {
     it("should handle tokens appropriately if auction is initialised for the CLNY token", async () => {
       await giveUserCLNYTokens(colonyNetwork, colonyNetwork.address, WAD);
       const supplyBefore = await clnyToken.totalSupply();
+      const balanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
       const tx = await colonyNetwork.startTokenAuction(clnyToken.address);
 
       const supplyAfter = await clnyToken.totalSupply();
+      const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
 
-      // tokens should be transferred to metacolony
-      expect(supplyBefore).to.eq.BN(supplyAfter);
-      await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, WAD]);
+      if (await isMainnet()) {
+        // tokens should be burned.
+        expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
+        await expectEvent(tx, "Burn(address indexed,uint256)", [colonyNetwork.address, WAD]);
+        expect(balanceAfter).to.be.zero;
+        expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
+      } else {
+        // tokens should be transferred to metacolony
+        expect(supplyBefore).to.eq.BN(supplyAfter);
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [colonyNetwork.address, metaColony.address, WAD]);
+      }
     });
 
     it("CLNY raised from auctions is dealt with appropriately", async () => {
@@ -125,6 +135,7 @@ contract("Contract Storage", (accounts) => {
       await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: accounts[1] });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: accounts[1] });
 
+      const balanceBefore = await clnyToken.balanceOf(tokenAuction.address);
       const supplyBefore = await clnyToken.totalSupply();
       const receivedTotal = await tokenAuction.receivedTotal();
       expect(receivedTotal).to.not.be.zero;
@@ -133,9 +144,15 @@ contract("Contract Storage", (accounts) => {
       const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
       expect(balanceAfter).to.be.zero;
       const supplyAfter = await clnyToken.totalSupply();
-      // tokens should be transferred to metacolony
-      expect(supplyBefore).to.eq.BN(supplyAfter);
-      await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [tokenAuction.address, metaColony.address, receivedTotal]);
+      if (await isMainnet()) {
+        // tokens should be burned.
+        expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
+        await expectEvent(tx, "Burn(address indexed,uint256)", [tokenAuction.address, receivedTotal]);
+      } else {
+        // tokens should be transferred to metacolony
+        expect(supplyBefore).to.eq.BN(supplyAfter);
+        await expectEvent(tx, "Transfer(address indexed,address indexed,uint256)", [tokenAuction.address, metaColony.address, receivedTotal]);
+      }
     });
   });
 });
