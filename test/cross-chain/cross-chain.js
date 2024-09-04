@@ -373,6 +373,19 @@ contract("Cross-chain", (accounts) => {
       await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
     });
 
+    it("callProxyNetwork can only be called through the metacolony", async () => {
+      const payload = homeColonyNetwork.interface.encodeFunctionData("setColonyBridgeAddress", [ADDRESS_ZERO]);
+      let tx = await homeColonyNetwork.createColonyForFrontend(ADDRESS_ZERO, "A", "A", 18, CURR_VERSION, "", "");
+      await tx.wait();
+
+      const colonyCount = await homeColonyNetwork.getColonyCount();
+      const colonyAddress = await homeColonyNetwork.getColony(colonyCount);
+      const fakeMetaColony = new ethers.Contract(colonyAddress, IMetaColony.abi, ethersHomeSigner);
+
+      tx = await fakeMetaColony.callProxyNetwork(foreignChainId, [payload], { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
+    });
+
     it("callProxyNetwork can only be called by root permissions on the metacolony", async () => {
       const payload = remoteColonyNetwork.interface.encodeFunctionData("setColonyBridgeAddress", [ADDRESS_ZERO]);
       const homeMetacolony2 = new ethers.Contract(homeMetacolony.address, IMetaColony.abi, ethersHomeSigner2);
@@ -1424,6 +1437,50 @@ contract("Cross-chain", (accounts) => {
       expect(colonyBalance.toHexString()).to.equal(ethers.utils.parseEther("0.7").toHexString());
       expect(recipientBalanceAfter.sub(receipientBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("0.3").toHexString());
     });
+
+    it("a bookkeeping error will mean that tokens can no longer be claimed until tokens are returned", async () => {
+      const tokenAmount = ethers.utils.parseEther("100");
+
+      let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
+      await tx.wait();
+
+      // Claim on the foreign chain
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      tx = await proxyColony.claimTokens(foreignToken.address);
+      await tx.wait();
+      await p;
+
+      // Now remove the tokens
+      const balanceSlot = ethers.utils.keccak256(
+        ethers.utils.concat([ethers.utils.hexZeroPad(proxyColony.address, 32), ethers.utils.hexZeroPad(1, 32)]),
+      );
+
+      await ethersForeignProvider.send("hardhat_setStorageAt", [
+        foreignToken.address,
+        balanceSlot,
+        ethers.utils.hexZeroPad(ethers.utils.parseEther("30").toHexString(), 32),
+      ]);
+
+      tx = await proxyColony.claimTokens(foreignToken.address, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-shell-token-bookkeeping-error");
+
+      // Now return the tokens
+      await ethersForeignProvider.send("hardhat_setStorageAt", [
+        foreignToken.address,
+        balanceSlot,
+        ethers.utils.hexZeroPad(ethers.utils.parseEther("100").toHexString(), 32),
+      ]);
+
+      // Mint some more tokens
+      tx = await foreignToken["mint(address,uint256)"](proxyColony.address, ethers.utils.parseEther("100"));
+      await tx.wait();
+
+      // Can now claim
+      const p2 = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      tx = await proxyColony.claimTokens(foreignToken.address);
+      await tx.wait();
+      await p2;
+    });
   });
 
   describe("making arbitrary transactions on another chain", async () => {
@@ -1465,6 +1522,18 @@ contract("Cross-chain", (accounts) => {
 
       const balanceAfter = await foreignToken.balanceOf(proxyColony.address);
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
+    });
+
+    it("arbitrary transactions on the foreign chain must go to contracts", async () => {
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+
+      const payload = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [proxyColony.address, ethers.utils.parseEther("100")]);
+
+      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [accounts[0]], [payload]);
+      await tx.wait();
+      await p;
+
+      await checkErrorRevertEthers(p, "require-execute-call-target-not-contract");
     });
 
     it("can make multiple arbitrary transactions on the foreign chain in one go", async () => {
@@ -1516,7 +1585,7 @@ contract("Cross-chain", (accounts) => {
       const tx4 = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000"]);
       await tx4.wait();
 
-      await checkErrorRevertEthers(p, "colony-arbitrary-transaction-failed");
+      await checkErrorRevertEthers(p, "require-execute-call-reverted-with-no-error");
     });
   });
 

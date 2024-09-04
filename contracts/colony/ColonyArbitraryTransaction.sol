@@ -61,6 +61,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     bytes memory payload = abi.encodeWithSignature("multicall(bytes[])", _actions);
 
     IColonyNetwork(colonyNetworkAddress).bridgeMessageToNetwork(_chainId, payload);
+    return true;
   }
 
   function makeArbitraryTransactions(
