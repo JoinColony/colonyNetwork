@@ -8,10 +8,18 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 
   static attemptCheck(err, attemptNumber) {
-    if (err.code === "CALL_EXCEPTION" || err.code === "UNPREDICTABLE_GAS_LIMIT") {
+    const allowedErrorCodes = ["CALL_EXCEPTION", "UNPREDICTABLE_GAS_LIMIT"];
+    if (allowedErrorCodes.includes(err.code)) {
       console.log(`Got a ${err.code}, no retrying`);
       return false;
     }
+
+    // I _think_ this means we're using solidity-coverage vs stock hardhat, but haven't dug in to it
+    if (err.error && err.error.data && err.error.data.length > 10 && err.error.data.substring(0, 10) === "0x08c379a0") {
+      console.log("Got a revert with reason, no retrying");
+      return false;
+    }
+
     console.log("Retrying RPC request #", attemptNumber);
     if (attemptNumber === 5) {
       return false;
