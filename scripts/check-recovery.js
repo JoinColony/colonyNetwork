@@ -83,6 +83,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/reputationMiningCycle/ReputationMiningCycleRespond.sol",
       "contracts/testHelpers/BridgeMock.sol",
       "contracts/testHelpers/ContractEditing.sol",
+      "contracts/testHelpers/ERC20Like.sol",
       "contracts/testHelpers/ERC20PresetMinterPauser.sol",
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/NoLimitSubdomains.sol",

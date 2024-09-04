@@ -46,6 +46,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
       "contracts/testHelpers/BridgeMock.sol",
+      "contracts/testHelpers/ERC20Like.sol",
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/testExtensions/TestExtensionBase.sol",
