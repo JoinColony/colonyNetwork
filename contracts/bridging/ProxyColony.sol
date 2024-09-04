@@ -96,9 +96,13 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards {
       require(_targets[i] != bridgeAddress, "colony-cannot-target-bridge");
       require(_targets[i] != owner, "colony-cannot-target-network");
 
-      (bool success, ) = callWithGuards(_targets[i], _payloads[i]);
+      (bool success, bytes memory returndata) = callWithGuards(_targets[i], _payloads[i]);
 
-      require(success, "colony-arbitrary-transaction-failed");
+      // Note that this is not a require because returndata might not be a string, and if we try
+      // to decode it we'll get a revert.
+      if (!success) {
+        revert(abi.decode(returndata, (string)));
+      }
     }
   }
 }
