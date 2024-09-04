@@ -319,6 +319,11 @@ jobs:
           command: CHAIN_ID=100 pnpm run test:contracts:chainid:coverage
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
+      - run:
+          name: "Running chainid tests for Mainnet"
+          command: CHAIN_ID=1 pnpm run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
       - persist_to_workspace:
           root: ./
           paths:
