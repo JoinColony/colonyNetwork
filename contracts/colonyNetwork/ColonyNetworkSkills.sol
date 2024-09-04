@@ -22,7 +22,6 @@ import "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import "./../common/Multicall.sol";
 import "./ColonyNetworkStorage.sol";
 import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
-import { CallWithGuards } from "../common/CallWithGuards.sol";
 
 contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall {
   // Skills

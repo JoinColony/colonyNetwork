@@ -305,6 +305,13 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("using extensions", () => {
+    it("extension-managing functions on Network cannot be called by non-colony addresses", async () => {
+      await checkErrorRevert(colonyNetwork.installExtension(TEST_EXTENSION, 1, { from: ROOT }), "colony-caller-must-be-colony");
+      await checkErrorRevert(colonyNetwork.upgradeExtension(TEST_EXTENSION, 2, { from: ROOT }), "colony-caller-must-be-colony");
+      await checkErrorRevert(colonyNetwork.deprecateExtension(TEST_EXTENSION, true, { from: ROOT }), "colony-caller-must-be-colony");
+      await checkErrorRevert(colonyNetwork.uninstallExtension(TEST_EXTENSION, { from: ROOT }), "colony-caller-must-be-colony");
+    });
+
     it("allows network-managed extensions to lock and unlock tokens", async () => {
       const tokenLockingAddress = await colonyNetwork.getTokenLocking();
       const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
