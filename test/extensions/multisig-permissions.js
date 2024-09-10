@@ -460,6 +460,43 @@ contract("Multisig Permissions", (accounts) => {
       );
     });
 
+    it("'disguising' motions that should be invalid with dominant sigs doesn't work", async () => {
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      const action2 = await encodeTxData(multisigPermissions, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE])]);
+
+      // This multicall action requires root permissions for both aspects, so works
+      const multicallAction = await encodeTxData(colony, "multicall", [[action, action2]]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction]);
+
+      const action3 = await encodeTxData(multisigPermissions, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
+
+      // This multicall action requires different permissions for each, so should fail (whether it's a multicall or not)
+      const multicallAction2 = await encodeTxData(colony, "multicall", [[action, action3]]);
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction2]),
+        "colony-action-summary-inconsistent-domain-skill-id",
+      );
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO], [action, action3]),
+        "multisig-invalid-motion-inconsistent",
+      );
+
+      // And fails both ways
+      const multicallAction3 = await encodeTxData(colony, "multicall", [[action3, action]]);
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [multicallAction3]),
+        "colony-action-summary-inconsistent-domain-skill-id",
+      );
+
+      await checkErrorRevert(
+        multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO, ADDRESS_ZERO], [action3, action]),
+        "multisig-invalid-motion-inconsistent",
+      );
+    });
+
     it("The domain skill threshold for execution changes as expected", async () => {
       await multisigPermissions.setGlobalThreshold(2);
       // By default, it's the global threshold

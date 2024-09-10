@@ -127,7 +127,7 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     }
 
     ActionSummary memory totalSummary;
-    bool domainantSigSeen = false;
+    bool dominantSigSeen = false;
 
     for (uint256 i; i < actions.length; i++) {
       ActionSummary memory actionSummary = getSingleActionSummary(
@@ -143,9 +143,9 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
         // If any of the actions are classed as 'dominant',
         //   the entire multicall is such
         totalSummary.sig = actionSummary.sig;
-        domainantSigSeen = true;
+        dominantSigSeen = true;
       } else if (isExpenditureSig(actionSummary.sig)) {
-        if (!domainantSigSeen) {
+        if (!dominantSigSeen) {
           totalSummary.sig = actionSummary.sig;
         }
 
@@ -161,7 +161,7 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
       } else if (!isExpenditureSig(totalSummary.sig)) {
         // If no expenditure signatures have been seen, we record the latest signature
         // Also, we aggregate the permissions as we go
-        if (!domainantSigSeen) {
+        if (!dominantSigSeen) {
           totalSummary.sig = actionSummary.sig;
         }
       }
