@@ -364,8 +364,9 @@ contract("Colony Expenditure", (accounts) => {
 
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId2]), "colony-not-valid-local-skill");
       await checkErrorRevert(colony.setExpenditureSkills(expenditureId, [SLOT0], [localSkillId3]), "colony-not-valid-local-skill");
+    });
 
-      // A skill that doesn't exist cannot be deprecated
+    it("should not allow owners to deprecate a skill that doesn't exist", async () => {
       const fakeLocalSkillId = 10000;
       await colony.deprecateLocalSkill(fakeLocalSkillId, true);
 
