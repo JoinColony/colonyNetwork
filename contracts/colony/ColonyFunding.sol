@@ -23,6 +23,7 @@ import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
 
 contract ColonyFunding is
   ColonyStorage // ignore-swc-123
@@ -104,6 +105,43 @@ contract ColonyFunding is
     fundingPots[0].balance[_token] += feeToPay;
 
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
+  }
+
+  function claimDomainFunds(address _token, uint256 _domainId) public stoppable {
+    require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
+    address domainTokenReceiverAddress = IColonyNetwork(colonyNetworkAddress)
+      .idempotentDeployDomainTokenReceiver(_domainId);
+    uint256 fundingPotId = domains[_domainId].fundingPotId;
+    // It's deployed, so check current balance of pot
+
+    uint256 claimAmount;
+
+    if (_token == address(0x0)) {
+      claimAmount = address(domainTokenReceiverAddress).balance;
+    } else {
+      claimAmount = ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
+    }
+
+    fundingPots[fundingPotId].balance[_token] += claimAmount;
+
+    // Claim funds
+
+    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+
+    // Add to funding pot
+
+    uint256 balanceAfter = getFundingPotBalance(fundingPotId, _token);
+
+    assert(balanceAfter - balanceBefore == claimAmount);
+
+    uint256 thisBalanceAfter;
+    if (_token == address(0x0)) {
+      thisBalanceAfter = address(this).balance;
+    } else {
+      thisBalanceAfter = ERC20Extended(_token).balanceOf(address(this));
+    }
+
+    assert(thisBalanceAfter - thisBalanceBefore == claimAmount);
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {

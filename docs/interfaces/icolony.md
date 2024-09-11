@@ -174,6 +174,19 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
+### ▸ `claimDomainFunds(address _token, uint256 _domainId)`
+
+Move any funds received by the colony for a specific domain to that domain's pot Currently no fees are taken
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_domainId|uint256|Id of the domain
+
+
 ### ▸ `claimExpenditurePayout(uint256 _id, uint256 _slot, address _token)`
 
 Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
@@ -1538,18 +1551,6 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_user|address|User we want to give an funding role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
-
-
-### ▸ `setOwner(address owner_)`
-
-Set the owner of the contract
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|owner_|address|The new owner of the contract
 
 
 ### ▸ `setRecoveryRole(address _user)`
