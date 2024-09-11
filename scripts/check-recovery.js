@@ -38,6 +38,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/IBasicMetaTransaction.sol",
       "contracts/common/CommonAuthority.sol",
       "contracts/common/DomainRoles.sol",
+      "contracts/common/DomainTokenReceiver.sol",
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
       "contracts/common/EtherRouterCreate3.sol",
