@@ -812,4 +812,14 @@ contract("Colony Network", (accounts) => {
       expect(owner).to.equal(accounts[1]);
     });
   });
+
+  describe("when working with DomainTokenReceivers", () => {
+    it("should only allow owner to set the DomainTokenReceiverResolver", async () => {
+      await checkErrorRevert(colonyNetwork.setDomainTokenReceiverResolver(ADDRESS_ZERO, { from: accounts[1] }), "ds-auth-unauthorized");
+      const cnAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
+      const owner = await cnAsEtherRouter.owner();
+      expect(owner).to.equal(accounts[0]);
+      await colonyNetwork.setDomainTokenReceiverResolver(ADDRESS_ZERO);
+    });
+  });
 });

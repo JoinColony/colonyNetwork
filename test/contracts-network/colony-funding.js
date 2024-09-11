@@ -18,6 +18,7 @@ const {
 
 const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
+const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -26,6 +27,8 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
+const Resolver = artifacts.require("Resolver");
+const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
 
 contract("Colony Funding", (accounts) => {
   const MANAGER = accounts[0];
@@ -548,6 +551,78 @@ contract("Colony Funding", (accounts) => {
       expect(colonyPotBalance).to.eq.BN(297);
       expect(colonyRewardPotBalance).to.eq.BN(3);
       expect(nonRewardPotsTotal).to.eq.BN(297);
+    });
+
+    it("should allow native coins to be directly sent to a domain", async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      await web3.eth.sendTransaction({ from: MANAGER, to: receiverAddress, value: 100, gas: 1000000 });
+
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);
+
+      // Claim the funds
+      await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);
+
+      // Check the balance of the domain
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(100);
+    });
+
+    it("should allow a token to be directly sent to a domain", async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      await otherToken.mint(receiverAddress, 100);
+
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+
+      // Claim the funds
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+
+      // Check the balance of the domain
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(100);
+    });
+
+    it("should not be able to claim funds for a domain that does not exist", async () => {
+      await checkErrorRevert(colony.claimDomainFunds(ethers.constants.AddressZero, 2), "colony-funding-domain-does-not-exist");
+    });
+
+    it("only a colony can call idempotentDeployDomainTokenReceiver on Network", async () => {
+      await checkErrorRevert(colonyNetwork.idempotentDeployDomainTokenReceiver(2), "colony-caller-must-be-colony");
+    });
+
+    it("If the receiver resolver is updated, then the resolver is updated at the next claim", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      // Send 100 wei
+      await otherToken.mint(receiverAddress, 100);
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const receiverAsEtherRouter = await EtherRouter.at(receiverAddress);
+      const resolver = await receiverAsEtherRouter.resolver();
+
+      // Update the resolver
+      const newResolver = await Resolver.new();
+      const domainTokenReceiver = await DomainTokenReceiver.new();
+
+      await setupDomainTokenReceiverResolver(colonyNetwork, domainTokenReceiver, newResolver);
+
+      await otherToken.mint(receiverAddress, 50);
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const resolverAfter = await receiverAsEtherRouter.resolver();
+      expect(resolverAfter).to.not.equal(resolver);
+      expect(resolverAfter).to.equal(newResolver.address);
     });
   });
 });
