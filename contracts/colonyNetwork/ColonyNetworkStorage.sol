@@ -129,6 +129,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // networkId -> colonyAddress -> updateCount -> update
   mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 49
 
+  address domainReceiverResolverAddress; // Storage slot 50
   // Modifiers
 
   modifier calledByColony() {
