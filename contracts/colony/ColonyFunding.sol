@@ -165,7 +165,14 @@ contract ColonyFunding is
     uint256 remainder = claimAmount - feeToPay;
     nonRewardPotsTotal[_token] += remainder;
 
-    fundingPots[0].balance[_token] += feeToPay;
+    // fundingPots[0].balance[_token] += feeToPay;
+    setFundingPotBalance(
+      0,
+      block.chainid,
+      _token,
+      getFundingPotBalance(0, block.chainid, _token) + feeToPay
+    );
+
 
     uint256 approvedAmount = domainReputationApproval[_domainId];
 
