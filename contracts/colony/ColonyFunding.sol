@@ -23,6 +23,7 @@ import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
 
 contract ColonyFunding is
   ColonyStorage // ignore-swc-123
@@ -140,6 +141,50 @@ contract ColonyFunding is
     );
 
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
+  }
+
+  function claimDomainFunds(address _token, uint256 _domainId) public stoppable {
+    address domainTokenReceiverAddress = IColonyNetwork(colonyNetworkAddress)
+      .checkDomainTokenReceiverDeployed(_domainId);
+    uint256 fundingPotId = domains[_domainId].fundingPotId;
+    // It's deployed, so check current balance of pot
+    uint256 balanceBefore = getFundingPotBalance(fundingPotId, _token);
+
+    uint256 claimAmount;
+    uint256 thisBalanceBefore;
+
+    if (_token == address(0x0)) {
+      claimAmount = address(domainTokenReceiverAddress).balance;
+      thisBalanceBefore = address(this).balance;
+    } else {
+      claimAmount = ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
+      thisBalanceBefore = ERC20Extended(_token).balanceOf(address(this));
+    }
+
+    // Claim funds
+
+    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+
+    // Add to funding pot
+
+    setFundingPotBalance(
+      fundingPotId,
+      block.chainid,
+      _token,
+      getFundingPotBalance(fundingPotId, block.chainid, _token) + claimAmount
+    );
+    uint256 balanceAfter = getFundingPotBalance(fundingPotId, _token);
+
+    assert(balanceAfter - balanceBefore == claimAmount);
+
+    uint256 thisBalanceAfter;
+    if (_token == address(0x0)) {
+      thisBalanceAfter = address(this).balance;
+    } else {
+      thisBalanceAfter = ERC20Extended(_token).balanceOf(address(this));
+    }
+
+    assert(thisBalanceAfter - thisBalanceBefore == claimAmount);
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {

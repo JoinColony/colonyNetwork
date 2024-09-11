@@ -909,6 +909,12 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimColonyFunds(address _token) external;
 
+  /// @notice Move any funds received by the colony for a specific domain to that domain's pot
+  /// Currently no fees are taken
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _domainId Id of the domain
+  function claimDomainFunds(address _token, uint256 _domainId) external;
+
   /// @notice Used by the bridge to indicate that funds have been claimed on another chain.
   /// @param _chainId Chain id of the chain where the funds were claimed
   /// @param _token Address of the token, `0x0` value indicates Ether

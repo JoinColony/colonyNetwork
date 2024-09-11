@@ -549,5 +549,45 @@ contract("Colony Funding", (accounts) => {
       expect(colonyRewardPotBalance).to.eq.BN(3);
       expect(nonRewardPotsTotal).to.eq.BN(297);
     });
+
+    it("should allow native coins to be directly sent to a domain", async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      await web3.eth.sendTransaction({ from: MANAGER, to: receiverAddress, value: 100, gas: 1000000 });
+
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);
+
+      // Claim the funds
+      await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);
+
+      // Check the balance of the domain
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(100);
+    });
+
+    it("should allow a token to be directly sent to a domain", async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      await otherToken.mint(receiverAddress, 100);
+
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+
+      // Claim the funds
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+
+      // Check the balance of the domain
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(100);
+    });
   });
 });
