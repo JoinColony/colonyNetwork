@@ -574,4 +574,32 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _destinationChainId The chainId of the chain to create the colony on
   /// @param _salt The salt to use for the colony creation
   function createProxyColony(uint256 _destinationChainId, bytes32 _salt) external;
+
+  /// @notice Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly
+  /// for a particular domain.
+  /// @dev Should only be called by a colony.
+  /// @param _domainId The domainId of the domain to check the deployment for
+  /// @return domainTokenReceiverAddress The address of the DomainTokenReceiver
+  function checkDomainTokenReceiverDeployed(
+    uint256 _domainId
+  ) external returns (address domainTokenReceiverAddress);
+
+  /// @notice Function to set the resolver that should be used by DomainTokenReceivers
+  /// @dev The next time a claim for a domain is called, they will first be updated to this resolver
+  /// @param _resolver The address of the resolver to use
+  function setDomainTokenReceiverResolver(address _resolver) external;
+
+  /// @notice Get the current DomainTokenReceiver resolver
+  /// @dev Note that some Receivers might be using an old resolver
+  /// @return resolver The address of the current resolver
+  function getDomainTokenReceiverResolver() external view returns (address resolver);
+
+  /// @notice Get the DomainTokenReceiver address for a particular domain
+  /// @param _colonyAddress The address of the colony
+  /// @param _domainId The domainId of the domain
+  /// @return domainTokenReceiverAddress The address of the DomainTokenReceiver (which may or may not be deployed currently)
+  function getDomainTokenReceiverAddress(
+    address _colonyAddress,
+    uint256 _domainId
+  ) external view returns (address domainTokenReceiverAddress);
 }

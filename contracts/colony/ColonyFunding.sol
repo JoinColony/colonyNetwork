@@ -165,13 +165,27 @@ contract ColonyFunding is
     uint256 remainder = claimAmount - feeToPay;
     nonRewardPotsTotal[_token] += remainder;
 
-    fundingPots[0].balance[_token] += feeToPay;
+    // fundingPots[0].balance[_token] += feeToPay;
+    setFundingPotBalance(
+      0,
+      block.chainid,
+      _token,
+      getFundingPotBalance(0, block.chainid, _token) + feeToPay
+    );
+
 
     uint256 approvedAmount = domainReputationTokenApprovals[_domainId][_token];
     if (!tokenEarnsReputationOnPayout(_token) || approvedAmount >= remainder) {
       // Either the token doesn't earn reputation or there is enough approval
       // Either way, the domain gets all the funds
-      fundingPots[fundingPotId].balance[_token] += remainder;
+      // fundingPots[fundingPotId].balance[_token] += remainder;
+      setFundingPotBalance(
+        fundingPotId,
+        block.chainid,
+        _token,
+        getFundingPotBalance(fundingPotId, block.chainid, _token) + remainder
+      );
+
       if (tokenEarnsReputationOnPayout(_token)) {
         // If it does earn reputation, deduct the approved amount
         domainReputationTokenApprovals[_domainId][_token] -= remainder;
@@ -180,10 +194,24 @@ contract ColonyFunding is
     } else {
       // The token earns reputation and there is not enough approvalable
       // The domain gets what was approved
-      fundingPots[fundingPotId].balance[_token] += approvedAmount;
+      // fundingPots[fundingPotId].balance[_token] += approvedAmount;
+      setFundingPotBalance(
+        fundingPotId,
+        block.chainid,
+        _token,
+        getFundingPotBalance(fundingPotId, block.chainid, _token) + approvedAmount
+      );
+
       // And the rest goes to the root pot
       Domain storage rootDomain = domains[1];
-      fundingPots[rootDomain.fundingPotId].balance[_token] += remainder - approvedAmount;
+      // fundingPots[rootDomain.fundingPotId].balance[_token] += remainder - approvedAmount;
+      setFundingPotBalance(
+        fundingPotId,
+        block.chainid,
+        _token,
+        getFundingPotBalance(fundingPotId, block.chainid, _token) + remainder - approvedAmount
+      );
+
       domainReputationTokenApprovals[_domainId][_token] = 0;
       emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, approvedAmount);
       emit ColonyFundsClaimed(msgSender(), _token, 0, remainder - approvedAmount);
