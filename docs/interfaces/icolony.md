@@ -154,6 +154,19 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
+### ▸ `claimDomainFunds(address _token, uint256 _domainId)`
+
+Move any funds received by the colony for a specific domain to that domain's pot Currently no fees are taken
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_domainId|uint256|Id of the domain
+
+
 ### ▸ `claimExpenditurePayout(uint256 _id, uint256 _slot, address _token)`
 
 Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
