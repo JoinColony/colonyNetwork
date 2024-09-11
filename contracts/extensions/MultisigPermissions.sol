@@ -531,9 +531,6 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     require(domainSkillId == motions[_motionId].domainSkillId, "multisig-not-same-domain");
   }
 
-  bytes32 constant ROOT_AND_ARCHITECTURE =
-    bytes32(1 << uint256(ColonyRole.Root)) | bytes32(1 << uint256(ColonyRole.Architecture));
-
   function validateUserPermissions(uint256 _permissionDomainId, uint256 _motionId) internal view {
     bytes32 userPermissions = getUserRoles(msgSender(), _permissionDomainId);
     Motion storage motion = motions[_motionId];
