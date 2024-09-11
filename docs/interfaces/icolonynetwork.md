@@ -209,6 +209,24 @@ Calculate raw miner weight in WADs.
 |---|---|---|
 |_minerWeight|uint256|The weight of miner reward
 
+### ▸ `checkDomainTokenReceiverDeployed(uint256 _domainId):address domainTokenReceiverAddress`
+
+Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly for a particular domain.
+
+*Note: Should only be called by a colony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|The domainId of the domain to check the deployment for
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainTokenReceiverAddress|address|The address of the DomainTokenReceiver
+
 ### ▸ `claimMiningReward(address _recipient)`
 
 Used by a user to claim any mining rewards due to them. This will place them in their balance or pending balance, as appropriate.
@@ -547,6 +565,37 @@ Returns the latest Colony contract version. This is the version used to create a
 |Name|Type|Description|
 |---|---|---|
 |_version|uint256|The current / latest Colony contract version
+
+### ▸ `getDomainTokenReceiverAddress(address _colonyAddress, uint256 _domainId):address domainTokenReceiverAddress`
+
+Get the DomainTokenReceiver address for a particular domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colonyAddress|address|The address of the colony
+|_domainId|uint256|The domainId of the domain
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainTokenReceiverAddress|address|The address of the DomainTokenReceiver (which may or may not be deployed currently)
+
+### ▸ `getDomainTokenReceiverResolver():address resolver`
+
+Get the current DomainTokenReceiver resolver
+
+*Note: Note that some Receivers might be using an old resolver*
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|resolver|address|The address of the current resolver
 
 ### ▸ `getENSRegistrar():address _address`
 
@@ -1074,6 +1123,19 @@ Called to set the address of the colony bridge contract
 |Name|Type|Description|
 |---|---|---|
 |_bridgeAddress|address|The address of the bridge
+
+
+### ▸ `setDomainTokenReceiverResolver(address _resolver)`
+
+Function to set the resolver that should be used by DomainTokenReceivers
+
+*Note: The next time a claim for a domain is called, they will first be updated to this resolver*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_resolver|address|The address of the resolver to use
 
 
 ### ▸ `setFeeInverse(uint256 _feeInverse)`
