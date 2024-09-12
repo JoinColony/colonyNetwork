@@ -92,6 +92,8 @@
     "@solidstate/hardhat-4byte-uploader": "^1.2.2",
     "@truffle/contract": "^4.6.31",
     "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^8.5.0",
+    "@typescript-eslint/parser": "^8.5.0",
     "@umaprotocol/truffle-ledger-provider": "^1.0.5",
     "@wormhole-foundation/relayer-engine": "^0.3.2",
     "async-request": "^1.2.0",
@@ -141,6 +143,7 @@
     "solidity-steamroller": "^1.1.0",
     "tsx": "^4.10.4",
     "typescript": "^5.4.5",
+    "typescript-eslint": "^8.5.0",
     "web3-utils": "^1.10.4",
     "ws": "^8.17.0"
   },

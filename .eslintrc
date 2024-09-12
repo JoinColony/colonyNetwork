@@ -25,12 +25,23 @@
     "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
     "no-only-tests/no-only-tests": ["error", {"block": ["contract", "it"], "focus": ["only"]}],
     "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}],
-    "space-infix-ops": ["error"]
+    "space-infix-ops": ["error"],
+    "no-restricted-syntax": "off"
   },
   "parserOptions": {
     "ecmaVersion": 2018
   },
   "plugins": [
     "no-only-tests"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "plugins": [
+        "@typescript-eslint"
+      ],
+      "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+      "parser": "@typescript-eslint/parser"
+    }
   ]
 }
