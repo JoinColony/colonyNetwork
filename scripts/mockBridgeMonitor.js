@@ -46,7 +46,7 @@ class MockBridgeMonitor {
   // I believe VM stands for 'Verified Message'
   async encodeMockVAA(sender, sequence, nonce, payload, consistencyLevel, chainId) {
     const version = 1;
-    const timestamp = Math.floor(Date.now() / 1000);
+    const timestamp = Math.floor(Date.now() / 1000); // Convert to seconds from milliseconds of Date.now()
     const emitterChainId = chainId;
     const emitterAddress = ethereumAddressToWormholeAddress(sender);
     const guardianSetIndex = 0;
