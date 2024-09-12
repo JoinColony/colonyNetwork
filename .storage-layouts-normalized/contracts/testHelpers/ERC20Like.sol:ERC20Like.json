@@ -1,0 +1,100 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/testHelpers/ERC20Like.sol:ERC20Like",
+      "label": "totalSupply",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20Like.sol:ERC20Like",
+      "label": "balanceOf",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20Like.sol:ERC20Like",
+      "label": "allowance",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20Like.sol:ERC20Like",
+      "label": "name",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20Like.sol:ERC20Like",
+      "label": "symbol",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/testHelpers/ERC20Like.sol:ERC20Like",
+      "label": "decimals",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint8",
+        "numberOfBytes": "1"
+      }
+    }
+  ]
+}
