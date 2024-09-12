@@ -1,6 +1,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { Server, ServerCredentials } from "@grpc/grpc-js";
+import { ethers } from "ethers";
 
 import { FilterEntry, SpyRPCServiceService } from "../lib/wormhole/sdk/js-proto-node/src/spy/v1/spy";
 import { FORKED_XDAI_CHAINID } from "../helpers/constants";
@@ -8,10 +9,7 @@ import { FORKED_XDAI_CHAINID } from "../helpers/constants";
 import { RetryProvider } from "../packages/package-utils";
 // Random key
 
-
 // import ethers from "ethers";
-
-const ethers = require("ethers");
 
 // eslint-disable-next-line import/no-unresolved
 const bridgeAbi = require("../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json").abi;
@@ -97,10 +95,8 @@ class MockBridgeMonitor {
 
     this.server = new Server();
 
-    this.subscription;
-
     this.server.addService(SpyRPCServiceService, {
-      subscribeSignedVAA: (subscription: any, x: any) => {
+      subscribeSignedVAA: (subscription: any) => {
         this.subscription = subscription;
         this.subscriptionFilters = subscription.request.filters;
         // setTimeout(() => {
@@ -123,9 +119,9 @@ class MockBridgeMonitor {
     });
   }
 
-  async getTransactionFromAddressWithNonce(provider: any, address: string, nonce: number) {
+  static async getTransactionFromAddressWithNonce(provider: ethers.providers.JsonRpcProvider, address: string, nonce: number) {
     const currentBlock = await provider.getBlockNumber();
-    for (let i = currentBlock; i > 0; i--) {
+    for (let i = currentBlock; i > 0; i -= 1) {
       const block = await provider.getBlock(i);
       for (const txHash of block.transactions) {
         const tx = await provider.getTransaction(txHash);
@@ -142,13 +138,9 @@ class MockBridgeMonitor {
   // Note that the documentation sometimes also calls them VMs (as does IWormhole)
   // I believe VM stands for 'Verified Message'
   async encodeMockVAA(sender: string, sequence: number, nonce: number, payload: string, consistencyLevel: number, chainId: number) {
-    const version = 1;
     const timestamp = Math.floor(Date.now() / 1000);
     const emitterChainId = chainId;
     const emitterAddress = ethereumAddressToWormholeAddress(sender);
-    const guardianSetIndex = 0;
-    // let signatures: any[] = [];
-    const hash = ethers.utils.id("something");
 
     // const vaa = await this.homeBridge.buildVM(
     //   version,
@@ -170,7 +162,7 @@ class MockBridgeMonitor {
     // const signatures = guardians.addSignatures(vaaBody, [0]);
     // Build the VAA header
 
-    const vaaHeader =
+    const vaaHeader    =
       "0x01" + // version
       "00000000" + // guardianSetIndex
       "01" + // signature count
@@ -178,7 +170,6 @@ class MockBridgeMonitor {
       "7777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007777";
 
     return vaaHeader + vaaBody.toString("hex").slice(2);
-    // return signatures.toString('hex').slice(2);
   }
 
   setupListeners() {
@@ -233,9 +224,9 @@ class MockBridgeMonitor {
       // and for chainId 256669101, we use 10002 (which is really sepolia).
       // This isn't ideal, but it's the best solution I have for now
       let wormholeChainId;
-      if (chainId === 265669100) {
+      if (chainId === FORKED_XDAI_CHAINID) {
         wormholeChainId = 10003;
-      } else if (chainId === 265669101) {
+      } else if (chainId === FORKED_XDAI_CHAINID + 1) {
         wormholeChainId = 10002;
       } else {
         throw new Error("Unsupported chainId");
@@ -284,15 +275,12 @@ class MockBridgeMonitor {
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
 
       this.subscription.write({ vaaBytes: Buffer.from(vaa.slice(2), "hex") });
-
-      while (true) {
-        const newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
-        if (newRelayerNonce > relayerNonce) {
-          break;
-        }
+      let newRelayerNonce = -1;
+      while (newRelayerNonce <= relayerNonce) {
+        newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
       }
 
-      tx = await this.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
+      tx = await MockBridgeMonitor.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
     }
 
     this.bridgingPromiseCount -= 1;
@@ -326,14 +314,12 @@ class MockBridgeMonitor {
 
       this.subscription.write({ vaaBytes: Buffer.from(vaa.slice(2), "hex") });
 
-      while (true) {
-        const newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
-        if (newRelayerNonce > relayerNonce) {
-          break;
-        }
+      let newRelayerNonce = -1;
+      while (newRelayerNonce <= relayerNonce) {
+        newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
       }
 
-      tx = await this.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
+      tx = await MockBridgeMonitor.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
     }
 
     this.bridgingPromiseCount -= 1;

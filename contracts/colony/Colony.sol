@@ -335,7 +335,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     metatransactionNonces[_user] += 1;
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public pure {
     require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
     require(_slot != ROOT_LOCAL_SKILL_SLOT, "colony-protected-variable");
   }

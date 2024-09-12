@@ -1,12 +1,13 @@
 import { Environment, StandardRelayerContext, RelayerApp, providers } from "@wormhole-foundation/relayer-engine";
 import { CHAIN_ID_ARBITRUM_SEPOLIA, CHAIN_ID_SEPOLIA } from "@certusone/wormhole-sdk";
 
-import path from "path";
-import fs from "fs";
-import NonceManager from "../metatransaction-broadcaster/ExtendedNonceManager";
-import { RetryProvider, TruffleLoader } from "../package-utils";
+import * as path from "path";
 
-const config = fs.existsSync("./config.js") ? require("./config.js") : {};
+import { ethers } from "ethers";
+
+import { RetryProvider, TruffleLoader, ExtendedNonceManager as NonceManager } from "package-utils";
+
+import config from "./config";
 
 const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
@@ -78,7 +79,6 @@ const loader = new TruffleLoader({
 
   const colonyBridges = {};
   const colonyBridgeContractDef = await loader.load({ contractDir: "bridging", contractName: "WormholeBridgeForColony" });
-  const ethers = require("ethers");
   const privateKey = "0xfe6066af949ec3c2c88ac10f47907c6d4e200c37b28b5af49e7d0ffd5c301c5c";
   for (const chainId of Object.keys(config.chains)) {
     const { colonyBridgeAddress } = config.chains[chainId];
@@ -96,7 +96,10 @@ const loader = new TruffleLoader({
     [chainid: string]: string;
   } = {};
 
-  Object.keys(config.chains).forEach((chainid) => (colonyBridgeAddresses[chainid] = config.chains[chainid].colonyBridgeAddress));
+  Object.keys(config.chains).forEach(function (chainid) {
+    colonyBridgeAddresses[chainid] = config.chains[chainid].colonyBridgeAddress;
+  });
+
   app.multiple(colonyBridgeAddresses, async (ctx, next) => {
     const { vaa } = ctx;
     if (!vaa) {
@@ -120,7 +123,7 @@ const loader = new TruffleLoader({
     try {
       // TODO: Explicit gas limit is a nod to tests...
       const tx = await destinationBridge.receiveMessage(ctx.vaaBytes, { gasLimit: 1000000 });
-  await tx.wait();
+      await tx.wait();
       console.log(`bridged with txhash${tx.hash}`);
     } catch (err) {
       console.log("ERROR", err);
@@ -136,7 +139,7 @@ const loader = new TruffleLoader({
       }
     }
 
-    next();
+    return next();
   });
 
   // add and configure any other middleware ..

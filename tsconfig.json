@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "package-utils": ["./packages/package-utils"],
+      "metatransaction-broadcaster/*": ["./packages/metatransaction-broadcaster/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx"]
+}
