@@ -34,3 +34,4 @@ ganache-chain-db-2/
 build-coverage/
 coverage-extensions/
 .pnpm-store
+.storage-layouts
