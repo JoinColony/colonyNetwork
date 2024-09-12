@@ -3,8 +3,7 @@ const express = require("express");
 const sqlite = require("sqlite");
 const sqlite3 = require("sqlite3");
 const queue = require("express-queue");
-const NonceManager = require("./ExtendedNonceManager");
-const { colonyIOCors, ConsoleAdapter, getFeeData } = require("../package-utils");
+const { colonyIOCors, ConsoleAdapter, getFeeData, ExtendedNonceManager: NonceManager } = require("../package-utils");
 
 const ETHEREUM_BRIDGE_ADDRESS = "0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59";
 const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";

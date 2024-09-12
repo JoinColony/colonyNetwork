@@ -10,8 +10,18 @@
     "assert": true,
     "contract": true
   },
+  "settings" :{
+    "import/resolver": {
+      "typescript": {
+        "project" : "./tsconfig.json"
+      },
+      "node": {
+        "extensions": [".js", ".ts", ".tsx"]
+      }
+    }
+  },
   "rules": {
-    "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"]}],
+    // "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"], "packageDir": ["./", "./packages"]}],
     "max-len": [2, { "code": 150, "ignoreComments": true }],
     "prettier/prettier": ["error", {"printWidth": 150}],
     "import/named": "off",
@@ -26,7 +36,8 @@
     "no-only-tests/no-only-tests": ["error", {"block": ["contract", "it"], "focus": ["only"]}],
     "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}],
     "space-infix-ops": ["error"],
-    "no-restricted-syntax": "off"
+    "no-restricted-syntax": "off",
+    "import/no-unresolved": "off" // This is handled by the typescript resolver
   },
   "parserOptions": {
     "ecmaVersion": 2018
