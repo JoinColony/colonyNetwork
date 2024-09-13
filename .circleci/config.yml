@@ -344,6 +344,7 @@ jobs:
             - coverage-chainid-777
   coverage-test-bridging:
     <<: *job_common
+    resource_class: large
     steps:
       - checkout
       - <<: *step_restore_cache
