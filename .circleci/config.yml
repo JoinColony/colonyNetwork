@@ -56,7 +56,7 @@ step_compile_mock_spy: &step_compile_mock_spy
       command: |
         cd ./lib/wormhole/sdk/js-proto-node && npm i
         cd ./../.. && DOCKER_BUILDKIT=1 docker build --target node-export -f Dockerfile.proto -o type=local,dest=. .
-        cd ./../.. && npx tsc --esModuleInterop --downlevelIteration ./scripts/mockGuardianSpy.ts
+        cd ./../.. && npx hardhat compile && npx tsc
 
 jobs:
   build-checks:

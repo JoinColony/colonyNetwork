@@ -456,6 +456,9 @@ importers:
       ethers:
         specifier: '5'
         version: 5.7.2
+      package-utils:
+        specifier: ../package-utils
+        version: link:../package-utils
 
 packages:
 
@@ -2301,7 +2304,7 @@ packages:
       '@ledgerhq/errors': 5.50.0
       '@ledgerhq/logs': 5.50.0
       rxjs: 6.6.7
-      semver: 7.6.2
+      semver: 7.6.3
     dev: true
 
   /@ledgerhq/errors@4.78.0:
@@ -2765,7 +2768,7 @@ packages:
       hardhat: ^2.0.0
     dependencies:
       ethers: 5.7.2
-      hardhat: 2.22.6(typescript@5.5.3)
+      hardhat: 2.22.6(ts-node@9.1.1)(typescript@4.9.5)
     dev: true
 
   /@nomiclabs/hardhat-etherscan@2.1.8(hardhat@2.22.6):

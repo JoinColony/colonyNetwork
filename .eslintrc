@@ -21,7 +21,7 @@
     }
   },
   "rules": {
-    // "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"], "packageDir": ["./", "./packages"]}],
+    "import/no-extraneous-dependencies": [2, {"devDependencies": true}],
     "max-len": [2, { "code": 150, "ignoreComments": true }],
     "prettier/prettier": ["error", {"printWidth": 150}],
     "import/named": "off",
@@ -37,7 +37,18 @@
     "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}],
     "space-infix-ops": ["error"],
     "no-restricted-syntax": "off",
-    "import/no-unresolved": "off" // This is handled by the typescript resolver
+    "import/no-unresolved": "off", // This is handled by the typescript resolver
+    "import/no-relative-packages": "off", // Required for monorepo-esque structure
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+   ]
   },
   "parserOptions": {
     "ecmaVersion": 2018
