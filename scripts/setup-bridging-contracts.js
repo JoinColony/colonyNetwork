@@ -7,7 +7,7 @@
 
 const path = require("path");
 const fs = require("fs");
-const ethers = require("ethers");
+const ethers = require("ethers"); // eslint-disable-line
 const { spawn } = require("child_process");
 const { TruffleLoader } = require("../packages/package-utils");
 const { WAD } = require("../helpers/constants");
@@ -17,7 +17,7 @@ const loader = new TruffleLoader({
 });
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;
-const MockGuardianSpy = require("./mockGuardianSpy");
+const MockGuardianSpy = require("./mockGuardianSpy").default;
 
 async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   console.log("setup-bridging-contracts: Not to be used in production");

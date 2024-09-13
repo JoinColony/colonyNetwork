@@ -1,24 +1,29 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { Server, ServerCredentials } from "@grpc/grpc-js";
-import { ethers } from "ethers";
+import { ServerWritableStreamImpl } from "@grpc/grpc-js/build/src/server-call";
 
-import { FilterEntry, SpyRPCServiceService } from "../lib/wormhole/sdk/js-proto-node/src/spy/v1/spy";
+import { ethers } from "ethers";
+import { RetryProvider } from "../packages/package-utils";
+
+import {
+  FilterEntry,
+  SpyRPCServiceService,
+  SubscribeSignedVAARequest,
+  SubscribeSignedVAAResponse,
+} from "../lib/wormhole/sdk/js-proto-node/src/spy/v1/spy";
 import { FORKED_XDAI_CHAINID } from "../helpers/constants";
 
-import { RetryProvider } from "../packages/package-utils";
 // Random key
 
-// import ethers from "ethers";
-
-// eslint-disable-next-line import/no-unresolved
-const bridgeAbi = require("../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json").abi;
-// eslint-disable-next-line import/no-unresolved
-const wormholeBridgeForColonyAbi = require("../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json").abi;
+import { abi as bridgeAbi } from "../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json";
+import { abi as wormholeBridgeForColonyAbi } from "../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json";
 
 function ethereumAddressToWormholeAddress(address: string) {
   return ethers.utils.hexZeroPad(ethers.utils.hexStripZeros(ethers.utils.hexlify(address)), 32);
 }
+
+type QueueEntry = [ethers.Contract, string, number, number, string, number, number];
 
 class MockBridgeMonitor {
   homeRpc: string;
@@ -33,33 +38,33 @@ class MockBridgeMonitor {
 
   foreignColonyBridgeAddress: string;
 
-  homeBridge: any;
+  homeBridge: ethers.Contract;
 
-  foreignBridge: any;
+  foreignBridge: ethers.Contract;
 
-  homeWormholeBridgeForColony: any;
+  homeWormholeBridgeForColony: ethers.Contract;
 
-  foreignWormholeBridgeForColony: any;
+  foreignWormholeBridgeForColony: ethers.Contract;
 
   skipCount: number = 0;
 
-  queue: any[] = [];
+  queue: QueueEntry[] = [];
 
-  skipped: any[] = [];
+  skipped: QueueEntry[] = [];
 
   locked: boolean = false;
 
   bridgingPromiseCount: number = 0;
 
-  resolveBridgingPromise: any;
+  resolveBridgingPromise: (tx: ethers.Transaction) => void;
 
-  signerHome: any;
+  signerHome: ethers.Signer;
 
-  signerForeign: any;
+  signerForeign: ethers.Signer;
 
   server: Server;
 
-  subscription: any;
+  subscription: ServerWritableStreamImpl<SubscribeSignedVAARequest, SubscribeSignedVAAResponse>;
 
   subscriptionFilters: FilterEntry[] = [];
 
@@ -96,7 +101,7 @@ class MockBridgeMonitor {
     this.server = new Server();
 
     this.server.addService(SpyRPCServiceService, {
-      subscribeSignedVAA: (subscription: any) => {
+      subscribeSignedVAA: (subscription: ServerWritableStreamImpl<SubscribeSignedVAARequest, SubscribeSignedVAAResponse>) => {
         this.subscription = subscription;
         this.subscriptionFilters = subscription.request.filters;
         // setTimeout(() => {
@@ -119,7 +124,7 @@ class MockBridgeMonitor {
     });
   }
 
-  static async getTransactionFromAddressWithNonce(provider: ethers.providers.JsonRpcProvider, address: string, nonce: number) {
+  static async getTransactionFromAddressWithNonce(provider: ethers.providers.Provider, address: string, nonce: number) {
     const currentBlock = await provider.getBlockNumber();
     for (let i = currentBlock; i > 0; i -= 1) {
       const block = await provider.getBlock(i);
@@ -162,7 +167,7 @@ class MockBridgeMonitor {
     // const signatures = guardians.addSignatures(vaaBody, [0]);
     // Build the VAA header
 
-    const vaaHeader    =
+    const vaaHeader =
       "0x01" + // version
       "00000000" + // guardianSetIndex
       "01" + // signature count
@@ -348,4 +353,4 @@ class MockBridgeMonitor {
   }
 }
 
-module.exports = MockBridgeMonitor;
+export default MockBridgeMonitor;

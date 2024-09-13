@@ -84,7 +84,10 @@ const loader = new TruffleLoader({
     const { colonyBridgeAddress } = config.chains[chainId];
     const providerAddress = config.chains[chainId].endpoints[0];
     const wallet = new ethers.Wallet(privateKey, new RetryProvider(providerAddress));
-    const nonceManager = new NonceManager(wallet);
+
+    // I think this type conversion is required because we are inheriting from a js file...
+    // The noncemanager inherits Signer, so this is fine, practically
+    const nonceManager = new NonceManager(wallet) as unknown as ethers.Signer;
 
     colonyBridges[chainId] = new ethers.Contract(colonyBridgeAddress, colonyBridgeContractDef.abi, nonceManager);
   }
