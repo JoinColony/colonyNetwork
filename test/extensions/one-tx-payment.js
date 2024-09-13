@@ -641,6 +641,15 @@ contract("One transaction payments", (accounts) => {
       await colony.upgrade(15);
       await colony.upgrade(16);
 
+      // Confirm this colony has the new domain structure
+      const domain = await colony.getDomain(1);
+      expect(domain.deprecated).to.be.false;
+      await colony.deprecateDomain(1, UINT256_MAX, 1, true);
+      const deprecatedDomain = await colony.getDomain(1);
+      expect(deprecatedDomain.deprecated).to.be.true;
+
+      // Undeprecate
+      await colony.deprecateDomain(1, UINT256_MAX, 1, false);
       await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 0);
     });
   });
