@@ -53,10 +53,14 @@ step_install_lsof: &step_install_lsof
 step_compile_mock_spy: &step_compile_mock_spy
     run:
       name: "Compile mock spy"
+      # The config copying is a hack for TS to be able to find the config file, I'd really like to get
+      # rid of that but don't know how.
       command: |
         cd ./lib/wormhole/sdk/js-proto-node && npm i
         cd ./../.. && DOCKER_BUILDKIT=1 docker build --target node-export -f Dockerfile.proto -o type=local,dest=. .
-        cd ./../.. && npx hardhat compile && npx tsc
+        cd ./../.. && npx hardhat compile
+        cp ./packages/wormhole-relayer/config.example.js ./packages/wormhole-relayer/config.js
+        npx tsc
 
 jobs:
   build-checks:

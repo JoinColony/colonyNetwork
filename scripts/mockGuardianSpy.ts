@@ -25,7 +25,7 @@ function ethereumAddressToWormholeAddress(address: string) {
 
 type QueueEntry = [ethers.Contract, string, number, number, string, number, number];
 
-class MockBridgeMonitor {
+class MockGuardianSpy {
   homeRpc: string;
 
   foreignRpc: string;
@@ -285,7 +285,7 @@ class MockBridgeMonitor {
         newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
       }
 
-      tx = await MockBridgeMonitor.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
+      tx = await MockGuardianSpy.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
     }
 
     this.bridgingPromiseCount -= 1;
@@ -324,7 +324,7 @@ class MockBridgeMonitor {
         newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
       }
 
-      tx = await MockBridgeMonitor.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
+      tx = await MockGuardianSpy.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
     }
 
     this.bridgingPromiseCount -= 1;
@@ -353,4 +353,4 @@ class MockBridgeMonitor {
   }
 }
 
-export default MockBridgeMonitor;
+export default MockGuardianSpy;

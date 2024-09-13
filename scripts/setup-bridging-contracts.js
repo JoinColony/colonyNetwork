@@ -199,7 +199,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   console.log(`Zodiac Bridge module address: ${zodiacBridge.address}`);
   console.log(`ERC721 address: ${erc721.address}`);
   console.log(`Token address: ${token.address}`);
-  return { gnosisSafe, resetRelayer, bridgeMonitor: guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
+  return { gnosisSafe, resetRelayer, guardianSpy, zodiacBridge, homeBridge, foreignBridge, homeColonyBridge, foreignColonyBridge };
 }
 
 async function getSig(provider, account, dataHash) {
