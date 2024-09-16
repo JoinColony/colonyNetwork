@@ -193,7 +193,18 @@ async function setupColonyNetwork() {
   EtherRouter.setAsDeployed(etherRouter);
 
   // Deploy LiFiMock to LiFi address
-  await setCode("0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE", LiFiFacetProxyMock.deployedBytecode);
+  try {
+    await setCode("0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE", LiFiFacetProxyMock.deployedBytecode);
+  } catch (error) {
+    if (error.message.includes("OnlyHardhatNetworkError")) {
+      await new Promise(function (resolve) {
+        web3.provider.send(
+          { method: "evm_setCode", params: ["0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE", LiFiFacetProxyMock.deployedBytecode] },
+          resolve,
+        );
+      });
+    }
+  }
 
   await setupUpgradableColonyNetwork(
     etherRouter,
