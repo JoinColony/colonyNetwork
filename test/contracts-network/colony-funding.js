@@ -820,6 +820,8 @@ contract("Colony Funding", (accounts) => {
       const resolverAfter = await receiverAsEtherRouter.resolver();
       expect(resolverAfter).to.not.equal(resolver);
       expect(resolverAfter).to.equal(newResolver.address);
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
+      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
     });
   });
 });
