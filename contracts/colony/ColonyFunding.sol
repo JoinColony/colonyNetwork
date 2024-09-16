@@ -294,7 +294,7 @@ contract ColonyFunding is
       getFundingPotBalance(domain.fundingPotId, block.chainid, _token) - _value
     );
 
-    ERC20Extended(_token).approve(LIFI_ADDRESS, _amount);
+    require(ERC20Extended(_token).approve(LIFI_ADDRESS, _amount), "colony-approve-failed");
     (bool success, ) = LIFI_ADDRESS.call{ value: _value }(_txdata);
 
     require(success, "colony-exchange-tokens-failed");
