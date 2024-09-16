@@ -161,6 +161,16 @@ contract ColonyFunding is
       thisBalanceBefore = ERC20Extended(_token).balanceOf(address(this));
     }
 
+    uint256 feeToPay = claimAmount / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
+    // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set
+    // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
+    // able to do with recovery mode.
+    uint256 remainder = claimAmount - feeToPay;
+    nonRewardPotsTotal[_token] += remainder;
+
+    fundingPots[0].balance[_token] += feeToPay;
+    fundingPots[fundingPotId].balance[_token] += remainder;
+
     // Claim funds
 
     DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
@@ -175,7 +185,7 @@ contract ColonyFunding is
     );
     uint256 balanceAfter = getFundingPotBalance(fundingPotId, _token);
 
-    assert(balanceAfter - balanceBefore == claimAmount);
+    assert(balanceAfter - balanceBefore == remainder);
 
     uint256 thisBalanceAfter;
     if (_token == address(0x0)) {
@@ -185,6 +195,8 @@ contract ColonyFunding is
     }
 
     assert(thisBalanceAfter - thisBalanceBefore == claimAmount);
+
+    emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
