@@ -81,11 +81,8 @@ jobs:
           name: "Check git hooks run"
           command: pnpm run check:gitchanges
       - run:
-          name: "Checking contract storage layout hasn't broken existing slots"
-          command: npx hardhat storage-layout --check
-      - run:
           name: "Checking contract storage layout hasn't had additions made"
-          command: npx hardhat storage-layout --update && npm run normalize:storageSlots && git checkout ./.storage-layouts && git diff --exit-code
+          command: npx hardhat storage-layout --update && npm run normalize:storageSlots && test -z "$(git status --porcelain)"
       - <<: *step_compile_mock_spy
       - run:
           name: "Linting JavaScript"
@@ -105,9 +102,6 @@ jobs:
       - run:
           name: "Check contract sizes"
           command: npx hardhat size-contracts
-      - run:
-          name: "Checking contract storage layout hasn't had additions made"
-          command: npx hardhat storage-layout --update && npm run normalize:storageSlots && test -z "$(git status --porcelain)"
       - run:
           name: "Upload function selectors to 4byte.directory"
           command: npx hardhat upload-selectors
