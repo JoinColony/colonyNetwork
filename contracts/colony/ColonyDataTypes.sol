@@ -63,6 +63,14 @@ interface ColonyDataTypes {
   /// @param payoutRemainder The remaining funds moved to the top-level domain pot
   event ColonyFundsClaimed(address agent, address token, uint256 fee, uint256 payoutRemainder);
 
+  /// @notice Event logged when funds sent directly to a domain are claimed
+  /// @param agent The address that is responsible for triggering this event
+  /// @param token The token address
+  /// @param domainId The domain id
+  /// @param fee The fee deducted for rewards
+  /// @param payoutRemainder The remaining funds moved to the domain pot
+  event DomainFundsClaimed(address agent, address token, uint256 domainId, uint256 fee, uint256 payoutRemainder);
+
   /// @notice Event logged when a new reward payout cycle has started
   /// @param agent The address that is responsible for triggering this event
   /// @param rewardPayoutId The reward payout cycle id
