@@ -206,10 +206,10 @@ contract ColonyFunding is
       Domain storage rootDomain = domains[1];
       // fundingPots[rootDomain.fundingPotId].balance[_token] += remainder - approvedAmount;
       setFundingPotBalance(
-        fundingPotId,
+        rootDomain.fundingPotId,
         block.chainid,
         _token,
-        getFundingPotBalance(fundingPotId, block.chainid, _token) + remainder - approvedAmount
+        getFundingPotBalance(rootDomain.fundingPotId, block.chainid, _token) + remainder - approvedAmount
       );
 
       domainReputationTokenApprovals[_domainId][_token] = 0;
@@ -237,7 +237,7 @@ contract ColonyFunding is
     require(_domainId > 1, "colony-funding-root-domain");
     if (_add) {
       domainReputationTokenApprovals[_domainId][_token] += _amount;
-    } else {
+   } else {
       domainReputationTokenApprovals[_domainId][_token] -= _amount;
     }
   }
