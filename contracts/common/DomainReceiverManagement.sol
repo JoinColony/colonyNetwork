@@ -44,11 +44,15 @@ abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContra
     if (!isContract(domainTokenReceiverAddress)) {
       // Then deploy the contract
       bytes32 salt = getDomainTokenReceiverDeploySalt(msgSender(), _domainId);
-      ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
+      address newContract = ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
         salt,
         type(EtherRouterCreate3).creationCode,
         abi.encodeWithSignature("setOwner(address)", (address(this))),
         ICreateX.Values(0, 0)
+      );
+      require(
+        newContract == domainTokenReceiverAddress,
+        "colony-network-domain-receiver-deploy-wrong-address"
       );
     }
 
@@ -64,12 +68,11 @@ abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContra
     }
 
     // Check it's set up correctly
-    DomainTokenReceiver(domainTokenReceiverAddress).getColonyAddress();
-    // if (DomainTokenReceiver(domainTokenReceiverAddress).getColonyAddress() != msgSender()) {
-    //   DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
-    // }
+    if (DomainTokenReceiver(domainTokenReceiverAddress).getColonyAddress() != msgSender()) {
+      DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
+    }
 
-    // return domainTokenReceiverAddress;
+    return domainTokenReceiverAddress;
   }
 
   function getDomainTokenReceiverAddress(
