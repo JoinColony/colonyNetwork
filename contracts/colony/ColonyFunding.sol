@@ -144,6 +144,7 @@ contract ColonyFunding is
   }
 
   function claimDomainFunds(address _token, uint256 _domainId) public stoppable {
+    require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
     address domainTokenReceiverAddress = IColonyNetwork(colonyNetworkAddress)
       .checkDomainTokenReceiverDeployed(_domainId);
     uint256 fundingPotId = domains[_domainId].fundingPotId;
@@ -187,19 +188,6 @@ contract ColonyFunding is
     // Claim funds
 
     DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
-
-    // uint256 balanceAfter = getFundingPotBalance(fundingPotId, _token);
-
-    // assert(balanceAfter - balanceBefore == remainder);
-
-    // uint256 thisBalanceAfter;
-    // if (_token == address(0x0)) {
-    //   thisBalanceAfter = address(this).balance;
-    // } else {
-    //   thisBalanceAfter = ERC20Extended(_token).balanceOf(address(this));
-    // }
-
-    // assert(thisBalanceAfter - thisBalanceBefore == claimAmount);
 
     emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
   }
@@ -249,7 +237,7 @@ contract ColonyFunding is
       getFundingPotBalance(domain.fundingPotId, block.chainid, _token) - _value
     );
 
-    ERC20Extended(_token).approve(LIFI_ADDRESS, _amount);
+    require(ERC20Extended(_token).approve(LIFI_ADDRESS, _amount), "colony-approve-failed");
     (bool success, ) = LIFI_ADDRESS.call{ value: _value }(_txdata);
 
     require(success, "colony-exchange-tokens-failed");
