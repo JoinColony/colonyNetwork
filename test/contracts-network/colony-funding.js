@@ -17,7 +17,7 @@ const {
 } = require("../../helpers/constants");
 
 const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
+const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent } = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -563,14 +563,19 @@ contract("Colony Funding", (accounts) => {
 
       const domain = await colony.getDomain(2);
       const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);
+      const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(ethers.constants.AddressZero);
 
       // Claim the funds
-      await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
+
+      const tx = await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
+      await expectEvent(tx, "DomainFundsClaimed", [MANAGER, ethers.constants.AddressZero, 2, 1, 99]);
 
       const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, ethers.constants.AddressZero);
+      const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(ethers.constants.AddressZero);
 
       // Check the balance of the domain
-      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(100);
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
+      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
     });
 
     it("should allow a token to be directly sent to a domain", async () => {
@@ -583,14 +588,18 @@ contract("Colony Funding", (accounts) => {
 
       const domain = await colony.getDomain(2);
       const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+      const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(otherToken.address);
 
       // Claim the funds
-      await colony.claimDomainFunds(otherToken.address, 2);
+      const tx = await colony.claimDomainFunds(otherToken.address, 2);
+      await expectEvent(tx, "DomainFundsClaimed", [MANAGER, otherToken.address, 2, 1, 99]);
 
       const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+      const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(otherToken.address);
 
       // Check the balance of the domain
-      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(100);
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
+      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
     });
 
     it("should not be able to claim funds for a domain that does not exist", async () => {
