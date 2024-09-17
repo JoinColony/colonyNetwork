@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 import { ColonyDataTypes, IColony } from "./../colony/IColony.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
 import { Bytes4Includes } from "./../common/Bytes4Includes.sol";
@@ -167,7 +168,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
   bytes4 constant SET_USER_ROLES_SIG =
     bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
 
-  function getDominantSigs() private pure returns (bytes4[] memory) {
+  function getRoleSettingSigs() private pure returns (bytes4[] memory) {
     bytes4[] memory dominantSigs = new bytes4[](5);
     dominantSigs[0] = SET_ARCHITECTURE_ROLE_SIG;
     dominantSigs[1] = SET_FUNDING_ROLE_SIG;
@@ -196,7 +197,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     bytes4[] memory forbiddenSigs = new bytes4[](1);
     forbiddenSigs[0] = OLD_MOVE_FUNDS;
 
-    bytes4[] memory dominantSigs = getDominantSigs();
+    bytes4[] memory dominantSigs = getRoleSettingSigs();
 
     for (uint256 i = 0; i < _data.length; i += 1) {
       require(_targets[i] != address(colony), "multisig-passed-target-cannot-be-base-colony");
@@ -314,10 +315,25 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     return domainSkillThreshold[_domainSkillId];
   }
 
+  function getMotionVoteThreshold(uint256 _motionId, uint8 _role) public view returns (uint256) {
+    Motion storage motion = motions[_motionId];
+    require(bytes32(1 << _role) & motion.requiredPermissions > 0, "multisig-role-not-required");
+    uint256 relevantDomainSkillId = motion.domainSkillId;
+
+    if (getRoleSettingSigs().includes(motion.sig)) {
+      ColonyNetworkDataTypes.Skill memory s = colonyNetwork.getSkill(motion.domainSkillId);
+      if (s.parents.length > 0) {
+        relevantDomainSkillId = s.parents[0];
+      }
+    }
+
+    return getDomainSkillRoleThreshold(relevantDomainSkillId, _role);
+  }
+
   function getDomainSkillRoleThreshold(
     uint256 _domainSkillId,
     uint8 _role
-  ) public view returns (uint256) {
+  ) internal view returns (uint256) {
     if (domainSkillThreshold[_domainSkillId] > 0) {
       return domainSkillThreshold[_domainSkillId];
     }
@@ -429,7 +445,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
           }
 
           if (_vote == Vote.Approve) {
-            uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
+            uint256 threshold = getMotionVoteThreshold(_motionId, roleIndex);
             if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
               anyBelowThreshold = true;
             } else if (motionVoteCount[_motionId][_vote][roleIndex] == threshold && _setTo) {
@@ -508,7 +524,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     while (uint256(motion.requiredPermissions) >= (1 << roleIndex)) {
       // For the current role, is it required for the motion?
       if ((motion.requiredPermissions & bytes32(1 << roleIndex)) > 0) {
-        uint256 threshold = getDomainSkillRoleThreshold(motion.domainSkillId, roleIndex);
+        uint256 threshold = getMotionVoteThreshold(_motionId, roleIndex);
         if (motionVoteCount[_motionId][_vote][roleIndex] < threshold) {
           return false;
         }
@@ -536,7 +552,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     Motion storage motion = motions[_motionId];
 
     if (
-      getDominantSigs().includes(motion.sig) &&
+      getRoleSettingSigs().includes(motion.sig) &&
       motion.requiredPermissions == bytes32(1 << uint256(ColonyRole.Architecture))
     ) {
       require(

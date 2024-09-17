@@ -499,31 +499,36 @@ contract("Multisig Permissions", (accounts) => {
 
     it("The domain skill threshold for execution changes as expected", async () => {
       await multisigPermissions.setGlobalThreshold(2);
+      // Create a motion that requires root permissions
+      const action = await encodeTxData(colony, "mintTokens", [WAD]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
       // By default, it's the global threshold
       const domain = await colony.getDomain(1);
 
-      let res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      let res = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(0);
 
       // Update global threshold
       await multisigPermissions.setGlobalThreshold(3);
-      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      res = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
       expect(res).to.eq.BN(3);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(0);
 
       // If we set it to something specific for the domain
       await multisigPermissions.setDomainSkillThreshold(domain.skillId, 2);
-      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      res = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(2);
 
       // Changing the global threshold has no effect
       await multisigPermissions.setGlobalThreshold(1);
-      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      res = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(2);
@@ -540,7 +545,7 @@ contract("Multisig Permissions", (accounts) => {
       await setRootRoles(multisigPermissions, USER6, rolesToBytes32([ROOT_ROLE]));
 
       // No effect
-      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      res = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(2);
@@ -549,7 +554,7 @@ contract("Multisig Permissions", (accounts) => {
       await multisigPermissions.setGlobalThreshold(0);
 
       // Still no change
-      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      res = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
       expect(res).to.eq.BN(2);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(2);
@@ -557,10 +562,42 @@ contract("Multisig Permissions", (accounts) => {
       // Remove the domain-specific threshold, drops to nUsersWithSpecificPermissions / 2 + 1
       await multisigPermissions.setDomainSkillThreshold(domain.skillId, 0);
 
-      res = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ROOT_ROLE);
+      res = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
       expect(res).to.eq.BN(4);
       res = await multisigPermissions.getDomainSkillThreshold(domain.skillId);
       expect(res).to.eq.BN(0);
+    });
+
+    it("The domain skill threshold for execution changes as expected when considering a motion to modify permissions", async () => {
+      await setRootRoles(multisigPermissions, USER0, rolesToBytes32([ARCHITECTURE_ROLE]));
+      const action = await encodeTxData(multisigPermissions, "setUserRoles", [1, 0, USER2, 2, rolesToBytes32([FUNDING_ROLE])]);
+      await multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
+      let threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ARCHITECTURE_ROLE);
+      expect(threshold).to.eq.BN(1);
+
+      await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([ARCHITECTURE_ROLE]));
+      threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ARCHITECTURE_ROLE);
+      expect(threshold).to.eq.BN(1);
+
+      await multisigPermissions.setUserRoles(1, 0, USER2, 2, rolesToBytes32([ARCHITECTURE_ROLE]));
+      threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ARCHITECTURE_ROLE);
+      expect(threshold).to.eq.BN(1);
+
+      await multisigPermissions.setUserRoles(1, 0, USER3, 2, rolesToBytes32([ARCHITECTURE_ROLE]));
+      threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ARCHITECTURE_ROLE);
+      expect(threshold).to.eq.BN(1);
+
+      // But a motion to create a subdomain, in the same domain, which requires the same architecture permission, requires 2 approvals,
+      // because there are three people with that permission in that domain
+
+      const action2 = await encodeTxData(colony, "addDomain", [1, 0, 2]);
+      await multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action2]);
+      const motionId2 = await multisigPermissions.getMotionCount();
+
+      threshold = await multisigPermissions.getMotionVoteThreshold(motionId2, ARCHITECTURE_ROLE);
+      expect(threshold).to.eq.BN(2);
     });
 
     it("Cannot award root in a non-root domain", async () => {
@@ -773,6 +810,8 @@ contract("Multisig Permissions", (accounts) => {
 
       // Give user0 root and admin in root domain
       await setRootRoles(multisigPermissions, USER0, rolesToBytes32([ROOT_ROLE, ADMINISTRATION_ROLE]));
+      await multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
 
       // Give users 1,2,3 admin in the subdomain
       await multisigPermissions.setUserRoles(1, 0, USER1, 2, rolesToBytes32([ADMINISTRATION_ROLE]));
@@ -785,7 +824,7 @@ contract("Multisig Permissions", (accounts) => {
       expect(counts).to.eq.BN(3);
 
       // That should make the threshold 2. If the admin holder in root was counted, the threshold would be three
-      const threshold = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ADMINISTRATION_ROLE);
+      const threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ADMINISTRATION_ROLE);
       expect(threshold).to.eq.BN(2);
     });
 
@@ -979,8 +1018,11 @@ contract("Multisig Permissions", (accounts) => {
       const counts = await multisigPermissions.getDomainSkillRoleCounts(domain.skillId, ADMINISTRATION_ROLE);
       expect(counts).to.eq.BN(3);
 
+      await multisigPermissions.createMotion(1, 0, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
       // That should make the threshold 2. If the admin holder in root was counted, the threshold would be three
-      const threshold = await multisigPermissions.getDomainSkillRoleThreshold(domain.skillId, ADMINISTRATION_ROLE);
+      const threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ADMINISTRATION_ROLE);
       expect(threshold).to.eq.BN(2);
     });
 
