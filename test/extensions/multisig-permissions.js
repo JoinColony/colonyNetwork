@@ -610,6 +610,36 @@ contract("Multisig Permissions", (accounts) => {
         "multisig-invalid-domain-inheritance",
       );
     });
+
+    it("Someone with architecture permissions in the root domain can't award multisig permissions in the root domain", async () => {
+      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARCHITECTURE_ROLE]));
+
+      await checkErrorRevert(
+        multisigPermissions.setUserRoles(1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE]), { from: USER2 }),
+        "multisig-caller-not-correct-permissions",
+      );
+    });
+
+    it("Architecture permissions in the root domain don't affect the motion vote threshold for role-setting in the root domain", async () => {
+      const action = await encodeTxData(multisigPermissions, "setUserRoles", [1, UINT256_MAX, USER2, 1, rolesToBytes32([FUNDING_ROLE])]);
+      await multisigPermissions.createMotion(1, UINT256_MAX, [ADDRESS_ZERO], [action]);
+      const motionId = await multisigPermissions.getMotionCount();
+
+      const motion = await multisigPermissions.getMotion(motionId);
+
+      // Motion requires the root role
+      expect(motion.requiredPermissions).to.equal(rolesToBytes32([ROOT_ROLE]));
+      let threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
+      expect(threshold).to.eq.BN(2);
+
+      await setRootRoles(multisigPermissions, USER2, rolesToBytes32([ARCHITECTURE_ROLE]));
+      await setRootRoles(multisigPermissions, USER3, rolesToBytes32([ARCHITECTURE_ROLE]));
+      await setRootRoles(multisigPermissions, accounts[4], rolesToBytes32([ARCHITECTURE_ROLE]));
+      await setRootRoles(multisigPermissions, accounts[5], rolesToBytes32([ARCHITECTURE_ROLE]));
+
+      threshold = await multisigPermissions.getMotionVoteThreshold(motionId, ROOT_ROLE);
+      expect(threshold).to.eq.BN(2);
+    });
   });
 
   describe("Approving motions", async () => {
