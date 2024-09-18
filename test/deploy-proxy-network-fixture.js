@@ -3,6 +3,7 @@
 const EtherRouter = artifacts.require("EtherRouter");
 const EtherRouterCreate3 = artifacts.require("EtherRouterCreate3");
 const Resolver = artifacts.require("Resolver");
+const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
 
 const truffleContract = require("@truffle/contract");
 const createXABI = require("../lib/createx/artifacts/src/ICreateX.sol/ICreateX.json");
@@ -55,4 +56,11 @@ module.exports = async () => {
   const proxyColonyNetwork = await ProxyColonyNetwork.at(etherRouter.address);
 
   await proxyColonyNetwork.setProxyColonyResolverAddress(resolver.address);
+
+  // Set up the resolver for DomainTokenReceiver
+
+  resolver = await Resolver.new();
+  const domainTokenReceiverImplementation = await DomainTokenReceiver.new();
+  await setupEtherRouter("common", "DomainTokenReceiver", { DomainTokenReceiver: domainTokenReceiverImplementation.address }, resolver);
+  await proxyColonyNetwork.setDomainTokenReceiverResolver(resolver.address);
 };
