@@ -1369,6 +1369,24 @@ exports.deployCreateXIfNeeded = async function deployCreateXIfNeeded() {
   }
 };
 
+exports.evmChainIdToWormholeChainId = function evmChainIdToWormholeChainId(_chainId) {
+  let chainId = _chainId;
+  if (typeof chainId === "string") {
+    if (chainId.startsWith("0x")) {
+      chainId = parseInt(chainId, 16);
+    } else {
+      chainId = parseInt(chainId, 10);
+    }
+  }
+  if (chainId === FORKED_XDAI_CHAINID) {
+    return 10003;
+  }
+  if (chainId === FORKED_XDAI_CHAINID + 1) {
+    return 10002;
+  }
+  throw new Error("Unsupported chainId");
+};
+
 class TestAdapter {
   constructor() {
     this.outputs = [];

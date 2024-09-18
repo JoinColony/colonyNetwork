@@ -34,7 +34,7 @@ const WormholeBridgeForColony = artifacts.require("WormholeBridgeForColony");
 const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-contracts");
 
 const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION, CREATEX_ADDRESS } = require("../../helpers/constants");
-const { forwardTime, checkErrorRevertEthers, revert, snapshot } = require("../../helpers/test-helper");
+const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
 
@@ -136,19 +136,11 @@ contract("Cross-chain", (accounts) => {
     // and for chainId 256669101, we use 10002 (which is really sepolia).
     // This isn't ideal, but it's the best solution I have for now
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
-    if (homeChainId === "0xfd5c9ec") {
-      wormholeHomeChainId = 10003;
-    } else {
-      wormholeHomeChainId = 10002;
-    }
+    wormholeHomeChainId = evmChainIdToWormholeChainId(homeChainId);
 
     // const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
-    if (foreignChainId === "0xfd5c9ec") {
-      wormholeForeignChainId = 10003;
-    } else {
-      wormholeForeignChainId = 10002;
-    }
+    wormholeForeignChainId = evmChainIdToWormholeChainId(foreignChainId);
 
     // Deploy colonyNetwork to whichever chain truffle hasn't already deployed to.
     try {
