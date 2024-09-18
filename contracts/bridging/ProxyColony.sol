@@ -25,6 +25,7 @@ import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { Multicall } from "./../common/Multicall.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ProxyColonyNetwork } from "./ProxyColonyNetwork.sol";
+import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
 
 contract ProxyColony is DSAuth, Multicall, CallWithGuards {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
@@ -42,7 +43,7 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards {
     _;
   }
 
-  event ColonyFundsClaimed(address token, uint256 balance);
+  event DomainFundsClaimed(address token, uint256 _domainId, uint256 balance);
   event TransferMade(address token, address user, uint256 amount);
 
   // Public functions
@@ -58,14 +59,39 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards {
     tokenBalances[_token] = balance;
 
     bytes memory payload = abi.encodeWithSignature(
-      "recordClaimedFundsFromBridge(uint256,address,uint256)",
+      "recordClaimedFundsFromBridge(uint256,address,uint256,uint256)",
       block.chainid,
       _token,
+      1,
       difference
     );
     ProxyColonyNetwork(owner).bridgeMessage(payload);
 
-    emit ColonyFundsClaimed(_token, balance);
+    emit DomainFundsClaimed(_token, 1, balance);
+  }
+
+  function claimTokensForDomain(address _token, uint256 _domainId) public {
+    address domainTokenReceiverAddress = ProxyColonyNetwork(owner).checkDomainTokenReceiverDeployed(
+      _domainId
+    );
+
+    uint256 balance = (_token == address(0x0))
+      ? address(domainTokenReceiverAddress).balance
+      : ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
+
+    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+
+    bytes memory payload = abi.encodeWithSignature(
+      "recordClaimedFundsFromBridge(uint256,address,uint256,uint256)",
+      block.chainid,
+      _token,
+      _domainId,
+      balance
+    );
+
+    ProxyColonyNetwork(owner).bridgeMessage(payload);
+
+    emit DomainFundsClaimed(_token, _domainId, balance);
   }
 
   // TODO: secure this function

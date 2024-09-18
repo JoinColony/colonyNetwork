@@ -25,7 +25,7 @@ contract DomainTokenReceiver is DSAuth {
 
   address colony;
 
-  function getColonyAddress() public returns (address) {
+  function getColonyAddress() public view returns (address) {
     return colony;
   }
 

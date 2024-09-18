@@ -148,7 +148,7 @@ contract ColonyFunding is
       .checkDomainTokenReceiverDeployed(_domainId);
     uint256 fundingPotId = domains[_domainId].fundingPotId;
     // It's deployed, so check current balance of pot
-    uint256 balanceBefore = getFundingPotBalance(fundingPotId, _token);
+    // uint256 balanceBefore = getFundingPotBalance(fundingPotId, _token);
 
     uint256 claimAmount;
     uint256 thisBalanceBefore;
@@ -168,35 +168,91 @@ contract ColonyFunding is
     uint256 remainder = claimAmount - feeToPay;
     nonRewardPotsTotal[_token] += remainder;
 
-    fundingPots[0].balance[_token] += feeToPay;
-    fundingPots[fundingPotId].balance[_token] += remainder;
-
-    // Claim funds
-
-    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
-
     // Add to funding pot
 
     setFundingPotBalance(
       fundingPotId,
       block.chainid,
       _token,
-      getFundingPotBalance(fundingPotId, block.chainid, _token) + claimAmount
+      getFundingPotBalance(fundingPotId, block.chainid, _token) + remainder
     );
-    uint256 balanceAfter = getFundingPotBalance(fundingPotId, _token);
 
-    assert(balanceAfter - balanceBefore == remainder);
+    setFundingPotBalance(
+      0,
+      block.chainid,
+      _token,
+      getFundingPotBalance(0, block.chainid, _token) + feeToPay
+    );
 
-    uint256 thisBalanceAfter;
-    if (_token == address(0x0)) {
-      thisBalanceAfter = address(this).balance;
-    } else {
-      thisBalanceAfter = ERC20Extended(_token).balanceOf(address(this));
-    }
+    // Claim funds
 
-    assert(thisBalanceAfter - thisBalanceBefore == claimAmount);
+    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+
+    // uint256 balanceAfter = getFundingPotBalance(fundingPotId, _token);
+
+    // assert(balanceAfter - balanceBefore == remainder);
+
+    // uint256 thisBalanceAfter;
+    // if (_token == address(0x0)) {
+    //   thisBalanceAfter = address(this).balance;
+    // } else {
+    //   thisBalanceAfter = ERC20Extended(_token).balanceOf(address(this));
+    // }
+
+    // assert(thisBalanceAfter - thisBalanceBefore == claimAmount);
 
     emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
+  }
+
+  address constant LIFI_ADDRESS = 0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE;
+  function exchangeTokensViaLiFi(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bytes memory _txdata,
+    uint256 _value,
+    address _token,
+    uint256 _amount
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
+    // TODO: Colony Network fee
+    Domain storage domain = domains[_domainId];
+
+    // Check the domain has enough for what is
+    if (_token == address(0x0)) {
+      require(
+        _value + _amount <= getFundingPotBalance(domain.fundingPotId, _token),
+        "colony-insufficient-funds"
+      );
+    } else {
+      require(
+        _amount <= getFundingPotBalance(domain.fundingPotId, _token),
+        "colony-insufficient-funds"
+      );
+      require(
+        _value <= getFundingPotBalance(domain.fundingPotId, _token),
+        "colony-insufficient-funds"
+      );
+    }
+
+    // Deduct the amount from the domain
+    setFundingPotBalance(
+      domain.fundingPotId,
+      block.chainid,
+      _token,
+      getFundingPotBalance(domain.fundingPotId, block.chainid, _token) - _amount
+    );
+
+    setFundingPotBalance(
+      domain.fundingPotId,
+      block.chainid,
+      address(0x0),
+      getFundingPotBalance(domain.fundingPotId, block.chainid, _token) - _value
+    );
+
+    ERC20Extended(_token).approve(LIFI_ADDRESS, _amount);
+    (bool success, ) = LIFI_ADDRESS.call{ value: _value }(_txdata);
+
+    require(success, "colony-exchange-tokens-failed");
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
@@ -376,9 +432,11 @@ contract ColonyFunding is
   function recordClaimedFundsFromBridge(
     uint256 _chainId,
     address _token,
+    uint256 _domainId,
     uint256 _amount
   ) public stoppable {
-    fundingPots[1].chainBalances[_chainId][_token] += _amount;
+    Domain storage d = domains[_domainId];
+    fundingPots[d.fundingPotId].chainBalances[_chainId][_token] += _amount;
 
     emit ProxyColonyFundsClaimed(_chainId, _token, _amount);
   }
