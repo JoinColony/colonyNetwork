@@ -30,7 +30,9 @@ const IColony = artifacts.require("IColony");
 const ProxyColonyNetwork = artifacts.require("ProxyColonyNetwork");
 const ProxyColony = artifacts.require("ProxyColony");
 const MetaTxToken = artifacts.require("MetaTxToken");
+const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
 // const { assert } = require("console");
+
 const { setupBridging, setForeignBridgeData, setHomeBridgeData } = require("../../scripts/setup-bridging-contracts");
 
 const {
@@ -41,6 +43,7 @@ const {
   CREATEX_ADDRESS,
   NETWORK_ADDRESS,
   HASHZERO,
+  LIFI_ADDRESS,
 } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -1480,6 +1483,73 @@ contract("Cross-chain", (accounts) => {
       tx = await proxyColony.claimTokens(foreignToken.address);
       await tx.wait();
       await p2;
+    });
+
+    it("can exchange tokens in a domain on one chain for tokens in a domain on another chain via LiFi", async () => {
+      const homeTokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersHomeSigner);
+      const homeToken = await homeTokenFactory.deploy("Test Token", "TT", 18);
+
+      expect(homeToken.address).to.not.equal(foreignToken.address);
+      await (await homeToken.unlock()).wait();
+      await (await foreignToken.unlock()).wait();
+
+      await homeToken["mint(address,uint256)"](homeColony.address, ethers.utils.parseEther("100"));
+      await homeColony.claimColonyFunds(homeToken.address);
+      await homeColony["addDomain(uint256,uint256,uint256)"](1, UINT256_MAX_ETHERS, 1);
+      const domain1 = await homeColony.getDomain(1);
+      const domain2 = await homeColony.getDomain(2);
+
+      let tx = await homeColony["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        UINT256_MAX_ETHERS,
+        1,
+        UINT256_MAX_ETHERS,
+        0,
+        domain1.fundingPotId,
+        domain2.fundingPotId,
+        ethers.utils.parseEther("50"),
+        homeChainId,
+        homeToken.address,
+      );
+      await tx.wait();
+
+      const domain2ReceiverAddress = await homeColonyNetwork.getDomainTokenReceiverAddress(proxyColony.address, 2);
+
+      const lifi = new ethers.Contract(LIFI_ADDRESS, LiFiFacetProxyMock.abi, ethersHomeSigner);
+
+      const txdata = lifi.interface.encodeFunctionData("swapTokensMock(uint256,address,uint256,address,address,uint256)", [
+        homeChainId,
+        homeToken.address,
+        foreignChainId,
+        foreignToken.address,
+        domain2ReceiverAddress,
+        ethers.utils.parseEther("50"),
+      ]);
+
+      tx = await homeColony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, homeToken.address, ethers.utils.parseEther("50"));
+
+      const receipt = await tx.wait();
+      const swapEvent = receipt.events
+        .filter((e) => e.address === LIFI_ADDRESS)
+        .map((e) => lifi.interface.parseLog(e))
+        .filter((e) => e.name === "SwapTokens")[0];
+      expect(swapEvent).to.not.be.undefined;
+
+      // Okay, so we saw the SwapTokens event. Let's do vaguely what it said for the test,
+      // but in practise this would be the responsibility of whatever entity we've paid to do it
+      // through LiFi.
+      await foreignToken["mint(address,uint256)"](swapEvent.args._toAddress, swapEvent.args._amount); // Implicit 1:1 exchange rate
+
+      // Now claim the tokens on the foreign chain
+      const p = bridgeMonitor.getPromiseForNextBridgedTransaction();
+      tx = await proxyColony.claimTokensForDomain(foreignToken.address, 2, { gasLimit: 1000000 });
+      await tx.wait();
+      await p;
+
+      // See if bookkeeping was tracked correctly
+      const domain = await colony.getDomain(2);
+      const balance = await colony.getFundingPotProxyBalance(domain.fundingPotId, foreignChainId, foreignToken.address);
+      expect(balance.toHexString()).to.equal(ethers.utils.parseEther("50").toHexString());
     });
   });
 
