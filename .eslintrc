@@ -10,7 +10,7 @@
     "assert": true,
     "contract": true
   },
-  "settings" :{
+  "settings": {
     "import/resolver": {
       "typescript": {
         "project" : "./tsconfig.json"

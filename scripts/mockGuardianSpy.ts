@@ -12,7 +12,7 @@ import {
   SubscribeSignedVAARequest,
   SubscribeSignedVAAResponse,
 } from "../lib/wormhole/sdk/js-proto-node/src/spy/v1/spy";
-import { FORKED_XDAI_CHAINID } from "../helpers/constants";
+import { evmChainIdToWormholeChainId } from "../helpers/test-helper";
 
 // Random key
 
@@ -46,15 +46,15 @@ class MockGuardianSpy {
 
   foreignWormholeBridgeForColony: ethers.Contract;
 
-  skipCount: number = 0;
+  skipCount = 0;
 
   queue: QueueEntry[] = [];
 
   skipped: QueueEntry[] = [];
 
-  locked: boolean = false;
+  locked = false;
 
-  bridgingPromiseCount: number = 0;
+  bridgingPromiseCount = 0;
 
   resolveBridgingPromise: (tx: ethers.Transaction) => void;
 
@@ -204,14 +204,7 @@ class MockGuardianSpy {
       // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
       // and for chainId 256669101, we use 10002 (which is really sepolia).
       // This isn't ideal, but it's the best solution I have for now
-      let wormholeChainId;
-      if (chainId === FORKED_XDAI_CHAINID) {
-        wormholeChainId = 10003;
-      } else if (chainId === FORKED_XDAI_CHAINID + 1) {
-        wormholeChainId = 10002;
-      } else {
-        throw new Error("Unsupported chainId");
-      }
+      const wormholeChainId = evmChainIdToWormholeChainId(chainId);
 
       if (this.skipCount > 0) {
         this.skipped.push([this.foreignWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
@@ -228,14 +221,7 @@ class MockGuardianSpy {
       // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
       // and for chainId 256669101, we use 10002 (which is really sepolia).
       // This isn't ideal, but it's the best solution I have for now
-      let wormholeChainId;
-      if (chainId === FORKED_XDAI_CHAINID) {
-        wormholeChainId = 10003;
-      } else if (chainId === FORKED_XDAI_CHAINID + 1) {
-        wormholeChainId = 10002;
-      } else {
-        throw new Error("Unsupported chainId");
-      }
+      const wormholeChainId = evmChainIdToWormholeChainId(chainId);
 
       if (this.skipCount > 0) {
         this.skipped.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);

@@ -4,5 +4,5 @@ exports.DiscordAdapter = require("./adapters/discord");
 exports.SlackAdapter = require("./adapters/slack");
 exports.ConsoleAdapter = require("./adapters/console");
 exports.TruffleLoader = require("./TruffleLoader");
-exports.RetryProvider = require("./retryProvider");
+exports.RetryProvider = require("./RetryProvider");
 exports.ExtendedNonceManager = require("./ExtendedNonceManager");
