@@ -17,15 +17,10 @@ pragma solidity 0.8.27;
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-contract CallWithGuards {
-  function isContract(address addr) internal view returns (bool) {
-    uint256 size;
-    assembly {
-      size := extcodesize(addr)
-    }
-    return size > 0;
-  }
 
+import { IsContract } from "./IsContract.sol";
+
+contract CallWithGuards is IsContract {
   function callWithGuards(
     address _target,
     bytes memory _payload
