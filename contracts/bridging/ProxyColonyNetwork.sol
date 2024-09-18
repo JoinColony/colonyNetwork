@@ -29,23 +29,23 @@ import { EtherRouterCreate3 } from "./../common/EtherRouterCreate3.sol";
 import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouter } from "./../common/EtherRouter.sol";
 import { IColonyBridge } from "./IColonyBridge.sol";
+import { DomainReceiverManagement } from "./../common/DomainReceiverManagement.sol";
 
-contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards {
+contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards, DomainReceiverManagement {
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
-
-  address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
 
   address public colonyBridgeAddress;
   uint256 public homeChainId;
   address public proxyColonyResolverAddress;
   mapping(address => bool) public shellColonies;
+  address public domainTokenReceiverResolver;
 
   /// @notice Event logged when the colony network has data about a bridge contract set.
   /// @param bridgeAddress The address of the bridge contract that will be interacted with
   event BridgeSet(address bridgeAddress);
 
   modifier onlyColony() {
-    require(shellColonies[msgSender()], "colony-network-caller-must-be-proxy-colony");
+    require(msgSenderIsColony(), "colony-network-caller-must-be-proxy-colony");
     _;
   }
 
@@ -78,6 +78,18 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards {
 
   function setHomeChainId(uint256 _homeChainId) public auth {
     homeChainId = _homeChainId;
+  }
+
+  function getDomainTokenReceiverResolver() public view override returns (address) {
+    return domainTokenReceiverResolver;
+  }
+
+  function msgSenderIsColony() internal view override returns (bool) {
+    return shellColonies[msgSender()];
+  }
+
+  function setDomainTokenReceiverResolver(address _resolver) public auth {
+    domainTokenReceiverResolver = _resolver;
   }
 
   function createProxyColonyFromBridge(bytes32 _salt) public onlyColonyBridge {

@@ -455,6 +455,24 @@ Put colony network mining into recovery mode. Can only be called by user with re
 
 
 
+### ▸ `exchangeTokensViaLiFi(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _txdata, uint256 _value, address _token, uint256 _amount)`
+
+Exchange funds between two tokens, potentially between chains
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The child index in `_permissionDomainId` where we can find `_domainId`
+|_domainId|uint256|Id of the domain
+|_txdata|bytes|Transaction data for the exchange
+|_value|uint256|Value of the transaction
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amount|uint256|Amount of tokens to exchange
+
+
 ### ▸ `executeMetaTransaction(address userAddress, bytes memory payload, bytes32 sigR, bytes32 sigS, uint8 sigV):bytes returnData`
 
 Executes a metatransaction targeting this contract
@@ -1420,6 +1438,21 @@ Get the owner of the contract
 |Name|Type|Description|
 |---|---|---|
 |owner|address|The owner of the contract
+
+### ▸ `recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _domainId, uint256 _amount)`
+
+Used by the bridge to indicate that funds have been claimed on another chain.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|Chain id of the chain where the funds were claimed
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_domainId|uint256|Id of the domain where the funds were claimed
+|_amount|uint256|Amount of funds claimed
+
 
 ### ▸ `registerColonyLabel(string memory colonyName, string memory orbitdb)`
 
