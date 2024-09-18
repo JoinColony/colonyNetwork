@@ -941,11 +941,35 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     address _token
   ) external view returns (uint256);
 
+  /// @notice Exchange funds between two tokens, potentially between chains
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`
+  /// @param _domainId Id of the domain
+  /// @param _txdata Transaction data for the exchange
+  /// @param _value Value of the transaction
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Amount of tokens to exchange
+  function exchangeTokensViaLiFi(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bytes memory _txdata,
+    uint256 _value,
+    address _token,
+    uint256 _amount
+  ) external;
+
   /// @notice Used by the bridge to indicate that funds have been claimed on another chain.
   /// @param _chainId Chain id of the chain where the funds were claimed
   /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _domainId Id of the domain where the funds were claimed
   /// @param _amount Amount of funds claimed
-  function recordClaimedFundsFromBridge(uint256 _chainId, address _token, uint256 _amount) external;
+  function recordClaimedFundsFromBridge(
+    uint256 _chainId,
+    address _token,
+    uint256 _domainId,
+    uint256 _amount
+  ) external;
 
   /// @notice Get the balance of a funding pot for a specific token on a specific chain
   /// @param _potId Id of the funding pot

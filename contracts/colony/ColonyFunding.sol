@@ -249,6 +249,57 @@ contract ColonyFunding is
     return domainReputationTokenApprovals[_domainId][_token];
   }
 
+  address constant LIFI_ADDRESS = 0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE;
+  function exchangeTokensViaLiFi(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bytes memory _txdata,
+    uint256 _value,
+    address _token,
+    uint256 _amount
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
+    // TODO: Colony Network fee
+    Domain storage domain = domains[_domainId];
+
+    // Check the domain has enough for what is
+    if (_token == address(0x0)) {
+      require(
+        _value + _amount <= getFundingPotBalance(domain.fundingPotId, _token),
+        "colony-insufficient-funds"
+      );
+    } else {
+      require(
+        _amount <= getFundingPotBalance(domain.fundingPotId, _token),
+        "colony-insufficient-funds"
+      );
+      require(
+        _value <= getFundingPotBalance(domain.fundingPotId, _token),
+        "colony-insufficient-funds"
+      );
+    }
+
+    // Deduct the amount from the domain
+    setFundingPotBalance(
+      domain.fundingPotId,
+      block.chainid,
+      _token,
+      getFundingPotBalance(domain.fundingPotId, block.chainid, _token) - _amount
+    );
+
+    setFundingPotBalance(
+      domain.fundingPotId,
+      block.chainid,
+      address(0x0),
+      getFundingPotBalance(domain.fundingPotId, block.chainid, _token) - _value
+    );
+
+    ERC20Extended(_token).approve(LIFI_ADDRESS, _amount);
+    (bool success, ) = LIFI_ADDRESS.call{ value: _value }(_txdata);
+
+    require(success, "colony-exchange-tokens-failed");
+  }
+
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
     return nonRewardPotsTotal[_token];
   }
@@ -426,9 +477,11 @@ contract ColonyFunding is
   function recordClaimedFundsFromBridge(
     uint256 _chainId,
     address _token,
+    uint256 _domainId,
     uint256 _amount
   ) public stoppable {
-    fundingPots[1].chainBalances[_chainId][_token] += _amount;
+    Domain storage d = domains[_domainId];
+    fundingPots[d.fundingPotId].chainBalances[_chainId][_token] += _amount;
 
     emit ProxyColonyFundsClaimed(_chainId, _token, _amount);
   }
