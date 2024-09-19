@@ -85,12 +85,21 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
       summary.domainSkillId = getActionDomainSkillId(_action, colonyNetworkAddress, colonyAddress);
       summary.expenditureId = getExpenditureId(_action);
     } else if (permissionMask | ROOT_ROLES == ROOT_ROLES) {
-      summary.domainSkillId = IColony(colonyAddress).getDomain(1).skillId;
       if (permissionMask == bytes32(0)) {
+        // If no permissions are claimed to be required, we require root permissions
+        // This (should) avoid issues with actions that are public or gated via other means.
+        // For example, if one domain created and executed a motion to create an expenditure, without these sorts of guards
+        // another domain could (potentially) create a motion to edit the expenditure, as the Multisig contract would be
+        // the owner of the expenditure, which is the only permission check for some expenditure functions.
+        // If we limit any such potential function to only being allowed by root in the root domain, that is at least
+        // consistent, if potentially overly restrictive.
         summary.requiredPermissions = ONLY_ROOT_ROLE_MASK;
       } else {
         summary.requiredPermissions = permissionMask;
       }
+      // In either case, whether this is a root action or a 'public' action we are being cautious about, we say the action
+      //  takes place in the root domain
+      summary.domainSkillId = IColony(colonyAddress).getDomain(1).skillId;
     } else {
       summary.domainSkillId = getActionDomainSkillId(_action, colonyNetworkAddress, colonyAddress);
       // A special case for permission-setting functions, which can be called by root (in root) and
