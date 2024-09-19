@@ -1,67 +1,65 @@
-/* eslint-disable import/no-extraneous-dependencies */
-
 import { Server, ServerCredentials } from "@grpc/grpc-js";
+
+import { Contract, Signer, ContractReceipt, ethers } from "ethers";
 import { ServerWritableStreamImpl } from "@grpc/grpc-js/build/src/server-call";
-
-import { ethers } from "ethers";
-import { RetryProvider } from "../packages/package-utils";
-
 import {
   FilterEntry,
   SpyRPCServiceService,
   SubscribeSignedVAARequest,
   SubscribeSignedVAAResponse,
 } from "../lib/wormhole/sdk/js-proto-node/src/spy/v1/spy";
-import { evmChainIdToWormholeChainId } from "../helpers/test-helper";
 
+// const { RetryProvider } = require("../packages/package-utils");
+import { RetryProvider } from "../packages/package-utils";
 // Random key
 
+// eslint-disable-next-line import/no-unresolved
 import { abi as bridgeAbi } from "../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json";
+// eslint-disable-next-line import/no-unresolved
 import { abi as wormholeBridgeForColonyAbi } from "../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json";
 
 function ethereumAddressToWormholeAddress(address: string) {
   return ethers.utils.hexZeroPad(ethers.utils.hexStripZeros(ethers.utils.hexlify(address)), 32);
 }
 
-type QueueEntry = [ethers.Contract, string, number, number, string, number, number];
+type QueueEntry = [Contract, string, number, number, string, number, number];
 
 class MockGuardianSpy {
   homeRpc: string;
 
-  foreignRpc: string;
+  foreignRpcs: string[];
 
   homeBridgeAddress: string;
 
-  foreignBridgeAddress: string;
+  foreignBridgeAddresses: string[];
 
   homeColonyBridgeAddress: string;
 
-  foreignColonyBridgeAddress: string;
+  foreignColonyBridgeAddresses: string[];
 
-  homeBridge: ethers.Contract;
+  homeBridge: Contract;
 
-  foreignBridge: ethers.Contract;
+  foreignBridges: Contract[];
 
-  homeWormholeBridgeForColony: ethers.Contract;
+  homeWormholeBridgeForColony: Contract;
 
-  foreignWormholeBridgeForColony: ethers.Contract;
+  foreignWormholeBridgesForColony: Contract[];
 
-  skipCount = 0;
+  skipCount: number = 0;
 
   queue: QueueEntry[] = [];
 
   skipped: QueueEntry[] = [];
 
-  locked = false;
+  locked: boolean = false;
 
-  bridgingPromiseCount = 0;
+  bridgingPromiseCount: number = 0;
 
-  resolveBridgingPromise: (tx: ethers.Transaction) => void;
+  resolveBridgingPromise: (tx: ContractReceipt) => void;
 
-  signerHome: ethers.Signer;
+  signerHome: Signer;
 
-  signerForeign: ethers.Signer;
-
+  // signerForeign: any;
   server: Server;
 
   subscription: ServerWritableStreamImpl<SubscribeSignedVAARequest, SubscribeSignedVAAResponse>;
@@ -83,11 +81,11 @@ class MockGuardianSpy {
    */
   constructor(
     homeRpc: string,
-    foreignRpc: string,
+    foreignRpcs: string[],
     homeBridgeAddress: string,
-    foreignBridgeAddress: string,
+    foreignBridgeAddresses: string[],
     homeColonyBridgeAddress: string,
-    foreignColonyBridgeAddress: string,
+    foreignColonyBridgeAddresses: string[],
   ) {
     this.homeRpc = homeRpc;
     this.foreignRpcs = foreignRpcs;
@@ -124,7 +122,7 @@ class MockGuardianSpy {
     });
   }
 
-  static async getTransactionFromAddressWithNonce(provider: ethers.providers.Provider, address: string, nonce: number) {
+  static async getTransactionFromAddressWithNonce(provider: Contract["provider"], address: string, nonce: number) {
     const currentBlock = await provider.getBlockNumber();
     for (let i = currentBlock; i > 0; i -= 1) {
       const block = await provider.getBlock(i);
@@ -146,6 +144,7 @@ class MockGuardianSpy {
     const timestamp = Math.floor(Date.now() / 1000);
     const emitterChainId = chainId;
     const emitterAddress = ethereumAddressToWormholeAddress(sender);
+    // let signatures: any[] = [];
 
     // const vaa = await this.homeBridge.buildVM(
     //   version,
@@ -175,6 +174,7 @@ class MockGuardianSpy {
       "7777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007777";
 
     return vaaHeader + vaaBody.toString("hex").slice(2);
+    // return signatures.toString('hex').slice(2);
   }
 
   setupForeignBridges(foreignRpc, foreignBridgeAddress, foreignColonyBridgeAddress) {
@@ -186,7 +186,6 @@ class MockGuardianSpy {
     this.foreignWormholeBridgesForColony.push(foreignWormholeBridgeForColony);
   }
 
-
   async getColonyBridgeWithChainId(chainId) {
     if ((await this.homeBridge.provider.getNetwork()).chainId === chainId) {
       return this.homeBridge;
@@ -197,18 +196,20 @@ class MockGuardianSpy {
       }
     }
     throw new Error("No bridge found for chainId");
-  };
+  }
 
-  getWormholeChainId(chainId) {
+  static getWormholeChainId(chainId) {
     // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
     // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
     // and for chainId 256669101, we use 10002 (which is really sepolia).
     // This isn't ideal, but it's the best solution I have for now
     if (chainId === 265669100) {
       return 10003;
-    } else if (chainId === 265669101) {
+    }
+    if (chainId === 265669101) {
       return 10002;
-    } else if (chainId === 265669102) {
+    }
+    if (chainId === 265669102) {
       return 10005;
     }
     throw new Error("Unsupported chainId");
@@ -224,13 +225,8 @@ class MockGuardianSpy {
       }
     }
 
-    this.signerHome = new RetryProvider(this.homeRpc).getSigner();
-    this.signerForeign = new RetryProvider(this.foreignRpc).getSigner();
-
-    this.homeBridge = new ethers.Contract(this.homeBridgeAddress, bridgeAbi, this.signerHome);
-    this.foreignBridge = new ethers.Contract(this.foreignBridgeAddress, bridgeAbi, this.signerForeign);
-    this.homeWormholeBridgeForColony = new ethers.Contract(this.homeColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerHome);
-    this.foreignWormholeBridgeForColony = new ethers.Contract(this.foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerForeign);
+    this.foreignBridges = [];
+    this.foreignWormholeBridgesForColony = [];
 
     this.signerHome = new RetryProvider(this.homeRpc).getSigner();
     // this.signerForeign = new RetryProvider(this.foreignRpc).getSigner();
@@ -238,7 +234,7 @@ class MockGuardianSpy {
     // this.foreignBridge = new ethers.Contract(this.foreignBridgeAddress, bridgeAbi, this.signerForeign);
     this.homeWormholeBridgeForColony = new ethers.Contract(this.homeColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerHome);
     // this.foreignWormholeBridgeForColony = new ethers.Contract(this.foreignColonyBridgeAddress, wormholeBridgeForColonyAbi, this.signerForeign);
-    for (let i = 0; i < this.foreignRpcs.length; i++) {
+    for (let i = 0; i < this.foreignRpcs.length; i += 1) {
       this.setupForeignBridges(this.foreignRpcs[i], this.foreignBridgeAddresses[i], this.foreignColonyBridgeAddresses[i]);
     }
     this.skipCount = 0;
@@ -247,15 +243,12 @@ class MockGuardianSpy {
     this.skipped = [];
     this.locked = false;
     this.homeBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
-      const { chainId } = await this.signerHome.provider.getNetwork();
-      // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
-      // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
-      // and for chainId 256669101, we use 10002 (which is really sepolia).
-      // This isn't ideal, but it's the best solution I have for now
-      const wormholeChainId = evmChainIdToWormholeChainId(chainId);
+      try {
+        const { chainId } = await this.signerHome.provider.getNetwork();
+        const [destinationEvmChainId] = new ethers.utils.AbiCoder().decode(["uint256", "address", "bytes"], `${payload.toString("hex")}`);
 
         const destinationBridge = await this.getColonyBridgeWithChainId(destinationEvmChainId.toNumber());
-        const wormholeChainId = this.getWormholeChainId(chainId);
+        const wormholeChainId = MockGuardianSpy.getWormholeChainId(chainId);
 
         if (this.skipCount > 0) {
           this.skipped.push([destinationBridge, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
@@ -270,19 +263,16 @@ class MockGuardianSpy {
       }
     });
 
-    this.foreignBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
-      const { chainId } = await this.signerForeign.provider.getNetwork();
-      // Due to limitations, for local testing, our wormhole chainIDs have to be 'real' wormhole chainids.
-      // So I've decreed that for chainId 256669100, we use 10003 (which is really arbitrum sepolia)
-      // and for chainId 256669101, we use 10002 (which is really sepolia).
-      // This isn't ideal, but it's the best solution I have for now
-      const wormholeChainId = evmChainIdToWormholeChainId(chainId);
+    for (const foreignBridge of this.foreignBridges) {
+      foreignBridge.on("LogMessagePublished", async (sender, sequence, nonce, payload, consistencyLevel) => {
+        const { chainId } = await foreignBridge.provider.getNetwork();
+        const [destinationEvmChainId] = new ethers.utils.AbiCoder().decode(["uint256", "address", "bytes"], `${payload.toString("hex")}`);
 
         if (destinationEvmChainId.toNumber() !== 265669100) {
           throw new Error("Unsupported chainId - change assumptions in mockGuardianSpy.ts");
         }
 
-        const wormholeChainId = this.getWormholeChainId(chainId);
+        const wormholeChainId = MockGuardianSpy.getWormholeChainId(chainId);
 
         if (this.skipCount > 0) {
           this.skipped.push([this.homeWormholeBridgeForColony, sender, sequence, nonce, payload, consistencyLevel, wormholeChainId]);
@@ -328,12 +318,15 @@ class MockGuardianSpy {
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
 
       this.subscription.write({ vaaBytes: Buffer.from(vaa.slice(2), "hex") });
+
       let newRelayerNonce = -1;
       while (newRelayerNonce <= relayerNonce) {
         newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
       }
 
       tx = await MockGuardianSpy.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
+    } else {
+      console.log("not sending, didnt pass filter");
     }
 
     this.bridgingPromiseCount -= 1;
@@ -366,7 +359,6 @@ class MockGuardianSpy {
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
 
       this.subscription.write({ vaaBytes: Buffer.from(vaa.slice(2), "hex") });
-
       let newRelayerNonce = -1;
       while (newRelayerNonce <= relayerNonce) {
         newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
