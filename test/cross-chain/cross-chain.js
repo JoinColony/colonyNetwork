@@ -48,6 +48,7 @@ const {
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
+const { getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const UINT256_MAX_ETHERS = ethers.BigNumber.from(2).pow(256).sub(1);
 
@@ -606,6 +607,34 @@ contract("Cross-chain", (accounts) => {
 
       const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
+    });
+
+    it("Can claim tokens received on foreign chain via metatransaction", async () => {
+      const tokenAmount = ethers.utils.parseEther("100");
+
+      let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
+      await tx.wait();
+
+      const metatransactionNonceBefore = await proxyColony.getMetatransactionNonce(accounts[1]);
+
+      // Claim on the foreign chain via metatransaction
+      const p = guardianSpy.getPromiseForNextBridgedTransaction();
+
+      const payload = proxyColony.interface.encodeFunctionData("claimTokens", [foreignToken.address]);
+
+      const { r, s, v } = await getMetaTransactionParameters(payload, accounts[1], proxyColony.address, foreignChainId);
+
+      tx = await proxyColony.executeMetaTransaction(accounts[1], payload, r, s, v, { from: accounts[0] });
+      await tx.wait();
+      await p;
+
+      // Check bookkeeping on the home chain
+      const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
+
+      // Check nonce incremented
+      const metatransactionNonceAfter = await proxyColony.getMetatransactionNonce(accounts[1]);
+      expect(metatransactionNonceAfter.toHexString()).to.equal(metatransactionNonceBefore.add(1).toHexString());
     });
 
     it("Can track native tokens received on foreign chains", async () => {

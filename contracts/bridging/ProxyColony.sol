@@ -26,8 +26,9 @@ import { Multicall } from "./../common/Multicall.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ProxyColonyNetwork } from "./ProxyColonyNetwork.sol";
 import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
-contract ProxyColony is DSAuth, Multicall, CallWithGuards {
+contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
@@ -130,5 +131,16 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards {
         revert(abi.decode(returndata, (string)));
       }
     }
+  }
+
+  // Overloading functions from BasicMetaTransaction
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+    return metatransactionNonces[_user];
+  }
+
+  // NB if implementing this functionality in a contract with recovery mode,
+  // you MUST prevent the metatransaction nonces from being editable with recovery mode.
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user] += 1;
   }
 }
