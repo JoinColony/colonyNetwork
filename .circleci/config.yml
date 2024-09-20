@@ -329,6 +329,7 @@ jobs:
           paths:
             - coverage-chainid-100
             - coverage-chainid-42161
+            - coverage-chainid-1
   coverage-test-bridging:
     <<: *job_common
     resource_class: large
