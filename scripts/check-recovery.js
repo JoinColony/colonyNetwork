@@ -50,6 +50,8 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/Multicall.sol",
       "contracts/common/Resolver.sol",
       "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
+      "contracts/common/DomainReceiverManagement.sol", // Is used, but in multiple places and has its own implementation for now
+      "contracts/common/DomainTokenReceiver.sol",
       "contracts/ens/ENS.sol",
       "contracts/ens/ENSRegistry.sol",
       "contracts/extensions/IColonyExtension.sol",
@@ -92,6 +94,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/NoLimitSubdomains.sol",
       "contracts/testHelpers/GasGuzzler.sol",
+      "contracts/testHelpers/LiFiFacetProxyMock.sol",
       "contracts/testHelpers/TasksPayments.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/FunctionsNotAvailableOnColony.sol",
