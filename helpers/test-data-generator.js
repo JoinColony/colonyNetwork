@@ -313,12 +313,15 @@ exports.setupColony = async function setupColony(colonyNetwork, tokenAddress, ve
   return colony;
 };
 
-exports.getMetaTransactionParameters = async function getMetaTransactionParameters(txData, userAddress, targetAddress) {
+exports.getMetaTransactionParameters = async function getMetaTransactionParameters(txData, userAddress, targetAddress, _chainId) {
   const contract = await BasicMetaTransaction.at(targetAddress);
   const nonce = await contract.getMetatransactionNonce(userAddress);
   // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,
   // we dance around the houses.
-  const chainId = await getChainId();
+  let chainId = _chainId;
+  if (!chainId) {
+    chainId = await getChainId();
+  }
 
   // Sign data
   const msg = web3.utils.soliditySha3(
