@@ -18,7 +18,6 @@ const {
   ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
-<<<<<<< HEAD
 const {
   fundColonyWithTokens,
   setupRandomColony,
@@ -28,26 +27,6 @@ const {
 } = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
-<<<<<<< HEAD
-||||||| parent of d7aa9686f (Allow funds to be sent directly to domains)
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
-=======
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit } = require("../../helpers/test-helper");
-const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
->>>>>>> d7aa9686f (Allow funds to be sent directly to domains)
-||||||| parent of c39f5a928 (Respect reward pots for domain-level claims; add event)
-=======
-||||||| parent of 632eb6ca (Respect reward pots for domain-level claims; add event)
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent } = require("../../helpers/test-helper");
-=======
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent } = require("../../helpers/test-helper");
-const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
->>>>>>> 632eb6ca (Respect reward pots for domain-level claims; add event)
->>>>>>> c39f5a928 (Respect reward pots for domain-level claims; add event)
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -56,15 +35,10 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
-<<<<<<< HEAD
 const Resolver = artifacts.require("Resolver");
 const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
 const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
-||||||| parent of d7aa9686f (Allow funds to be sent directly to domains)
-=======
-const Resolver = artifacts.require("Resolver");
-const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
->>>>>>> d7aa9686f (Allow funds to be sent directly to domains)
+const ToggleableToken = artifacts.require("ToggleableToken");
 
 contract("Colony Funding", (accounts) => {
   const MANAGER = accounts[0];
@@ -888,8 +862,65 @@ contract("Colony Funding", (accounts) => {
       const resolverAfter = await receiverAsEtherRouter.resolver();
       expect(resolverAfter).to.not.equal(resolver);
       expect(resolverAfter).to.equal(newResolver.address);
-      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
-      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
+    });
+
+    it("should not be able to claim funds for a domain that does not exist", async () => {
+      await checkErrorRevert(colony.claimDomainFunds(ethers.constants.AddressZero, 2), "colony-funding-domain-does-not-exist");
+    });
+
+    it("only a colony can call checkDomainTokenReceiverDeployed on Network", async () => {
+      await checkErrorRevert(colonyNetwork.checkDomainTokenReceiverDeployed(2), "colony-caller-must-be-colony");
+    });
+
+    it("only the owner (which should be colonyNetwork) can call setColonyAddress on DomainTokenReceiver", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
+
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      const receiverAsEtherRouter = await EtherRouter.at(receiverAddress);
+      const receiver = await DomainTokenReceiver.at(receiverAddress);
+      const owner = await receiverAsEtherRouter.owner();
+      expect(owner).to.equal(colonyNetwork.address);
+
+      await checkErrorRevert(receiver.setColonyAddress(colony.address), "ds-auth-unauthorized");
+      await receiver.setColonyAddress.estimateGas(colony.address, { from: colonyNetwork.address });
+    });
+
+    it("If transfer fails from receiver, then the funds are not claimed", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      const toggleableToken = await ToggleableToken.new(200);
+      await toggleableToken.mint(receiverAddress, 100);
+
+      await toggleableToken.toggleLock();
+
+      // Try to claim the funds
+      await checkErrorRevert(colony.claimDomainFunds(toggleableToken.address, 2), "domain-token-receiver-transfer-failed");
+    });
+
+    it("If the receiver resolver is updated, then the resolver is updated at the next claim", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      // Send 100 wei
+      await otherToken.mint(receiverAddress, 100);
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const receiverAsEtherRouter = await EtherRouter.at(receiverAddress);
+      const resolver = await receiverAsEtherRouter.resolver();
+
+      // Update the resolver
+      const newResolver = await Resolver.new();
+      const domainTokenReceiver = await DomainTokenReceiver.new();
+
+      await setupDomainTokenReceiverResolver(colonyNetwork, domainTokenReceiver, newResolver);
+
+      await otherToken.mint(receiverAddress, 50);
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const resolverAfter = await receiverAsEtherRouter.resolver();
+      expect(resolverAfter).to.not.equal(resolver);
+      expect(resolverAfter).to.equal(newResolver.address);
     });
   });
 });
