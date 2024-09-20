@@ -49,6 +49,19 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
   });
 
+  it("makeSingleArbitraryTransaction can only be called by the colony on itself", async () => {
+    const action = await encodeTxData(token, "mint", [WAD]);
+    await checkErrorRevert(colony.makeSingleArbitraryTransaction(token.address, action, { from: USER0 }), "colony-not-self");
+  });
+
+  it("makeArbitraryTransactions must be called with the same number of addresses and actions", async () => {
+    const action = await encodeTxData(token, "mint", [WAD]);
+    await checkErrorRevert(
+      colony.makeArbitraryTransactions([token.address, token.address], [action], true),
+      "colony-targets-and-actions-length-mismatch",
+    );
+  });
+
   it("should be able to make multiple arbitrary transactions", async () => {
     const action = await encodeTxData(token, "mint", [WAD]);
     const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
