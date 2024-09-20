@@ -32,11 +32,13 @@ abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContra
 
   function getDomainTokenReceiverResolver() public view virtual returns (address);
   function msgSenderIsColony() internal view virtual returns (bool);
+  function isStopped() internal view virtual returns (bool);
 
   function checkDomainTokenReceiverDeployed(
     uint256 _domainId
   ) public returns (address domainTokenReceiverAddress) {
     require(msgSenderIsColony(), "colony-domain-receiver-management-not-colony");
+    require(!isStopped(), "colony-domain-receiver-management-stopped");
 
     // Calculate the address the domain should be receiving funds at
     domainTokenReceiverAddress = getDomainTokenReceiverAddress(msgSender(), _domainId);
