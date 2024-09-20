@@ -413,6 +413,30 @@ contract("Colony", (accounts) => {
 
       await checkErrorRevert(colony.executeMetaTransaction(USER1, txData, r, s, v, { from: USER1 }), "metatransaction-signer-signature-mismatch");
     });
+
+    it("not vulnerable to metatransactions / multicall vulnerability", async () => {
+      // https://blog.solidityscan.com/unveiling-the-erc-2771context-and-multicall-vulnerability-f96ffa5b499f
+      // Create an expenditure as a user
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+
+      // Should not be able to multicall and cancel it as another user, pretending to be the first user
+      const expenditureId = await colony.getExpenditureCount();
+      let txData1 = await colony.contract.methods.cancelExpenditure(expenditureId).encodeABI();
+
+      const METATRANSACTION_FLAG = ethers.utils.id("METATRANSACTION");
+
+      txData1 += METATRANSACTION_FLAG.slice(2) + USER0.slice(2);
+
+      const txData2 = await colony.contract.methods.multicall([txData1]).encodeABI();
+
+      const { r, s, v } = await getMetaTransactionParameters(txData2, USER1, colony.address);
+
+      // User 1 can't cancel the expenditure directly
+      await checkErrorRevert(colony.cancelExpenditure(expenditureId, { from: USER1 }), "colony-expenditure-not-owner");
+
+      // And can't via metatransaction using specially constructed malicious txdata
+      await checkErrorRevert(colony.executeMetaTransaction(USER1, txData2, r, s, v, { from: USER1 }), "colony-metatx-function-call-unsuccessful");
+    });
   });
 
   describe("when executing a multicall transaction", () => {
