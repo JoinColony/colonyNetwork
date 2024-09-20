@@ -346,6 +346,10 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
 >>>>>>> 125a5a92 (First pass at cross-chain domain-level token swaps)
   }
 
+  function isStopped() internal view override returns (bool) {
+    return recoveryMode;
+  }
+
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
