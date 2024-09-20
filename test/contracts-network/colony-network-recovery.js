@@ -204,6 +204,7 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.bridgeMessage(1, "0x00000000"), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.bridgeMessageToNetwork(1, "0x00000000"), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.createProxyColony(1, HASHZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.checkDomainTokenReceiverDeployed(1), "colony-domain-receiver-management-stopped");
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();

@@ -927,6 +927,17 @@ contract("Cross-chain", (accounts) => {
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
 
+    it("root permissions are required for makeProxyArbitraryTransactions", async () => {
+      const p = guardianSpy.getPromiseForNextBridgedTransaction();
+      let tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000"]);
+      await tx.wait();
+      await p;
+
+      await colony.setUserRoles(1, UINT256_MAX_ETHERS, accounts[0], 1, ethers.utils.hexZeroPad("0x00", 32));
+      tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000"], { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
+    });
+
     it("arbitrary transactions on the foreign chain must go to contracts", async () => {
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
 
@@ -1076,6 +1087,13 @@ contract("Cross-chain", (accounts) => {
     it("a non-proxy-colony address cannot call bridgeMessage", async () => {
       const tx = await remoteColonyNetwork.bridgeMessage(HASHZERO, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-network-caller-must-be-proxy-colony");
+    });
+  });
+
+  describe("ColonyNetwork functions are secure", async () => {
+    it("a non-colony address cannot call bridgeMessage", async () => {
+      const tx = await homeColonyNetwork.bridgeMessage(1, HASHZERO, { gasLimit: 1000000 });
+      await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-colony");
     });
   });
 
