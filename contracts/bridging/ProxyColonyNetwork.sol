@@ -92,6 +92,10 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards, DomainReceiver
     domainTokenReceiverResolver = _resolver;
   }
 
+  function isStopped() internal pure override returns (bool) {
+    return false;
+  }
+
   function createProxyColonyFromBridge(bytes32 _salt) public onlyColonyBridge {
     EtherRouter etherRouter = EtherRouter(
       payable(
