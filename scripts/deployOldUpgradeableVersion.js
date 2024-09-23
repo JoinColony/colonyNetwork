@@ -8,9 +8,15 @@ const contract = require("@truffle/contract");
 const { web3GetCode, setStorageSlot } = require("../helpers/test-helper");
 const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE, ADDRESS_ZERO } = require("../helpers/constants");
 
-const colonyDeployed = {};
-const colonyNetworkDeployed = {};
-const deployedResolverAddresses = {};
+let colonyDeployed = {};
+let colonyNetworkDeployed = {};
+let deployedResolverAddresses = {};
+
+module.exports.resetAlreadyDeployedVersionTracking = async () => {
+  colonyDeployed = {};
+  colonyNetworkDeployed = {};
+  deployedResolverAddresses = {};
+};
 
 module.exports.deployOldExtensionVersion = async (contractName, interfaceName, implementationNames, versionTag, colonyNetwork) => {
   if (versionTag.indexOf(" ") !== -1) {
@@ -116,14 +122,12 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
     colonyDeployed[interfaceName] = {};
   }
   if (colonyDeployed[interfaceName][versionTag]) {
-    // Already deployed... if truffle's not snapshotted it away. See if there's any code there.
+    // Already deployed... note that if a snapshot revert is made without calling `resetAlreadyDeployedVersionTracking`,
+    // then this will break.
     const { resolverAddress } = colonyDeployed[interfaceName][versionTag];
-    const code = await web3GetCode(resolverAddress);
-    if (code !== "0x") {
-      // Must also check it's registered
-      await module.exports.registerOldColonyVersion(resolverAddress, colonyNetwork);
-      return colonyDeployed[interfaceName][versionTag];
-    }
+    // Must also check it's registered
+    await module.exports.registerOldColonyVersion(resolverAddress, colonyNetwork);
+    return colonyDeployed[interfaceName][versionTag];
   }
 
   try {

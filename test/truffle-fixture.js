@@ -66,6 +66,7 @@ const ethers = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 const truffleContract = require("@truffle/contract");
 const createXABI = require("../lib/createx/artifacts/src/ICreateX.sol/ICreateX.json");
+const { resetAlreadyDeployedVersionTracking } = require("../scripts/deployOldUpgradeableVersion");
 
 let postFixtureSnapshotId;
 
@@ -83,6 +84,7 @@ const { getChainId, hardhatRevert, hardhatSnapshot, deployCreateXIfNeeded, isXda
 module.exports = async () => {
   if (postFixtureSnapshotId) {
     await hardhatRevert(hre.network.provider, postFixtureSnapshotId);
+    await resetAlreadyDeployedVersionTracking();
     postFixtureSnapshotId = await hardhatSnapshot(hre.network.provider);
     return;
   }
