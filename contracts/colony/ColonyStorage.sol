@@ -223,7 +223,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     uint256 permissionDomainId,
     uint256 childSkillIndex,
     uint256 childDomainId
-  ) internal view returns (bool) {
+  ) public view returns (bool) {
     if (permissionDomainId == childDomainId) {
       return childSkillIndex == UINT256_MAX;
     } else {

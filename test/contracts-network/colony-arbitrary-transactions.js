@@ -17,6 +17,7 @@ const CoinMachine = artifacts.require("CoinMachine");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
+const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 
 contract("Colony Arbitrary Transactions", (accounts) => {
   let colony;
@@ -110,6 +111,11 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
   it("should not be able to make arbitrary transactions to a user address", async () => {
     await checkErrorRevert(colony.makeArbitraryTransaction(accounts[0], "0x0"), "colony-to-must-be-contract");
+  });
+
+  it("should not be able to make single arbitrary transactions directly", async () => {
+    const colonyArbitraryTransactions = await ColonyArbitraryTransaction.at(colony.address);
+    await checkErrorRevert(colonyArbitraryTransactions.makeSingleArbitraryTransaction(colony.address, "0x0"), "colony-not-self");
   });
 
   it("should not be able to make arbitrary transactions to network or token locking", async () => {

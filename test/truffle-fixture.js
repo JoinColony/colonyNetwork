@@ -51,6 +51,7 @@ const VotingReputationMisalignedRecovery = artifacts.require("VotingReputationMi
 const TokenSupplier = artifacts.require("TokenSupplier");
 const Whitelist = artifacts.require("Whitelist");
 const StagedExpenditure = artifacts.require("StagedExpenditure");
+const MultisigPermissions = artifacts.require("MultisigPermissions");
 
 // We `require` the ReputationMiningCycle object to make sure
 // it is injected in the `artifacts` variables during test
@@ -417,4 +418,5 @@ async function setupExtensions() {
   ]);
   await addExtension("extensions", "Whitelist", "Whitelist", [Whitelist]);
   await addExtension("extensions", "StagedExpenditure", "StagedExpenditure", [StagedExpenditure]);
+  await addExtension("extensions", "MultisigPermissions", "MultisigPermissions", [MultisigPermissions]);
 }

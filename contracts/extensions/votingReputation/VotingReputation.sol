@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { VotingReputationStorage } from "./VotingReputationStorage.sol";
 import { IColony, ColonyDataTypes } from "./../../colony/IColony.sol";
+import { ActionSummary } from "./../../common/GetActionSummary.sol";
 
 contract VotingReputation is VotingReputationStorage {
   // Public
@@ -79,13 +80,6 @@ contract VotingReputation is VotingReputationStorage {
 
     ActionSummary memory actionSummary = getActionSummary(_action, _altTarget);
 
-    require(actionSummary.sig != OLD_MOVE_FUNDS, "voting-rep-disallowed-function");
-    require(
-      actionSummary.domainSkillId != type(uint256).max &&
-        actionSummary.expenditureId != type(uint256).max,
-      "voting-rep-invalid-multicall"
-    );
-
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
 
     if (actionSummary.sig == NO_ACTION) {
@@ -137,88 +131,6 @@ contract VotingReputation is VotingReputationStorage {
     }
 
     emit MotionCreated(motionCount, msgSender(), _domainId);
-  }
-
-  function submitVote(
-    uint256 _motionId,
-    bytes32 _voteSecret,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  ) public {
-    Motion storage motion = motions[_motionId];
-    require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
-    require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
-
-    uint256 userRep = checkReputation(
-      motion.rootHash,
-      motion.skillId,
-      msgSender(),
-      _key,
-      _value,
-      _branchMask,
-      _siblings
-    );
-
-    // Count reputation if first submission
-    if (voteSecrets[_motionId][msgSender()] == bytes32(0)) {
-      motion.repSubmitted += userRep;
-    }
-
-    voteSecrets[_motionId][msgSender()] = _voteSecret;
-
-    emit MotionVoteSubmitted(_motionId, msgSender());
-
-    if (motion.repSubmitted >= wmul(motion.skillRep, maxVoteFraction)) {
-      motion.events[SUBMIT_END] = uint64(block.timestamp);
-      motion.events[REVEAL_END] = uint64(block.timestamp + revealPeriod);
-
-      emit MotionEventSet(_motionId, SUBMIT_END);
-    }
-  }
-
-  function revealVote(
-    uint256 _motionId,
-    bytes32 _salt,
-    uint256 _vote,
-    bytes memory _key,
-    bytes memory _value,
-    uint256 _branchMask,
-    bytes32[] memory _siblings
-  ) public {
-    Motion storage motion = motions[_motionId];
-    require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
-    require(_vote <= 1, "voting-rep-bad-vote");
-
-    uint256 userRep = checkReputation(
-      motion.rootHash,
-      motion.skillId,
-      msgSender(),
-      _key,
-      _value,
-      _branchMask,
-      _siblings
-    );
-    motion.votes[_vote] += userRep;
-
-    bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
-    require(voteSecret == keccak256(abi.encodePacked(_salt, _vote)), "voting-rep-secret-no-match");
-    delete voteSecrets[_motionId][msgSender()];
-
-    uint256 voterReward = getVoterReward(_motionId, userRep);
-    motion.paidVoterComp += voterReward;
-
-    emit MotionVoteRevealed(_motionId, msgSender(), _vote);
-
-    // See if reputation revealed matches reputation submitted
-    if ((motion.votes[NAY] + motion.votes[YAY]) == motion.repSubmitted) {
-      motion.events[REVEAL_END] = uint64(block.timestamp);
-
-      emit MotionEventSet(_motionId, REVEAL_END);
-    }
-
-    tokenLocking.transfer(token, voterReward, msgSender(), true);
   }
 
   function escalateMotion(
@@ -302,7 +214,10 @@ contract VotingReputation is VotingReputationStorage {
     // Perform vote power checks
     if (_motionId > motionCountV10) {
       // New functionality for versions 10 and above
-      if (isExpenditureSig(motion.sig) && getTarget(motion.altTarget) == address(colony)) {
+      if (
+        isExpenditureSig(motion.sig) &&
+        getTarget(motion.altTarget, address(colony)) == address(colony)
+      ) {
         uint256 expenditureId = unlockExpenditure(_motionId);
         uint256 votePower = (motion.votes[NAY] + motion.votes[YAY]) > 0
           ? motion.votes[YAY]
@@ -316,8 +231,12 @@ contract VotingReputation is VotingReputationStorage {
       }
     } else {
       // Backwards compatibility for versions 9 and below
+
       ActionSummary memory actionSummary = getActionSummary(motion.action, motion.altTarget);
-      if (isExpenditureSig(actionSummary.sig) && getTarget(motion.altTarget) == address(colony)) {
+      if (
+        isExpenditureSig(actionSummary.sig) &&
+        getTarget(motion.altTarget, address(colony)) == address(colony)
+      ) {
         if (getSig(motion.action) != MULTICALL) {
           unlockV9Expenditure(_motionId);
         }
@@ -432,16 +351,6 @@ contract VotingReputation is VotingReputationStorage {
     bytes32 _slotSignature
   ) public view returns (uint256 _vote) {
     return expenditurePastVotes_DEPRECATED[_slotSignature];
-  }
-
-  function getVoterReward(
-    uint256 _motionId,
-    uint256 _voterRep
-  ) public view returns (uint256 _reward) {
-    Motion storage motion = motions[_motionId];
-    uint256 fractionUserReputation = wdiv(_voterRep, motion.repSubmitted);
-    uint256 totalStake = motion.stakes[YAY] + motion.stakes[NAY];
-    return wmul(wmul(fractionUserReputation, totalStake), voterRewardFraction);
   }
 
   function getVoterRewardRange(

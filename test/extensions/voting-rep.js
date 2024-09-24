@@ -35,6 +35,7 @@ const {
   getTokenArgs,
   getBlockTime,
   upgradeExtensionOnceThenToLatest,
+  checkErrorRevertEstimateGas,
 } = require("../../helpers/test-helper");
 
 const { setupRandomColony, getMetaTransactionParameters, fundColonyWithTokens } = require("../../helpers/test-data-generator");
@@ -119,7 +120,7 @@ contract("Voting Reputation", (accounts) => {
   const NAY = 0;
   const YAY = 1;
 
-  // const NULL = 0;
+  const NULL = 0;
   const STAKING = 1;
   const SUBMIT = 2;
   // const REVEAL = 3;
@@ -134,6 +135,8 @@ contract("Voting Reputation", (accounts) => {
   const WAD32 = bn2bytes32(WAD);
   const HALF = WAD.divn(2);
   const YEAR = SECONDS_PER_DAY * 365;
+
+  const NO_ACTION = "0x12345678";
 
   before(async () => {
     const cnAddress = (await EtherRouter.deployed()).address;
@@ -593,7 +596,10 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can update the motion states correctly", async () => {
-      let motionState = await voting.getMotionState(motionId);
+      let motionState = await voting.getMotionState(100);
+      expect(motionState).to.eq.BN(NULL);
+
+      motionState = await voting.getMotionState(motionId);
       expect(motionState).to.eq.BN(STAKING);
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1738,9 +1744,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("motions with the special NO_ACTION signature do not require (and cannot be) executed, and go straight to that state", async function () {
-      const action = "0x12345678";
-
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, NO_ACTION, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
 
       await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
@@ -1754,13 +1758,11 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("motions with the special NO_ACTION signature can be created in subdomains", async function () {
-      const action = "0x12345678";
-
       const user0Key2 = makeReputationKey(colony.address, domain2.skillId, USER0);
       const user0Value2 = makeReputationValue(WAD.divn(3), 9);
       const [user0Mask2, user0Siblings2] = reputationTree.getProof(user0Key2);
 
-      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, action, domain2Key, domain2Value, domain2Mask, domain2Siblings);
+      await voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, NO_ACTION, domain2Key, domain2Value, domain2Mask, domain2Siblings);
       motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 2, WAD, { from: USER0 });
@@ -1775,7 +1777,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can correctly summarize a single action", async () => {
-      const NO_ACTION = "0x12345678";
       const SET_EXPENDITURE_STATE = soliditySha3("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)").slice(0, 10);
 
       await colony.makeExpenditure(1, 1, 3);
@@ -1788,7 +1789,7 @@ contract("Voting Reputation", (accounts) => {
       summary = await voting.getActionSummary(NO_ACTION, ADDRESS_ZERO);
       expect(summary.sig).to.equal(NO_ACTION);
       expect(summary.expenditureId).to.be.zero;
-      expect(summary.domainSkillId).to.be.zero;
+      // expect(summary.domainSkillId).to.be.zero; // We leave this undefined
 
       // Expenditure actions (domain 3)
       action = await encodeTxData(colony, "setExpenditureState", [1, 1, expenditureId, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
@@ -1813,8 +1814,9 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can correctly summarize a multicall action", async () => {
-      const NO_ACTION = "0x12345678";
-      const OLD_MOVE_FUNDS = soliditySha3("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)").slice(0, 10);
+      const OLD_MOVE_FUNDS_SIG = soliditySha3("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)").slice(0, 10);
+      // NB This is still not a full call, but it's long enough that it has a permissions signature
+      const OLD_MOVE_FUNDS_CALL = `${OLD_MOVE_FUNDS_SIG}${"0".repeat(63)}1${bn2bytes32(UINT256_MAX).slice(2)}`;
       const SET_EXPENDITURE_STATE = soliditySha3("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)").slice(0, 10);
       const SET_EXPENDITURE_PAYOUT = soliditySha3("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)").slice(0, 10);
 
@@ -1837,15 +1839,17 @@ contract("Voting Reputation", (accounts) => {
       // Domain actions (domain 3)
       const action7 = await encodeTxData(colony, "setExpenditureMetadata", [1, 1, 3, "metadata"]);
       // Domain actions (domain 1)
-      const action8 = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
+      // const action8 = await encodeTxData(colony, "addDomain", [1, UINT256_MAX, 1]);
       // Expenditure actions (domain 1)
       const action9 = await encodeTxData(colony, "setExpenditureState", [1, UINT256_MAX, expenditure1Id, 25, [true], [bn2bytes32(new BN(3))], WAD32]);
-      const action10 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditure1Id, 0, token.address, WAD]);
+      // const action10 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditure1Id, 0, token.address, WAD]);
       // A different expenditure (domain 3)
       const action11 = await encodeTxData(colony, "setExpenditurePayout", [1, 1, expenditure3Id, 0, token.address, WAD]);
       // To an alternative target
       const action12 = await encodeTxData(tokenLocking, "obligateStake", [USER0, WAD, token.address]);
       const action13 = await encodeTxData(tokenLocking, "obligateStake", [USER1, WAD, token.address]);
+
+      const action14 = await encodeTxData(colony, "moveFundsBetweenPots", [1, UINT256_MAX, 1, 1, 1, 1, 1, UINT256_MAX, token.address]);
 
       let multicall;
       let summary;
@@ -1858,12 +1862,12 @@ contract("Voting Reputation", (accounts) => {
       expect(summary.domainSkillId).to.eq.BN(domain3.skillId);
 
       // Blacklisted function
-      multicall = await encodeTxData(colony, "multicall", [[OLD_MOVE_FUNDS, action2]]);
+      multicall = await encodeTxData(colony, "multicall", [[OLD_MOVE_FUNDS_CALL, action14]]);
       summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.sig).to.equal(OLD_MOVE_FUNDS);
+      await checkErrorRevertEstimateGas(voting.getActionSummary.estimateGas(multicall, ADDRESS_ZERO), "colony-action-summary-forbidden-sig");
 
       // Special NO_ACTION
-      multicall = await encodeTxData(colony, "multicall", [[action1, NO_ACTION]]);
+      multicall = await encodeTxData(colony, "multicall", [[action9, NO_ACTION]]);
       summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
       expect(summary.sig).to.equal(NO_ACTION);
 
@@ -1888,43 +1892,38 @@ contract("Voting Reputation", (accounts) => {
       expect(summary.expenditureId).to.eq.BN(expenditure2Id);
       expect(summary.domainSkillId).to.eq.BN(domain3.skillId);
 
-      // Expenditure & root actions, domain 1
-      multicall = await encodeTxData(colony, "multicall", [[action3, action9, action10]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.sig).to.equal(SET_EXPENDITURE_PAYOUT);
-      expect(summary.expenditureId).to.eq.BN(expenditure1Id);
-      expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
-
-      // Domain & root actions, domain 1
-      multicall = await encodeTxData(colony, "multicall", [[action3, action8]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.sig).to.equal(soliditySha3("addDomain(uint256,uint256,uint256)").slice(0, 10));
-      expect(summary.expenditureId).to.be.zero;
-      expect(summary.domainSkillId).to.eq.BN(domain1.skillId);
-
       // To an alternative target without `getCapabilityRoles` fails
       multicall = await encodeTxData(colony, "multicall", [[action12, action13]]);
       await checkErrorRevert(voting.getActionSummary(multicall, tokenLocking.address));
 
-      // Different domain actions (error, implemented as UINT256_MAX)
+      // Different domain actions (error)
       // Root (1) & domain (2) actions
       multicall = await encodeTxData(colony, "multicall", [[action3, action5]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
+      await checkErrorRevertEstimateGas(
+        voting.getActionSummary.estimateGas(multicall, ADDRESS_ZERO),
+        "colony-action-summary-inconsistent-domain-skill-id",
+      );
 
       // Expenditure (3) and domain (2) actions
       multicall = await encodeTxData(colony, "multicall", [[action1, action5]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
+      await checkErrorRevertEstimateGas(
+        voting.getActionSummary.estimateGas(multicall, ADDRESS_ZERO),
+        "colony-action-summary-inconsistent-domain-skill-id",
+      );
+
       // Same case, but reverse the multicall order
       multicall = await encodeTxData(colony, "multicall", [[action5, action1]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.domainSkillId).to.eq.BN(UINT256_MAX);
+      await checkErrorRevertEstimateGas(
+        voting.getActionSummary.estimateGas(multicall, ADDRESS_ZERO),
+        "colony-action-summary-inconsistent-domain-skill-id",
+      );
 
       // Two different expenditures in (3)
       multicall = await encodeTxData(colony, "multicall", [[action1, action11]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      expect(summary.expenditureId).to.eq.BN(UINT256_MAX);
+      await checkErrorRevertEstimateGas(
+        voting.getActionSummary.estimateGas(multicall, ADDRESS_ZERO),
+        "colony-action-summary-inconsistent-expenditure-id",
+      );
     });
 
     it("can take a multicall root action", async () => {
@@ -2057,12 +2056,12 @@ contract("Voting Reputation", (accounts) => {
 
       await checkErrorRevert(
         voting.createMotion(2, UINT256_MAX, ADDRESS_ZERO, multicall, domain2Key, domain2Value, domain2Mask, domain2Siblings),
-        "voting-rep-invalid-multicall",
+        "colony-action-summary-inconsistent-expenditure-id",
       );
     });
 
     it("multicall actions involving NO_ACTION cannot be finalizable", async () => {
-      const multicall = await encodeTxData(colony, "multicall", [["0x12345678"]]); // NO_ACTION inside the multicall
+      const multicall = await encodeTxData(colony, "multicall", [[NO_ACTION]]); // NO_ACTION inside the multicall
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
@@ -3099,8 +3098,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can create a v9 NO_ACTION motion, upgrade, and then finalize the motion", async () => {
-      const action = "0x12345678";
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, NO_ACTION, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
 
       await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
@@ -3135,7 +3133,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot let an invalid motion involving multicalling NO_ACTION be finalized", async () => {
-      const multicall = await encodeTxData(colony, "multicall", [["0x12345678"]]);
+      const multicall = await encodeTxData(colony, "multicall", [[NO_ACTION]]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       const motionId = await voting.getMotionCount();
@@ -3152,7 +3150,7 @@ contract("Voting Reputation", (accounts) => {
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
     });
 
-    it("can let any (allowed) multicall motion be finalized after upgrade", async () => {
+    it("will not finalize invalid multicall motion after upgrade", async () => {
       await colony.makeExpenditure(1, UINT256_MAX, 1);
       const expenditureId1 = await colony.getExpenditureCount();
       await colony.makeExpenditure(1, 0, 2);
@@ -3172,6 +3170,29 @@ contract("Voting Reputation", (accounts) => {
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await upgradeFromV9ToLatest(colony);
+      await voting.getMotionState.estimateGas(motionId);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
+    });
+
+    it("can let any (allowed) multicall motion be finalized after upgrade", async () => {
+      await colony.makeExpenditure(1, UINT256_MAX, 1);
+      const expenditureId1 = await colony.getExpenditureCount();
+
+      const action1 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId1, 0, token.address, WAD]);
+      const action2 = await encodeTxData(colony, "setExpenditurePayout", [1, UINT256_MAX, expenditureId1, 0, token.address, WAD]);
+      const multicall = await encodeTxData(colony, "multicall", [[action1, action2]]);
+
+      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
+      const motionId = await voting.getMotionCount();
+
+      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
+      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
+
+      await forwardTime(STAKE_PERIOD, this);
+      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
+
+      await upgradeFromV9ToLatest(colony);
+      await voting.getMotionState.estimateGas(motionId);
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await voting.finalizeMotion(motionId);

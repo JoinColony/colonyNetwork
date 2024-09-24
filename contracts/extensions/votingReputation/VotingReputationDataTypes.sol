@@ -17,6 +17,7 @@
 */
 
 pragma solidity 0.8.25;
+
 import { ColonyDataTypes } from "./../../colony/ColonyDataTypes.sol";
 
 // prettier-ignore
@@ -43,12 +44,6 @@ interface VotingReputationDataTypes {
     address altTarget;
     bytes4 sig;
     bytes action;
-  }
-
-  struct ActionSummary {
-    bytes4 sig;
-    uint256 domainSkillId;
-    uint256 expenditureId;
   }
 
   // Events
