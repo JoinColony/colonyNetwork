@@ -270,20 +270,12 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // when it was created via a cross-chain call (to an as-yet unwritten function).
     bytes32 salt = getColonyCreationSalt();
     // EtherRouter etherRouter = new EtherRouter();
-    EtherRouter etherRouter = EtherRouter(
-      payable(
-        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
-          salt,
-          type(EtherRouterCreate3).creationCode,
-          abi.encodeWithSignature("setOwner(address)", (address(this))),
-          ICreateX.Values(0, 0)
-        )
-      )
-    );
+    address colonyAddress = deployEtherRouterViaCreateX(salt);
 
-    IColony colony = IColony(address(etherRouter));
+    IColony colony = IColony(colonyAddress);
 
     address resolverForColonyVersion = colonyVersionResolver[_version]; // ignore-swc-107
+    EtherRouter etherRouter = EtherRouter(payable(colonyAddress));
     etherRouter.setResolver(resolverForColonyVersion); // ignore-swc-113
 
     // Creating new instance of colony's authority
@@ -325,5 +317,19 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // Colony will not have owner
     DSAuth dsauth = DSAuth(_colonyAddress);
     dsauth.setOwner(address(0x0));
+  }
+
+  function deployEtherRouterViaCreateX(bytes32 _salt) internal returns (address) {
+    EtherRouter etherRouter = EtherRouter(
+      payable(
+        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
+          _salt,
+          type(EtherRouterCreate3).creationCode,
+          abi.encodeWithSignature("setOwner(address)", (address(this))),
+          ICreateX.Values(0, 0)
+        )
+      )
+    );
+    return address(etherRouter);
   }
 }
