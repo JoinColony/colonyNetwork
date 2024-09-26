@@ -1553,6 +1553,18 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
+### ▸ `setOwner(address owner_)`
+
+Set the owner of the contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|owner_|address|The new owner of the contract
+
+
 ### ▸ `setRecoveryRole(address _user)`
 
 Set new colony recovery role. Can be called by root.

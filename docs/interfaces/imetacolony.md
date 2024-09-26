@@ -1616,6 +1616,18 @@ Set the Colony Network fee inverse amount.
 |_feeInverse|uint256|Nonzero amount for the fee inverse
 
 
+### ▸ `setOwner(address owner_)`
+
+Set the owner of the contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|owner_|address|The new owner of the contract
+
+
 ### ▸ `setPayoutWhitelist(address _token, bool _status)`
 
 Set a token's status in the payout whitelist on the Colony Network
