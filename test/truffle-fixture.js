@@ -82,7 +82,7 @@ const {
   setupDomainTokenReceiverResolver,
 } = require("../helpers/upgradable-contracts");
 const { FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX, CREATEX_ADDRESS } = require("../helpers/constants");
-const { getChainId, hardhatRevert, hardhatSnapshot, deployCreateXIfNeeded, isXdai } = require("../helpers/test-helper");
+const { getChainId, hardhatRevert, hardhatSnapshot, idempotentDeployCreateX, isXdai } = require("../helpers/test-helper");
 
 module.exports = async () => {
   if (postFixtureSnapshotId) {
@@ -145,7 +145,7 @@ async function deployContracts() {
   const reputationMiningCycleBinarySearch = await ReputationMiningCycleBinarySearch.new();
   ReputationMiningCycleBinarySearch.setAsDeployed(reputationMiningCycleBinarySearch);
 
-  await deployCreateXIfNeeded();
+  await idempotentDeployCreateX();
 }
 
 async function setupColonyNetwork() {

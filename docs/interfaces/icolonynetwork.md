@@ -209,24 +209,6 @@ Calculate raw miner weight in WADs.
 |---|---|---|
 |_minerWeight|uint256|The weight of miner reward
 
-### ▸ `checkDomainTokenReceiverDeployed(uint256 _domainId):address domainTokenReceiverAddress`
-
-Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly for a particular domain.
-
-*Note: Should only be called by a colony.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_domainId|uint256|The domainId of the domain to check the deployment for
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|domainTokenReceiverAddress|address|The address of the DomainTokenReceiver
-
 ### ▸ `claimMiningReward(address _recipient)`
 
 Used by a user to claim any mining rewards due to them. This will place them in their balance or pending balance, as appropriate.
@@ -970,6 +952,24 @@ Get token locking contract address.
 |Name|Type|Description|
 |---|---|---|
 |_lockingAddress|address|Token locking contract address
+
+### ▸ `idempotentDeployDomainTokenReceiver(uint256 _domainId):address domainTokenReceiverAddress`
+
+Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly for a particular domain.
+
+*Note: Should only be called by a colony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|The domainId of the domain to check the deployment for
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainTokenReceiverAddress|address|The address of the DomainTokenReceiver
 
 ### ▸ `initialise(address _resolver, uint256 _version)`
 
