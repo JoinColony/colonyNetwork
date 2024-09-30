@@ -5,8 +5,8 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { WAD, INT128_MAX, ADDRESS_ZERO, SECONDS_PER_DAY, SECONDS_PER_HOUR } = require("../../helpers/constants");
-const { checkErrorRevert, web3GetCode, getBlockTime, forwardTime } = require("../../helpers/test-helper");
+const { WAD, INT128_MAX, ADDRESS_ZERO, ADDRESS_FULL, SECONDS_PER_DAY, SECONDS_PER_HOUR } = require("../../helpers/constants");
+const { checkErrorRevert, getBlockTime, forwardTime } = require("../../helpers/test-helper");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
@@ -34,7 +34,9 @@ contract("Reputation Bootstrapper", (accounts) => {
   const PIN2 = 2;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const extension = await ReputationBootstrapper.new();
@@ -72,21 +74,29 @@ contract("Reputation Bootstrapper", (accounts) => {
       await reputationBootstrapper.deprecate(true);
       await reputationBootstrapper.uninstall();
 
-      const code = await web3GetCode(reputationBootstrapper.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await reputationBootstrapper.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(REPUTATION_BOOTSTRAPPER, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(REPUTATION_BOOTSTRAPPER, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(
         colony.installExtension(REPUTATION_BOOTSTRAPPER, version, { from: USER0 }),
-        "colony-network-extension-already-installed"
+        "colony-network-extension-already-installed",
       );
       await checkErrorRevert(colony.uninstallExtension(REPUTATION_BOOTSTRAPPER, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(REPUTATION_BOOTSTRAPPER, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
@@ -133,7 +143,7 @@ contract("Reputation Bootstrapper", (accounts) => {
     it("cannot setup reputation amounts with invalid values", async () => {
       await checkErrorRevert(
         reputationBootstrapper.setGrants([true], [soliditySha3(PIN1)], [INT128_MAX.addn(1)]),
-        "reputation-bootstrapper-invalid-amount"
+        "reputation-bootstrapper-invalid-amount",
       );
     });
 
@@ -243,7 +253,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       // Can't add new grants until funds are there
       await checkErrorRevert(
         reputationBootstrapper.setGrants([true], [soliditySha3(PIN2)], [WAD.muln(2)]),
-        "reputation-bootstrapper-insufficient-balance"
+        "reputation-bootstrapper-insufficient-balance",
       );
 
       await token.mint(reputationBootstrapper.address, WAD.muln(2));
@@ -279,7 +289,7 @@ contract("Reputation Bootstrapper", (accounts) => {
       // Cannot set to 3 WAD
       await checkErrorRevert(
         reputationBootstrapper.setGrants([true], [soliditySha3(PIN1)], [WAD.muln(3)]),
-        "reputation-bootstrapper-insufficient-balance"
+        "reputation-bootstrapper-insufficient-balance",
       );
 
       // Cannot add a second grant

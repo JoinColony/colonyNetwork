@@ -1,12 +1,11 @@
-pragma solidity 0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.25;
 pragma experimental "ABIEncoderV2";
 
-import {Bits} from "./Bits.sol";
-
+import { Bits } from "./Bits.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 library Data {
-
   struct Label {
     bytes32 data;
     uint length;
@@ -29,17 +28,19 @@ library Data {
 
   // Returns a label containing the longest common prefix of `self` and `label`,
   // and a label consisting of the remaining part of `label`.
-  function splitCommonPrefix(Label memory self, Label memory other) internal pure returns (
-    Label memory prefix,
-    Label memory labelSuffix
-  )
-  {
+  function splitCommonPrefix(
+    Label memory self,
+    Label memory other
+  ) internal pure returns (Label memory prefix, Label memory labelSuffix) {
     return splitAt(self, commonPrefix(self, other));
   }
 
   // Splits the label at the given position and returns prefix and suffix,
   // i.e. 'prefix.length == pos' and 'prefix.data . suffix.data == l.data'.
-  function splitAt(Label memory self, uint pos) internal pure returns (Label memory prefix, Label memory suffix) {
+  function splitAt(
+    Label memory self,
+    uint pos
+  ) internal pure returns (Label memory prefix, Label memory suffix) {
     assert(pos <= self.length && pos <= 256);
     prefix.length = pos;
     if (pos == 0) {
@@ -54,7 +55,9 @@ library Data {
 
   // Removes the first bit from a label and returns the bit and a
   // label containing the rest of the label (shifted to the left).
-  function chopFirstBit(Label memory self) internal pure returns (uint firstBit, Label memory tail) {
+  function chopFirstBit(
+    Label memory self
+  ) internal pure returns (uint firstBit, Label memory tail) {
     require(self.length > 0, "colony-patricia-tree-zero-self-length");
     return (uint(self.data >> 255), Label(self.data << 1, self.length - 1)); // ignore-swc-101
   }
@@ -79,7 +82,12 @@ library Data {
   }
 
   // Private functions
-  function insertAtEdge(Tree storage self, Edge memory e, Label memory key, bytes32 value) private returns (Edge memory) {
+  function insertAtEdge(
+    Tree storage self,
+    Edge memory e,
+    Label memory key,
+    bytes32 value
+  ) private returns (Edge memory) {
     assert(key.length >= e.label.length);
     Label memory prefix;
     Label memory suffix;
@@ -90,7 +98,8 @@ library Data {
     if (suffix.length == 0) {
       // Full match with the key, update operation
       newNodeHash = value;
-    } else if (prefix.length >= e.label.length) {  // NOTE: how could a common prefix be longer than either label?
+    } else if (prefix.length >= e.label.length) {
+      // NOTE: how could a common prefix be longer than either label?
       // Partial match, just follow the path
       Node memory n = self.nodes[e.node];
       (head, tail) = chopFirstBit(suffix);
@@ -133,7 +142,7 @@ library Data {
     if (length == 0) {
       return 0;
     }
-    uint diff = uint(self.data ^ other.data) & ~uint(0) << 256 - length; // TODO Mask should not be needed.
+    uint diff = uint(self.data ^ other.data) & (~uint(0) << (256 - length)); // TODO Mask should not be needed.
     if (diff == 0) {
       return length;
     }

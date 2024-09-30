@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,17 +16,17 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../common/BasicMetaTransaction.sol";
-import "./ColonyExtension.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 // ignore-file-swc-108
 
-
 contract Whitelist is ColonyExtension, BasicMetaTransaction {
-
   //  Events
 
   event UserApproved(address indexed _user, bool _status);
@@ -36,21 +37,20 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   bool useApprovals;
   string agreementHash;
 
-  mapping (address => bool) approvals;
-  mapping (address => bool) signatures;
+  mapping(address => bool) approvals;
+  mapping(address => bool) signatures;
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  /// @param _user The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
-
 
   // Modifiers
 
@@ -59,47 +59,30 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
     _;
   }
 
-  // Public
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("Whitelist");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
-    return 4;
+  function version() public pure override returns (uint256 _version) {
+    return 7;
   }
 
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
+  // Public
 
   /// @notice Initialise the extension
   /// @param _useApprovals Whether or not to require administrative approval
   /// @param _agreementHash An agreement hash (such as an IPFS URI)
   function initialise(bool _useApprovals, string memory _agreementHash) public {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "whitelist-unauthorised");
+    require(
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      "whitelist-unauthorised"
+    );
     require(!useApprovals && bytes(agreementHash).length == 0, "whitelist-already-initialised");
     require(_useApprovals || bytes(_agreementHash).length > 0, "whitelist-bad-initialisation");
 
@@ -114,7 +97,10 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   /// @param _status The whitelist status to set
   function approveUsers(address[] memory _users, bool _status) public initialised notDeprecated {
     require(useApprovals, "whitelist-no-approvals");
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Administration), "whitelist-unauthorised");
+    require(
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Administration),
+      "whitelist-unauthorised"
+    );
 
     for (uint256 i; i < _users.length; i++) {
       approvals[_users[i]] = _status;
@@ -128,8 +114,7 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   function signAgreement(string memory _agreementHash) public initialised notDeprecated {
     require(bytes(agreementHash).length > 0, "whitelist-no-agreement");
     require(
-      keccak256(abi.encodePacked(agreementHash)) ==
-      keccak256(abi.encodePacked(_agreementHash)),
+      keccak256(abi.encodePacked(agreementHash)) == keccak256(abi.encodePacked(_agreementHash)),
       "whitelist-bad-signature"
     );
 
@@ -141,12 +126,10 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   /// @notice Get the user's overall whitelist status
   /// @param _user The address of the user
   /// @return _approved Is `true` when the user is approved
-  function isApproved(address _user) public initialised view returns (bool _approved) {
-    return (
-      !deprecated &&
+  function isApproved(address _user) public view initialised returns (bool _approved) {
+    return (!deprecated &&
       (!useApprovals || approvals[_user]) &&
-      (bytes(agreementHash).length == 0 || signatures[_user])
-    );
+      (bytes(agreementHash).length == 0 || signatures[_user]));
   }
 
   /// @notice Get the useApprovals boolean

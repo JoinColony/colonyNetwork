@@ -67,7 +67,7 @@ function correctAuthModifier(functionDef) {
 walkSync("./contracts/").forEach((contractName) => {
   // Only contracts using domain-level permissions need to be checked, i.e. those that implement
   // functions in IColony.sol
-  // Basically only Colony.sol, ColonyFunding.sol, ColonyTask.sol, ColonyExpenditure.sol (?)
+  // Basically only Colony.sol, ColonyFunding.sol, ColonyExpenditure.sol (?)
   if (
     [
       "contracts/colony/ColonyAuthority.sol",
@@ -84,6 +84,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/CommonAuthority.sol",
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
+      "contracts/common/EtherRouterCreate3.sol",
       "contracts/common/IRecovery.sol",
       "contracts/common/Resolver.sol",
       "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
@@ -102,7 +103,9 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/reputationMiningCycle/ReputationMiningCycle.sol",
       "contracts/reputationMiningCycle/ReputationMiningCycleRespond.sol",
       "contracts/testHelpers/ContractEditing.sol",
+      "contracts/testHelpers/TasksPayments.sol",
       "contracts/testHelpers/ToggleableToken.sol",
+      "contracts/testHelpers/ERC20Like.sol",
       "contracts/tokenLocking/ITokenLocking.sol",
       "contracts/tokenLocking/TokenLocking.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
@@ -128,6 +131,11 @@ walkSync("./contracts/").forEach((contractName) => {
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
 
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
+  if (!contract) {
+    return;
+  }
+
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes
     .filter((child) => child.type === "FunctionDefinition" && child.name !== "")
@@ -140,7 +148,7 @@ walkSync("./contracts/").forEach((contractName) => {
           "doesn't appear to have the right auth declaration for function ",
           functionDef.name,
           ". Errors: ",
-          res.errors
+          res.errors,
         );
         process.exit(1);
       }

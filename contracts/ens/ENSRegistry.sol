@@ -1,10 +1,10 @@
-pragma solidity 0.8.20;
+// SPDX-License-Identifier: BSD-2-Clause
+pragma solidity 0.8.25;
 
-import "./ENS.sol";
+import { ENS } from "./ENS.sol";
 
 // ignore-file-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
 // (It's really the abi.encodepacked in setSubnodeOwner.
-
 
 contract ENSRegistry is ENS {
   struct Record {
@@ -13,12 +13,15 @@ contract ENSRegistry is ENS {
     uint64 ttl;
   }
 
-  mapping (bytes32 => Record) internal records;
+  mapping(bytes32 => Record) internal records;
 
   // Permits modifications only by the owner of the specified node, or if unowned.
   modifier onlyOwner(bytes32 node) {
     address currentOwner = records[node].owner;
-    require(currentOwner == address(0x0) || currentOwner == msg.sender, "colony-ens-non-owner-access");
+    require(
+      currentOwner == address(0x0) || currentOwner == msg.sender,
+      "colony-ens-non-owner-access"
+    );
     _;
   }
 
@@ -39,7 +42,11 @@ contract ENSRegistry is ENS {
   /// @param node The parent node.
   /// @param label The hash of the label specifying the subnode.
   /// @param owner The address of the new owner.
-  function setSubnodeOwner(bytes32 node, bytes32 label, address owner) public override onlyOwner(node) {
+  function setSubnodeOwner(
+    bytes32 node,
+    bytes32 label,
+    address owner
+  ) public override onlyOwner(node) {
     require(records[node].owner != address(0x0), "unowned-node");
     bytes32 subnode = keccak256(abi.encodePacked(node, label));
     emit NewOwner(node, label, owner);
@@ -82,5 +89,4 @@ contract ENSRegistry is ENS {
   function ttl(bytes32 node) public view override returns (uint64) {
     return records[node].ttl;
   }
-
 }

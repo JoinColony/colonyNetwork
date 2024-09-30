@@ -1,5 +1,4 @@
-/* eslint-disable no-underscore-dangle */
-/* global artifacts */
+/* global artifacts, hre */
 
 const path = require("path");
 const chai = require("chai");
@@ -7,15 +6,15 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 const axios = require("axios");
-const { TruffleLoader } = require("../../packages/package-utils");
+const { TruffleLoader, RetryProvider } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
-const { UINT256_MAX } = require("../../helpers/constants");
+const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
+const { web3GetTransaction, currentBlockTime } = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
 
 const { expect } = chai;
-const ganacheAccounts = require("../../ganache-accounts.json"); // eslint-disable-line import/no-unresolved
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -28,11 +27,11 @@ const GasGuzzler = artifacts.require("GasGuzzler");
 
 chai.use(bnChai(web3.utils.BN));
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-const provider = new ethers.providers.JsonRpcProvider(`http://127.0.0.1:${realProviderPort}`);
+const realProviderPort = 8545;
+const provider = new RetryProvider(`http://127.0.0.1:${realProviderPort}`);
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 contract("Metatransaction broadcaster", (accounts) => {
@@ -46,8 +45,12 @@ contract("Metatransaction broadcaster", (accounts) => {
   let broadcaster;
   let metaTxToken;
 
+  let privateKey;
+
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
@@ -55,11 +58,8 @@ contract("Metatransaction broadcaster", (accounts) => {
     metaTxToken = await MetaTxToken.new("Test", "TEST", 18);
     colony = await setupColony(colonyNetwork, metaTxToken.address);
 
-    broadcaster = new MetatransactionBroadcaster({
-      privateKey: `${ganacheAccounts.private_keys[accounts[0].toLowerCase()]}`,
-      loader,
-      provider,
-    });
+    privateKey = hre.config.networks.hardhat.accounts[0].privateKey;
+    broadcaster = new MetatransactionBroadcaster({ privateKey, loader, provider });
     await broadcaster.initialise(colonyNetwork.address);
   });
 
@@ -90,7 +90,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const coinMachineImplementation = await CoinMachine.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
+      await setupEtherRouter("extensions", "CoinMachine", { CoinMachine: coinMachineImplementation.address }, resolver);
 
       const versionSig = await resolver.stringToSig("version()");
       const target = await resolver.lookup(versionSig);
@@ -199,6 +199,56 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       expect(valid).to.be.equal(true);
     });
+
+    it("transactions to set token authority are accepted immediately after colony creation", async function () {
+      let txData = await colonyNetwork.contract.methods.deployTokenViaNetwork("TST", "TST", 18).encodeABI();
+      let { r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address);
+      let tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAddress } = tx.receipt.logs.filter((l) => l.event === "TokenDeployed")[0].args;
+
+      txData = await colonyNetwork.contract.methods["createColony(address,uint256,string,string)"](tokenAddress, CURR_VERSION, "", "").encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { colonyAddress } = tx.receipt.logs.filter((l) => l.event === "ColonyAdded")[0].args;
+
+      txData = await colonyNetwork.contract.methods.deployTokenAuthority(tokenAddress, colonyAddress, []).encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAuthorityAddress } = tx.receipt.logs.filter((l) => l.event === "TokenAuthorityDeployed")[0].args;
+
+      const token = await MetaTxToken.at(tokenAddress);
+      txData = await token.contract.methods.setAuthority(tokenAuthorityAddress).encodeABI();
+      const valid = await broadcaster.isTokenTransactionValid(token.address, txData, USER1);
+      expect(valid).to.be.equal(true);
+    });
+
+    it("transactions to set token authority are accepted _only_ immediately after colony creation", async function () {
+      let txData = await colonyNetwork.contract.methods.deployTokenViaNetwork("TST", "TST", 18).encodeABI();
+      let { r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address);
+      let tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAddress } = tx.receipt.logs.filter((l) => l.event === "TokenDeployed")[0].args;
+
+      txData = await colonyNetwork.contract.methods["createColony(address,uint256,string,string)"](tokenAddress, CURR_VERSION, "", "").encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { colonyAddress } = tx.receipt.logs.filter((l) => l.event === "ColonyAdded")[0].args;
+
+      txData = await colonyNetwork.contract.methods.deployTokenAuthority(tokenAddress, colonyAddress, []).encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      tx = await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+      const { tokenAuthorityAddress } = tx.receipt.logs.filter((l) => l.event === "TokenAuthorityDeployed")[0].args;
+
+      // Do another metatransaction
+      txData = await colonyNetwork.contract.methods["createColony(address,uint256,string,string)"](tokenAddress, CURR_VERSION, "", "").encodeABI();
+      ({ r, s, v } = await getMetaTransactionParameters(txData, USER1, colonyNetwork.address));
+      await colonyNetwork.executeMetaTransaction(USER1, txData, r, s, v, { from: USER0 });
+
+      // Now we won't pay to set the authority
+      const token = await MetaTxToken.at(tokenAddress);
+      txData = await token.contract.methods.setAuthority(tokenAuthorityAddress).encodeABI();
+      const valid = await broadcaster.isTokenTransactionValid(token.address, txData, USER1);
+      expect(valid).to.be.equal(false);
+    });
   });
 
   describe("should correctly respond to POSTs to the /broadcast endpoint", function () {
@@ -242,6 +292,9 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount1).to.eq.BN(1200000);
       const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
       expect(balanceAccount2).to.eq.BN(300000);
+
+      const tx = await web3GetTransaction(txHash);
+      expect(tx.gas).to.be.lt.BN(500000);
     });
 
     it("valid transactions broadcast near-simultaneously are still mined", async function () {
@@ -435,9 +488,8 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("a valid EIP712 transaction is broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
-
-      const { r, s, v } = await getPermitParameters(USER0, colony.address, 1, deadline, metaTxToken.address);
+      const deadline = (await currentBlockTime()) + 3600;
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, colony.address, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 
@@ -477,9 +529,8 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("an EIP712 transaction with an invalid spender is not broadcast and mined", async function () {
       await metaTxToken.mint(USER0, 1500000, { from: USER0 });
 
-      const deadline = Math.floor(Date.now() / 1000) + 3600;
-
-      const { r, s, v } = await getPermitParameters(USER0, USER1, 1, deadline, metaTxToken.address);
+      const deadline = (await currentBlockTime()) + 3600;
+      const { r, s, v } = await getPermitParameters(USER0, privateKey, USER1, 1, deadline, metaTxToken.address);
 
       // Send to endpoint
 
@@ -710,7 +761,7 @@ contract("Metatransaction broadcaster", (accounts) => {
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
-            reason: "VM Exception while processing transaction: revert colony-metatx-function-call-unsuccessful",
+            reason: "Error: VM Exception while processing transaction: reverted with reason string 'colony-metatx-function-call-unsuccessful'",
           },
         });
       }
@@ -730,7 +781,7 @@ contract("Metatransaction broadcaster", (accounts) => {
     it("a transaction that would be valid but is too expensive is rejected and not mined", async function () {
       const extensionImplementation = await GasGuzzler.new();
       const resolver = await Resolver.new();
-      await setupEtherRouter("GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
+      await setupEtherRouter("testHelpers", "GasGuzzler", { GasGuzzler: extensionImplementation.address }, resolver);
       const TEST_EXTENSION = soliditySha3("GasGuzzler");
 
       const mcAddress = await colonyNetwork.getMetaColony();
@@ -771,7 +822,7 @@ contract("Metatransaction broadcaster", (accounts) => {
           status: "fail",
           data: {
             payload: "Transaction reverts and will not be broadcast. It either fails outright, or uses too much gas.",
-            reason: "VM Exception while processing transaction: revert colony-metatx-function-call-unsuccessful",
+            reason: "Error: VM Exception while processing transaction: reverted with reason string 'colony-metatx-function-call-unsuccessful'",
           },
         });
       }

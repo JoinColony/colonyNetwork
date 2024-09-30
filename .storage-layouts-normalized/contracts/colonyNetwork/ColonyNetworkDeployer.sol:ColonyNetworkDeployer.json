@@ -1,0 +1,1137 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "recoveryMode",
+      "offset": 20,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "recoveryRolesCount",
+      "offset": 21,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "recoveryApprovalCount",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "recoveryEditedTimestamp",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "recoveryApprovalTimestamps",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "colonyCount",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "currentColonyVersion",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "metaColony",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "tokenLocking",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "feeInverse",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "skillCount",
+      "offset": 0,
+      "slot": "11",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "reputationMiningSkillId",
+      "offset": 0,
+      "slot": "12",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "reputationRootHash",
+      "offset": 0,
+      "slot": "13",
+      "type": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "reputationRootHashNLeaves",
+      "offset": 0,
+      "slot": "14",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "miningCycleResolver",
+      "offset": 0,
+      "slot": "15",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "activeReputationMiningCycle",
+      "offset": 0,
+      "slot": "16",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "inactiveReputationMiningCycle",
+      "offset": 0,
+      "slot": "17",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "colonies",
+      "offset": 0,
+      "slot": "18",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => address)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "_isColony",
+      "offset": 0,
+      "slot": "19",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "colonyVersionResolver",
+      "offset": 0,
+      "slot": "20",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => address)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "skills",
+      "offset": 0,
+      "slot": "21",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyNetworkDataTypes.Skill)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyNetworkDataTypes.Skill",
+          "members": [
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "nParents",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint128",
+                "numberOfBytes": "16"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "nChildren",
+              "offset": 16,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint128",
+                "numberOfBytes": "16"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "parents",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "dynamic_array",
+                "label": "uint256[]",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "children",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "dynamic_array",
+                "label": "uint256[]",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "DEPRECATED_globalSkill",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "deprecated",
+              "offset": 1,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            }
+          ],
+          "numberOfBytes": "128"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "stakedBalances",
+      "offset": 0,
+      "slot": "22",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "recentAuctions",
+      "offset": 0,
+      "slot": "23",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "ens",
+      "offset": 0,
+      "slot": "24",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "rootNode",
+      "offset": 0,
+      "slot": "25",
+      "type": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "userNode",
+      "offset": 0,
+      "slot": "26",
+      "type": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "colonyNode",
+      "offset": 0,
+      "slot": "27",
+      "type": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "colonyLabels",
+      "offset": 0,
+      "slot": "28",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => string)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "bytes",
+          "label": "string",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "userLabels",
+      "offset": 0,
+      "slot": "29",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => string)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "bytes",
+          "label": "string",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "records",
+      "offset": 0,
+      "slot": "30",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(bytes32 => struct ColonyNetworkDataTypes.ENSRecord)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyNetworkDataTypes.ENSRecord",
+          "members": [
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "addr",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "orbitdb",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "bytes",
+                "label": "string",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "64"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "replacementReputationUpdateLog",
+      "offset": 0,
+      "slot": "31",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(uint256 => struct ColonyNetworkDataTypes.ReputationLogEntry))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => struct ColonyNetworkDataTypes.ReputationLogEntry)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "struct ColonyNetworkDataTypes.ReputationLogEntry",
+            "members": [
+              {
+                "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                "label": "user",
+                "offset": 0,
+                "slot": "0",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "address",
+                  "numberOfBytes": "20"
+                }
+              },
+              {
+                "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                "label": "amount",
+                "offset": 0,
+                "slot": "1",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "int256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                "label": "skillId",
+                "offset": 0,
+                "slot": "2",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                }
+              },
+              {
+                "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                "label": "colony",
+                "offset": 0,
+                "slot": "3",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "address",
+                  "numberOfBytes": "20"
+                }
+              },
+              {
+                "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                "label": "nUpdates",
+                "offset": 0,
+                "slot": "4",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint128",
+                  "numberOfBytes": "16"
+                }
+              },
+              {
+                "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                "label": "nPreviousUpdates",
+                "offset": 16,
+                "slot": "4",
+                "type": {
+                  "encoding": "inplace",
+                  "label": "uint128",
+                  "numberOfBytes": "16"
+                }
+              }
+            ],
+            "numberOfBytes": "160"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "replacementReputationUpdateLogsExist",
+      "offset": 0,
+      "slot": "32",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "miningStakes",
+      "offset": 0,
+      "slot": "33",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => struct ColonyNetworkDataTypes.MiningStake)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyNetworkDataTypes.MiningStake",
+          "members": [
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "amount",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+              "label": "timestamp",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "64"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "pendingMiningRewards",
+      "offset": 0,
+      "slot": "34",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "totalMinerRewardPerCycle",
+      "offset": 0,
+      "slot": "35",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "DEPRECATED_annualMetaColonyStipend",
+      "offset": 0,
+      "slot": "36",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "DEPRECATED_lastMetaColonyStipendIssued",
+      "offset": 0,
+      "slot": "37",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "resolvers",
+      "offset": 0,
+      "slot": "38",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(bytes32 => mapping(uint256 => address))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => address)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "installations",
+      "offset": 0,
+      "slot": "39",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(bytes32 => mapping(address => address payable))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => address payable)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "address payable",
+            "numberOfBytes": "20"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "payoutWhitelist",
+      "offset": 0,
+      "slot": "40",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "bool",
+          "numberOfBytes": "1"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "41",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "miningDelegators",
+      "offset": 0,
+      "slot": "42",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => address)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "reputationMiningChainId",
+      "offset": 0,
+      "slot": "43",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "colonyBridgeAddress",
+      "offset": 0,
+      "slot": "44",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "bridgeCurrentRootHashNonces",
+      "offset": 0,
+      "slot": "45",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "networkSkillCounts",
+      "offset": 0,
+      "slot": "46",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "pendingSkillAdditions",
+      "offset": 0,
+      "slot": "47",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(uint256 => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "reputationUpdateCount",
+      "offset": 0,
+      "slot": "48",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+      "label": "pendingReputationUpdates",
+      "offset": 0,
+      "slot": "49",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(address => mapping(uint256 => struct ColonyNetworkDataTypes.PendingReputationUpdate)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => mapping(uint256 => struct ColonyNetworkDataTypes.PendingReputationUpdate))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            },
+            "label": "mapping(uint256 => struct ColonyNetworkDataTypes.PendingReputationUpdate)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "struct ColonyNetworkDataTypes.PendingReputationUpdate",
+              "members": [
+                {
+                  "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                  "label": "user",
+                  "offset": 0,
+                  "slot": "0",
+                  "type": {
+                    "encoding": "inplace",
+                    "label": "address",
+                    "numberOfBytes": "20"
+                  }
+                },
+                {
+                  "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                  "label": "amount",
+                  "offset": 0,
+                  "slot": "1",
+                  "type": {
+                    "encoding": "inplace",
+                    "label": "int256",
+                    "numberOfBytes": "32"
+                  }
+                },
+                {
+                  "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                  "label": "skillId",
+                  "offset": 0,
+                  "slot": "2",
+                  "type": {
+                    "encoding": "inplace",
+                    "label": "uint256",
+                    "numberOfBytes": "32"
+                  }
+                },
+                {
+                  "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                  "label": "colony",
+                  "offset": 0,
+                  "slot": "3",
+                  "type": {
+                    "encoding": "inplace",
+                    "label": "address",
+                    "numberOfBytes": "20"
+                  }
+                },
+                {
+                  "contract": "contracts/colonyNetwork/ColonyNetworkDeployer.sol:ColonyNetworkDeployer",
+                  "label": "timestamp",
+                  "offset": 0,
+                  "slot": "4",
+                  "type": {
+                    "encoding": "inplace",
+                    "label": "uint256",
+                    "numberOfBytes": "32"
+                  }
+                }
+              ],
+              "numberOfBytes": "160"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

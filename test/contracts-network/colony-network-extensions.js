@@ -9,7 +9,7 @@ const { soliditySha3 } = require("web3-utils");
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 const { checkErrorRevert, web3GetBalance, encodeTxData } = require("../../helpers/test-helper");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
-const { UINT256_MAX } = require("../../helpers/constants");
+const { UINT256_MAX, ADDRESS_FULL } = require("../../helpers/constants");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -47,7 +47,8 @@ contract("Colony Network Extensions", (accounts) => {
   const TEST_VOTING_TOKEN = soliditySha3("VotingToken");
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -55,23 +56,23 @@ contract("Colony Network Extensions", (accounts) => {
 
     testExtension0Resolver = await Resolver.new();
     const testExtension0 = await TestExtension0.new();
-    await setupEtherRouter("TestExtension0", { TestExtension0: testExtension0.address }, testExtension0Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension0", { TestExtension0: testExtension0.address }, testExtension0Resolver);
 
     testExtension1Resolver = await Resolver.new();
     const testExtension1 = await TestExtension1.new();
-    await setupEtherRouter("TestExtension1", { TestExtension1: testExtension1.address }, testExtension1Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension1", { TestExtension1: testExtension1.address }, testExtension1Resolver);
 
     testExtension2Resolver = await Resolver.new();
     const testExtension2 = await TestExtension2.new();
-    await setupEtherRouter("TestExtension2", { TestExtension2: testExtension2.address }, testExtension2Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension2", { TestExtension2: testExtension2.address }, testExtension2Resolver);
 
     testExtension3Resolver = await Resolver.new();
     const testExtension3 = await TestExtension3.new();
-    await setupEtherRouter("TestExtension3", { TestExtension3: testExtension3.address }, testExtension3Resolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestExtension3", { TestExtension3: testExtension3.address }, testExtension3Resolver);
 
     testVotingTokenResolver = await Resolver.new();
     const testVotingToken = await TestVotingToken.new();
-    await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
+    await setupEtherRouter("testHelpers/testExtensions", "TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
 
     await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address);
     await metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension2Resolver.address);
@@ -94,7 +95,7 @@ contract("Colony Network Extensions", (accounts) => {
       await extension.install(colony.address);
 
       // Can get the colony
-      const colonyAddress = await extension.getColony();
+      let colonyAddress = await extension.getColony();
       expect(colonyAddress).to.equal(colony.address);
 
       // Can only install once
@@ -105,10 +106,13 @@ contract("Colony Network Extensions", (accounts) => {
       // But can using separate payable function
       await extension.receiveEther({ value: 100 });
 
-      // Can uninstall as expected, with ether going to the colony
+      // Can uninstall as expected, with ether going to the colony and the colony/resolver being deleted
       await extension.uninstall();
       const colonyBalance = await web3GetBalance(colony.address);
       expect(new BN(colonyBalance)).to.eq.BN(100);
+
+      colonyAddress = await extension.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
   });
 
@@ -125,7 +129,7 @@ contract("Colony Network Extensions", (accounts) => {
     it("does not allow the meta colony to overwrite existing extensions", async () => {
       await checkErrorRevert(
         metaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address),
-        "colony-network-extension-already-set"
+        "colony-network-extension-already-set",
       );
     });
 
@@ -138,7 +142,7 @@ contract("Colony Network Extensions", (accounts) => {
 
       await checkErrorRevert(
         fakeMetaColony.addExtensionToNetwork(TEST_EXTENSION, testExtension1Resolver.address),
-        "colony-caller-must-be-meta-colony"
+        "colony-caller-must-be-meta-colony",
       );
     });
   });

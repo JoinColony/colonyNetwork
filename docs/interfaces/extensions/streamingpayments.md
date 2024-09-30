@@ -6,24 +6,10 @@ streaming payments, indicating the tokens and amounts to be transferred
 over a given interval of time. Users can then claim tokens continually, at
 whatever frequency they choose.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
-
-### ▸ `addToken(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _id, address _token, uint256 _amount)`
-
-Add a new token/amount pair
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_fundingPermissionDomainId|uint256|The domain in which the caller holds the funding permission
-|_fundingChildSkillIndex|uint256|The index linking the fundingPermissionDomainId to the domainId
-|_id|uint256|The id of the streaming payment
-|_token|address|The address of the token
-|_amount|uint256|The amount to pay out
-
 
 ### ▸ `cancel(uint256 _adminPermissionDomainId, uint256 _adminChildSkillIndex, uint256 _id)`
 
@@ -39,9 +25,9 @@ Cancel the streaming payment, specifically by setting endTime to block.timestamp
 |_id|uint256|The id of the streaming payment
 
 
-### ▸ `cancelAndWaive(uint256 _id, address[] memory _tokens)`
+### ▸ `cancelAndWaive(uint256 _id)`
 
-Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim to specified tokens already earned. Only callable by the recipient.
+Cancel the streaming payment, specifically by setting endTime to block.timestamp, and waive claim to tokens already earned. Only callable by the recipient.
 
 
 **Parameters**
@@ -49,10 +35,9 @@ Cancel the streaming payment, specifically by setting endTime to block.timestamp
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|The id of the streaming payment
-|_tokens|address[]|The tokens to waive any claims to.
 
 
-### ▸ `claim(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id, address[] memory _tokens)`
+### ▸ `claim(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id)`
 
 Claim a streaming payment
 
@@ -66,10 +51,9 @@ Claim a streaming payment
 |_fromChildSkillIndex|uint256|The linking the domainId to the fromPot domain
 |_toChildSkillIndex|uint256|The linking the domainId to the toPot domain
 |_id|uint256|The id of the streaming payment
-|_tokens|address[]|The tokens to be paid out
 
 
-### ▸ `create(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _adminPermissionDomainId, uint256 _adminChildSkillIndex, uint256 _domainId, uint256 _startTime, uint256 _endTime, uint256 _interval, address _recipient, address[] memory _tokens, uint256[] memory _amounts)`
+### ▸ `create(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _adminPermissionDomainId, uint256 _adminChildSkillIndex, uint256 _domainId, uint256 _startTime, uint256 _endTime, uint256 _interval, address _recipient, address _token, uint256 _amount)`
 
 Creates a new streaming payment
 
@@ -87,20 +71,8 @@ Creates a new streaming payment
 |_endTime|uint256|The time at which the payment ends paying out
 |_interval|uint256|The period of time over which _amounts are paid out
 |_recipient|address|The recipient of the streaming payment
-|_tokens|address[]|The tokens to be paid out
-|_amounts|uint256[]|The amounts to be paid out (per _interval of time)
-
-
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
+|_token|address|The token to be paid out
+|_amount|uint256|The amount to be paid out (per _interval of time)
 
 
 ### ▸ `finishUpgrade()`
@@ -110,7 +82,24 @@ Called when upgrading the extension
 
 
 
-### ▸ `getAmountEntitledFromStart(uint256 _id, address _token):uint256 amount`
+### ▸ `getAmountClaimableLifetime(uint256 _id):uint256 amount`
+
+Get the amount claimable in the lifetime of the stream
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|The id of the streaming payment
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|The amount claimable
+
+### ▸ `getAmountEntitledFromStart(uint256 _id):uint256 amount`
 
 Get the amount entitled to claim from the start of the stream
 
@@ -120,13 +109,24 @@ Get the amount entitled to claim from the start of the stream
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|The id of the streaming payment
-|_token|address|The address of the token
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
 |amount|uint256|The amount entitled
+
+### ▸ `getNUnresolvedStreamingPayments():uint256 nUnresolvedPayments`
+
+Get the number of unresolved streaming payments
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nUnresolvedPayments|uint256|The number of unresolved streaming payments
 
 ### ▸ `getNumStreamingPayments():uint256 numPayments`
 
@@ -139,24 +139,6 @@ Get the total number of streaming payments
 |Name|Type|Description|
 |---|---|---|
 |numPayments|uint256|The total number of streaming payments
-
-### ▸ `getPaymentToken(uint256 _id, address _token):PaymentToken paymentToken`
-
-Get the payment token struct by Id and token
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_id|uint256|The id of the streaming payment
-|_token|address|The address of the token
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|paymentToken|PaymentToken|The payment token struct
 
 ### ▸ `getStreamingPayment(uint256 _id):StreamingPayment streamingPayment`
 
@@ -186,18 +168,6 @@ Returns the identifier of the extension
 |Name|Type|Description|
 |---|---|---|
 |_identifier|bytes32|The extension's identifier
-
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
 
 ### ▸ `setEndTime(uint256 _adminPermissionDomainId, uint256 _adminChildSkillIndex, uint256 _id, uint256 _endTime)`
 
@@ -229,7 +199,7 @@ Update the startTime, only if the current startTime is in the future
 |_startTime|uint256|The new startTime to set
 
 
-### ▸ `setTokenAmount(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id, address _token, uint256 _amount)`
+### ▸ `setTokenAmount(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _fromChildSkillIndex, uint256 _toChildSkillIndex, uint256 _id, uint256 _amount, uint256 _interval)`
 
 Update the token amount to be paid out. Claims existing payout prior to the change
 
@@ -245,8 +215,8 @@ Update the token amount to be paid out. Claims existing payout prior to the chan
 |_fromChildSkillIndex|uint256|The linking the domainId to the fromPot domain
 |_toChildSkillIndex|uint256|The linking the domainId to the toPot domain
 |_id|uint256|The id of the streaming payment
-|_token|address|The address of the token
 |_amount|uint256|The new amount to pay out
+|_interval|uint256|The new interval over which _amount is paid out
 
 
 ### ▸ `uninstall()`

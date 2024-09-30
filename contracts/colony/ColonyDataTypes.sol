@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,9 +16,9 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-
+// prettier-ignore
 interface ColonyDataTypes {
   // Events
 
@@ -164,19 +165,166 @@ interface ColonyDataTypes {
   /// @param mask Mask indicating whether we are making mapping or array operations
   /// @param keys Values used to construct final slot via mapping or array operations
   /// @param value Value being set in the slot
-  event ExpenditureStateChanged(
-    address agent,
-    uint256 indexed expenditureId,
-    uint256 indexed storageSlot,
-    bool[] mask,
-    bytes32[] keys,
-    bytes32 value
-  );
+  event ExpenditureStateChanged(address agent, uint256 indexed expenditureId, uint256 indexed storageSlot, bool[] mask, bytes32[] keys, bytes32 value);
 
-  /// @notice Event logged when a new payment is added
+  /// @notice Event logged when tokens are minted
   /// @param agent The address that is responsible for triggering this event
-  /// @param paymentId The newly added payment id
-  event PaymentAdded(address agent, uint256 paymentId);
+  /// @param who The address being awarded the tokens
+  /// @param amount The amount of tokens being awarded
+  event TokensMinted(address agent, address who, uint256 amount);
+
+  /// @notice Event logged when a payout is claimed
+  /// @param agent The address that is responsible for triggering this event
+  /// @param fundingPotId Id of the funding pot where payout comes from
+  /// @param token Token of the payout claim
+  /// @param amount Amount of the payout claimed, after network fee was deducted
+  event PayoutClaimed(address agent, uint256 indexed fundingPotId, address token, uint256 amount);
+
+  /// @notice Event logged when a new local skill is added
+  /// @param agent The address that is responsible for triggering this event
+  /// @param localSkillId Id of the newly-created local skill
+  event LocalSkillAdded(address agent, uint256 localSkillId);
+
+  /// @notice Event logged when a new local skill is added
+  /// @param agent The address that is responsible for triggering this event
+  /// @param localSkillId Id of the newly-created local skill
+  /// @param deprecated Deprecation status of the local skill
+  event LocalSkillDeprecated(address agent, uint256 localSkillId, bool deprecated);
+
+  /// @notice Event logged when a new Domain is added
+  /// @param agent The address that is responsible for triggering this event
+  /// @param domainId Id of the newly-created Domain
+  event DomainAdded(address agent, uint256 domainId);
+
+  /// @notice Event logged when domain metadata is updated
+  /// @param agent The address that is responsible for triggering this event
+  /// @param domainId Id of the newly-created Domain
+  /// @param metadata IPFS hash of the metadata
+  event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
+
+  /// @notice Event logged when domain metadata is updated
+  /// @param agent The address that is responsible for triggering this event
+  /// @param domainId Id of the domain
+  /// @param deprecated Whether or not the domain is deprecated
+  event DomainDeprecated(address agent, uint256 indexed domainId, bool deprecated);
+
+  /// @notice Event logged when Colony metadata is updated
+  /// @param agent The address that is responsible for triggering this event
+  /// @param metadata IPFS hash of the metadata
+  event ColonyMetadata(address agent, string metadata);
+
+  /// @notice Event logged when Colony metadata is updated via a delta
+  /// @param agent The address that is responsible for triggering this event
+  /// @param metadata IPFS hash of the delta
+  event ColonyMetadataDelta(address agent, string metadata);
+
+  /// @notice Event logged when a new FundingPot is added
+  /// @param fundingPotId Id of the newly-created FundingPot
+  event FundingPotAdded(uint256 fundingPotId);
+
+  /// @notice Emit a metadata string for a transaction
+  /// @param agent Agent emitting the annotation
+  /// @param txHash Hash of transaction being annotated (0x0 for current tx)
+  /// @param metadata IPFS hash of the metadata
+  event Annotation(address indexed agent, bytes32 indexed txHash, string metadata);
+
+  /// @notice Event logged when the colony burns tokens
+  /// @param agent The address that is responsible for triggering this event
+  /// @param token the address of the token being burned
+  /// @param token the amount of the token being burned
+  event TokensBurned(address agent, address token, uint256 amount);
+
+  /// @notice Event emitted when the colony unlocks its native token through the
+  /// provided function
+  /// @param agent The address that is responsible for triggering this event
+  event TokenUnlocked(address agent);
+
+  /// @notice Event logged when a manual reputation reward/penalty is made
+  /// @param agent The address that is responsible for triggering this event
+  /// @param user The address that is having its reputation changed
+  /// @param skillId The id of the skill the user is having their reputation changed in
+  /// @param amount The (maximum) amount the address is having its reputation changed by
+  event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
+
+  event ArbitraryTransaction(address target, bytes data, bool success);
+
+  /// @notice Event logged when an expenditure payout is claimed.
+  /// @dev This is emitted in addition to the other PayoutClaimed
+  /// event. The other will be removed soon.
+  /// @param agent The address that is responsible for triggering this event
+  /// @param id Id of the expenditure
+  /// @param slot Expenditure slot of the payout claimed
+  /// @param token Token of the payout claim
+  /// @param tokenPayout Amount of the payout claimed, after network fee was deducted
+  event PayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
+
+  // Structs
+
+  struct RewardPayoutCycle {
+    // Reputation root hash at the time of reward payout creation
+    bytes32 reputationState;
+    // Colony wide reputation
+    uint256 colonyWideReputation;
+    // Total tokens at the time of reward payout creation
+    uint256 totalTokens;
+    // Amount alocated for reward payout
+    uint256 amount;
+    // Token in which a reward is paid out with
+    address tokenAddress;
+    // Time of creation (in seconds)
+    uint256 blockTimestamp;
+    // How many tokens remain to be paid out.
+    uint256 amountRemaining;
+    // Whether this payout is active or not.
+    bool finalized;
+  }
+
+  struct Expenditure {
+    ExpenditureStatus status;
+    address owner;
+    uint256 fundingPotId;
+    uint256 domainId;
+    uint256 finalizedTimestamp;
+    uint256 globalClaimDelay;
+  }
+
+  struct ExpenditureSlot {
+    address payable recipient;
+    uint256 claimDelay;
+    int256 payoutModifier;
+    uint256[] skills;
+  }
+
+  enum ExpenditureStatus { Draft, Cancelled, Finalized, Locked }
+
+  // Any new roles added should be added before NUMBER_OF_ROLES, which should always be the last entry in this enum
+  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration, NUMBER_OF_ROLES }
+
+  // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
+  // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
+  enum FundingPotAssociatedType { Unassigned, Domain, DEPRECATED_Task, DEPRECATED_Payment, Expenditure }
+
+  struct FundingPot {
+    // Funding pots can store multiple token balances, for ETH use 0x0 address
+    mapping(address => uint256) balance;
+    // Funding pots can be associated with different fundable entities, for now these are: tasks, domains and payments.
+    FundingPotAssociatedType associatedType;
+    uint256 associatedTypeId;
+    // Map any assigned payouts from this pot
+    mapping (address => uint256) payouts;
+    uint256 payoutsWeCannotMake;
+  }
+
+  struct Domain {
+    uint256 skillId;
+    uint256 fundingPotId;
+  }
+
+  struct LocalSkill {
+    bool exists;
+  }
+
+  // Deprecated Task and Payment events
 
   /// @notice Event logged when a new task is added
   /// @param agent The address that is responsible for triggering this event
@@ -240,70 +388,14 @@ interface ColonyDataTypes {
   /// @param taskId Id of the finalized task
   event TaskFinalized(address agent, uint256 indexed taskId);
 
-  /// @notice Event logged when tokens are minted
-  /// @param agent The address that is responsible for triggering this event
-  /// @param who The address being awarded the tokens
-  /// @param amount The amount of tokens being awarded
-  event TokensMinted(address agent, address who, uint256 amount);
-
-  /// @notice Event logged when a payout is claimed, either from a Task or Payment
-  /// @param agent The address that is responsible for triggering this event
-  /// @param fundingPotId Id of the funding pot where payout comes from
-  /// @param token Token of the payout claim
-  /// @param amount Amount of the payout claimed, after network fee was deducted
-  event PayoutClaimed(address agent, uint256 indexed fundingPotId, address token, uint256 amount);
-
   /// @notice Event logged when a task has been canceled
   /// @param taskId Id of the canceled task
   event TaskCanceled(uint256 indexed taskId);
 
-  /// @notice Event logged when a new local skill is added
+  /// @notice Event logged when a new payment is added
   /// @param agent The address that is responsible for triggering this event
-  /// @param localSkillId Id of the newly-created local skill
-  event LocalSkillAdded(address agent, uint256 localSkillId);
-
-  /// @notice Event logged when a new local skill is added
-  /// @param agent The address that is responsible for triggering this event
-  /// @param localSkillId Id of the newly-created local skill
-  /// @param deprecated Deprecation status of the local skill
-  event LocalSkillDeprecated(address agent, uint256 localSkillId, bool deprecated);
-
-  /// @notice Event logged when a new Domain is added
-  /// @param agent The address that is responsible for triggering this event
-  /// @param domainId Id of the newly-created Domain
-  event DomainAdded(address agent, uint256 domainId);
-
-  /// @notice Event logged when domain metadata is updated
-  /// @param agent The address that is responsible for triggering this event
-  /// @param domainId Id of the newly-created Domain
-  /// @param metadata IPFS hash of the metadata
-  event DomainMetadata(address agent, uint256 indexed domainId, string metadata);
-
-  /// @notice Event logged when domain metadata is updated
-  /// @param agent The address that is responsible for triggering this event
-  /// @param domainId Id of the domain
-  /// @param deprecated Whether or not the domain is deprecated
-  event DomainDeprecated(address agent, uint256 indexed domainId, bool deprecated);
-
-  /// @notice Event logged when Colony metadata is updated
-  /// @param agent The address that is responsible for triggering this event
-  /// @param metadata IPFS hash of the metadata
-  event ColonyMetadata(address agent, string metadata);
-
-  /// @notice Event logged when Colony metadata is updated via a delta
-  /// @param agent The address that is responsible for triggering this event
-  /// @param metadata IPFS hash of the delta
-  event ColonyMetadataDelta(address agent, string metadata);
-
-  /// @notice Event logged when a new FundingPot is added
-  /// @param fundingPotId Id of the newly-created FundingPot
-  event FundingPotAdded(uint256 fundingPotId);
-
-  /// @notice Emit a metadata string for a transaction
-  /// @param agent Agent emitting the annotation
-  /// @param txHash Hash of transaction being annotated (0x0 for current tx)
-  /// @param metadata IPFS hash of the metadata
-  event Annotation(address indexed agent, bytes32 indexed txHash, string metadata);
+  /// @param paymentId The newly added payment id
+  event PaymentAdded(address agent, uint256 paymentId);
 
   /// @notice Event logged when a payment has its payout set
   /// @param agent The address that is responsible for triggering this event
@@ -329,70 +421,11 @@ interface ColonyDataTypes {
   /// @param paymentId Id of the payment
   event PaymentFinalized(address agent, uint256 indexed paymentId);
 
-  /// @notice Event logged when the colony burns tokens
-  /// @param agent The address that is responsible for triggering this event
-  /// @param token the address of the token being burned
-  /// @param token the amount of the token being burned
-  event TokensBurned(address agent, address token, uint256 amount);
+  // Deprecated Task and Payment structs
 
-  /// @notice Event emitted when the colony unlocks its native token through the
-  /// provided function
-  /// @param agent The address that is responsible for triggering this event
-  event TokenUnlocked(address agent);
-
-  /// @notice Event logged when a manual reputation reward/penalty is made
-  /// @param agent The address that is responsible for triggering this event
-  /// @param user The address that is having its reputation changed
-  /// @param skillId The id of the skill the user is having their reputation changed in
-  /// @param amount The (maximum) amount the address is having its reputation changed by
-  event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
-
-  event ArbitraryTransaction(address target, bytes data, bool success);
-
-  struct RewardPayoutCycle {
-    // Reputation root hash at the time of reward payout creation
-    bytes32 reputationState;
-    // Colony wide reputation
-    uint256 colonyWideReputation;
-    // Total tokens at the time of reward payout creation
-    uint256 totalTokens;
-    // Amount alocated for reward payout
-    uint256 amount;
-    // Token in which a reward is paid out with
-    address tokenAddress;
-    // Time of creation (in seconds)
-    uint256 blockTimestamp;
-    // How many tokens remain to be paid out.
-    uint256 amountRemaining;
-    // Whether this payout is active or not.
-    bool finalized;
-  }
-
-  struct Expenditure {
-    ExpenditureStatus status;
-    address owner;
-    uint256 fundingPotId;
-    uint256 domainId;
-    uint256 finalizedTimestamp;
-    uint256 globalClaimDelay;
-  }
-
-  struct ExpenditureSlot {
-    address payable recipient;
-    uint256 claimDelay;
-    int256 payoutModifier;
-    uint256[] skills;
-  }
-
-  enum ExpenditureStatus { Draft, Cancelled, Finalized, Locked }
-
-  struct Payment {
-    address payable recipient;
-    bool finalized;
-    uint256 fundingPotId;
-    uint256 domainId;
-    uint256[] skills;
-  }
+  enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
+  enum TaskRole { Manager, Evaluator, Worker }
+  enum TaskStatus { Active, Cancelled, Finalized }
 
   struct Task {
     bytes32 specificationHash;
@@ -403,20 +436,10 @@ interface ColonyDataTypes {
     uint256 completionTimestamp;
     uint256 domainId;
     uint256[] skills;
-
     mapping (uint8 => Role) roles;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
     mapping (uint8 => mapping (address => uint256)) payouts;
   }
-
-  enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
-
-  enum TaskRole { Manager, Evaluator, Worker }
-
-  enum TaskStatus { Active, Cancelled, Finalized }
-
-  // Any new roles added should be added before NUMBER_OF_ROLES, which should always be the last entry in this enum
-  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration, NUMBER_OF_ROLES }
 
   struct Role {
     // Address of the user for the given role
@@ -433,27 +456,11 @@ interface ColonyDataTypes {
     mapping (uint8 => bytes32) secret;
   }
 
-  // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
-  // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
-  enum FundingPotAssociatedType { Unassigned, Domain, Task, Payment, Expenditure }
-
-  struct FundingPot {
-    // Funding pots can store multiple token balances, for ETH use 0x0 address
-    mapping (address => uint256) balance;
-    // Funding pots can be associated with different fundable entities, for now these are: tasks, domains and payments.
-    FundingPotAssociatedType associatedType;
-    uint256 associatedTypeId;
-    // Map any assigned payouts from this pot, note that in Tasks these are broken down to a more granular level on a per role basis
-    mapping (address => uint256) payouts;
-    uint256 payoutsWeCannotMake;
-  }
-
-  struct Domain {
-    uint256 skillId;
+  struct Payment {
+    address payable recipient;
+    bool finalized;
     uint256 fundingPotId;
-  }
-
-  struct LocalSkill {
-    bool exists;
+    uint256 domainId;
+    uint256[] skills;
   }
 }

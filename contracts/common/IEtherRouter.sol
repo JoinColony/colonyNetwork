@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,12 +16,11 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.8.20; // ignore-swc-103
+pragma solidity >=0.8.25; // ignore-swc-103
 pragma experimental ABIEncoderV2;
 
 // Note that we have deliberately left the fallback function off here to accommodate
 // address / address payable conversion issues where we want to use this.
-
 
 interface IEtherRouter {
   /// @notice Sets the resolver address. This is used in the routing of all delegatecalls by the EtherRouter.

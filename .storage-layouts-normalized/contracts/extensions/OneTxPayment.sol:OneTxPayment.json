@@ -1,0 +1,80 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/extensions/OneTxPayment.sol:OneTxPayment",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/OneTxPayment.sol:OneTxPayment",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/OneTxPayment.sol:OneTxPayment",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/OneTxPayment.sol:OneTxPayment",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColony",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/OneTxPayment.sol:OneTxPayment",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/extensions/OneTxPayment.sol:OneTxPayment",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    }
+  ]
+}

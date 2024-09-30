@@ -1,14 +1,13 @@
-pragma solidity 0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.25;
 pragma experimental "ABIEncoderV2";
 
-import {Data} from "./Data.sol";
-import {Bits} from "./Bits.sol";
-import "./PatriciaTreeProofs.sol";
-
+import { Data } from "./Data.sol";
+import { Bits } from "./Bits.sol";
+import { PatriciaTreeProofs } from "./PatriciaTreeProofs.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeBase is PatriciaTreeProofs {
-
   using Data for Data.Tree;
   using Data for Data.Edge;
   using Data for Data.Label;
@@ -28,7 +27,9 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
     n = tree.nodes[hash];
   }
 
-  function getProofFunctionality(bytes32 key) internal view returns (uint branchMask, bytes32[] memory _siblings) {
+  function getProofFunctionality(
+    bytes32 key
+  ) internal view returns (uint branchMask, bytes32[] memory _siblings) {
     require(tree.root != 0, "colony-patricia-tree-zero-tree-root");
     Data.Label memory k = Data.Label(key, 256);
     Data.Edge memory e = tree.rootEdge;
@@ -45,7 +46,7 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
         break;
       }
       length += prefix.length;
-      branchMask |= uint(1) << 255 - length;
+      branchMask |= uint(1) << (255 - length);
       length += 1;
       uint256 head;
       Data.Label memory tail;

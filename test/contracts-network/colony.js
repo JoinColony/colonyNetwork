@@ -4,20 +4,24 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
+const { IPFS_HASH, UINT256_MAX, WAD, ADDRESS_ZERO, SPECIFICATION_HASH, HASHZERO } = require("../../helpers/constants");
 const {
-  IPFS_HASH,
-  UINT256_MAX,
-  MANAGER_RATING,
-  WORKER_RATING,
-  RATING_1_SALT,
-  RATING_2_SALT,
-  RATING_1_SECRET,
-  RATING_2_SECRET,
-  WAD,
-  ADDRESS_ZERO,
-} = require("../../helpers/constants");
-const { getTokenArgs, web3GetBalance, checkErrorRevert, expectNoEvent, expectAllEvents, expectEvent } = require("../../helpers/test-helper");
-const { makeTask, setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
+  getTokenArgs,
+  web3GetBalance,
+  checkErrorRevert,
+  expectNoEvent,
+  expectAllEvents,
+  expectEvent,
+  upgradeColonyOnceThenToLatest,
+} = require("../../helpers/test-helper");
+const {
+  setupRandomColony,
+  getMetaTransactionParameters,
+  makeExpenditure,
+  fundColonyWithTokens,
+  setupColony,
+} = require("../../helpers/test-data-generator");
+const { deployColonyVersionGLWSS4, deployColonyVersionHMWSS } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -28,21 +32,26 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const TransferTest = artifacts.require("TransferTest");
 const Token = artifacts.require("Token");
 
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+
 contract("Colony", (accounts) => {
   let colony;
   let token;
+  let localSkillId;
   let colonyNetwork;
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {
-    ({ colony, token } = await setupRandomColony(colonyNetwork));
+    ({ colony, token, localSkillId } = await setupRandomColony(colonyNetwork));
   });
 
   describe("when initialised", () => {
@@ -72,14 +81,9 @@ contract("Colony", (accounts) => {
       expect(owner).to.be.equal(ethers.constants.AddressZero);
     });
 
-    it("should return zero task count", async () => {
-      const taskCount = await colony.getTaskCount();
-      expect(taskCount).to.be.zero;
-    });
-
-    it("should return zero for taskChangeNonce", async () => {
-      const taskChangeNonce = await colony.getTaskChangeNonce(1);
-      expect(taskChangeNonce).to.be.zero;
+    it("should return zero expenditure count", async () => {
+      const expenditureCount = await colony.getExpenditureCount();
+      expect(expenditureCount).to.be.zero;
     });
 
     it("should emit correct Mint event when minting tokens", async () => {
@@ -112,13 +116,6 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.initialiseColony(colonyNetwork.address, token.address), "colony-already-initialised-network");
     });
 
-    it("should correctly generate a rating secret", async () => {
-      const ratingSecret1 = await colony.generateSecret(RATING_1_SALT, MANAGER_RATING);
-      const ratingSecret2 = await colony.generateSecret(RATING_2_SALT, WORKER_RATING);
-      expect(ratingSecret1).to.eq.BN(RATING_1_SECRET);
-      expect(ratingSecret2).to.eq.BN(RATING_2_SECRET);
-    });
-
     it("should initialise the root domain", async () => {
       // There should be one domain (the root domain)
       const domainCount = await colony.getDomainCount();
@@ -130,16 +127,17 @@ contract("Colony", (accounts) => {
       expect(domain.fundingPotId).to.eq.BN(1);
 
       // A domain skill should have been created for the Colony
-      const rootLocalSkillId = await colonyNetwork.getSkillCount();
-      expect(domain.skillId).to.eq.BN(rootLocalSkillId.subn(1));
+      const skillCount = await colonyNetwork.getSkillCount();
+      expect(domain.skillId).to.be.gte.BN(1);
+      expect(domain.skillId).to.be.lte.BN(skillCount);
     });
 
     it("should let funding pot information be read", async () => {
-      const taskId = await makeTask({ colony });
-      const taskInfo = await colony.getTask(taskId);
-      let potInfo = await colony.getFundingPot(taskInfo.fundingPotId);
-      expect(potInfo.associatedType).to.eq.BN(2);
-      expect(potInfo.associatedTypeId).to.eq.BN(taskId);
+      const expenditureId = await makeExpenditure({ colony });
+      const expenditure = await colony.getExpenditure(expenditureId);
+      let potInfo = await colony.getFundingPot(expenditure.fundingPotId);
+      expect(potInfo.associatedType).to.eq.BN(4);
+      expect(potInfo.associatedTypeId).to.eq.BN(expenditureId);
       expect(potInfo.payoutsWeCannotMake).to.be.zero;
 
       // Read pot info about a pot in a domain
@@ -185,7 +183,7 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "LocalSkillAdded", [accounts[0], skillCount]);
     });
 
-    it("should allow root users to deprecate local skills", async () => {
+    it.skip("should allow root users to deprecate local skills", async () => {
       await colony.addLocalSkill();
       const skillCount = await colonyNetwork.getSkillCount();
 
@@ -193,12 +191,12 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
     });
 
-    it("should not emit an event if deprecation is a no-op", async () => {
+    it("should revert when trying to deprecate a local skill", async () => {
       await colony.addLocalSkill();
       const skillCount = await colonyNetwork.getSkillCount();
 
-      const tx = await colony.deprecateLocalSkill(skillCount, false);
-      await expectNoEvent(tx, "LocalSkillDeprecated");
+      const tx = colony.deprecateLocalSkill(skillCount, false);
+      await checkErrorRevert(tx, "colony-network-deprecate-local-skills-temporarily-disabled");
     });
   });
 
@@ -233,7 +231,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe("when deprecating domains", () => {
+  describe.skip("when deprecating domains", () => {
     it("should log the DomainDeprecated event", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await expectEvent(colony.deprecateDomain(1, 0, 2, true), "DomainDeprecated", [USER0, 2, true]);
@@ -254,20 +252,22 @@ contract("Colony", (accounts) => {
     const INITIAL_ADDRESSES = accounts.slice(0, 4);
 
     it("should assign reputation correctly", async () => {
-      const skillCount = await colonyNetwork.getSkillCount();
-      const rootDomainSkillId = skillCount.subn(1);
+      const domain = await colony.getDomain(1);
 
       await colony.mintTokens(WAD.muln(14));
       await colony.claimColonyFunds(token.address);
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
+
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       expect(numberOfReputationLogs).to.eq.BN(INITIAL_ADDRESSES.length);
+
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       expect(updateLog.user).to.eq.BN(INITIAL_ADDRESSES[0]);
       expect(updateLog.amount).to.eq.BN(INITIAL_REPUTATIONS[0]);
-      expect(updateLog.skillId).to.eq.BN(rootDomainSkillId);
+      expect(updateLog.skillId).to.eq.BN(domain.skillId);
     });
 
     it("should assign tokens correctly", async () => {
@@ -322,20 +322,8 @@ contract("Colony", (accounts) => {
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
           from: USER1,
         }),
-        "ds-auth-unauthorized"
+        "ds-auth-unauthorized",
       );
-    });
-
-    it("should not allow bootstrapping if tasks have been made", async () => {
-      await colony.mintTokens(WAD.muln(14));
-      await makeTask({ colony });
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
-    });
-
-    it("should not allow bootstrapping if payments have been made", async () => {
-      await colony.mintTokens(WAD.muln(14));
-      await colony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, 0);
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });
 
     it("should not allow bootstrapping if expenditures have been made", async () => {
@@ -407,8 +395,23 @@ contract("Colony", (accounts) => {
 
       await checkErrorRevert(
         colony.executeMetaTransaction(USER0, txData, r, ADDRESS_ZERO, v + 1, { from: USER1 }),
-        "colony-metatx-invalid-signature"
+        "colony-metatx-invalid-signature",
       );
+    });
+
+    it("should not allow a user to replay another's metatransaction even if nonce the same", async () => {
+      const txData = await colony.contract.methods.mintTokens(100).encodeABI();
+
+      const user0Nonce = await colony.getMetatransactionNonce(USER0);
+      const user1Nonce = await colony.getMetatransactionNonce(USER1);
+
+      expect(user0Nonce).to.be.eq.BN(user1Nonce);
+
+      const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
+
+      await colony.executeMetaTransaction(USER0, txData, r, s, v, { from: USER1 });
+
+      await checkErrorRevert(colony.executeMetaTransaction(USER1, txData, r, s, v, { from: USER1 }), "metatransaction-signer-signature-mismatch");
     });
   });
 
@@ -448,6 +451,91 @@ contract("Colony", (accounts) => {
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, amount.divn(2), token.address);
 
       await checkErrorRevert(colony.burnTokens(token.address, amount), "colony-not-enough-tokens");
+    });
+  });
+
+  describe("when viewing deprecated Tasks and Payments", () => {
+    let OldInterface;
+    let oldColony;
+    before(async () => {
+      ({ OldInterface } = await deployColonyVersionGLWSS4(colonyNetwork));
+      await deployColonyVersionHMWSS(colonyNetwork);
+    });
+
+    beforeEach(async () => {
+      colony = await setupColony(colonyNetwork, token.address, 13);
+
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
+      await token.setAuthority(tokenAuthority.address);
+
+      oldColony = await OldInterface.at(colony.address);
+      await colony.addLocalSkill();
+      localSkillId = await colonyNetwork.getSkillCount();
+    });
+
+    it("should be able to query for a task", async () => {
+      await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, localSkillId, 0, { from: USER0 });
+      await upgradeColonyOnceThenToLatest(oldColony);
+      const taskId = await colony.getTaskCount();
+      const task = await colony.getTask(taskId);
+
+      expect(task.specificationHash).to.equal(SPECIFICATION_HASH);
+      expect(task.domainId).to.eq.BN(1);
+
+      const taskChangeNonce = await colony.getTaskChangeNonce(taskId);
+      const taskWorkRatingSecretsInfo = await colony.getTaskWorkRatingSecretsInfo(taskId);
+      const taskWorkRatingSecret = await colony.getTaskWorkRatingSecret(taskId, 0);
+      const taskRole = await colony.getTaskRole(taskId, 0);
+
+      expect(taskChangeNonce).to.eq.BN(0);
+      expect(taskWorkRatingSecretsInfo[0]).to.eq.BN(0);
+      expect(taskWorkRatingSecretsInfo[1]).to.eq.BN(0);
+      expect(taskWorkRatingSecret).to.equal(HASHZERO);
+      expect(taskRole.user).to.equal(USER0);
+    });
+
+    it("should be able to query for a payment", async () => {
+      await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, localSkillId, { from: USER0 });
+      await upgradeColonyOnceThenToLatest(oldColony);
+
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      expect(payment.recipient).to.equal(USER1);
+      expect(payment.domainId).to.eq.BN(1);
+    });
+
+    it("should be able to transfer funds allocated to a task back to the domain", async () => {
+      await fundColonyWithTokens(colony, token, WAD);
+
+      await oldColony.makeTask(1, UINT256_MAX, SPECIFICATION_HASH, 1, localSkillId, 0, { from: USER0 });
+      const taskId = await colony.getTaskCount();
+      const { fundingPotId, status } = await colony.getTask(taskId);
+
+      expect(status).to.eq.BN(0); // Active
+
+      // Move funds into task funding pot
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
+      await upgradeColonyOnceThenToLatest(oldColony);
+      // Move funds back
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
+    });
+
+    it("should be able to transfer funds allocated to a payment back to the domain", async () => {
+      await fundColonyWithTokens(colony, token, WAD);
+
+      await oldColony.addPayment(1, UINT256_MAX, USER1, token.address, WAD, 1, localSkillId, { from: USER0 });
+      const paymentId = await colony.getPaymentCount();
+      const { fundingPotId, finalized } = await colony.getPayment(paymentId);
+
+      expect(finalized).to.be.false;
+
+      // Move funds into task funding pot
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, fundingPotId, WAD, token.address);
+      await upgradeColonyOnceThenToLatest(oldColony);
+      // Move funds back
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, fundingPotId, 1, WAD, token.address);
     });
   });
 });

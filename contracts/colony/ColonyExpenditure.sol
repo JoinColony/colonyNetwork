@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,11 +16,10 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental "ABIEncoderV2";
 
-import "./ColonyStorage.sol";
-
+import { ColonyStorage } from "./ColonyStorage.sol";
 
 contract ColonyExpenditure is ColonyStorage {
   int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
@@ -27,17 +27,17 @@ contract ColonyExpenditure is ColonyStorage {
 
   // Public functions
 
-  function setDefaultGlobalClaimDelay(uint256 _defaultGlobalClaimDelay)
-    public
-    stoppable
-    auth
-  {
+  function setDefaultGlobalClaimDelay(uint256 _defaultGlobalClaimDelay) public stoppable auth {
     defaultGlobalClaimDelay = _defaultGlobalClaimDelay;
 
     emit ExpenditureGlobalClaimDelaySet(msgSender(), _defaultGlobalClaimDelay);
   }
 
-  function makeExpenditure(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId)
+  function makeExpenditure(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId
+  )
     public
     stoppable
     domainNotDeprecated(_domainId)
@@ -65,12 +65,10 @@ contract ColonyExpenditure is ColonyStorage {
     return expenditureCount;
   }
 
-  function transferExpenditure(uint256 _id, address _newOwner)
-    public
-    stoppable
-    expenditureDraftOrLocked(_id)
-    expenditureOnlyOwner(_id)
-  {
+  function transferExpenditure(
+    uint256 _id,
+    address _newOwner
+  ) public stoppable expenditureDraftOrLocked(_id) expenditureOnlyOwner(_id) {
     expenditures[_id].owner = _newOwner;
 
     emit ExpenditureTransferred(msgSender(), _id, _newOwner);
@@ -93,33 +91,46 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureTransferred(msgSender(), _id, _newOwner);
   }
 
-  function cancelExpenditure(uint256 _id)
+  function cancelExpenditureViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id
+  )
     public
     stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
+    expenditureDraftOrLocked(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     expenditures[_id].status = ExpenditureStatus.Cancelled;
 
     emit ExpenditureCancelled(msgSender(), _id);
   }
 
-  function lockExpenditure(uint256 _id)
-    public
-    stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-  {
+  function cancelExpenditure(
+    uint256 _id
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
+    expenditures[_id].status = ExpenditureStatus.Cancelled;
+
+    emit ExpenditureCancelled(msgSender(), _id);
+  }
+
+  function lockExpenditure(
+    uint256 _id
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     expenditures[_id].status = ExpenditureStatus.Locked;
 
     emit ExpenditureLocked(msgSender(), _id);
   }
 
-  function finalizeExpenditure(uint256 _id)
+  function finalizeExpenditureViaArbitration(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id
+  )
     public
     stoppable
     expenditureDraftOrLocked(_id)
-    expenditureOnlyOwner(_id)
+    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
   {
     FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
     require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
@@ -130,12 +141,22 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureFinalized(msgSender(), _id);
   }
 
-  function setExpenditureMetadata(uint256 _id, string memory _metadata)
-    public
-    stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-  {
+  function finalizeExpenditure(
+    uint256 _id
+  ) public stoppable expenditureDraftOrLocked(_id) expenditureOnlyOwner(_id) {
+    FundingPot storage fundingPot = fundingPots[expenditures[_id].fundingPotId];
+    require(fundingPot.payoutsWeCannotMake == 0, "colony-expenditure-not-funded");
+
+    expenditures[_id].status = ExpenditureStatus.Finalized;
+    expenditures[_id].finalizedTimestamp = block.timestamp;
+
+    emit ExpenditureFinalized(msgSender(), _id);
+  }
+
+  function setExpenditureMetadata(
+    uint256 _id,
+    string memory _metadata
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
 
@@ -153,12 +174,11 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureMetadataSet(msgSender(), _id, _metadata);
   }
 
-  function setExpenditureRecipients(uint256 _id, uint256[] memory _slots, address payable[] memory _recipients)
-    public
-    stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-  {
+  function setExpenditureRecipients(
+    uint256 _id,
+    uint256[] memory _slots,
+    address payable[] memory _recipients
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     require(_slots.length == _recipients.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
@@ -168,17 +188,15 @@ contract ColonyExpenditure is ColonyStorage {
     }
   }
 
-  function setExpenditureSkills(uint256 _id, uint256[] memory _slots, uint256[] memory _skillIds)
-    public
-    stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-  {
+  function setExpenditureSkills(
+    uint256 _id,
+    uint256[] memory _slots,
+    uint256[] memory _skillIds
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     require(_slots.length == _skillIds.length, "colony-expenditure-bad-slots");
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
     for (uint256 i; i < _slots.length; i++) {
-      require(isValidGlobalOrLocalSkill(_skillIds[i]), "colony-not-valid-global-or-local-skill");
+      require(isValidLocalSkill(_skillIds[i]), "colony-not-valid-local-skill");
 
       // We only allow setting of the first skill here.
       // If we allow more in the future, make sure to have a hard limit that
@@ -190,12 +208,11 @@ contract ColonyExpenditure is ColonyStorage {
     }
   }
 
-  function setExpenditureClaimDelays(uint256 _id, uint256[] memory _slots, uint256[] memory _claimDelays)
-    public
-    stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-  {
+  function setExpenditureClaimDelays(
+    uint256 _id,
+    uint256[] memory _slots,
+    uint256[] memory _claimDelays
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     require(_slots.length == _claimDelays.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
@@ -205,12 +222,11 @@ contract ColonyExpenditure is ColonyStorage {
     }
   }
 
-  function setExpenditurePayoutModifiers(uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)
-    public
-    stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-  {
+  function setExpenditurePayoutModifiers(
+    uint256 _id,
+    uint256[] memory _slots,
+    int256[] memory _payoutModifiers
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
     require(_slots.length == _payoutModifiers.length, "colony-expenditure-bad-slots");
 
     for (uint256 i; i < _slots.length; i++) {
@@ -220,37 +236,12 @@ contract ColonyExpenditure is ColonyStorage {
     }
   }
 
-  function setExpenditureValues(
-    uint256 _id,
-    uint256[] memory _recipientSlots,
-    address payable[] memory _recipients,
-    uint256[] memory _skillIdSlots,
-    uint256[] memory _skillIds,
-    uint256[] memory _claimDelaySlots,
-    uint256[] memory _claimDelays,
-    uint256[] memory _payoutModifierSlots,
-    int256[] memory _payoutModifiers,
-    address[] memory _payoutTokens,
-    uint256[][] memory _payoutSlots,
-    uint256[][] memory _payoutValues
-  )
-    public
-    stoppable
-    expenditureDraft(_id)
-    expenditureOnlyOwner(_id)
-  {
-    if (_recipients.length > 0) { setExpenditureRecipients(_id, _recipientSlots, _recipients); }
-    if (_skillIds.length > 0) { setExpenditureSkills(_id, _skillIdSlots, _skillIds); }
-    if (_claimDelays.length > 0) { setExpenditureClaimDelays(_id, _claimDelaySlots, _claimDelays); }
-    if (_payoutModifiers.length > 0) { setExpenditurePayoutModifiers(_id, _payoutModifierSlots, _payoutModifiers); }
-    if (_payoutTokens.length > 0) { setExpenditurePayouts(_id, _payoutTokens, _payoutSlots, _payoutValues); }
-  }
-
   // Deprecated
-  function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient)
-    public
-    stoppable
-  {
+  function setExpenditureRecipient(
+    uint256 _id,
+    uint256 _slot,
+    address payable _recipient
+  ) public stoppable {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;
     address payable[] memory recipients = new address payable[](1);
@@ -259,10 +250,7 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Deprecated
-  function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId)
-    public
-    stoppable
-  {
+  function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) public stoppable {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;
     uint256[] memory skillIds = new uint256[](1);
@@ -271,10 +259,11 @@ contract ColonyExpenditure is ColonyStorage {
   }
 
   // Deprecated
-  function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)
-    public
-    stoppable
-  {
+  function setExpenditureClaimDelay(
+    uint256 _id,
+    uint256 _slot,
+    uint256 _claimDelay
+  ) public stoppable {
     uint256[] memory slots = new uint256[](1);
     slots[0] = _slot;
     uint256[] memory claimDelays = new uint256[](1);
@@ -307,7 +296,7 @@ contract ColonyExpenditure is ColonyStorage {
       uint256 offset = uint256(_keys[0]);
       require(offset == 0 || offset == 3 || offset == 4, "colony-expenditure-bad-offset");
 
-    // Explicitly whitelist all slots, in case we add new slots in the future
+      // Explicitly whitelist all slots, in case we add new slots in the future
     } else if (_storageSlot == EXPENDITURESLOTS_SLOT) {
       require(_keys.length >= 2, "colony-expenditure-bad-keys");
       uint256 offset = uint256(_keys[1]);
@@ -317,11 +306,10 @@ contract ColonyExpenditure is ColonyStorage {
       if (offset == 2) {
         require(
           int256(uint256(_value)) <= MAX_PAYOUT_MODIFIER &&
-          int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
+            int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
           "colony-expenditure-bad-payout-modifier"
         );
       }
-
     } else {
       require(false, "colony-expenditure-bad-slot");
     }
@@ -341,37 +329,22 @@ contract ColonyExpenditure is ColonyStorage {
     expenditure = expenditures[_id];
   }
 
-  function getExpenditureSlot(uint256 _id, uint256 _slot) public view returns (ExpenditureSlot memory expenditureSlot) {
+  function getExpenditureSlot(
+    uint256 _id,
+    uint256 _slot
+  ) public view returns (ExpenditureSlot memory expenditureSlot) {
     expenditureSlot = expenditureSlots[_id][_slot];
   }
 
-  function getExpenditureSlotPayout(uint256 _id, uint256 _slot, address _token) public view returns (uint256) {
+  function getExpenditureSlotPayout(
+    uint256 _id,
+    uint256 _slot,
+    address _token
+  ) public view returns (uint256) {
     return expenditureSlotPayouts[_id][_slot][_token];
   }
 
   // Internal functions
-
-  // Used to avoid stack error in setExpenditureValues
-  function setExpenditurePayouts(
-    uint256 _id,
-    address[] memory _tokens,
-    uint256[][] memory _slots,
-    uint256[][] memory _values
-  )
-    internal
-  {
-    for (uint256 i; i < _tokens.length; i++) {
-      (bool success, bytes memory returndata) = address(this).delegatecall(
-        abi.encodeWithSignature("setExpenditurePayouts(uint256,uint256[],address,uint256[])", _id, _slots[i], _tokens[i], _values[i])
-      );
-      if (!success) {
-        if (returndata.length == 0) revert();
-        assembly {
-          revert(add(32, returndata), mload(returndata))
-        }
-      }
-    }
-  }
 
   bool constant MAPPING = false;
   bool constant ARRAY = true;
@@ -382,9 +355,7 @@ contract ColonyExpenditure is ColonyStorage {
     bool[] memory _mask,
     bytes32[] memory _keys,
     bytes32 _value
-  )
-    internal
-  {
+  ) internal {
     require(_keys.length == _mask.length, "colony-expenditure-bad-mask");
 
     bytes32 value = _value;
@@ -392,7 +363,6 @@ contract ColonyExpenditure is ColonyStorage {
 
     // See https://solidity.readthedocs.io/en/v0.5.14/miscellaneous.html
     for (uint256 i; i < _keys.length; i++) {
-
       if (_mask[i] == MAPPING) {
         slot = keccak256(abi.encode(_keys[i], slot));
       }
@@ -409,7 +379,6 @@ contract ColonyExpenditure is ColonyStorage {
           slot = keccak256(abi.encode(slot));
         }
       }
-
     }
 
     assembly {

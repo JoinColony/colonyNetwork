@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,11 +16,10 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.8.20; // ignore-swc-103
+pragma solidity >=0.8.25; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import "./ContractRecoveryDataTypes.sol";
-
+import { ContractRecoveryDataTypes } from "./ContractRecoveryDataTypes.sol";
 
 interface IRecovery is ContractRecoveryDataTypes {
   /// @notice Put colony network mining into recovery mode.
@@ -49,7 +49,7 @@ interface IRecovery is ContractRecoveryDataTypes {
 
   /// @notice Return number of recovery roles.
   /// @return numRoles Number of users with the recovery role.
-  function numRecoveryRoles() external view returns(uint64 numRoles);
+  function numRecoveryRoles() external view returns (uint64 numRoles);
 
   /// @notice Update value of arbitrary storage variable.
   /// Can only be called by user with recovery role.

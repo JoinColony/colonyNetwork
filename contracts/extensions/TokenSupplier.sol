@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,16 +16,15 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../common/BasicMetaTransaction.sol";
-import "./../common/ERC20Extended.sol";
-import "./ColonyExtension.sol";
-
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
 
 contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
-
   uint256 constant ISSUANCE_PERIOD = 1 days;
 
   // Events
@@ -44,14 +44,14 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   mapping(address => uint256) metatransactionNonces;
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  /// @param _user The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers
@@ -65,35 +65,22 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("TokenSupplier");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
-    return 5;
+  function version() public pure override returns (uint256 _version) {
+    return 8;
   }
 
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
+    super.install(_colony);
 
-    colony = IColony(_colony);
     token = colony.getToken();
-  }
-
-  /// @notice Called when upgrading the extension (currently a no-op)
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {}
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
   }
 
   /// @notice Initialise the extension, must be called before any tokens can be issued
@@ -102,7 +89,10 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   function initialise(uint256 _tokenSupplyCeiling, uint256 _tokenIssuanceRate) public {
     require(isRoot(), "token-supplier-caller-not-root");
     require(lastIssue == 0, "token-supplier-already-initialised");
-    require(_tokenSupplyCeiling > ERC20Extended(token).totalSupply(), "token-supplier-ceiling-too-low");
+    require(
+      _tokenSupplyCeiling > ERC20Extended(token).totalSupply(),
+      "token-supplier-ceiling-too-low"
+    );
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
     tokenIssuanceRate = _tokenIssuanceRate;
@@ -116,7 +106,10 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @param _tokenSupplyCeiling Total amount of tokens to issue
   function setTokenSupplyCeiling(uint256 _tokenSupplyCeiling) public initialised {
     require(isRoot(), "token-supplier-caller-not-root");
-    require(_tokenSupplyCeiling > ERC20Extended(token).totalSupply(), "token-supplier-ceiling-too-low");
+    require(
+      _tokenSupplyCeiling > ERC20Extended(token).totalSupply(),
+      "token-supplier-ceiling-too-low"
+    );
 
     tokenSupplyCeiling = _tokenSupplyCeiling;
 
@@ -126,14 +119,14 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Update the tokenIssuanceRate
   /// @param _tokenIssuanceRate Number of tokens to issue per day
   // slither-disable-next-line reentrancy-no-eth
-  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public initialised  {
+  function setTokenIssuanceRate(uint256 _tokenIssuanceRate) public initialised {
     require(
-      isRoot() || (
-        isRootFunding() &&
-        block.timestamp - lastRateUpdate >= 4 weeks &&
-        _tokenIssuanceRate <= tokenIssuanceRate + tokenIssuanceRate / 10 &&
-        _tokenIssuanceRate >= tokenIssuanceRate - tokenIssuanceRate / 10
-      ), "token-supplier-caller-not-authorized"
+      isRoot() ||
+        (isRootFunding() &&
+          block.timestamp - lastRateUpdate >= 4 weeks &&
+          _tokenIssuanceRate <= tokenIssuanceRate + tokenIssuanceRate / 10 &&
+          _tokenIssuanceRate >= tokenIssuanceRate - tokenIssuanceRate / 10),
+      "token-supplier-caller-not-authorized"
     );
 
     // Issue any outstanding tokens under the previous rate and update timestamp
@@ -199,5 +192,4 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   function isRootFunding() internal view returns (bool) {
     return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Funding);
   }
-
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -10,52 +11,46 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import "./../common/ERC20Extended.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../common/ERC20Extended.sol";
-import "./../../lib/dappsys/auth.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { DSAuth, DSAuthEvents, DSAuthority } from "./../../lib/dappsys/auth.sol";
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
 abstract contract DSAuthMeta is DSAuthEvents, BasicMetaTransaction {
-    DSAuthority  public  authority;
-    address      public  owner;
+  DSAuthority public authority;
+  address public owner;
 
-    constructor() {
-        owner = msgSender();
-        emit LogSetOwner(msgSender());
-    }
+  constructor() {
+    owner = msgSender();
+    emit LogSetOwner(msgSender());
+  }
 
-    function setOwner(address owner_)
-        public
-        auth
-    {
-        owner = owner_;
-        emit LogSetOwner(owner);
-    }
+  function setOwner(address owner_) public auth {
+    owner = owner_;
+    emit LogSetOwner(owner);
+  }
 
-    function setAuthority(DSAuthority authority_)
-        public
-        auth
-    {
-        authority = authority_;
-        emit LogSetAuthority(address(authority));
-    }
+  function setAuthority(DSAuthority authority_) public auth {
+    authority = authority_;
+    emit LogSetAuthority(address(authority));
+  }
 
-    modifier auth {
-        require(isAuthorized(msgSender(), msg.sig), "ds-auth-unauthorized");
-        _;
-    }
+  modifier auth() {
+    require(isAuthorized(msgSender(), msg.sig), "ds-auth-unauthorized");
+    _;
+  }
 
-    function isAuthorized(address src, bytes4 sig) internal view returns (bool) {
-        if (src == address(this)) {
-            return true;
-        } else if (src == owner) {
-            return true;
-        } else if (authority == DSAuthority(address(0x00))) {
-            return false;
-        } else {
-            return authority.canCall(src, address(this), sig);
-        }
+  function isAuthorized(address src, bytes4 sig) internal view returns (bool) {
+    if (src == address(this)) {
+      return true;
+    } else if (src == owner) {
+      return true;
+    } else if (authority == DSAuthority(address(0x00))) {
+      return false;
+    } else {
+      return authority.canCall(src, address(this), sig);
     }
+  }
 }

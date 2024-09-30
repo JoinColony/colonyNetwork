@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,21 +16,20 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../common/BasicMetaTransaction.sol";
-import "./ColonyExtension.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
 
 abstract contract ColonyExtensionMeta is ColonyExtension, BasicMetaTransaction {
+  mapping(address => uint256) metatransactionNonces;
 
-  mapping (address => uint256) metatransactionNonces;
-
-  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
     return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address _user) override internal {
+  function incrementMetatransactionNonce(address _user) internal override {
     metatransactionNonces[_user] += 1;
   }
 

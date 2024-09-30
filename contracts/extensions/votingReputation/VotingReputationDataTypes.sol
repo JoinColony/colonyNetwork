@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,12 +16,14 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
-import "./../../colony/ColonyDataTypes.sol";
+pragma solidity 0.8.25;
 
+import { ColonyDataTypes } from "./../../colony/ColonyDataTypes.sol";
 
+// prettier-ignore
 interface VotingReputationDataTypes {
-  // Constants
+  // Data structures
+
   enum ExtensionState { Deployed, Active, Deprecated }
 
   enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
@@ -39,6 +42,7 @@ interface VotingReputationDataTypes {
     bool escalated;
     bool finalized;
     address altTarget;
+    bytes4 sig;
     bytes action;
   }
 

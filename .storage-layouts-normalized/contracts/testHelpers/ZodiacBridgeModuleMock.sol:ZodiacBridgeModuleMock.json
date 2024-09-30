@@ -1,0 +1,15 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/testHelpers/ZodiacBridgeModuleMock.sol:ZodiacBridgeModuleMock",
+      "label": "avatar",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,15 +16,13 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.8.20; // ignore-swc-103
+pragma solidity >=0.8.25; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import "./TokenLockingDataTypes.sol";
-import "./../common/IBasicMetaTransaction.sol";
-
+import { TokenLockingDataTypes } from "./TokenLockingDataTypes.sol";
+import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
 
 interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
-
   /// @notice Set the ColonyNetwork contract address.
   /// @dev ColonyNetwork is used for checking if sender is a colony created on colony network.
   /// @param _colonyNetwork Address of the ColonyNetwork
@@ -122,7 +121,12 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _amount Amount of colony's internal token we are taking.
   /// @param _token The colony's internal token address
   /// @param _recipient Recipient of the slashed tokens
-  function transferStake(address _user, uint256 _amount, address _token, address _recipient) external;
+  function transferStake(
+    address _user,
+    uint256 _amount,
+    address _token,
+    address _recipient
+  ) external;
 
   /// @notice Get global lock count for a specific token.
   /// @param _token Address of the token
@@ -144,19 +148,30 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _user Address of the obligated account.
   /// @param _token The token for which the user is obligated.
   /// @return obligation The total amount this user is obligated
-  function getTotalObligation(address _user, address _token) external view returns (uint256 obligation);
+  function getTotalObligation(
+    address _user,
+    address _token
+  ) external view returns (uint256 obligation);
 
   /// @notice See how much an address has approved another address to obligate on their behalf.
   /// @param _user Address of the account that has approved _approvee to obligate their funds.
   /// @param _token The token for which the user has provided the approval.
   /// @param _obligator The address that has been approved to obligate the funds.
   /// @return approval The total amount for this obligation
-  function getApproval(address _user, address _token, address _obligator) external view returns (uint256 approval);
+  function getApproval(
+    address _user,
+    address _token,
+    address _obligator
+  ) external view returns (uint256 approval);
 
   /// @notice See how much a user is currently obligated by another.
   /// @param _user Address of the account that has had their funds obligated.
   /// @param _token The token for which the user has provided the approval.
   /// @param _obligator The address that obligated the funds (and therefore can slash or return them).
   /// @return approval The total amount for this obligation
-  function getObligation(address _user, address _token, address _obligator) external view returns (uint256 approval);
+  function getObligation(
+    address _user,
+    address _token,
+    address _obligator
+  ) external view returns (uint256 approval);
 }

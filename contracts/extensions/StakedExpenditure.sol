@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,24 +16,23 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/ColonyDataTypes.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./ColonyExtensionMeta.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
 
-
 contract StakedExpenditure is ColonyExtensionMeta {
-
   // Events
 
   event ExpenditureMadeViaStake(address indexed creator, uint256 expenditureId, uint256 stake);
-  event ExpenditureCancelled(uint256 expenditureId);
+  event ExpenditureCancelled(address agent, uint256 expenditureId);
   event StakeReclaimed(uint256 expenditureId);
-  event StakeFractionSet(uint256 stakeFraction);
+  event StakeFractionSet(address agent, uint256 stakeFraction);
+  event ExpenditureStakerPunished(address agent, uint256 expenditureId, bool punished);
 
   // Datatypes
 
@@ -45,60 +45,52 @@ contract StakedExpenditure is ColonyExtensionMeta {
 
   uint256 stakeFraction;
 
-  mapping (uint256 => Stake) stakes;
+  mapping(uint256 => Stake) stakes;
 
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "staked-expenditure-caller-not-root");
+    require(
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      "staked-expenditure-caller-not-root"
+    );
     _;
   }
 
-  // Overrides
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("StakedExpenditure");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
-    return 3;
-  }
-
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
+  function version() public pure override returns (uint256 _version) {
+    return 6;
   }
 
   // Public
 
+  /// @notice Initialise the extension
+  /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
+  function initialise(uint256 _stakeFraction) public onlyRoot {
+    require(stakeFraction == 0, "staked-expenditure-already-initialised");
+    setStakeFraction(_stakeFraction);
+  }
+
   /// @notice Sets the stake fraction
   /// @param _stakeFraction WAD-denominated fraction, used to determine stake as fraction of rep in domain
   function setStakeFraction(uint256 _stakeFraction) public onlyRoot {
+    if (stakeFraction == 0) {
+      emit ExtensionInitialised();
+    }
+    require(_stakeFraction > 0, "staked-expenditure-value-too-small");
     require(_stakeFraction <= WAD, "staked-expenditure-value-too-large");
     stakeFraction = _stakeFraction;
 
-    emit StakeFractionSet(_stakeFraction);
+    emit StakeFractionSet(msgSender(), _stakeFraction);
   }
 
   /// @notice Make an expenditure by putting up a stake
@@ -117,17 +109,28 @@ contract StakedExpenditure is ColonyExtensionMeta {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-    notDeprecated
-  {
+  ) public notDeprecated {
+    require(stakeFraction > 0, "staked-expenditure-not-initialised");
+
     bytes32 rootHash = IColonyNetwork(colony.getColonyNetwork()).getReputationRootHash();
     uint256 domainSkillId = colony.getDomain(_domainId).skillId;
-    uint256 domainRep = checkReputation(rootHash, domainSkillId, address(0x0), _key, _value, _branchMask, _siblings);
+    uint256 domainRep = checkReputation(
+      rootHash,
+      domainSkillId,
+      address(0x0),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
     uint256 stakeAmount = wmul(domainRep, stakeFraction);
 
     colony.obligateStake(msgSender(), _domainId, stakeAmount);
-    uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
+    uint256 expenditureId = colony.makeExpenditure(
+      _permissionDomainId,
+      _childSkillIndex,
+      _domainId
+    );
 
     stakes[expenditureId] = Stake({ creator: msgSender(), amount: stakeAmount });
     colony.transferExpenditure(expenditureId, msgSender());
@@ -148,7 +151,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
     require(
       expenditure.status == ColonyDataTypes.ExpenditureStatus.Cancelled ||
-      expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized,
+        expenditure.status == ColonyDataTypes.ExpenditureStatus.Finalized,
       "staked-expenditure-expenditure-invalid-state"
     );
 
@@ -166,9 +169,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _expenditureId
-  )
-    public
-  {
+  ) public {
     Stake storage stake = stakes[_expenditureId];
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
@@ -200,9 +201,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
     uint256 _callerChildSkillIndex,
     uint256 _expenditureId,
     bool _punish
-  )
-    public
-  {
+  ) public {
     ColonyDataTypes.Expenditure memory expenditure = colony.getExpenditure(_expenditureId);
 
     require(
@@ -252,6 +251,8 @@ contract StakedExpenditure is ColonyExtensionMeta {
     }
 
     cancelExpenditure(_permissionDomainId, _childSkillIndex, _expenditureId, expenditure.owner);
+
+    emit ExpenditureStakerPunished(msgSender(), _expenditureId, _punish);
   }
 
   // View
@@ -279,9 +280,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
     uint256 _childSkillIndex,
     uint256 _expenditureId,
     address _expenditureOwner
-  )
-    internal
-  {
+  ) internal {
     // Get the slot storing 0x{owner}{state}
     bool[] memory mask = new bool[](1);
     mask[0] = ARRAY;
@@ -289,10 +288,8 @@ contract StakedExpenditure is ColonyExtensionMeta {
     keys[0] = bytes32(uint256(0));
 
     // Prepare the new 0x000...{owner}{state} value
-    bytes32 value = (
-      bytes32(bytes20(_expenditureOwner)) >> 0x58 | // Shift the address to the right, except for one byte
-      bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled)) // Put this value in that rightmost byte
-    );
+    bytes32 value = ((bytes32(bytes20(_expenditureOwner)) >> 0x58) |
+      bytes32(uint256(ColonyDataTypes.ExpenditureStatus.Cancelled))); // Shift the address to the right, except for one byte // Put this value in that rightmost byte
 
     colony.setExpenditureState(
       _permissionDomainId,
@@ -304,6 +301,6 @@ contract StakedExpenditure is ColonyExtensionMeta {
       value
     );
 
-    emit ExpenditureCancelled(_expenditureId);
+    emit ExpenditureCancelled(msgSender(), _expenditureId);
   }
 }

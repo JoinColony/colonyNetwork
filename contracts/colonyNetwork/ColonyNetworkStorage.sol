@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,19 +16,19 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../../lib/dappsys/math.sol";
-import "./../colony/IMetaColony.sol";
-import "./../common/CommonStorage.sol";
-import "./../common/ERC20Extended.sol";
-import "./ColonyNetworkDataTypes.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { CommonStorage } from "./../common/CommonStorage.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-
-contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, MultiChain {
   // Number of colonies in the network
   uint256 colonyCount; // Storage slot 6
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -56,18 +57,18 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   address inactiveReputationMiningCycle; // Storage slot 17
 
   // Maps index to colony address
-  mapping (uint256 => address) colonies; // Storage slot 18
-  mapping (address => bool) _isColony; // Storage slot 19
+  mapping(uint256 => address) colonies; // Storage slot 18
+  mapping(address => bool) _isColony; // Storage slot 19
   // Maps colony contract versions to respective resolvers
-  mapping (uint256 => address) colonyVersionResolver; // Storage slot 20
+  mapping(uint256 => address) colonyVersionResolver; // Storage slot 20
   // Contains all global and local skills in the network, mapping skillId to Skill. Where skillId is 1-based unique identifier
-  mapping (uint256 => Skill) skills; // Storage slot 21
+  mapping(uint256 => Skill) skills; // Storage slot 21
 
   // Mapping containing how much has been staked by each user
-  mapping (address => uint) stakedBalances; // Storage slot 22
+  mapping(address => uint) stakedBalances; // Storage slot 22
 
   // Mapping containing the last auction start timestamp for a token address
-  mapping (address => uint) recentAuctions; // Storage slot 23
+  mapping(address => uint) recentAuctions; // Storage slot 23
 
   // Address of the ENS registrar for joincolony.eth
   address ens; // Storage slot 24
@@ -78,15 +79,15 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   // Namehash of the colony node that we administer (i.e. namehash("colony.joincolony.eth"))
   bytes32 colonyNode; // Storage slot 27
   // Mapping from colony address to claimed colony label
-  mapping (address => string) colonyLabels; // Storage slot 28
+  mapping(address => string) colonyLabels; // Storage slot 28
   // Mapping from user address to claimed user label
-  mapping (address => string) userLabels; // Storage slot 29
+  mapping(address => string) userLabels; // Storage slot 29
 
-  mapping (bytes32 => ENSRecord) records; // Storage slot 30
-  mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog; // Storage slot 31
-  mapping (address => bool) replacementReputationUpdateLogsExist; // Storage slot 32
-  mapping (address => MiningStake) miningStakes; // Storage slot 33
-  mapping (address => uint256) pendingMiningRewards; // Storage slot 34
+  mapping(bytes32 => ENSRecord) records; // Storage slot 30
+  mapping(address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog; // Storage slot 31
+  mapping(address => bool) replacementReputationUpdateLogsExist; // Storage slot 32
+  mapping(address => MiningStake) miningStakes; // Storage slot 33
+  mapping(address => uint256) pendingMiningRewards; // Storage slot 34
 
   uint256 totalMinerRewardPerCycle; // Storage slot 35
   uint256 DEPRECATED_annualMetaColonyStipend; // Storage slot 36
@@ -98,13 +99,37 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
   mapping(bytes32 => mapping(address => address payable)) installations; // Storage slot 39
 
   // Used for whitelisting payout tokens
-  mapping (address => bool) payoutWhitelist; // Storage slot 40
+  mapping(address => bool) payoutWhitelist; // Storage slot 40
 
   uint256 constant METATRANSACTION_NONCES_SLOT = 41;
   mapping(address => uint256) metatransactionNonces; // Storage slot 41
 
   // Mining delegation mapping
   mapping(address => address) miningDelegators; // Storage slot 42
+
+  uint256 reputationMiningChainId; // Storage slot 43
+
+  address colonyBridgeAddress; // Storage slot 44
+
+  mapping(uint256 => uint256) bridgeCurrentRootHashNonces; // Storage slot 45
+
+  // A mapping that maps chain id -> skill count
+  mapping(uint256 => uint256) networkSkillCounts; // Storage slot 46
+
+  // A mapping that stores pending bridged skill additions that have been bridged out-of-order
+  // chainId -> skillCount -> parentSkillId
+  mapping(uint256 => mapping(uint256 => uint256)) pendingSkillAdditions; // Storage slot 47
+
+  // A mapping that stores the latest reputation update received from a colony on a particular chain
+  // chainId -> colonyAddress -> updateCount
+  mapping(uint256 => mapping(address => uint256)) reputationUpdateCount; // Storage slot 48
+
+  // A mapping that stores reputation updates that haven't been added to the log yet, either because they've been
+  // received out of order, or because the skill in question hasn't been bridged yet.
+  // networkId -> colonyAddress -> updateCount -> update
+  mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 49
+
+  // Modifiers
 
   modifier calledByColony() {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
@@ -123,19 +148,72 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage {
     _;
   }
 
-  // Meta Colony allowed to manage Global skills
-  // All colonies are able to manage their Local (domain associated) skills
-  modifier allowedToAddSkill(bool globalSkill) {
-    if (globalSkill) {
-      require(msgSender() == metaColony, "colony-must-be-meta-colony");
-    } else {
-      require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
-    }
+  modifier allowedToAddSkill() {
+    require(_isColony[msgSender()] || msgSender() == address(this), "colony-caller-must-be-colony");
     _;
   }
 
-  modifier skillExists(uint skillId) {
+  modifier skillExists(uint256 skillId) {
     require(skillCount >= skillId, "colony-invalid-skill-id");
+    require(toChainId(skillId) == block.chainid || isXdai(), "colony-invalid-skill-id");
     _;
+  }
+
+  modifier onlyColonyBridge() {
+    require(msgSender() == colonyBridgeAddress, "colony-network-caller-must-be-colony-bridge");
+    _;
+  }
+
+  modifier onlyMiningChain() {
+    if (getMiningChainId() == block.chainid) {
+      require(
+        inactiveReputationMiningCycle != address(0x0),
+        "colony-reputation-mining-not-initialised"
+      );
+    }
+    require(isMiningChain(), "colony-only-valid-on-mining-chain");
+    _;
+  }
+
+  modifier onlyMiningChainOrDuringSetup() {
+    require(
+      isMiningChain() || getMiningChainId() == 0,
+      "colony-only-valid-on-mining-chain-or-during-setup"
+    );
+    _;
+  }
+
+  modifier onlyNotMiningChain() {
+    require(!isMiningChain(), "colony-only-valid-not-on-mining-chain");
+    _;
+  }
+
+  // Internal functions
+
+  function toRootSkillId(uint256 _chainId) internal pure returns (uint256) {
+    require(_chainId <= type(uint128).max, "colony-chain-id-too-large");
+    return _chainId << 128;
+  }
+
+  function toChainId(uint256 _skillId) internal pure returns (uint256) {
+    return _skillId >> 128;
+  }
+
+  function isMiningChain() internal view returns (bool) {
+    return block.chainid == getMiningChainId();
+  }
+
+  function getMiningChainId() public view returns (uint256) {
+    if (reputationMiningChainId == 0 && isXdai()) {
+      return block.chainid;
+    }
+    return reputationMiningChainId;
+  }
+
+  function getAndCacheReputationMiningChainId() internal returns (uint256) {
+    if (reputationMiningChainId == 0 && isXdai()) {
+      reputationMiningChainId = block.chainid;
+    }
+    return reputationMiningChainId;
   }
 }

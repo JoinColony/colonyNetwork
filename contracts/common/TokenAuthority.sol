@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,10 +16,9 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "../../lib/dappsys/auth.sol";
-
+import { DSAuth, DSAuthority } from "../../lib/dappsys/auth.sol";
 
 contract TokenAuthority is DSAuthority {
   address public immutable token;

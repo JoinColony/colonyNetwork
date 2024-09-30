@@ -1,14 +1,14 @@
-/* eslint-disable no-underscore-dangle */
+/* globals hre */
 
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../../packages/package-utils");
 
 const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../../helpers/constants");
 const {
-  getActiveRepCycle,
   forwardTime,
   forwardTimeTo,
   advanceMiningCycleNoContest,
@@ -26,12 +26,13 @@ const {
   sleep,
   stopMining,
   startMining,
+  getChainId,
 } = require("../../../helpers/test-helper");
 const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedExpenditure,
   fundColonyWithTokens,
 } = require("../../../helpers/test-data-generator");
 const ReputationMinerClient = require("../../../packages/reputation-miner/ReputationMinerClient");
@@ -43,20 +44,20 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "..", "artifacts", "contracts"),
 });
 
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = 8545;
+let MINER1;
+let MINER2;
+let MINER3;
 
-process.env.SOLIDITY_COVERAGE
+hre.__SOLIDITY_COVERAGE_RUNNING
   ? contract.skip
   : contract("Reputation miner client auto enabled functionality", (accounts) => {
-      const MINER1 = accounts[5];
-      const MINER2 = accounts[6];
-      const MINER3 = accounts[7];
+      [, , , , , MINER1, MINER2, MINER3] = accounts;
 
       let colonyNetwork;
-      let repCycle;
       let reputationMinerClient;
       let goodClient;
       let startingBlockNumber;
@@ -70,11 +71,11 @@ process.env.SOLIDITY_COVERAGE
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER1, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER2, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER3, DEFAULT_STAKE);
-        await colonyNetwork.initialiseReputationMining();
-        await colonyNetwork.startNextCycle();
+        const chainId = await getChainId();
+        await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken });
+        await setupClaimedExpenditure({ colonyNetwork, colony: metaColony });
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
         const startingBlock = await currentBlock();
         startingBlockNumber = startingBlock.number;
@@ -82,17 +83,18 @@ process.env.SOLIDITY_COVERAGE
         goodClient = new ReputationMinerTestWrapper({
           loader,
           realProviderPort,
-          minerAddress: MINER2,
+          minerAddress: _MINER2,
           useJsTree: true,
           // dbPath: "./reputationStates_good.sqlite"
         });
         reputationMinerClient = new ReputationMinerClient({
           loader,
           realProviderPort,
-          minerAddress: MINER1,
+          minerAddress: _MINER1,
           useJsTree: true,
           auto: true,
           oracle: false,
+          processingDelay: 1,
         });
       };
 
@@ -101,11 +103,19 @@ process.env.SOLIDITY_COVERAGE
       });
 
       beforeEach(async function () {
-        repCycle = await getActiveRepCycle(colonyNetwork);
         await goodClient.initialise(colonyNetwork.address);
         await goodClient.resetDB();
         await goodClient.sync(startingBlockNumber);
         await goodClient.saveCurrentState();
+        reputationMinerClient = new ReputationMinerClient({
+          loader,
+          realProviderPort,
+          minerAddress: MINER1,
+          useJsTree: true,
+          auto: true,
+          oracle: false,
+          processingDelay: 1,
+        });
         await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
       });
 
@@ -124,13 +134,18 @@ process.env.SOLIDITY_COVERAGE
           const oldHash = await colonyNetwork.getReputationRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 12);
 
           // Forward through most of the cycle duration and wait for the client to submit all 12 allowed entries
           await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
-          const miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
+          const miningCycleComplete = getMiningCycleCompletePromise(
+            reputationMinerClient._miner.colonyNetwork,
+            (await currentBlock()).number,
+            oldHash,
+            rootHash,
+          );
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
           await forwardTime(MINING_CYCLE_DURATION * 0.1 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
@@ -145,6 +160,7 @@ process.env.SOLIDITY_COVERAGE
             useJsTree: true,
             oracle: true,
             auto: false,
+            processingDelay: 1,
             // dbPath: "./reputationStates_good.sqlite"
           });
 
@@ -157,13 +173,18 @@ process.env.SOLIDITY_COVERAGE
           const oldHash = await colonyNetwork.getReputationRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 12);
 
           // Forward through most of the cycle duration and wait for the client to submit all 12 allowed entries
           await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
-          const miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
+          const miningCycleComplete = getMiningCycleCompletePromise(
+            reputationMinerClient._miner.colonyNetwork,
+            (await currentBlock()).number,
+            oldHash,
+            rootHash,
+          );
 
           let oracleCheckInterval;
 
@@ -192,9 +213,15 @@ process.env.SOLIDITY_COVERAGE
           await forwardTime(MINING_CYCLE_DURATION * 0.1 + MINING_CYCLE_DURATION, this);
           await miningCycleComplete;
 
-          await oracleUpdated;
+          await mineBlock(); // Triggers the client to process the next cycle.
 
+          await oracleUpdated;
           clearTimeout(oracleCheckInterval);
+
+          // Wait until the client has processed the block
+          while (reputationMinerClient.lockedForBlockProcessing) {
+            await sleep(1000);
+          }
 
           // Check the oracle has the same root hash as the miner after updating
           const oracleHash = await oracleClient._miner.reputationTree.getRootHash();
@@ -212,7 +239,7 @@ process.env.SOLIDITY_COVERAGE
           const oldHash = await colonyNetwork.getReputationRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 2);
+          const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 2);
 
           // Forward through half of the cycle duration and wait for the client to submit some entries
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -226,14 +253,20 @@ process.env.SOLIDITY_COVERAGE
             minerAddress: MINER1,
             useJsTree: true,
             auto: true,
+            processingDelay: 1,
           });
           await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 12);
 
           await mineBlock();
           await receive12Submissions;
 
-          const miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
+          const miningCycleComplete = getMiningCycleCompletePromise(
+            reputationMinerClient._miner.colonyNetwork,
+            (await currentBlock()).number,
+            oldHash,
+            rootHash,
+          );
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
           await forwardTime(MINING_CYCLE_DURATION * 0.6 + MINING_CYCLE_DURATION, this);
@@ -248,7 +281,7 @@ process.env.SOLIDITY_COVERAGE
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 12);
 
           // Make a submission from the second client and then await the remaining 11 submissions from the first client
           await goodClient.loadState(oldHash);
@@ -259,7 +292,12 @@ process.env.SOLIDITY_COVERAGE
           await checkSuccessEthers(goodClient.submitRootHash());
           await receive12Submissions;
 
-          const miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
+          const miningCycleComplete = getMiningCycleCompletePromise(
+            reputationMinerClient._miner.colonyNetwork,
+            (await currentBlock()).number,
+            oldHash,
+            rootHash,
+          );
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
           await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
@@ -267,7 +305,6 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("miners should be randomised in terms of order of allowed responses each cycle", async function () {
-          reputationMinerClient._processingDelay = 1;
           const reputationMinerClient2 = new ReputationMinerClient({
             loader,
             realProviderPort,
@@ -279,13 +316,12 @@ process.env.SOLIDITY_COVERAGE
           });
           await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
           await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
-          await mineBlock();
 
           let differentAddresses = false;
           const completionAddresses = [];
           while (!differentAddresses) {
             const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-            const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+            const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, null, null, null, 12);
 
             // Forward time and wait for the client to submit all 12 allowed entries
             await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -297,7 +333,7 @@ process.env.SOLIDITY_COVERAGE
             let completionEvent;
             const miningCycleCompletePromise = new Promise(function (resolve, reject) {
               colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-                event.removeListener();
+                await event.removeListener();
                 cycleComplete = true;
                 completionEvent = event;
                 resolve();
@@ -327,11 +363,9 @@ process.env.SOLIDITY_COVERAGE
             }
           }
           await reputationMinerClient2.close();
-          reputationMinerClient._processingDelay = 10;
         });
 
         it("Losing a race shouldn't prevent a miner from continuing", async function () {
-          reputationMinerClient._processingDelay = 1;
           const SUBMISSION_SIG = web3.utils.soliditySha3("submitRootHash(bytes32,uint256,bytes32,uint256)").slice(0, 10);
 
           const reputationMinerClient2 = new ReputationMinerClient({
@@ -351,13 +385,12 @@ process.env.SOLIDITY_COVERAGE
           }
           reputationMinerClient.lockedForBlockProcessing = true;
           reputationMinerClient2.lockedForBlockProcessing = true;
-          await mineBlock();
 
           let latestBlock = await currentBlock();
           let firstSubmissionBlockNumber = latestBlock.number;
 
           let repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          let receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+          let receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, null, null, null, 12);
 
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
           const oldHash = await colonyNetwork.getReputationRootHash();
@@ -367,22 +400,46 @@ process.env.SOLIDITY_COVERAGE
           for (let i = 0; i < 11; i += 1) {
             await goodClient.submitRootHash();
           }
-          await stopMining();
 
-          const submissionIndex1 = reputationMinerClient.submissionIndex;
-          const submissionIndex2 = reputationMinerClient2.submissionIndex;
+          await stopMining();
+          latestBlock = await currentBlock();
+
+          // Wait until all our block listeners have fired on both clients
+          while (
+            latestBlock.number !== reputationMinerClient.blockSeenWhileLocked ||
+            latestBlock.number !== reputationMinerClient2.blockSeenWhileLocked
+          ) {
+            await sleep(1000);
+            latestBlock = await currentBlock();
+          }
+
+          const miner1TxCountBefore = await web3.eth.getTransactionCount(MINER1);
+          const miner3TxCountBefore = await web3.eth.getTransactionCount(MINER3);
+          let miner1TxCountAfter = miner1TxCountBefore;
+          let miner3TxCountAfter = miner3TxCountBefore;
+
           reputationMinerClient.lockedForBlockProcessing = false;
           reputationMinerClient2.lockedForBlockProcessing = false;
 
           await mineBlock();
-          while (reputationMinerClient.submissionIndex === submissionIndex1 || reputationMinerClient2.submissionIndex === submissionIndex2) {
+          while (miner1TxCountAfter === miner1TxCountBefore || miner3TxCountAfter === miner3TxCountBefore) {
+            await sleep(1000);
+            miner1TxCountAfter = await web3.eth.getTransactionCount(MINER1, "pending");
+            miner3TxCountAfter = await web3.eth.getTransactionCount(MINER3, "pending");
+          }
+
+          await startMining(); // Turn on automining
+          await mineBlock(); // Mine the pending transactions
+
+          // Wait until the clients have processed the block
+          while (reputationMinerClient.lockedForBlockProcessing || reputationMinerClient2.lockedForBlockProcessing) {
             await sleep(1000);
           }
 
-          await startMining();
+          // Mine another block, which should trigger submissions (with a processing delay of 1)
           await mineBlock();
-
           await receive12Submissions;
+
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
           await forwardTime(MINING_CYCLE_DURATION / 2 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -411,7 +468,7 @@ process.env.SOLIDITY_COVERAGE
 
           // So we've now seen a miner lose a race - let's check they can go through a cycle correctly.
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
-          receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+          receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, null, null, null, 12);
 
           latestBlock = await currentBlock();
           firstSubmissionBlockNumber = latestBlock.number;
@@ -439,9 +496,25 @@ process.env.SOLIDITY_COVERAGE
 
           // If we are locked for block processing (for example, after stopping block checks due to an error), this will hang
           // Reset everything to be well behaved before testing the assertion.
-          reputationMinerClient2.lockedForBlockProcessing = false;
+          try {
+            let count = 0;
+            while (reputationMinerClient.lockedForBlockProcessing || reputationMinerClient2.lockedForBlockProcessing) {
+              await sleep(1000);
+              count += 1;
+              if (count > 60) {
+                throw new Error("ERROR: timeout while waiting for block processing to finish");
+              }
+            }
+          } catch (err) {
+            // If the above timed out, the test probably failed and we need to take manual action to close reputationMinerClient2
+            if (err.toString().includes("ERROR: timeout while waiting for block processing to finish")) {
+              reputationMinerClient2.lockedForBlockProcessing = false;
+            } else {
+              throw err;
+            }
+          }
+
           await reputationMinerClient2.close();
-          reputationMinerClient._processingDelay = 10;
 
           if ([...new Set(submissionAddresses)].length === 1) {
             assert(false, "Only one miner address seen");
@@ -468,7 +541,7 @@ process.env.SOLIDITY_COVERAGE
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 12);
 
           // Forward through most of the cycle duration
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -477,7 +550,7 @@ process.env.SOLIDITY_COVERAGE
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -491,7 +564,7 @@ process.env.SOLIDITY_COVERAGE
           const goodClientConfirmedBinarySearch = new Promise(function (resolve, reject) {
             repCycleEthers.on("BinarySearchConfirmed", async (_hash, _nLeaves, _jrh, _firstDisagree, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -506,7 +579,7 @@ process.env.SOLIDITY_COVERAGE
           const goodClientCompleteChallenge = new Promise(function (resolve, reject) {
             repCycleEthers.on("ChallengeCompleted", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -518,7 +591,7 @@ process.env.SOLIDITY_COVERAGE
           });
 
           await badClient.submitRootHash();
-          let disputeRound = await repCycle.getDisputeRound(0);
+          let disputeRound = await repCycleEthers.getDisputeRound(0);
           const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
           const goodIndex = badIndex.add(1).mod(2);
 
@@ -536,7 +609,7 @@ process.env.SOLIDITY_COVERAGE
           await mineBlock();
           await badClient.confirmJustificationRootHash();
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
@@ -544,7 +617,7 @@ process.env.SOLIDITY_COVERAGE
             return new Promise(function (resolve, reject) {
               repCycleEthers.on("BinarySearchStep", async (_hash, _nLeaves, _jrh, event) => {
                 if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                  event.removeListener();
+                  await event.removeListener();
                   resolve();
                 }
               });
@@ -556,7 +629,7 @@ process.env.SOLIDITY_COVERAGE
             });
           }
 
-          while (badEntry.upperBound !== badEntry.lowerBound) {
+          while (!badEntry.upperBound.eq(badEntry.lowerBound)) {
             await mineBlock();
             const goodClientSearchStepPromise = getGoodClientBinarySearchStepPromise();
             await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
@@ -565,28 +638,28 @@ process.env.SOLIDITY_COVERAGE
               await mineBlock();
               await badClient.respondToBinarySearchForChallenge();
             }
-            disputeRound = await repCycle.getDisputeRound(0);
+            disputeRound = await repCycleEthers.getDisputeRound(0);
             badEntry = disputeRound[badIndex];
             goodEntry = disputeRound[goodIndex];
           }
 
           await noEventSeen(repCycleEthers, "BinarySearchConfirmed");
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
-          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1);
 
           await mineBlock();
           await goodClientConfirmedBinarySearch;
           await mineBlock();
           await badClient.confirmBinarySearchResult();
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
 
-          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION);
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION + 1);
 
           await mineBlock();
           await goodClientCompleteChallenge;
@@ -594,7 +667,7 @@ process.env.SOLIDITY_COVERAGE
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -605,7 +678,7 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          disputeRound = await repCycle.getDisputeRound(0);
+          disputeRound = await repCycleEthers.getDisputeRound(0);
           badEntry = disputeRound[badIndex];
           goodEntry = disputeRound[goodIndex];
 
@@ -617,6 +690,7 @@ process.env.SOLIDITY_COVERAGE
 
           await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-decay-incorrect");
 
+          // await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
           await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
           // Good client should now realise it can timeout bad submission
@@ -626,7 +700,7 @@ process.env.SOLIDITY_COVERAGE
 
           const newCycleStart = new Promise(function (resolve, reject) {
             reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-              event.removeListener();
+              await event.removeListener();
               resolve();
             });
 
@@ -663,12 +737,13 @@ process.env.SOLIDITY_COVERAGE
             useJsTree: true,
             auto: true,
             adapter,
+            processingDelay: 1,
           });
           await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
           expect(adapter.outputs[0]).to.equal("Successfully resumed pre-submission", "The client didn't resume pre-submission");
           await reputationMinerClient2.close();
 
-          const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 2);
+          const receive2Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 2);
 
           // Forward through half of the cycle duration and wait for the client to submit some entries
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -685,6 +760,7 @@ process.env.SOLIDITY_COVERAGE
             useJsTree: true,
             auto: true,
             adapter,
+            processingDelay: 1,
           });
           await reputationMinerClient3.initialise(colonyNetwork.address, startingBlockNumber);
           expect(adapter.outputs[0]).to.equal("Successfully resumed mid-submission", "The client didn't resume mid-submission");
@@ -711,7 +787,7 @@ process.env.SOLIDITY_COVERAGE
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 12);
 
           // Forward through most of the cycle duration
           await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -720,7 +796,7 @@ process.env.SOLIDITY_COVERAGE
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -732,46 +808,43 @@ process.env.SOLIDITY_COVERAGE
           });
 
           await badClient.submitRootHash();
-          let disputeRound = await repCycle.getDisputeRound(0);
-          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
-          const goodIndex = badIndex.add(1).mod(2);
 
-          let goodEntry = disputeRound[goodIndex];
+          const openingTimestamp = await repCycleEthers.getReputationMiningWindowOpenTimestamp();
 
-          // Forward time again so clients can start responding to challenges
-          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION), this);
           await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
-
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION * 2 + 1, this);
 
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
 
-            // After 30s, we throw a timeout error
+            // After 60s, we throw a timeout error
             setTimeout(() => {
               reject(new Error("ERROR: timeout while waiting for HashInvalidated"));
-            }, 30000);
+            }, 60000);
           });
 
-          disputeRound = await repCycle.getDisputeRound(0);
-          goodEntry = disputeRound[goodIndex];
+          const disputeRound = await repCycleEthers.getDisputeRound(0);
+          const entry = disputeRound[0];
 
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          // Forward time again so clients can start responding to challenges
+          await forwardTimeTo(parseInt(entry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION, this);
 
-          // Good client should now realise it can timeout bad submission
+          // Good client should now realise it can confirm JRH
           await goodClientConfirmedJRH;
+          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          // Good client should now relise it can invalidate the bad submission
           await goodClientInvalidateOpponent;
           await mineBlock();
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
           const newCycleStart = new Promise(function (resolve, reject) {
             reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-              event.removeListener();
+              await event.removeListener();
               resolve();
             });
 
@@ -811,16 +884,35 @@ process.env.SOLIDITY_COVERAGE
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
-          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, 12);
+          const receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, rootHash, nLeaves, jrh, 12);
+          const openingTimestamp = await repCycleEthers.getReputationMiningWindowOpenTimestamp();
 
           // Forward through most of the cycle duration
-          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION / 2), this);
           await receive12Submissions;
+
+          await reputationMinerClient.close();
+
+          await badClient.submitRootHash();
+
+          // Forward time again so clients can start responding to challenges
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION));
+          await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
+
+          const reputationMinerClient2 = new ReputationMinerClient({
+            loader,
+            realProviderPort,
+            minerAddress: MINER1,
+            useJsTree: true,
+            auto: true,
+            processingDelay: 1,
+          });
+          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
 
           const goodClientConfirmedJRH = new Promise(function (resolve, reject) {
             repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === rootHash && _nLeaves.eq(nLeaves) && _jrh === jrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -831,38 +923,14 @@ process.env.SOLIDITY_COVERAGE
             }, 60000);
           });
 
-          await reputationMinerClient.close();
-
-          await badClient.submitRootHash();
-          const disputeRound = await repCycle.getDisputeRound(0);
-          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
-          const goodIndex = badIndex.add(1).mod(2);
-
-          const goodEntry = disputeRound[goodIndex];
-          // Forward time again so clients can start responding to challenges
-          await forwardTimeTo(parseInt(goodEntry.lastResponseTimestamp, 10));
-          await noEventSeen(repCycleEthers, "JustificationRootHashConfirmed");
-
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
-
-          const reputationMinerClient2 = new ReputationMinerClient({
-            loader,
-            realProviderPort,
-            minerAddress: MINER1,
-            useJsTree: true,
-            auto: true,
-          });
-          await reputationMinerClient2.initialise(colonyNetwork.address, startingBlockNumber);
-          await mineBlock();
+          await forwardTimeTo(openingTimestamp.add(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1), this);
 
           await goodClientConfirmedJRH;
-
-          // Now cleanup
 
           const goodClientInvalidateOpponent = new Promise(function (resolve, reject) {
             repCycleEthers.on("HashInvalidated", async (_hash, _nLeaves, _jrh, event) => {
               if (_hash === badRootHash && _nLeaves.eq(badNLeaves) && _jrh === badJrh) {
-                event.removeListener();
+                await event.removeListener();
                 resolve();
               }
             });
@@ -873,24 +941,22 @@ process.env.SOLIDITY_COVERAGE
             }, 30000);
           });
 
-          await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          const disputeRound = await repCycleEthers.getDisputeRound(0);
+          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
+
+          const badEntry = disputeRound[badIndex];
+
+          // Bad entry timestamp + CHALLENGE_RESPONSE_WINDOW_DURATION is the earliest time we can invalidate
+          // the bad entry. After an additional CHALLENGE_RESPONSE_WINDOW_DURATION, we are guaranteed to be able to invalidate.
+
+          await forwardTimeTo(parseInt(badEntry.lastResponseTimestamp, 10) + CHALLENGE_RESPONSE_WINDOW_DURATION * 2, this);
 
           // Good client should now realise it can timeout bad submission
           await goodClientInvalidateOpponent;
-          await mineBlock();
+
           // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
 
-          const newCycleStart = new Promise(function (resolve, reject) {
-            reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-              event.removeListener();
-              resolve();
-            });
-
-            // After 60s, we throw a timeout error
-            setTimeout(() => {
-              reject(new Error("ERROR: timeout while waiting for new cycle to happen"));
-            }, 60000);
-          });
+          const newCycleStart = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, (await currentBlock()).number);
 
           await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -906,10 +972,11 @@ process.env.SOLIDITY_COVERAGE
         it(`should continue to mine successfully even if the submission hash takes a long time to be mined
           (e.g. because it ran out of funds)`, async function () {
           let repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          let openingTimestamp = parseInt(await repCycleEthers.getReputationMiningWindowOpenTimestamp(), 10);
           // Advance through a reputation cycle
           let rootHash = await reputationMinerClient._miner.getRootHash();
 
-          let receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+          let receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, null, null, null, 12);
 
           const delayedReputationMinerClient = new ReputationMinerClient({
             loader,
@@ -918,6 +985,7 @@ process.env.SOLIDITY_COVERAGE
             useJsTree: true,
             auto: true,
             oracle: false,
+            processingDelay: 1,
           });
           // That client is fine until we give it an awkward miner
           delayedReputationMinerClient._miner = new ReputationMinerLongTransactionMined({
@@ -930,33 +998,41 @@ process.env.SOLIDITY_COVERAGE
           await delayedReputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
 
           // Forward through most of the cycle duration and wait for the clients to submit all 12 allowed entries
-          await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
           let oldHash = await colonyNetwork.getReputationRootHash();
 
-          let miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
+          let miningCycleComplete = getMiningCycleCompletePromise(
+            reputationMinerClient._miner.colonyNetwork,
+            (await currentBlock()).number,
+            oldHash,
+            rootHash,
+          );
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          await forwardTime(MINING_CYCLE_DURATION * 0.1 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, this);
           await miningCycleComplete;
 
           // Advance through another - the client should still be waiting for the first transaction to return.
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          openingTimestamp = parseInt(await repCycleEthers.getReputationMiningWindowOpenTimestamp(), 10);
 
-          reputationMinerClient.blocksSinceCycleCompleted = 10;
-          await mineBlock();
+          receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, null, null, null, 12);
 
-          receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
-
-          await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
           rootHash = await reputationMinerClient._miner.getRootHash();
           oldHash = await colonyNetwork.getReputationRootHash();
-          miningCycleComplete = getMiningCycleCompletePromise(reputationMinerClient._miner.colonyNetwork, oldHash, rootHash);
+          miningCycleComplete = getMiningCycleCompletePromise(
+            reputationMinerClient._miner.colonyNetwork,
+            (await currentBlock()).number,
+            oldHash,
+            rootHash,
+          );
 
-          await forwardTime(MINING_CYCLE_DURATION * 0.1 + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, this);
           await miningCycleComplete;
 
           // We now resolve the original
@@ -965,14 +1041,13 @@ process.env.SOLIDITY_COVERAGE
           // And then we get both clients to process the newest cycle. The good miner will update normally.
           // In the case of the delayedReputationMinerClient, we expect it to recognise something has gone
           // wrong, and resync.
-          delayedReputationMinerClient.blocksSinceCycleCompleted = 10;
-          reputationMinerClient.blocksSinceCycleCompleted = 10;
-          await mineBlock();
+
           repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+          openingTimestamp = parseInt(await repCycleEthers.getReputationMiningWindowOpenTimestamp(), 10);
 
-          receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, null, null, null, 12);
+          receive12Submissions = getWaitForNSubmissionsPromise(repCycleEthers, (await currentBlock()).number, null, null, null, 12);
 
-          await forwardTime(MINING_CYCLE_DURATION * 0.9, this);
+          await forwardTimeTo(openingTimestamp + MINING_CYCLE_DURATION * 0.9, this);
           await receive12Submissions;
 
           // check delayed miner and good miner have ended up in the same state.
@@ -986,10 +1061,14 @@ process.env.SOLIDITY_COVERAGE
 
         function noEventSeen(contract, event) {
           return new Promise(function (resolve, reject) {
+            let listener;
             contract.on(event, async () => {
+              await contract.off(event, listener);
               reject(new Error(`ERROR: The event ${event} was unexpectedly seen`));
             });
-            setTimeout(() => {
+            [listener] = contract.listeners(event).slice(-1);
+            setTimeout(async () => {
+              await contract.off(event, listener);
               resolve();
             }, 5000);
           });

@@ -9,7 +9,7 @@ const { argv } = require("yargs")
   .option("providerAddress", { type: "array", default: [] });
 
 const KycOracle = require("../KycOracle");
-const { TruffleLoader } = require("../../package-utils");
+const { TruffleLoader, RetryProvider } = require("../../package-utils");
 
 const { adminAddress, privateKey, whitelistAddress, apiKey, network, localProviderPort, localProviderAddress, providerAddress, dbPath, port } = argv;
 const supportedInfuraNetworks = ["mainnet"];
@@ -20,7 +20,7 @@ if ((!adminAddress && !privateKey) || !whitelistAddress || !apiKey) {
 }
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 let provider;
@@ -31,9 +31,9 @@ if (network) {
   }
   provider = new ethers.providers.InfuraProvider(network);
 } else if (providerAddress.length === 0) {
-  provider = new ethers.providers.JsonRpcProvider(`http://${localProviderAddress || "localhost"}:${localProviderPort || "8545"}`);
+  provider = new RetryProvider(`http://${localProviderAddress || "localhost"}:${localProviderPort || "8545"}`);
 } else {
-  provider = new ethers.providers.JsonRpcProvider(providerAddress[0]);
+  provider = new RetryProvider(providerAddress[0]);
 }
 
 const client = new KycOracle({ privateKey, adminAddress, apiKey, loader, provider, dbPath, port });

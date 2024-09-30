@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,18 +16,12 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-// import "./../colonyNetwork/IColonyNetwork.sol";
-// import "./../colony/ColonyRoles.sol";
-import "./../../common/IBasicMetaTransaction.sol";
-import "./../IColonyExtension.sol";
-import "./VotingReputationDataTypes.sol";
-// import "./../patriciaTree/PatriciaTreeProofs.sol";
-// import "./../tokenLocking/ITokenLocking.sol";
-// import "./ColonyExtension.sol";
-
+import { IColonyExtension } from "./../IColonyExtension.sol";
+import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
+import { ActionSummary } from "./../../common/GetActionSummary.sol";
 
 interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Initialise the extension
@@ -47,8 +42,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     uint256 _submitPeriod,
     uint256 _revealPeriod,
     uint256 _escalationPeriod
-  )
-    external;
+  ) external;
 
   // external functions (interface)
 
@@ -61,7 +55,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @param _value Reputation tree value for the root domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
- function createMotion(
+  function createMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
     address _altTarget,
@@ -70,8 +64,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    external;
+  ) external;
 
   /// @notice Stake on a motion
   /// @param _motionId The id of the motion
@@ -93,8 +86,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    external;
+  ) external;
 
   /// @notice Submit a vote secret for a motion
   /// @param _motionId The id of the motion
@@ -110,8 +102,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    external;
+  ) external;
 
   /// @notice Reveal a vote secret for a motion
   /// @param _motionId The id of the motion
@@ -129,8 +120,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    external;
+  ) external;
 
   /// @notice Escalate a motion to a higher domain
   /// @param _motionId The id of the motion
@@ -148,12 +138,15 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    external;
+  ) external;
 
   /// @notice Finalized a motion, executing its action if appropriate
   /// @param _motionId The id of the motion to finalize
   function finalizeMotion(uint256 _motionId) external;
+
+  /// @notice Finalize a motion, executing its action if appropriate, without the call executing successfully
+  /// @param _motionId The id of the motion to finalize
+  function finalizeMotionWithoutFailure(uint256 _motionId) external;
 
   /// @notice Return whether a motion, assuming it's in the finalizable state,
   /// is allowed to finalize without the call executing successfully.
@@ -175,8 +168,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     uint256 _childSkillIndex,
     address _staker,
     uint256 _vote
-  )
-    external;
+  ) external;
 
   // external view functions
 
@@ -186,11 +178,11 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
 
   /// @notice Get the voter reward fraction
   /// @return _fraction The voter reward fraction
-  function getVoterRewardFraction() external view returns (uint256 _fraction) ;
+  function getVoterRewardFraction() external view returns (uint256 _fraction);
 
   /// @notice Get the user min stake fraction
   /// @return _fraction The user min stake fraction
-  function getUserMinStakeFraction() external view returns (uint256 _fraction) ;
+  function getUserMinStakeFraction() external view returns (uint256 _fraction);
 
   /// @notice Get the max vote fraction
   /// @return _fraction The max vote fraction
@@ -214,7 +206,7 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
 
   /// @notice Get the total motion count
   /// @return _count The total motion count
-  function getMotionCount() external view returns (uint256 _count) ;
+  function getMotionCount() external view returns (uint256 _count);
 
   /// @notice Get the data for a single motion
   /// @param _motionId The id of the motion
@@ -226,17 +218,38 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @param _staker The staker address
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   /// @return _stake The user's stake
-  function getStake(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _stake);
+  function getStake(
+    uint256 _motionId,
+    address _staker,
+    uint256 _vote
+  ) external view returns (uint256 _stake);
 
-  /// @notice Get the number of ongoing motions for a single expenditure / expenditure slot
-  /// @param _structHash The hash of the expenditureId or expenditureId*expenditureSlot
-  /// @return _count The number of ongoing motions
+  /// @notice DEPRECATED Get the count of active motions for an expenditure slot
+  /// @param _structHash Hash of an expenditure id and slot
+  /// @return _count Number of motions
   function getExpenditureMotionCount(bytes32 _structHash) external view returns (uint256 _count);
 
-  /// @notice Get the largest past vote on a single expenditure variable
-  /// @param _actionHash The hash of the particular expenditure action
+  /// @notice Get the motion which holds the lock on an expenditure
+  /// @param _expenditureId The expenditureId
+  /// @return _motionId The motion holding the lock
+  function getExpenditureMotionLock(
+    uint256 _expenditureId
+  ) external view returns (uint256 _motionId);
+
+  /// @notice Get the largest past vote on an expenditure
+  /// @dev The previous version of this function which took an actionHash has been deprecated
+  /// @param _expenditureId The expenditureId
   /// @return _vote The largest past vote on this variable
-  function getExpenditurePastVote(bytes32 _actionHash) external view returns (uint256 _vote);
+  function getExpenditurePastVote(uint256 _expenditureId) external view returns (uint256 _vote);
+
+  /// @notice DEPRECATED Get the largest past vote on an expenditure
+  /// @dev This is deprecated, and allows visibility on to this variable for any v9 motions that are still
+  /// ongoing.
+  /// @param _slotSignature The slot signature
+  /// @return _vote The largest past vote on this variable
+  function getExpenditurePastVotes_DEPRECATED(
+    bytes32 _slotSignature
+  ) external view returns (uint256 _vote);
 
   /// @notice Get the current state of the motion
   /// @param _motionId The id of the motion
@@ -244,22 +257,37 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   function getMotionState(uint256 _motionId) external view returns (MotionState _motionState);
 
   /// @notice Get the voter reward
-  /// NB This function will only return a meaningful value if in the reveal state.
-  /// Prior to the reveal state, getVoterRewardRange should be used.
+  /// @dev This function will only return an accurate value if in the reveal state. Otherwise, use getVoterRewardRange
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @return _reward The voter reward
-  function getVoterReward(uint256 _motionId, uint256 _voterRep) external view returns (uint256 _reward);
+  function getVoterReward(
+    uint256 _motionId,
+    uint256 _voterRep
+  ) external view returns (uint256 _reward);
 
   /// @notice Get the range of potential rewards for a voter on a specific motion, intended to be
   /// used when the motion is in the reveal state.
-  /// Once a motion is in the reveal state the reward is known, and getVoterRewardRange should be used.
+  /// Once a motion is in the reveal state and the reward is known, getVoterReward should be used.
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @param _voterAddress The address the user will be voting as
   /// @return _rewardMin The voter reward range lower bound
   /// @return _rewardMax The voter reward range upper bound
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) external view returns (uint256 _rewardMin, uint256 _rewardMax);
+  function getVoterRewardRange(
+    uint256 _motionId,
+    uint256 _voterRep,
+    address _voterAddress
+  ) external view returns (uint256 _rewardMin, uint256 _rewardMax);
+
+  /// @notice Return a summary of the multicall action
+  /// @param _action The id of the motion
+  /// @param _altTarget The address of the altTarget, or 0x0 if none exists
+  /// @return _summary A summary of the multicall
+  function getActionSummary(
+    bytes memory _action,
+    address _altTarget
+  ) external view returns (ActionSummary memory _summary);
 
   /// @notice Get the staker reward
   /// @param _motionId The id of the motion
@@ -267,17 +295,11 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @param _vote The vote (0 = NAY, 1 = YAY)
   /// @return _reward The staker reward (if any)
   /// @return _penalty The reputation penalty (if any)
-  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) external view returns (uint256 _reward, uint256 _penalty);
-
-  /// @notice Create the action that should be taken based on the passed action to appropriately
-  /// set the claim window of an expenditure from starting.
-  /// @param _action The action being voted on
-  /// @param _value The value to set the claim delay to
-  /// @return _delayAction The delay action
-  /// @dev Not expected to be used directly, could be made private in the future
-  function createClaimDelayAction(bytes memory _action, uint256 _value)
-    external
-    returns (bytes memory _delayAction);
+  function getStakerReward(
+    uint256 _motionId,
+    address _staker,
+    uint256 _vote
+  ) external view returns (uint256 _reward, uint256 _penalty);
 
   /// @notice Claim the staker's reward from a motion that was created with v4 of the extension, and is
   /// now missing and cannot be interacted with via the normal claim function.
@@ -292,6 +314,5 @@ interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
     uint256 _childSkillIndex,
     address _staker,
     uint256 _vote
-  )
-    external;
+  ) external;
 }

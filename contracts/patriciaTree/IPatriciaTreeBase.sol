@@ -1,11 +1,10 @@
-pragma solidity >=0.8.20; // ignore-swc-103
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.25; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import {Data} from "./Data.sol";
-
+import { Data } from "./Data.sol";
 
 interface IPatriciaTreeBase {
-
   /// @notice Get the root hash
   /// @dev This value is a keccak256 hash of the rootEdge: `keccak256(Edge.node, Edge.label.length, Edge.label.data)`
   /// @return rootHash The `bytes32` hash value

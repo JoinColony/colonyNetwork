@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,8 +16,9 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
+// prettier-ignore
 interface ColonyNetworkDataTypes {
   /// @notice Event logged when the colony network is intialised. This is only ever emitted once in a network's lifetime
   /// @param resolver The Resolver contract address used by the Colony version 1
@@ -48,7 +50,7 @@ interface ColonyNetworkDataTypes {
   /// @param metaColony Address of the MetaColony instance (i.e. EtherRouter)
   /// @param token Address of the associated CLNY token
   /// @param rootSkillId Id of the root skill of the global skills tree, normally this is 2
-  /// Note that the speciat mining skill is created at rootSkillId + 1, so normally this is 3
+  /// Note that the special mining skill is created at rootSkillId + 1, so normally this is 3
   /// Skill id 1 is normally the local skill associate with meta colony domain 1
   event MetaColonyCreated(address metaColony, address token, uint256 rootSkillId);
 
@@ -64,6 +66,19 @@ interface ColonyNetworkDataTypes {
   /// @param skillId The skill id
   /// @param parentSkillId The id of the parent skill under which this new skill is added
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
+
+  /// @notice Event logged when bridging of a skill creation did not succeed.
+  /// @param skillId The skillId that failed to bridge
+  event SkillCreationStored(uint256 skillId);
+
+  /// @notice Event logged when a skill is received from a bridge, but can't yet be
+  /// added to the skill tree.
+  /// @param skillId The skillId of the skill that was bridged
+  event SkillStoredFromBridge(uint256 skillId);
+
+  /// @notice Event logged when a skill is successfully added from a bridge.
+  /// @param skillId The skillId of the skill that was bridged
+  event SkillAddedFromBridge(uint256 skillId);
 
   /// @notice Event logged when a new auction is created and started
   /// @dev Emitted from `IColonyNetwork.startTokenAuction` function
@@ -145,6 +160,33 @@ interface ColonyNetworkDataTypes {
   /// @param tokenAuthorityAddress The address of the token authority deployed
   event TokenAuthorityDeployed(address tokenAuthorityAddress);
 
+  /// @notice Event logged when the colony network has data about a bridge contract set.
+  /// @param bridgeAddress The address of the bridge contract that will be interacted with
+  event BridgeSet(address bridgeAddress);
+
+  /// @notice Event logged when bridging of a reputation update did not succeed.
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param count The number of the reputation update trying to be bridged in that colony
+  event ReputationUpdateStored(address colony, uint256 count);
+
+  /// @notice Event logged when a reputation update makes it to the bridge.
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param count The number of the reputation update trying to be bridged in that colony
+  event ReputationUpdateSentToBridge(address colony, uint256 count);
+
+  /// @notice Event logged when a reputation update is received from a bridge, but can't be
+  /// added to the reputation update log due to being bridged out of order or the skill not existing.
+  /// @param chainId The chainId of the chain the bridge is associated with
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param updateNumber The number of the reputation update bridged in that colony
+  event ReputationUpdateStoredFromBridge(uint256 chainId, address colony, uint256 updateNumber);
+
+  /// @notice Event logged when a reputation update is successfully bridged.
+  /// @param chainId The chainId of the chain the bridge is associated with
+  /// @param colony The address of the colony where reputation is being emitted
+  /// @param updateNumber The number of the reputation update bridged in that colony
+  event ReputationUpdateAddedFromBridge(uint256 chainId, address colony, uint256 updateNumber);
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;
@@ -155,7 +197,7 @@ interface ColonyNetworkDataTypes {
     // array of `skill_id`s of all child skills
     uint256[] children;
     // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
-    bool globalSkill;
+    bool DEPRECATED_globalSkill;
     // `true` for a global skill that is deprecated
     bool deprecated;
   }
@@ -167,7 +209,7 @@ interface ColonyNetworkDataTypes {
 
   struct ReputationLogEntry {
     address user;
-    int amount;
+    int256 amount;
     uint256 skillId;
     address colony;
     uint128 nUpdates;
@@ -176,6 +218,14 @@ interface ColonyNetworkDataTypes {
 
   struct MiningStake {
     uint256 amount;
+    uint256 timestamp;
+  }
+
+  struct PendingReputationUpdate {
+    address user;
+    int256 amount;
+    uint256 skillId;
+    address colony;
     uint256 timestamp;
   }
 }

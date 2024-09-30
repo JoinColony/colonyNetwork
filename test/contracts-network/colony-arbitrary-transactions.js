@@ -17,6 +17,7 @@ const CoinMachine = artifacts.require("CoinMachine");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
+const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 
 contract("Colony Arbitrary Transactions", (accounts) => {
   let colony;
@@ -27,7 +28,8 @@ contract("Colony Arbitrary Transactions", (accounts) => {
   const USER1 = accounts[1];
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
@@ -68,7 +70,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     await checkErrorRevert(
       colony.makeArbitraryTransactions([token.address, ADDRESS_ZERO], [action, action2], true),
-      "colony-arbitrary-transaction-failed"
+      "colony-arbitrary-transaction-failed",
     );
 
     const balancePost = await token.balanceOf(colony.address);
@@ -111,6 +113,11 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     await checkErrorRevert(colony.makeArbitraryTransaction(accounts[0], "0x0"), "colony-to-must-be-contract");
   });
 
+  it("should not be able to make single arbitrary transactions directly", async () => {
+    const colonyArbitraryTransactions = await ColonyArbitraryTransaction.at(colony.address);
+    await checkErrorRevert(colonyArbitraryTransactions.makeSingleArbitraryTransaction(colony.address, "0x0"), "colony-not-self");
+  });
+
   it("should not be able to make arbitrary transactions to network or token locking", async () => {
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
@@ -129,7 +136,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address);
     await checkErrorRevert(
       colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address),
-      "colony-funding-too-many-approvals"
+      "colony-funding-too-many-approvals",
     );
     const approval = await colony.getTokenApproval(token.address, USER0);
     expect(approval).to.be.eq.BN(50);
@@ -151,7 +158,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     expect(allApprovals).to.eq.BN(20);
     await checkErrorRevert(
       colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 81, token.address),
-      "colony-funding-too-many-approvals"
+      "colony-funding-too-many-approvals",
     );
     await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 80, token.address);
     // Pot still thinks it has 20 tokens in it
@@ -212,14 +219,9 @@ contract("Colony Arbitrary Transactions", (accounts) => {
   it("should not be able to make arbitrary transactions to the colony's own extensions", async () => {
     const COIN_MACHINE = soliditySha3("CoinMachine");
 
-    const ethersProvider = new ethers.providers.JsonRpcProvider(web3.currentProvider.host);
-    const ethersColonyNetwork = new ethers.Contract(colonyNetwork.address, colonyNetwork.abi, ethersProvider);
-
-    const eventFilter = ethersColonyNetwork.filters.ExtensionAddedToNetwork(COIN_MACHINE);
-    const events = await ethersColonyNetwork.queryFilter(eventFilter, 0);
-    const log = await ethersColonyNetwork.interface.parseLog(events[0]);
-
-    await colony.installExtension(COIN_MACHINE, log.args.version);
+    const extension = await CoinMachine.new();
+    const version = await extension.version();
+    await colony.installExtension(COIN_MACHINE, version);
 
     const coinMachineAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
     const coinMachine = await CoinMachine.at(coinMachineAddress);

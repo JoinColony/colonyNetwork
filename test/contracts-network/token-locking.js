@@ -1,4 +1,5 @@
 /* globals artifacts */
+
 const path = require("path");
 const chai = require("chai");
 const bnChai = require("bn-chai");
@@ -27,22 +28,24 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
 const ToggleableToken = artifacts.require("ToggleableToken");
 const TestVotingToken = artifacts.require("TestVotingToken");
 const Resolver = artifacts.require("Resolver");
 
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const REAL_PROVIDER_PORT = 8545;
 
 contract("Token Locking", (addresses) => {
   const usersTokens = 10;
   const otherUserTokens = 100;
   const userAddress = addresses[1];
   const otherUserAddress = addresses[2];
+
   let token;
   let tokenLocking;
   let otherToken;
@@ -51,7 +54,9 @@ contract("Token Locking", (addresses) => {
   let colonyWideReputationProof;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
@@ -91,6 +96,10 @@ contract("Token Locking", (addresses) => {
   });
 
   describe("when depositing tokens", async () => {
+    it("should not allow any user to update the network", async () => {
+      await checkErrorRevert(tokenLocking.setColonyNetwork(colonyNetwork.address, { from: otherUserAddress }), "ds-auth-unauthorized");
+    });
+
     it("should correctly set colony network address", async () => {
       await checkErrorRevert(tokenLocking.setColonyNetwork(ethers.constants.AddressZero), "colony-token-locking-network-cannot-be-zero");
 
@@ -133,7 +142,7 @@ contract("Token Locking", (addresses) => {
     it("should not be able to deposit tokens if they are not approved", async () => {
       await checkErrorRevert(
         tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, true, { from: userAddress }),
-        "ds-token-insufficient-approval"
+        "ds-token-insufficient-approval",
       );
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
@@ -157,7 +166,7 @@ contract("Token Locking", (addresses) => {
 
       await checkErrorRevert(
         tokenLocking.methods["deposit(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress }),
-        "colony-token-locking-token-locked"
+        "colony-token-locking-token-locked",
       );
     });
 
@@ -212,7 +221,7 @@ contract("Token Locking", (addresses) => {
 
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, otherUserTokens, false, { from: userAddress }),
-        "Panic: Arithmetic overflow"
+        "Panic: Arithmetic overflow",
       );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       expect(info.balance).to.eq.BN(usersTokens);
@@ -250,7 +259,7 @@ contract("Token Locking", (addresses) => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, usersTokens, false, { from: userAddress }),
-        "colony-token-locking-token-locked"
+        "colony-token-locking-token-locked",
       );
     });
 
@@ -311,7 +320,7 @@ contract("Token Locking", (addresses) => {
 
       await checkErrorRevert(
         tokenLocking.transfer(token.address, usersTokens, otherUserAddress, false, { from: userAddress }),
-        "colony-token-locking-token-locked"
+        "colony-token-locking-token-locked",
       );
     });
 
@@ -337,7 +346,7 @@ contract("Token Locking", (addresses) => {
       // Make an extension available on the network that is able to lock tokens.
       const testVotingTokenResolver = await Resolver.new();
       const testVotingToken = await TestVotingToken.new();
-      await setupEtherRouter("TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
+      await setupEtherRouter("testHelpers/testExtensions", "TestVotingToken", { TestVotingToken: testVotingToken.address }, testVotingTokenResolver);
       TEST_VOTING_TOKEN = soliditySha3("VotingToken");
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IMetaColony.at(metaColonyAddress);
@@ -402,6 +411,14 @@ contract("Token Locking", (addresses) => {
       const info = await tokenLocking.getUserLock(token.address, otherUserAddress);
       expect(info.pendingBalance).to.eq.BN(usersTokens);
     });
+
+    it("should not be able to unlock users tokens with a nonexistent lock", async () => {
+      await colony.installExtension(TEST_VOTING_TOKEN, 1);
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(TEST_VOTING_TOKEN, colony.address);
+      const votingToken = await TestVotingToken.at(extensionAddress);
+
+      await checkErrorRevert(votingToken.unlockTokenForUser(userAddress, 100), "colony-bad-lock-id");
+    });
   });
 
   describe("locking behavior", async () => {
@@ -459,7 +476,7 @@ contract("Token Locking", (addresses) => {
       const payoutId = logs[0].args.rewardPayoutId;
       await checkErrorRevert(
         tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId),
-        "colony-token-locking-sender-not-colony-or-network"
+        "colony-token-locking-sender-not-colony-or-network",
       );
     });
 

@@ -10,20 +10,10 @@ Extension therefore requires `Administration` and `Funding` roles to function.
 
 _Note: if you deployed your Colony using the Dapp, the `OneTxPayment` extension is already installed for you_
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
-
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
 
 ### ▸ `finishUpgrade()`
 
@@ -49,7 +39,7 @@ Return the permissions required for each function
 |---|---|---|
 |_roles|bytes32|The byte32 of permissions required
 
-### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 _nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -58,13 +48,13 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|The nonce
+|_nonce|uint256|The nonce
 
 ### ▸ `identifier():bytes32 _identifier`
 
@@ -77,18 +67,6 @@ Returns the identifier of the extension
 |Name|Type|Description|
 |---|---|---|
 |_identifier|bytes32|The extension's identifier
-
-### ▸ `install(address _colony)`
-
-Configures the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony in which the extension holds permissions
-
 
 ### ▸ `makePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _callerPermissionDomainId, uint256 _callerChildSkillIndex, address[] memory _workers, address[] memory _tokens, uint256[] memory _amounts, uint256 _domainId, uint256 _skillId)`
 
@@ -130,13 +108,6 @@ Completes a colony payment in a single transaction
 |_amounts|uint256[]|The amounts of the tokens being paid out
 |_domainId|uint256|The domainId the payment should be coming from
 |_skillId|uint256|The skillId that the payment should be marked with, possibly awarding reputation in this skill.
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,8 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
-
+pragma solidity 0.8.25;
 
 interface ContractRecoveryDataTypes {
   /// @notice Event logged when user gets/loses the recovery role.
@@ -43,5 +43,4 @@ interface ContractRecoveryDataTypes {
   /// and wish to leave recovery mode
   /// @param user The address signalling they are happy with the state
   event RecoveryModeExitApproved(address user);
-
 }

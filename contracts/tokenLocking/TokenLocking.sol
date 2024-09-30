@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,19 +16,22 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental "ABIEncoderV2";
 
-import "./../../lib/dappsys/math.sol";
-import "./../colony/IMetaColony.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../common/ERC20Extended.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./../tokenLocking/TokenLockingStorage.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import { TokenLockingStorage } from "./../tokenLocking/TokenLockingStorage.sol";
 
-
-contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // ignore-swc-123
+contract TokenLocking is
+  TokenLockingStorage,
+  DSMath,
+  BasicMetaTransaction // ignore-swc-123
+{
   modifier calledByColonyOrNetwork() {
     require(
       colonyNetwork == msgSender() || IColonyNetwork(colonyNetwork).isColony(msgSender()),
@@ -54,12 +58,12 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
 
   // Public functions
 
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] += 1;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user] += 1;
   }
 
   function setColonyNetwork(address _colonyNetwork) public auth {
@@ -83,9 +87,11 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     return totalLockCount[_token];
   }
 
-  function unlockTokenForUser(address _token, address _user, uint256 _lockId) public
-  calledByColonyOrNetwork
-  {
+  function unlockTokenForUser(
+    address _token,
+    address _user,
+    uint256 _lockId
+  ) public calledByColonyOrNetwork {
     require(lockers[_token][_lockId] == msgSender(), "colony-token-locking-not-locker");
 
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
@@ -102,7 +108,10 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
   }
 
   function incrementLockCounterTo(address _token, uint256 _lockId) public {
-    require(_lockId <= totalLockCount[_token] && _lockId > userLocks[_token][msgSender()].lockCount, "colony-token-locking-invalid-lock-id");
+    require(
+      _lockId <= totalLockCount[_token] && _lockId > userLocks[_token][msgSender()].lockCount,
+      "colony-token-locking-invalid-lock-id"
+    );
     userLocks[_token][msgSender()].lockCount = _lockId;
   }
 
@@ -111,7 +120,11 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     deposit(_token, _amount, false);
   }
 
-  function deposit(address _token, uint256 _amount, bool _force) public tokenNotLocked(_token, _force) {
+  function deposit(
+    address _token,
+    uint256 _amount,
+    bool _force
+  ) public tokenNotLocked(_token, _force) {
     Lock storage lock = userLocks[_token][msgSender()];
     lock.balance += _amount;
 
@@ -122,23 +135,31 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     }
 
     // Actually claim the tokens
-    require(ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
+    require(
+      ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount),
+      "colony-token-locking-transfer-failed"
+    ); // ignore-swc-123
 
     emit UserTokenDeposited(_token, msgSender(), lock.balance);
   }
 
   function depositFor(address _token, uint256 _amount, address _recipient) public {
-    require(ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount), "colony-token-locking-transfer-failed"); // ignore-swc-123
+    require(
+      ERC20Extended(_token).transferFrom(msgSender(), address(this), _amount),
+      "colony-token-locking-transfer-failed"
+    ); // ignore-swc-123
 
     makeConditionalDeposit(_token, _amount, _recipient);
 
     emit UserTokenDeposited(_token, _recipient, userLocks[_token][_recipient].balance);
   }
 
-  function transfer(address _token, uint256 _amount, address _recipient, bool _force) public
-  notObligated(_token, _amount)
-  tokenNotLocked(_token, _force)
-  {
+  function transfer(
+    address _token,
+    uint256 _amount,
+    address _recipient,
+    bool _force
+  ) public notObligated(_token, _amount) tokenNotLocked(_token, _force) {
     Lock storage userLock = userLocks[_token][msgSender()];
     userLock.balance -= _amount;
 
@@ -152,42 +173,66 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     withdraw(_token, _amount, false);
   }
 
-  function withdraw(address _token, uint256 _amount, bool _force) public
-  notObligated(_token, _amount)
-  tokenNotLocked(_token, _force)
-  {
+  function withdraw(
+    address _token,
+    uint256 _amount,
+    bool _force
+  ) public notObligated(_token, _amount) tokenNotLocked(_token, _force) {
     Lock storage lock = userLocks[_token][msgSender()];
     lock.balance -= _amount;
 
-    require(ERC20Extended(_token).transfer(msgSender(), _amount), "colony-token-locking-transfer-failed");
+    require(
+      ERC20Extended(_token).transfer(msgSender(), _amount),
+      "colony-token-locking-transfer-failed"
+    );
 
     emit UserTokenWithdrawn(_token, msgSender(), _amount);
   }
 
-  function approveStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
+  function approveStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) public calledByColonyOrNetwork {
     approvals[_user][_token][msgSender()] += _amount;
 
     emit UserTokenApproved(_token, _user, msgSender(), _amount);
   }
 
-  function obligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
+  function obligateStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) public calledByColonyOrNetwork {
     approvals[_user][_token][msgSender()] -= _amount;
     obligations[_user][_token][msgSender()] += _amount;
     totalObligations[_user][_token] += _amount;
 
-    require(userLocks[_token][_user].balance >= totalObligations[_user][_token], "colony-token-locking-insufficient-deposit");
+    require(
+      userLocks[_token][_user].balance >= totalObligations[_user][_token],
+      "colony-token-locking-insufficient-deposit"
+    );
 
     emit UserTokenObligated(_token, _user, msgSender(), _amount);
   }
 
-  function deobligateStake(address _user, uint256 _amount, address _token) public calledByColonyOrNetwork() {
+  function deobligateStake(
+    address _user,
+    uint256 _amount,
+    address _token
+  ) public calledByColonyOrNetwork {
     obligations[_user][_token][msgSender()] -= _amount;
     totalObligations[_user][_token] -= _amount;
 
     emit UserTokenDeobligated(_token, _user, msgSender(), _amount);
   }
 
-  function transferStake(address _user, uint256 _amount, address _token, address _recipient) public calledByColonyOrNetwork() {
+  function transferStake(
+    address _user,
+    uint256 _amount,
+    address _token,
+    address _recipient
+  ) public calledByColonyOrNetwork {
     obligations[_user][_token][msgSender()] -= _amount;
     totalObligations[_user][_token] -= _amount;
 
@@ -200,8 +245,8 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     emit StakeTransferred(_token, msgSender(), _user, _recipient, _amount);
   }
 
-  function reward(address _recipient, uint256 _amount) public pure { // solhint-disable-line no-empty-blocks
-
+  function reward(address _recipient, uint256 _amount) public pure {
+    // solhint-disable-line no-empty-blocks
   }
 
   function getTotalLockCount(address _token) public view returns (uint256) {
@@ -216,11 +261,19 @@ contract TokenLocking is TokenLockingStorage, DSMath, BasicMetaTransaction { // 
     return totalObligations[_user][_token];
   }
 
-  function getApproval(address _user, address _token, address _obligator) public view returns (uint256) {
+  function getApproval(
+    address _user,
+    address _token,
+    address _obligator
+  ) public view returns (uint256) {
     return approvals[_user][_token][_obligator];
   }
 
-  function getObligation(address _user, address _token, address _obligator) public view returns (uint256) {
+  function getObligation(
+    address _user,
+    address _token,
+    address _obligator
+  ) public view returns (uint256) {
     return obligations[_user][_token][_obligator];
   }
 

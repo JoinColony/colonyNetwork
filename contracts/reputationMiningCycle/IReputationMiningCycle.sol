@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,36 +16,46 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.8.20; // ignore-swc-103
+pragma solidity >=0.8.25; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import "./ReputationMiningCycleDataTypes.sol";
-
+import { ReputationMiningCycleDataTypes } from "./ReputationMiningCycleDataTypes.sol";
 
 interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice The getter for the disputeRounds mapping.
   /// @param _round The dispute round to query
   /// @return submissions An array of DisputedEntrys struct for the round.
   /// See ReputationMiningCycleDataTypes for the full description of the properties.
-  function getDisputeRound(uint256 _round) external view returns (DisputedEntry[] memory submissions);
+  function getDisputeRound(
+    uint256 _round
+  ) external view returns (DisputedEntry[] memory submissions);
 
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.
   /// @param _user Address of the user
   /// @return submission the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description.
-  function getReputationHashSubmission(address _user) external view returns (Submission memory submission);
+  function getReputationHashSubmission(
+    address _user
+  ) external view returns (Submission memory submission);
 
   /// @notice Get the hash for the corresponding entry.
   /// @param _submitter The address that submitted the hash
   /// @param _entryIndex The index of the entry that they used to submit the hash
   /// @param _newHash The hash that they submitted
   /// @return entryHash The hash for the corresponding entry
-  function getEntryHash(address _submitter, uint256 _entryIndex, bytes32 _newHash) external pure returns (bytes32 entryHash);
+  function getEntryHash(
+    address _submitter,
+    uint256 _entryIndex,
+    bytes32 _newHash
+  ) external pure returns (bytes32 entryHash);
 
   /// @notice Returns a boolean result of whether the miner has already submitted at this entry index.
   /// @param _miner The address that submitted the hash
   /// @param _index The index of the entry that they used to submit the hash
   /// @return result Boolean whether the entryIndex was already submitted
-  function minerSubmittedEntryIndex(address _miner, uint256 _index) external view returns (bool result);
+  function minerSubmittedEntryIndex(
+    address _miner,
+    uint256 _index
+  ) external view returns (bool result);
 
   /// @notice Resets the timestamp that the submission window opens to `now`.
   /// @dev only allowed to be called by ColonyNetwork.
@@ -55,7 +66,12 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param _nLeaves Number of leaves in tree with root `newHash`
   /// @param _jrh The justifcation root hash for this submission
   /// @param _entryIndex The entry number for the given `newHash` and `nLeaves`
-  function submitRootHash(bytes32 _newHash, uint256 _nLeaves, bytes32 _jrh, uint256 _entryIndex) external;
+  function submitRootHash(
+    bytes32 _newHash,
+    uint256 _nLeaves,
+    bytes32 _jrh,
+    uint256 _entryIndex
+  ) external;
 
   /// @notice Get whether a challenge round is complete.
   /// @param _round The round number to check
@@ -82,7 +98,8 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint256 _round,
     uint256 _idx,
     bytes memory _jhIntermediateValue,
-    bytes32[] memory _siblings) external;
+    bytes32[] memory _siblings
+  ) external;
 
   /// @notice Confirm the result of a binary search - depending on how exactly the binary search finished, the saved binary search intermediate state might be incorrect.
   /// @notice This function ensures that the intermediate hashes saved are correct.
@@ -94,7 +111,8 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint256 _round,
     uint256 _idx,
     bytes memory _jhIntermediateValue,
-    bytes32[] memory _siblings) external;
+    bytes32[] memory _siblings
+  ) external;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
   /// @param _u A `uint256[27]` array. The elements of this array, in order are:
@@ -126,7 +144,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 24. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// * 25. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 26. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-  /// @param _b32 A `bytes32[8]` array. The elements of this array, in order are:
+  /// @param _b32 A `bytes32[7]` array. The elements of this array, in order are:
   /// * 1. The colony address in the key of the reputation being changed that the disagreement is over.
   /// * 2. The skillid in the key of the reputation being changed that the disagreement is over.
   /// * 3. The user address in the key of the reputation being changed that the disagreement is over.
@@ -151,7 +169,8 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes32[] memory _disagreeStateSiblings,
     bytes32[] memory _userOriginReputationSiblings,
     bytes32[] memory _childReputationSiblings,
-    bytes32[] memory _adjacentReputationSiblings) external;
+    bytes32[] memory _adjacentReputationSiblings
+  ) external;
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible.
   /// @param _round The round that the hash is currently in.
@@ -166,7 +185,8 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint256 _round,
     uint256 _index,
     bytes32[] memory _siblings1,
-    bytes32[] memory _siblings2) external;
+    bytes32[] memory _siblings2
+  ) external;
 
   /// @notice Add a new entry to the reputation update log.
   /// @param _user The address of the user having their reputation changed by this log entry
@@ -182,7 +202,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     address _colonyAddress,
     uint128 _nParents,
     uint128 _nChildren
-    ) external;
+  ) external;
 
   /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract.
   /// @return nUpdates
@@ -191,7 +211,9 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Get the `ReputationLogEntry` at index `_id`.
   /// @param _id The reputation log members array index of the entry to get
   /// @return reputationUpdateLogEntry The Reputation Update Log Entry
-  function getReputationUpdateLogEntry(uint256 _id) external view returns (ReputationLogEntry memory reputationUpdateLogEntry);
+  function getReputationUpdateLogEntry(
+    uint256 _id
+  ) external view returns (ReputationLogEntry memory reputationUpdateLogEntry);
 
   /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
   /// @param _stakers The array of stakers addresses to receive the reward.
@@ -208,7 +230,7 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
     address _metaColonyAddress,
     uint256 _reward,
     uint256 _miningSkillId
-    ) external;
+  ) external;
 
   /// @notice Get the timestamp that the current reputation mining window opened.
   /// @return timestamp The timestamp
@@ -247,14 +269,23 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param _jrh The JRH of that was submitted
   /// @param _index The index of the submission - should be 0-11, as up to twelve submissions can be made.
   /// @return user Address of the user that submitted the hash / nLeaves/ jrh at index
-  function getSubmissionUser(bytes32 _hash, uint256 _nLeaves, bytes32 _jrh, uint256 _index) external view returns (address user);
+  function getSubmissionUser(
+    bytes32 _hash,
+    uint256 _nLeaves,
+    bytes32 _jrh,
+    uint256 _index
+  ) external view returns (address user);
 
   /// @notice Get the number of submissions miners made of a particular hash / nLeaves / jrh combination.
   /// @param _hash The hash that was submitted
   /// @param _nLeaves The number of leaves that was submitted
   /// @param _jrh The JRH of that was submitted
   /// @return count The number of submissions - should be 0-12, as up to twelve submissions can be made
-  function getNSubmissionsForHash(bytes32 _hash, uint256 _nLeaves, bytes32 _jrh) external view returns (uint256 count);
+  function getNSubmissionsForHash(
+    bytes32 _hash,
+    uint256 _nLeaves,
+    bytes32 _jrh
+  ) external view returns (uint256 count);
 
   /// @notice Returns whether a particular address has been involved in the current mining cycle. This might be
   /// from submitting a hash, or from defending one during a dispute.
@@ -271,5 +302,8 @@ interface IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// enum in ReputationMiningCycleDataTypes
   /// @param _since The timestamp the last response for the submission in the dispute in question was made at.
   /// @return possible bool Whether the user can respond at the current time.
-  function getResponsePossible(DisputeStages _stage, uint256 _since) external view returns (bool possible);
+  function getResponsePossible(
+    DisputeStages _stage,
+    uint256 _since
+  ) external view returns (bool possible);
 }

@@ -4,7 +4,7 @@ const path = require("path");
 const apicache = require("apicache")
 
 const ReputationMiner = require("./ReputationMiner");
-const { ConsoleAdapter, updateGasEstimate } = require("../package-utils");
+const { ConsoleAdapter, getFeeData } = require("../package-utils");
 
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
 const MINUTE_IN_SECONDS = 60;
@@ -392,7 +392,7 @@ class ReputationMinerClient {
         // Let's process the reputation log if it's been this._processingDelay blocks
         if (this.blocksSinceCycleCompleted < this._processingDelay) {
           this.blocksSinceCycleCompleted += 1;
-		      if (this.blocksSinceCycleCompleted === 1) {
+          if (this.blocksSinceCycleCompleted === 1) {
             this._adapter.log(`⏰ Waiting for ${this._processingDelay} blocks before processing next log`)
           };
           this.endDoBlockChecks();
@@ -442,10 +442,9 @@ class ReputationMinerClient {
           const canSubmit = await this._miner.submissionPossible(entryIndex);
           if (canSubmit) {
             this._adapter.log("⏰ Looks like it's time to submit an entry to the current cycle");
-            this.submissionIndex += 1;
-            const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+            await this.updateFeeData("average");
             await this.submitEntry(entryIndex);
+            this.submissionIndex += 1;
             this.endDoBlockChecks();
             return;
           }
@@ -462,6 +461,12 @@ class ReputationMinerClient {
       if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
         // Is what we believe to be the right submission being disputed?
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+        // This means the state we have wasn't submitted. Hopefully that's because we were in dispute, and the
+        // cycle has been completed...
+        if (round.eq(ethers.constants.NegativeOne)) {
+          this.endDoBlockChecks();
+          return;
+        }
         const disputeRound = await repCycle.getDisputeRound(round);
         const entry = disputeRound[index];
         const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
@@ -494,8 +499,7 @@ class ReputationMinerClient {
               return;
             }
           }
-          const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-          await this._miner.setGasPrice(gasPrice);
+          await this.updateFeeData("fast");
 
           this._adapter.log("Invalidating pseudo-opponent in dispute");
           await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
@@ -509,8 +513,7 @@ class ReputationMinerClient {
         if (submission.jrhNLeaves.eq(0)) {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.CONFIRM_JRH, entry.lastResponseTimestamp);
           if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+            await this.updateFeeData("fast");
             this._adapter.log("Confirming JRH in dispute");
             const tx = await this._miner.confirmJustificationRootHash();
             await tx.wait();
@@ -524,8 +527,7 @@ class ReputationMinerClient {
           if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
             const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_RESPONSE, entry.lastResponseTimestamp);
             if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+              await this.updateFeeData("fast");
               this._adapter.log("Responding to binary search in dispute");
               const tx = await this._miner.respondToBinarySearchForChallenge();
               await tx.wait();
@@ -542,8 +544,7 @@ class ReputationMinerClient {
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.BINARY_SEARCH_CONFIRM, entry.lastResponseTimestamp);
           if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+            await this.updateFeeData("fast");
             this._adapter.log("Confirming binary search in dispute");
             const tx = await this._miner.confirmBinarySearchResult();
             await tx.wait();
@@ -560,8 +561,7 @@ class ReputationMinerClient {
         {
           const responsePossible = await repCycle.getResponsePossible(disputeStages.RESPOND_TO_CHALLENGE, entry.lastResponseTimestamp);
           if (responsePossible){
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+            await this.updateFeeData("fast");
             this._adapter.log("Responding to challenge in dispute");
             const tx = await this._miner.respondToChallenge();
             await tx.wait();
@@ -578,8 +578,7 @@ class ReputationMinerClient {
           );
           if (responsePossible) {
             // If so, invalidate them.
-            const gasPrice = await updateGasEstimate("fast", this.chainId, this._adapter);
-            await this._miner.setGasPrice(gasPrice);
+            await this.updateFeeData("fast");
             this._adapter.log("Invalidating opponent in dispute");
             await repCycle.invalidateHash(round, oppIndex, {"gasPrice": this._miner.gasPrice});
             this.endDoBlockChecks();
@@ -592,6 +591,12 @@ class ReputationMinerClient {
       if (lastHashStanding && ethers.BigNumber.from(block.timestamp).sub(windowOpened).gte(this._miner.getMiningCycleDuration())) {
         // If the submission window is closed and we are the last hash, confirm it
         const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+        // This means the state we have wasn't submitted. Hopefully that's because we were in dispute, and the
+        // cycle has been completed...
+        if (round.eq(ethers.constants.NegativeOne)) {
+          this.endDoBlockChecks();
+          return;
+        }
         const disputeRound = await repCycle.getDisputeRound(round);
         const entry = disputeRound[index];
 
@@ -602,7 +607,33 @@ class ReputationMinerClient {
       }
       this.endDoBlockChecks();
     } catch (err) {
-      const repCycleCode = await this._miner.realProvider.getCode(repCycle.address);
+
+      if (repCycle && repCycle.address) {
+        let repCycleCode;
+        try {
+          repCycleCode = await this._miner.realProvider.getCode(repCycle.address);
+        } catch (e) {
+          this._adapter.error(`Error getting repCycle code: ${e}`);
+        }
+
+        if (repCycleCode === "0x") {
+          // TODO: Update this for the selfdestruct changes
+          // The repcycle was probably advanced by another miner while we were trying to
+          // respond to it. That's fine, and we'll sort ourselves out on the next block.
+          this.endDoBlockChecks();
+          return;
+        }
+      }
+
+      if (err.toString().indexOf('ECONNRESET') >= 0) {
+        // Ethers saw a connection reset error. This can happen occasionally, even when functioning well, depending
+        // on the provider endpoint. Regardless of when this happens in the block checks, I believe we can resume just fine,
+        // so log and continue.
+        this._adapter.error(`Connection reset error - continuing`);
+        this.endDoBlockChecks();
+        return;
+      }
+
       // If it's out-of-ether...
       if (err.toString().indexOf('does not have enough funds') >= 0 ) {
         // This could obviously be much better in the future, but for now, we'll settle for this not triggering a restart loop.
@@ -610,17 +641,19 @@ class ReputationMinerClient {
         this._adapter.error(`Block checks suspended due to not enough Ether. Send ether to \`${signingAddress}\`, then restart the miner`);
         return;
       }
-      if (repCycleCode === "0x") {
-        // The repcycle was probably advanced by another miner while we were trying to
-        // respond to it. That's fine, and we'll sort ourselves out on the next block.
-        this.endDoBlockChecks();
-        return;
-      }
       this._adapter.error(`Error during block checks: ${err}`);
       if (racingFunctionSignatures.indexOf(err.transaction.data.slice(0, 10)) > -1){
         // An error on a function that we were 'racing' to execute failed - most likely because someone else did it.
         // So let's keep mining.
         console.log('Sometimes-expected transaction failure - we lost a race to submit for a stage. Continuing mining')
+        this.endDoBlockChecks();
+        return;
+      }
+      if (err.toString().indexOf('ECONNRESET') >= 0) {
+        // Ethers saw a connection reset error. This can happen occasionally, even when functioning well, depending
+        // on the provider endpoint. Regardless of when this happens in the block checks, I believe we can resume just fine,
+        // so log and continue.
+        this._adapter.error(`Connection reset error - continuing`);
         this.endDoBlockChecks();
         return;
       }
@@ -636,20 +669,25 @@ class ReputationMinerClient {
 
   endDoBlockChecks() {
     if (this.resolveBlockChecksFinished){
+      this.lockedForBlockProcessing = false;
       this.resolveBlockChecksFinished();
-    }
-    this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
-    this.lockedForBlockProcessing = false;
-    if (this.blockSeenWhileLocked){
-      // NB Not an async call - we do not want to wait here for the block checks to complete.
-      this.doBlockChecks(this.blockSeenWhileLocked);
+    } else {
+      this.blockTimeoutCheck = setTimeout(this.reportBlockTimeout.bind(this), 300000);
+      this.lockedForBlockProcessing = false;
+      if (this.blockSeenWhileLocked){
+        // NB Not an async call - we do not want to wait here for the block checks to complete.
+        this.doBlockChecks(this.blockSeenWhileLocked);
+      }
     }
   }
 
   async close() {
+    // This check guards against calling close() twice
+    if (this.resolveBlockChecksFinished){ return; }
+
     this._miner.realProvider.polling = false;
 
-    const blockChecksFinished = new Promise((resolve) => {
+    const blockChecksFinishedPromise = new Promise((resolve) => {
       this.resolveBlockChecksFinished = resolve;
     });
 
@@ -664,7 +702,7 @@ class ReputationMinerClient {
     }
 
     if (this.lockedForBlockProcessing) {
-      await blockChecksFinished;
+      await blockChecksFinishedPromise;
     }
 
     if (this.blockTimeoutCheck) {
@@ -760,14 +798,15 @@ class ReputationMinerClient {
     // Confirm hash if possible
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      const gasPrice = await updateGasEstimate("average", this.chainId, this._adapter);
-      await this._miner.setGasPrice(gasPrice);
+      await this.updateFeeData("average");
 
       const confirmNewHashTx = await this._miner.confirmNewHash();
 
-      this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
-      await confirmNewHashTx.wait();
-      this._adapter.log("✅ New reputation hash confirmed");
+      if (confirmNewHashTx) {
+        this._adapter.log(`⛏️ Transaction waiting to be mined ${confirmNewHashTx.hash}`);
+        await confirmNewHashTx.wait();
+        this._adapter.log("✅ New reputation hash confirmed");
+      }
     }
   }
 
@@ -779,6 +818,11 @@ class ReputationMinerClient {
   async reportConfirmTimeout() {
     this._adapter.error("Error: We expected to see the mining cycle confirm ten minutes ago. Something might be wrong!");
     this._miningCycleConfirmationOverdue = true;
+  }
+
+  async updateFeeData(type) {
+    const feeData = await getFeeData(type, this.chainId, this._adapter, this._miner.realProvider);
+    this._miner.setFeeData(feeData);
   }
 
 }

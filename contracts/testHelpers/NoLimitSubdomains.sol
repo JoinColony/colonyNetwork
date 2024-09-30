@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,17 +16,18 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/ColonyStorage.sol";
-
+import { ColonyStorage } from "./../colony/ColonyStorage.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract NoLimitSubdomains is ColonyStorage {
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
+  function addDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _parentDomainId
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId) {
     uint256 parentSkillId = domains[_parentDomainId].skillId;
 
     // Setup new local skill
@@ -44,14 +46,9 @@ contract NoLimitSubdomains is ColonyStorage {
     fundingPots[fundingPotCount].associatedTypeId = domainCount;
 
     // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({
-      skillId: _skillId,
-      fundingPotId: fundingPotCount
-    });
+    domains[domainCount] = Domain({ skillId: _skillId, fundingPotId: fundingPotCount });
 
     emit DomainAdded(msg.sender, domainCount);
     emit FundingPotAdded(fundingPotCount);
   }
-
-
 }

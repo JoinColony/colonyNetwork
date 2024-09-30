@@ -7,6 +7,7 @@ const { soliditySha3, isAddress } = require("web3-utils");
 
 const PatriciaTree = require("./patricia");
 const PatriciaTreeNoHash = require("./patriciaNoHashKey");
+const { RetryProvider } = require("../package-utils");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -15,6 +16,8 @@ const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205
 const minStake = ethers.BigNumber.from(10).pow(18).mul(2000);
 
 const DAY_IN_SECONDS = 60 * 60 * 24;
+
+const BLOCK_PAGING_SIZE = 10000;
 
 class ReputationMiner {
   /**
@@ -38,7 +41,7 @@ class ReputationMiner {
         network_id: 515,
         vmErrorsOnRPCResponse: false,
         locked: false,
-        logger: console,
+        logger: { log: x => console.log("Ganache:", x)},
         accounts: [
           {
             balance: "0x10000000000000000000000000",
@@ -54,7 +57,7 @@ class ReputationMiner {
     if (provider) {
       this.realProvider = provider;
     } else {
-      this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
+      this.realProvider = new RetryProvider(`http://localhost:${realProviderPort}`);
     }
 
     if (minerAddress) {
@@ -71,10 +74,10 @@ class ReputationMiner {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
-    this.colonyNetworkContractDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
-    this.repCycleContractDef = await this.loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
-    this.tokenLockingContractDef = await this.loader.load({ contractName: "ITokenLocking" }, { abi: true, address: false });
-    this.colonyContractDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
+    this.colonyNetworkContractDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
+    this.repCycleContractDef = await this.loader.load({ contractDir: "reputationMiningCycle", contractName: "IReputationMiningCycle" });
+    this.tokenLockingContractDef = await this.loader.load({ contractDir: "tokenLocking", contractName: "ITokenLocking" });
+    this.colonyContractDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
 
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
     const tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
@@ -83,11 +86,13 @@ class ReputationMiner {
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
 
-
     if (!this.useJsTree) {
-      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+      this.patriciaTreeContractDef = await this.loader.load(
+        { contractDir: "patriciaTree", contractName: "PatriciaTree" },
+        { abi: true, address: false, bytecode: true }
+      );
       this.patriciaTreeNoHashContractDef = await this.loader.load(
-        { contractName: "PatriciaTreeNoHash" },
+        { contractDir: "patriciaTree", contractName: "PatriciaTreeNoHash" },
         { abi: true, address: false, bytecode: true }
       );
     }
@@ -96,7 +101,7 @@ class ReputationMiner {
 
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
-    this.gasPrice = ethers.utils.hexlify(20000000000);
+    this.feeData = {};
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
     this.db = new Database(this.dbPath, { });
@@ -143,28 +148,31 @@ class ReputationMiner {
       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
       INNER JOIN users ON users.rowid=reputations.user_rowid
       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      INNER JOIN skills ON skills.rowid=reputations.skill_rowid
       WHERE reputation_states.root_hash=?
       AND colonies.address=?
-      AND reputations.skill_id=?
+      AND skills.skill_id=?
       AND users.address=?`
     );
 
     this.queries.insertReputation = this.db.prepare(
-      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
       SELECT
       (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
       (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
-      ?,
+      (SELECT skills.rowid FROM skills WHERE skills.skill_id=?),
       (SELECT users.rowid FROM users WHERE users.address=?),
       ?`
     );
 
     this.queries.getAllReputationsInHash = this.db.prepare(
-      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+      // eslint-disable-next-line max-len
+      `SELECT skills.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
        FROM reputations
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
        WHERE reputation_states.root_hash=?
        ORDER BY substr(reputations.value, 67) ASC`
     );
@@ -175,9 +183,10 @@ class ReputationMiner {
       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
       INNER JOIN users ON users.rowid=reputations.user_rowid
       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      INNER JOIN skills ON skills.rowid=reputations.skill_rowid
       WHERE reputation_states.root_hash=?
       AND users.address=?
-      AND reputations.skill_id=?
+      AND skills.skill_id=?
       AND colonies.address=?`
     );
 
@@ -187,19 +196,21 @@ class ReputationMiner {
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
        WHERE reputation_states.root_hash=?
        AND colonies.address=?
-       AND reputations.skill_id=?
+       AND skills.skill_id=?
        AND users.address!='0x0000000000000000000000000000000000000000'
        ORDER BY reputations.value DESC`
     );
 
     this.queries.getReputationsForAddress = this.db.prepare(
-      `SELECT DISTINCT reputations.skill_id as skill_id, reputations.value as value
+      `SELECT DISTINCT skills.skill_id as skill_id, reputations.value as value
        FROM reputations
        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
        INNER JOIN users ON users.rowid=reputations.user_rowid
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
        WHERE reputation_states.root_hash=?
        AND colonies.address=?
        AND users.address=?
@@ -763,7 +774,7 @@ class ReputationMiner {
     }
 
     // Submit that entry
-    return repCycle.submitRootHash(hash, nLeaves, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.submitRootHash(hash, nLeaves, jrh, entryIndex, { gasLimit: gasEstimate, ...this.feeData });
   }
 
   async getEntryIndex(startIndex = 1) {
@@ -917,7 +928,8 @@ class ReputationMiner {
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
-    const skillId = parseInt(keyElements[1], 16);
+    // const skillId = parseInt(keyElements[1], 16);
+    const skillId = ethers.BigNumber.from(keyElements[1]).toString();
     const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
 
     if (reputationValue.length === 0) {
@@ -973,7 +985,8 @@ class ReputationMiner {
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
-    const skillId = parseInt(keyElements[1], 16);
+    // const skillId = parseInt(keyElements[1], 16);
+    const skillId = ethers.BigNumber.from(keyElements[1]).toString();
 
     res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
 
@@ -1017,7 +1030,7 @@ class ReputationMiner {
       index,
       siblings1,
       siblings2,
-      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+      { gasLimit: gasEstimate, ...this.feeData }
     );
   }
 
@@ -1107,7 +1120,7 @@ class ReputationMiner {
       siblings,
       {
         gasLimit: gasEstimate,
-        gasPrice: this.gasPrice
+        ...this.feeData
       }
     );
   }
@@ -1139,7 +1152,7 @@ class ReputationMiner {
 
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, siblings, {
       gasLimit: gasEstimate,
-      gasPrice: this.gasPrice
+      ...this.feeData
     });
   }
 
@@ -1243,7 +1256,7 @@ class ReputationMiner {
     }
 
     return repCycle.respondToChallenge(...functionArgs,
-      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+      { gasLimit: gasEstimate, ...this.feeData }
     );
   }
 
@@ -1254,7 +1267,10 @@ class ReputationMiner {
   async confirmNewHash() {
     const repCycle = await this.getActiveRepCycle();
     const [round] = await this.getMySubmissionRoundAndIndex();
-
+    if (round.eq(ethers.constants.NegativeOne)) {
+      console.log("No submission found to confirm - maybe we were beaten to it?");
+      return false;
+    }
     let gasEstimate;
     try {
       gasEstimate = await repCycle.estimateGas.confirmNewHash(round);
@@ -1263,7 +1279,7 @@ class ReputationMiner {
     } catch (err){
       gasEstimate = ethers.BigNumber.from(4000000);
     }
-    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.confirmNewHash(round, { gasLimit: gasEstimate, ...this.feeData });
   }
 
 
@@ -1359,28 +1375,48 @@ class ReputationMiner {
     if (!blockNumber) {
       throw new Error("Block number not supplied to sync");
     }
-    // Get the events
-    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
-    filter.fromBlock = blockNumber;
-    const events = await this.realProvider.getLogs(filter);
-    let localHash = await this.reputationTree.getRootHash();
-    let applyLogs = false;
 
-    // Run through events backwards find the most recent one that we know...
-    let syncFromIndex = 0;
-    for (let i = events.length - 1 ; i >= 0 ; i -= 1){
-      const event = events[i];
-      const hash = event.data.slice(0, 66);
-      const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
-      // Do we have such a state?
-      const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
-      if (res.n === 1){
-        // We know that state! We can just sync from the next one...
-        syncFromIndex = i + 1;
-        await this.loadState(hash);
-        applyLogs = true;
-        break;
+    let localHash = await this.reputationTree.getRootHash();
+    let foundKnownState = false;
+    let applyLogs = false;
+    let syncFromIndex = -1;
+
+    const latestBlockNumber = await this.realProvider.getBlockNumber();
+    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
+    filter.fromBlock = latestBlockNumber + 1; // +1 to accommodate the first loop iteration
+    filter.toBlock = filter.fromBlock;
+
+    let events = [];
+    while (filter.toBlock > blockNumber && !foundKnownState ) {
+      // Create a span of events up to BLOCK_PAGING_SIZE in length
+      filter.toBlock = filter.fromBlock - 1;
+      filter.fromBlock = Math.max(filter.toBlock - BLOCK_PAGING_SIZE + 1, blockNumber);
+
+      // Get new span of events, [fromBlock:oldset ... toBlock:newest]
+      const partialEvents = await this.realProvider.getLogs(filter);
+      // Build a complete reversed array of events, [newest ... oldest]
+      events = events.concat(partialEvents.reverse());
+
+      // Run through events to find the most recent one that we know...
+      for (let i = 0 ; i < events.length ; i += 1) {
+        const event = events[i];
+        if (await this.cycleCompleteEventIsKnownState(event)) {
+          // We know that state! We can just sync from the next one...
+          const knownHash = event.data.slice(0, 66);
+          await this.loadState(knownHash);
+
+          foundKnownState = true;
+          applyLogs = true;
+          syncFromIndex = i - 1;
+
+          break;
+        }
       }
+    }
+
+    // This means that we have not seen a known state, and so will have to sync from the start
+    if (syncFromIndex === -1 && !foundKnownState) {
+      syncFromIndex = events.length - 1;
     }
 
     // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
@@ -1390,10 +1426,10 @@ class ReputationMiner {
       applyLogs = true;
     }
 
-    for (let i = syncFromIndex; i < events.length; i += 1) {
-      console.log(`Syncing mining cycle ${i + 1} of ${events.length}...`)
+    for (let i = syncFromIndex; i >= 0; i -= 1) {
+      console.log(`Syncing mining cycle ${syncFromIndex - i + 1} of ${syncFromIndex + 1}...`)
       const event = events[i];
-      if (i === 0) {
+      if (i === events.length - 1 && !foundKnownState) {
         // If we are syncing from the very start of the reputation history, the block
         // before the very first 'ReputationMiningCycleComplete' does not have an
         // active reputation cycle. So we skip it if 'fromBlock' has not been judiciously
@@ -1426,12 +1462,12 @@ class ReputationMiner {
     }
 
     // Some more cycles might have completed since we started syncing
-    const lastEventBlock = events[events.length - 1].blockNumber
-    filter.fromBlock = lastEventBlock;
+    filter.fromBlock = latestBlockNumber;
+    filter.toBlock = "latest";
     const sinceEvents = await this.realProvider.getLogs(filter);
     if (sinceEvents.length > 1){
       console.log("Some more cycles have completed during the sync process. Continuing to sync...")
-      await this.sync(lastEventBlock, saveHistoricalStates);
+      await this.sync(sinceEvents[1].blockNumber - 1, saveHistoricalStates);
     }
 
     // Check final state
@@ -1447,13 +1483,21 @@ class ReputationMiner {
     }
   }
 
+  async cycleCompleteEventIsKnownState(event) {
+    const hash = event.data.slice(0, 66);
+    const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
+    // Do we have such a state?
+    const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
+    return res.n === 1;
+  }
+
   async printCurrentState() {
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
       const decimalValue = new BN(this.reputations[key].slice(2, 66), 16);
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
-      const skillId = parseInt(keyElements[1], 16);
+      const skillId = ethers.BigNumber.from(keyElements[1]);
 
       console.log("colonyAddress", colonyAddress);
       console.log("userAddress", userAddress);
@@ -1463,18 +1507,8 @@ class ReputationMiner {
     }
   }
 
-  // Gas price should be a hex string
-  async setGasPrice(_gasPrice){
-    if (!ethers.utils.isHexString(_gasPrice)){
-      throw new Error("Passed gas price was not a hex string")
-    }
-    const passedPrice = ethers.BigNumber.from(_gasPrice);
-    const minimumPrice = ethers.BigNumber.from("1100000000");
-    if (passedPrice.lt(minimumPrice)){
-      this.gasPrice = minimumPrice.toHexString();
-    } else {
-      this.gasPrice = _gasPrice;
-    }
+  setFeeData(_feeData){
+    this.feeData = _feeData;
   }
 
   async saveCurrentState() {
@@ -1485,7 +1519,7 @@ class ReputationMiner {
       const value = this.reputations[key];
       const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
-      const skillId = parseInt(keyElements[1], 16);
+      const skillId = ethers.BigNumber.from(keyElements[1]).toString();
       this.queries.saveColony.run(colonyAddress);
       this.queries.saveUser.run(userAddress);
       this.queries.saveSkill.run(skillId);
@@ -1668,11 +1702,11 @@ class ReputationMiner {
     const saveSkill = db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`);
 
     const insertReputation = db.prepare(
-      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
       SELECT
       (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
       (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
-      ?,
+      (SELECT skills.rowid FROM skills WHERE skills.skill_id=?),
       (SELECT users.rowid FROM users WHERE users.address=?),
       ?`
     );
@@ -1697,15 +1731,15 @@ class ReputationMiner {
       "CREATE TABLE IF NOT EXISTS reputation_states ( rowid INTEGER PRIMARY KEY, root_hash text NOT NULL UNIQUE, n_leaves INTEGER NOT NULL)"
     ).run();
     await db.prepare("CREATE TABLE IF NOT EXISTS colonies ( rowid INTEGER PRIMARY KEY, address text NOT NULL UNIQUE )").run();
-    await db.prepare("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )").run();
+    await db.prepare("CREATE TABLE IF NOT EXISTS skills ( rowid INTEGER PRIMARY KEY, skill_id text NOT NULL UNIQUE )").run();
     await db.prepare(
       `CREATE TABLE IF NOT EXISTS reputations (
         reputation_rowid INTEGER NOT NULL,
         colony_rowid INTEGER NOT NULL,
-        skill_id INTEGER NOT NULL,
+        skill_rowid INTEGER NOT NULL,
         user_rowid INTEGER NOT NULL,
         value text NOT NULL,
-        PRIMARY KEY("reputation_rowid","colony_rowid","skill_id","user_rowid")
+        PRIMARY KEY("reputation_rowid","colony_rowid","skill_rowid","user_rowid")
       )`
     ).run();
 
@@ -1724,7 +1758,7 @@ class ReputationMiner {
     await db.pragma('journal_mode = WAL');
     await db.prepare('CREATE INDEX IF NOT EXISTS reputation_states_root_hash ON reputation_states (root_hash)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS users_address ON users (address)').run();
-    await db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_id)').run();
+    await db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_rowid)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS colonies_address ON colonies (address)').run();
 
     // We added a composite key to reputations - do we need to port it over?
@@ -1801,6 +1835,54 @@ class ReputationMiner {
       await db.prepare(`ALTER TABLE colonies2 RENAME TO colonies`).run()
 
       console.log('Explicit primary keys added to secondary tables');
+    }
+    // TODO: Migration from when we moved skillid from integer to text
+    res = await db.prepare("SELECT type FROM PRAGMA_TABLE_INFO('reputations') WHERE name='skill_id'").all();
+    if (res.length === 1) {
+      console.log("reputations.skill_id exists, so need to migrate to skill_rowid");
+      await db.prepare(
+        `CREATE TABLE reputations2 (
+          reputation_rowid INTEGER NOT NULL,
+          colony_rowid INTEGER NOT NULL,
+          skill_rowid INTEGER NOT NULL,
+          user_rowid INTEGER NOT NULL,
+          value text NOT NULL,
+          PRIMARY KEY("reputation_rowid","colony_rowid","skill_rowid","user_rowid")
+        )`
+      ).run();
+
+      await db.prepare(
+        `CREATE TABLE skills2 (
+          rowid INTEGER PRIMARY KEY,
+          skill_id text NOT NULL UNIQUE
+        )`
+      ).run()
+
+      await db.prepare(`INSERT INTO skills2 (rowid, skill_id) SELECT rowid, skill_id FROM skills;`).run()
+      await db.prepare(`DROP TABLE skills`).run()
+      await db.prepare(`ALTER TABLE skills2 RENAME TO skills`).run()
+
+
+      // Open another connection to write in to reputations2 while iterating over reputations
+      // This is generally prevented to avoid race conditions etc but is safe here - we are exclusively
+      // reading from a table we are not writing to.
+      const db2 = new Database(db.name, { });
+      const statementToIterate = db2.prepare('SELECT * FROM reputations');
+      // eslint-disable-next-line no-restricted-syntax
+      for (const row of statementToIterate.iterate()) {
+        const skill = await db.prepare(`SELECT rowid FROM skills WHERE skill_id = ?`).get(row.skill_id.toString());
+        await db.prepare(
+          `INSERT INTO reputations2 (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
+          VALUES (?, ?, ?, ?, ?)`).run(row.reputation_rowid, row.colony_rowid, skill.rowid, row.user_rowid, row.value);
+      }
+
+      db2.close()
+
+      await db.prepare(`DROP TABLE reputations`).run()
+      await db.prepare(`ALTER TABLE reputations2 RENAME TO reputations`).run()
+
+      await db.prepare('CREATE INDEX IF NOT EXISTS reputation_skill_id ON reputations (skill_rowid)').run();
+      console.log("skill_id -> skill_rowid migration complete");
     }
   }
 

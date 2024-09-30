@@ -15,9 +15,9 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-
+// prettier-ignore
 interface ReputationMiningCycleDataTypes {
 
   struct ReputationLogEntry {

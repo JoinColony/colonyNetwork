@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,14 +16,14 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyStorage.sol";
-
+import { ColonyStorage } from "./ColonyStorage.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract ColonyDomains is ColonyStorage {
-
+  // prettier-ignore
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(_colonyNetworkAddress != address(0x0), "colony-network-cannot-be-zero");
     require(_token != address(0x0), "colony-token-cannot-be-zero");
@@ -34,22 +35,6 @@ contract ColonyDomains is ColonyStorage {
     token = _token;
     tokenLockingAddress = IColonyNetwork(colonyNetworkAddress).getTokenLocking();
 
-    // Initialise the task update reviewers
-    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    // We are setting a manager to both reviewers, but it will require just one signature from manager
-    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Manager);
-    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Evaluator);
-    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), TaskRole.Manager, TaskRole.Evaluator);
-    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), TaskRole.Manager, TaskRole.Worker);
-    setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), TaskRole.Manager, TaskRole.Worker);
-
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address,uint256,uint256)")));
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
-
     // Initialise the local skill and domain trees
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 rootDomainSkill = colonyNetwork.getSkillCount();
@@ -57,23 +42,30 @@ contract ColonyDomains is ColonyStorage {
     initialiseRootLocalSkill();
 
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
-    rewardInverse = 2**256 - 1;
+    rewardInverse = 2 ** 256 - 1;
 
     emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
-  stoppable
-  domainNotDeprecated(_parentDomainId)
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
+  function addDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _parentDomainId
+  )
+    public
+    stoppable
+    domainNotDeprecated(_parentDomainId)
+    authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
     addDomain(_permissionDomainId, _childSkillIndex, _parentDomainId, "");
   }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId, string memory _metadata) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
-  {
+  function addDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _parentDomainId,
+    string memory _metadata
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId) {
     // Note: Remove when we want to allow more domain hierarchy levels
     require(_parentDomainId == 1, "colony-parent-domain-not-root");
 
@@ -92,25 +84,31 @@ contract ColonyDomains is ColonyStorage {
     }
   }
 
-  function editDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, string memory _metadata) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  function editDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    string memory _metadata
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     if (keccak256(abi.encodePacked(_metadata)) != keccak256(abi.encodePacked(""))) {
       emit DomainMetadata(msgSender(), _domainId, _metadata);
     }
   }
 
-  function deprecateDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bool _deprecated) public
-  stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    if (IColonyNetwork(colonyNetworkAddress).deprecateSkill(domains[_domainId].skillId, _deprecated)) {
-
+  function deprecateDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bool _deprecated
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
+    if (
+      IColonyNetwork(colonyNetworkAddress).deprecateSkill(domains[_domainId].skillId, _deprecated)
+    ) {
       emit DomainDeprecated(msgSender(), _domainId, _deprecated);
     }
   }
 
+  // NOTE: We intentionally avoid adding rootLocalSkill to the local skills mapping
   function initialiseRootLocalSkill() public stoppable {
     require(rootLocalSkill == 0, "colony-root-local-skill-initialised");
     rootLocalSkill = IColonyNetwork(colonyNetworkAddress).initialiseRootLocalSkill();
@@ -134,23 +132,9 @@ contract ColonyDomains is ColonyStorage {
     fundingPots[fundingPotCount].associatedTypeId = domainCount;
 
     // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({
-      skillId: _skillId,
-      fundingPotId: fundingPotCount
-    });
+    domains[domainCount] = Domain({ skillId: _skillId, fundingPotId: fundingPotCount });
 
     emit DomainAdded(msgSender(), domainCount);
     emit FundingPotAdded(fundingPotCount);
   }
-
-  function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
-  private
-  {
-    reviewers[_sig] = [_firstReviewer, _secondReviewer];
-  }
-
-  function setRoleAssignmentFunction(bytes4 _sig) private {
-    roleAssignmentSigs[_sig] = true;
-  }
-
 }

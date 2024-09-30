@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,17 +16,16 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../../lib/dappsys/auth.sol";
-import "./../common/MetaTransactionMsgSender.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
+import { MetaTransactionMsgSender } from "./../common/MetaTransactionMsgSender.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-
 abstract contract CommonStorage is DSAuth, MetaTransactionMsgSender {
-  uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant UINT256_MAX = 2 ** 256 - 1;
 
   uint256 constant AUTHORITY_SLOT = 0;
   uint256 constant OWNER_SLOT = 1;
@@ -47,9 +47,9 @@ abstract contract CommonStorage is DSAuth, MetaTransactionMsgSender {
   // Recovery variables
   bool recoveryMode;
   uint64 recoveryRolesCount;
-  uint64 recoveryApprovalCount;// Storage slot 3
+  uint64 recoveryApprovalCount; // Storage slot 3
   uint256 recoveryEditedTimestamp; // Storage slot 4
-  mapping (address => uint256) recoveryApprovalTimestamps; // Storage slot 5
+  mapping(address => uint256) recoveryApprovalTimestamps; // Storage slot 5
 
   modifier recovery() {
     require(recoveryMode, "colony-not-in-recovery-mode");

@@ -1,0 +1,174 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+      "label": "tree",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "struct Data.Tree",
+        "members": [
+          {
+            "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+            "label": "root",
+            "offset": 0,
+            "slot": "0",
+            "type": {
+              "encoding": "inplace",
+              "label": "bytes32",
+              "numberOfBytes": "32"
+            }
+          },
+          {
+            "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+            "label": "rootEdge",
+            "offset": 0,
+            "slot": "1",
+            "type": {
+              "encoding": "inplace",
+              "label": "struct Data.Edge",
+              "members": [
+                {
+                  "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                  "label": "node",
+                  "offset": 0,
+                  "slot": "0",
+                  "type": {
+                    "encoding": "inplace",
+                    "label": "bytes32",
+                    "numberOfBytes": "32"
+                  }
+                },
+                {
+                  "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                  "label": "label",
+                  "offset": 0,
+                  "slot": "1",
+                  "type": {
+                    "encoding": "inplace",
+                    "label": "struct Data.Label",
+                    "members": [
+                      {
+                        "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                        "label": "data",
+                        "offset": 0,
+                        "slot": "0",
+                        "type": {
+                          "encoding": "inplace",
+                          "label": "bytes32",
+                          "numberOfBytes": "32"
+                        }
+                      },
+                      {
+                        "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                        "label": "length",
+                        "offset": 0,
+                        "slot": "1",
+                        "type": {
+                          "encoding": "inplace",
+                          "label": "uint256",
+                          "numberOfBytes": "32"
+                        }
+                      }
+                    ],
+                    "numberOfBytes": "64"
+                  }
+                }
+              ],
+              "numberOfBytes": "96"
+            }
+          },
+          {
+            "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+            "label": "nodes",
+            "offset": 0,
+            "slot": "4",
+            "type": {
+              "encoding": "mapping",
+              "key": {
+                "encoding": "inplace",
+                "label": "bytes32",
+                "numberOfBytes": "32"
+              },
+              "label": "mapping(bytes32 => struct Data.Node)",
+              "numberOfBytes": "32",
+              "value": {
+                "encoding": "inplace",
+                "label": "struct Data.Node",
+                "members": [
+                  {
+                    "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                    "label": "children",
+                    "offset": 0,
+                    "slot": "0",
+                    "type": {
+                      "base": {
+                        "encoding": "inplace",
+                        "label": "struct Data.Edge",
+                        "members": [
+                          {
+                            "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                            "label": "node",
+                            "offset": 0,
+                            "slot": "0",
+                            "type": {
+                              "encoding": "inplace",
+                              "label": "bytes32",
+                              "numberOfBytes": "32"
+                            }
+                          },
+                          {
+                            "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                            "label": "label",
+                            "offset": 0,
+                            "slot": "1",
+                            "type": {
+                              "encoding": "inplace",
+                              "label": "struct Data.Label",
+                              "members": [
+                                {
+                                  "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                                  "label": "data",
+                                  "offset": 0,
+                                  "slot": "0",
+                                  "type": {
+                                    "encoding": "inplace",
+                                    "label": "bytes32",
+                                    "numberOfBytes": "32"
+                                  }
+                                },
+                                {
+                                  "contract": "contracts/patriciaTree/PatriciaTreeBase.sol:PatriciaTreeBase",
+                                  "label": "length",
+                                  "offset": 0,
+                                  "slot": "1",
+                                  "type": {
+                                    "encoding": "inplace",
+                                    "label": "uint256",
+                                    "numberOfBytes": "32"
+                                  }
+                                }
+                              ],
+                              "numberOfBytes": "64"
+                            }
+                          }
+                        ],
+                        "numberOfBytes": "96"
+                      },
+                      "encoding": "inplace",
+                      "label": "struct Data.Edge[2]",
+                      "numberOfBytes": "192"
+                    }
+                  }
+                ],
+                "numberOfBytes": "192"
+              }
+            }
+          }
+        ],
+        "numberOfBytes": "160"
+      }
+    }
+  ]
+}

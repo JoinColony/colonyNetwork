@@ -3,8 +3,7 @@ const express = require("express");
 const sqlite = require("sqlite");
 const sqlite3 = require("sqlite3");
 const queue = require("express-queue");
-const NonceManager = require("./ExtendedNonceManager");
-const { colonyIOCors, ConsoleAdapter, updateGasEstimate } = require("../package-utils");
+const { colonyIOCors, ConsoleAdapter, getFeeData, ExtendedNonceManager: NonceManager } = require("../package-utils");
 
 const ETHEREUM_BRIDGE_ADDRESS = "0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59";
 const BINANCE_BRIDGE_ADDRESS = "0x162E898bD0aacB578C8D5F8d6ca588c13d2A383F";
@@ -78,14 +77,14 @@ class MetatransactionBroadcaster {
     const network = await this.provider.getNetwork();
     this.chainId = network.chainId;
 
-    const colonyNetworkDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
+    const colonyNetworkDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, colonyNetworkDef.abi, this.wallet);
 
-    this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+    this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
     this.tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
 
-    this.metaTxDef = await this.loader.load({ contractName: "IBasicMetaTransaction" }, { abi: true, address: false });
-    this.metaTxTokenDef = await this.loader.load({ contractName: "MetaTxToken" }, { abi: true, address: false });
+    this.metaTxDef = await this.loader.load({ contractDir: "common", contractName: "IBasicMetaTransaction" });
+    this.metaTxTokenDef = await this.loader.load({ contractDir: "metaTxToken", contractName: "MetaTxToken" });
   }
 
   async close() {
@@ -98,7 +97,7 @@ class MetatransactionBroadcaster {
       `CREATE TABLE IF NOT EXISTS addresses (
         address text NOT NULL UNIQUE,
         validForMtx bool NOT NULL
-      )`
+      )`,
     );
     await db.close();
   }
@@ -109,7 +108,7 @@ class MetatransactionBroadcaster {
     const res = await db.all(
       `SELECT DISTINCT addresses.validForMtx as validForMtx
        FROM addresses
-       WHERE addresses.address="${checksummedAddress}"`
+       WHERE addresses.address="${checksummedAddress}"`,
     );
     await db.close();
     const valid = res.map((x) => x.validForMtx);
@@ -139,7 +138,7 @@ class MetatransactionBroadcaster {
     // Is it an extension?
     // We do this is two parts. Is it an old-style extension?
     // First, instantiate it as if it's an extension.
-    const colonyExtensionDef = await this.loader.load({ contractName: "ColonyExtension" }, { abi: true, address: false });
+    const colonyExtensionDef = await this.loader.load({ contractDir: "extensions", contractName: "ColonyExtension" });
     const possibleExtension = new ethers.Contract(checksummedAddress, colonyExtensionDef.abi, this.wallet);
     try {
       const extensionId = await possibleExtension.identifier();
@@ -163,13 +162,13 @@ class MetatransactionBroadcaster {
       `INSERT INTO addresses (address, validForMtx)
        VALUES ("${address}", true)
        ON CONFLICT(address) DO
-       UPDATE SET validForMtx = "true"`
+       UPDATE SET validForMtx = "true"`,
     );
     await db.close();
   }
 
   async isTokenTransactionValid(target, txData, userAddress) {
-    const metaTxTokenDef = await this.loader.load({ contractName: "MetaTxToken" }, { abi: true, address: false });
+    const metaTxTokenDef = await this.loader.load({ contractDir: "metaTxToken", contractName: "MetaTxToken" });
     const possibleToken = new ethers.Contract(target, metaTxTokenDef.abi, this.wallet);
     let valid = false;
     try {
@@ -194,7 +193,7 @@ class MetatransactionBroadcaster {
   }
 
   async isColonyFamilyTransactionAllowed(target, txData, userAddress) {
-    const colonyDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
+    const colonyDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
     const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
     try {
       const tx = possibleColony.interface.parseTransaction({ data: txData });
@@ -232,7 +231,7 @@ class MetatransactionBroadcaster {
       // Not a colony related transaction (we recognise)
     }
 
-    const votingRepDef = await this.loader.load({ contractName: "VotingReputation" }, { abi: true, address: false });
+    const votingRepDef = await this.loader.load({ contractDir: "extensions/votingReputation", contractName: "VotingReputation" });
     const possibleVotingRep = new ethers.Contract(target, votingRepDef.abi, this.wallet);
     try {
       const tx = possibleVotingRep.interface.parseTransaction({ data: txData });
@@ -248,7 +247,7 @@ class MetatransactionBroadcaster {
         const { addressValid, validTokenTransaction, allowedColonyFamilyTransaction } = await this.doValidTransactionChecks(
           motionTarget,
           motion.action,
-          userAddress
+          userAddress,
         );
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
           return false;
@@ -259,7 +258,7 @@ class MetatransactionBroadcaster {
       // Not a voting rep related transaction (we recognise)
     }
 
-    const multicallDef = await this.loader.load({ contractName: "Multicall" }, { abi: true, address: false });
+    const multicallDef = await this.loader.load({ contractDir: "common", contractName: "Multicall" });
     const possibleMulticall = new ethers.Contract(target, multicallDef.abi, this.wallet);
 
     try {
@@ -295,20 +294,33 @@ class MetatransactionBroadcaster {
   }
 
   async isValidSetAuthorityTransaction(tx, userAddress) {
+    let logs = [];
     // Get the most recent metatx this user sent on colonyNetwork
-    let logs = await this.provider.getLogs({
-      address: this.colonyNetwork.address,
-      topics: [ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
-      fromBlock: 0,
-    });
-    const data = logs
-      .map((l) => {
-        return {
-          log: l,
-          event: this.colonyNetwork.interface.parseLog(l),
-        };
-      })
-      .filter((x) => ethers.utils.getAddress(x.event.args.userAddress) === ethers.utils.getAddress(userAddress));
+    const stepSize = 10000;
+    let toBlock = await this.provider.getBlockNumber();
+    let fromBlock = toBlock - stepSize;
+    let data = [];
+    // TODO: avoid endless loop here if user never sent a metatx
+    while (data.length === 0) {
+      logs = await this.provider.getLogs({
+        address: this.colonyNetwork.address,
+        topics: [ethers.utils.id("MetaTransactionExecuted(address,address,bytes)")],
+        fromBlock,
+        toBlock,
+      });
+
+      data = logs
+        .map((l) => {
+          return {
+            log: l,
+            event: this.colonyNetwork.interface.parseLog(l),
+          };
+        })
+        .filter((x) => ethers.utils.getAddress(x.event.args.userAddress) === ethers.utils.getAddress(userAddress));
+
+      fromBlock -= stepSize;
+      toBlock -= stepSize;
+    }
     // Get the TokenAuthorityDeployed event
     const receipt = await this.provider.getTransactionReceipt(data[data.length - 1].log.transactionHash);
     logs = receipt.logs.map((l) => this.colonyNetwork.interface.parseLog(l)).filter((e) => e.name === "TokenAuthorityDeployed");
@@ -324,6 +336,10 @@ class MetatransactionBroadcaster {
 
       try {
         gasEstimate = await estimateGas(...args);
+        if (ethers.BigNumber.from(args[args.length - 1].gasLimit).gt(gasEstimate.mul(11).div(10))) {
+          // eslint-disable-next-line
+          args[args.length - 1].gasLimit = gasEstimate.mul(11).div(10);
+        }
       } catch (err) {
         let reason;
         try {
@@ -358,7 +374,7 @@ class MetatransactionBroadcaster {
         const { addressValid, validTokenTransaction, allowedColonyFamilyTransaction } = await this.doValidTransactionChecks(
           target,
           payload,
-          userAddress
+          userAddress,
         );
 
         if (!(addressValid && allowedColonyFamilyTransaction) && !validTokenTransaction) {
@@ -429,14 +445,14 @@ class MetatransactionBroadcaster {
     try {
       const { target, userAddress, payload, r, s, v } = req.body;
       const contract = new ethers.Contract(target, this.metaTxDef.abi, this.nonceManager);
-      this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+      this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
       return this.processTransactionLogic(req, res, contract.estimateGas.executeMetaTransaction, contract.executeMetaTransaction, [
         userAddress,
         payload,
         r,
         s,
         v,
-        { gasPrice: this.gasPrice, gasLimit: this.gasLimit },
+        { ...this.feeData, gasLimit: this.gasLimit },
       ]);
     } catch (err) {
       return res.status(500).send({
@@ -450,7 +466,7 @@ class MetatransactionBroadcaster {
     try {
       const { target, owner, spender, value, deadline, r, s, v } = req.body;
       const contract = new ethers.Contract(target, this.metaTxTokenDef.abi, this.nonceManager);
-      this.gasPrice = await updateGasEstimate("safeLow", this.chainId, this.adapter);
+      this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
       return this.processTransactionLogic(req, res, contract.estimateGas.permit, contract.permit, [
         owner,
         spender,
@@ -459,7 +475,7 @@ class MetatransactionBroadcaster {
         v,
         r,
         s,
-        { gasPrice: this.gasPrice, gasLimit: this.gasLimit },
+        { ...this.feeData, gasLimit: this.gasLimit },
       ]);
     } catch (err) {
       return res.status(500).send({

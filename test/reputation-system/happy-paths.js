@@ -19,13 +19,15 @@ const {
   makeReputationValue,
   removeSubdomainLimit,
   checkErrorRevert,
+  getChainId,
+  getMultichainSkillId,
 } = require("../../helpers/test-helper");
 
 const {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedExpenditure,
   fundColonyWithTokens,
 } = require("../../helpers/test-data-generator");
 
@@ -40,9 +42,10 @@ const {
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
-  GLOBAL_SKILL_ID,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ADDRESS_ZERO,
+  XDAI_CHAINID,
+  FORKED_XDAI_CHAINID,
 } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -54,25 +57,47 @@ chai.use(bnChai(web3.utils.BN));
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;
 
-let metaColony;
 let colonyNetwork;
+let metaColony;
 let clnyToken;
+let localSkillId;
+let miningSkillId;
+let metaRootSkillId;
+let chainId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-  await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+  chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
-  // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
-  // We're not resetting the global skills tree as the Network is not reset
+  await metaColony.addLocalSkill();
+  localSkillId = await colonyNetwork.getSkillCount();
+  const miningChainId = parseInt(process.env.MINING_CHAIN_ID, 10) || chainId;
+
+  if (chainId !== miningChainId) {
+    throw Error("Test suite doesn't support this configuration yet");
+  }
+  if (chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID) {
+    expect(localSkillId).to.eq.BN(4);
+  } else {
+    expect(localSkillId.shln(128).mod(UINT256_MAX).shrn(128)).to.eq.BN(4);
+  }
+
+  // Temporary for tests until we allow subdomain depth > 1
+  await removeSubdomainLimit(colonyNetwork);
+
+  // Initialise 8-level domain skills tree: 1 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11
   await metaColony.addDomain(1, UINT256_MAX, 1);
   await metaColony.addDomain(1, 1, 2);
   await metaColony.addDomain(1, 2, 3);
@@ -81,10 +106,13 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await metaColony.addDomain(1, 5, 6);
   await metaColony.addDomain(1, 6, 7);
 
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  const domainCount = await metaColony.getDomainCount();
+  const latestDomain = await metaColony.getDomain(domainCount);
+  expect(latestDomain.skillId).to.eq.BN(getMultichainSkillId(chainId, 11).toString());
+
+  miningSkillId = await colonyNetwork.getReputationMiningSkillId();
+  const metaDomain1 = await metaColony.getDomain(1);
+  metaRootSkillId = metaDomain1.skillId;
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
@@ -96,9 +124,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
-
-  const META_ROOT_SKILL = new BN(1);
-  const MINING_SKILL = new BN(3);
 
   before(async () => {
     // Setup a new network instance as we'll be modifying the global skills tree
@@ -139,8 +164,6 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope with many hashes being submitted and eliminated before a winner is assigned", async function manySubmissionTest() {
-      this.timeout(100000000);
-
       // TODO: This test probably needs to be written more carefully to make sure all possible edge cases are dealt with
       for (let i = 3; i < 11; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], DEFAULT_STAKE);
@@ -158,13 +181,13 @@ contract("Reputation Mining - happy paths", (accounts) => {
           const client = new MaliciousReputationMinerExtraRep(
             { loader, realProviderPort, useJsTree, minerAddress: addr },
             entryToFalsify,
-            amountToFalsify
+            amountToFalsify,
           );
           // Each client will get a different reputation update entry wrong by a different amount, apart from the first one which
           // will submit a correct hash.
           await client.initialise(colonyNetwork.address);
           return client;
-        })
+        }),
       );
 
       // We need to complete the current reputation cycle so that all the required log entries are present
@@ -208,21 +231,14 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should be able to process a large reputation update log", async function largeReputationLogTest() {
-      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
-        await setupFinalizedTask( // eslint-disable-line prettier/prettier
-          {
-            colonyNetwork,
-            colony: metaColony,
-            token: clnyToken,
-            workerRating: 2,
-            managerPayout: 1,
-            evaluatorPayout: 1,
-            workerPayout: 1,
-          }
-        );
+        // Manager, evaluator, worker
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, WORKER, 1);
+        await metaColony.emitSkillReputationReward(localSkillId, WORKER, 1);
       }
 
       console.log("Finished setting up tasks for test");
@@ -234,32 +250,25 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
     // eslint-disable-next-line max-len
     it("should be able to process a large reputation update log even if it's using the solidity patricia tree", async function largeReputationLogTestSolidity() {
-      this.timeout(100000000);
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(30));
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
-        await setupFinalizedTask( // eslint-disable-line prettier/prettier
-          {
-            colonyNetwork,
-            colony: metaColony,
-            token: clnyToken,
-            workerRating: 2,
-            managerPayout: 1,
-            evaluatorPayout: 1,
-            workerPayout: 1,
-          }
-        );
+        // Manager, evaluator, worker
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, MANAGER, 1);
+        await metaColony.emitDomainReputationReward(1, WORKER, 1);
+        await metaColony.emitSkillReputationReward(localSkillId, WORKER, 1);
       }
 
       console.log("Finished setting up tasks for test");
 
       // Complete two reputation cycles to process the log
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree: false, minerAddress: MINER1 });
-      await goodClient.initialise(colonyNetwork.address);
-      await goodClient.resetDB();
+      const goodClientSolidityTree = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree: false, minerAddress: MINER1 });
+      await goodClientSolidityTree.initialise(colonyNetwork.address);
+      await goodClientSolidityTree.resetDB();
 
-      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClientSolidityTree, test: this });
     });
 
     it("should allow submitted hashes to go through multiple responses to a challenge", async () => {
@@ -291,27 +300,22 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope if someone's existing reputation would go negative, setting it to zero instead", async function noNegativeRep() {
-      this.timeout(600000);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       // Create reputation
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER1 });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER2 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER1 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER2 });
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 29, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       // Send rep to 0
-      await setupFinalizedTask({
-        colonyNetwork,
-        colony: metaColony,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000000,
-        workerPayout: 1000000000000,
-        managerRating: 1,
-        workerRating: 1,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MANAGER, -1000000000000);
+      await metaColony.emitDomainReputationReward(1, MANAGER, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, WORKER, -1000000000000);
+      await metaColony.emitSkillReputationPenalty(localSkillId, WORKER, -1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -326,26 +330,20 @@ contract("Reputation Mining - happy paths", (accounts) => {
     });
 
     it("should cope if someone's new reputation would be negative, setting it to zero instead", async function newRepToZeroTest() {
-      this.timeout(600000);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER1 });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER2 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER1 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER2 });
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 31, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
-      await setupFinalizedTask({
-        colonyNetwork,
-        colony: metaColony,
-        worker: accounts[4],
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000000,
-        workerPayout: 1000000000000,
-        managerRating: 1,
-        workerRating: 1,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, MANAGER, -1000000000000);
+      await metaColony.emitDomainReputationReward(1, MANAGER, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, UINT256_MAX, 1, accounts[4], -1000000000000);
+      await metaColony.emitSkillReputationPenalty(localSkillId, accounts[4], -1000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -364,20 +362,20 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(2));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER1 });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: MINER2 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER1 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, worker: MINER2 });
 
       const bigPayout = new BN("10").pow(new BN("38"));
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
         29,
-        bigPayout.muln(2).neg()
+        bigPayout.muln(2).neg(),
       );
       await badClient.initialise(colonyNetwork.address);
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
-      const skillId = GLOBAL_SKILL_ID;
+      const skillId = localSkillId;
       const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
 
@@ -388,16 +386,12 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       const rootHash = await goodClient.getRootHash();
       await fundColonyWithTokens(metaColony, clnyToken, bigPayout.muln(4));
-      await setupFinalizedTask({
-        colonyNetwork,
-        colony: metaColony,
-        worker: MINER1,
-        managerPayout: bigPayout,
-        evaluatorPayout: bigPayout,
-        workerPayout: bigPayout,
-        managerRating: 3,
-        workerRating: 3,
-      });
+
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(1, MANAGER, bigPayout.divn(2).muln(3));
+      await metaColony.emitDomainReputationReward(1, MANAGER, bigPayout);
+      await metaColony.emitDomainReputationReward(1, MINER1, bigPayout.divn(2).muln(3));
+      await metaColony.emitSkillReputationReward(localSkillId, MINER1, bigPayout.divn(2).muln(3));
 
       await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
@@ -420,7 +414,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
       await badClient.initialise(colonyNetwork.address);
 
-      const skillId = GLOBAL_SKILL_ID;
+      const skillId = localSkillId;
       const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
 
@@ -448,14 +442,14 @@ contract("Reputation Mining - happy paths", (accounts) => {
       const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
 
       expect(largeCalculationResult.toString(16, 64), `Incorrect decay. Actual value is ${decimalValueDecay}`).to.equal(
-        goodClient.reputations[decayKey].slice(2, 66)
+        goodClient.reputations[decayKey].slice(2, 66),
       );
     });
 
     it("should keep reputation updates that occur during one update window for the next window", async () => {
       // Creates an entry in the reputation log for the worker and manager
       await fundColonyWithTokens(metaColony, clnyToken);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       let addr = await colonyNetwork.getReputationMiningCycle(false);
       let inactiveReputationMiningCycle = await IReputationMiningCycle.at(addr);
@@ -481,81 +475,80 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
     it("should insert reputation updates from the log", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId }); // 4 entries each
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
-      await setupFinalizedTask({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 2,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 1,
-        workerRating: 1,
-        evaluator: EVALUATOR,
-        worker: accounts[3],
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, MANAGER, -1000000000000);
+      await metaColony.emitDomainReputationReward(2, EVALUATOR, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 1, 2, accounts[3], -5000000000000);
+      await metaColony.emitSkillReputationPenalty(localSkillId, accounts[3], -5000000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      // Should be 17 updates: 1 for the previous mining cycle and 4x4 for the tasks.
+      // Should be 17 updates: 1 for the previous mining cycle and 4x4 for the expenditures.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const activeLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(activeLogEntries).to.eq.BN(17);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-      expect(Object.keys(goodClient.reputations).length).to.equal(33);
+      expect(Object.keys(goodClient.reputations).length).to.equal(36);
+
+      const rootLocalSkillId = await metaColony.getRootLocalSkill();
 
       const META_ROOT_SKILL_TOTAL = REWARD // eslint-disable-line prettier/prettier
         .add(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT).muln(3)) // eslint-disable-line prettier/prettier
         .add(new BN(1000000000));
       // .sub(new BN(1000000000000)); // Manager cannot lose skill they never had
       // .sub(new BN(5000000000000)); // Worker cannot lose skill they never had
+
       const reputationProps = [
-        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: META_ROOT_SKILL_TOTAL },
-        { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD },
-        { id: 3, skill: META_ROOT_SKILL, account: MINER1, value: REWARD },
-        { id: 4, skill: MINING_SKILL, account: MINER1, value: REWARD },
-        // Completing 3 standard tasks
-        {
-          id: 5,
-          skill: META_ROOT_SKILL,
-          account: MANAGER,
-          value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).muln(3) // eslint-disable-line prettier/prettier
-        },
-        { id: 6, skill: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT.muln(3) },
-        { id: 7, skill: GLOBAL_SKILL_ID, account: undefined, value: WORKER_PAYOUT.muln(3) },
-        { id: 8, skill: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT.muln(3) },
-        // Completing a task in global skill 3 and  domain 2 (which has corresponding skill 4)
-        { id: 9, skill: new BN(6), account: undefined, value: new BN(0) },
-        { id: 10, skill: new BN(7), account: undefined, value: new BN(0) },
-        { id: 11, skill: new BN(8), account: undefined, value: new BN(0) },
-        { id: 12, skill: new BN(9), account: undefined, value: new BN(0) },
-        { id: 13, skill: new BN(10), account: undefined, value: new BN(0) },
-        { id: 14, skill: new BN(11), account: undefined, value: new BN(0) },
-        { id: 15, skill: new BN(5), account: undefined, value: new BN(1000000000) },
-        { id: 16, skill: new BN(6), account: MANAGER, value: new BN(0) },
-        { id: 17, skill: new BN(7), account: MANAGER, value: new BN(0) },
-        { id: 18, skill: new BN(8), account: MANAGER, value: new BN(0) },
-        { id: 19, skill: new BN(9), account: MANAGER, value: new BN(0) },
-        { id: 20, skill: new BN(10), account: MANAGER, value: new BN(0) },
-        { id: 21, skill: new BN(11), account: MANAGER, value: new BN(0) },
-        { id: 22, skill: new BN(5), account: MANAGER, value: new BN(0) },
-        { id: 23, skill: new BN(1), account: EVALUATOR, value: new BN(1000000000) },
-        { id: 24, skill: new BN(5), account: EVALUATOR, value: new BN(1000000000) },
-        { id: 25, skill: new BN(6), account: accounts[3], value: new BN(0) },
-        { id: 26, skill: new BN(7), account: accounts[3], value: new BN(0) },
-        { id: 27, skill: new BN(8), account: accounts[3], value: new BN(0) },
-        { id: 28, skill: new BN(9), account: accounts[3], value: new BN(0) },
-        { id: 29, skill: new BN(10), account: accounts[3], value: new BN(0) },
-        { id: 30, skill: new BN(11), account: accounts[3], value: new BN(0) },
-        { id: 31, skill: new BN(1), account: accounts[3], value: new BN(0) },
-        { id: 32, skill: new BN(5), account: accounts[3], value: new BN(0) },
-        { id: 33, skill: new BN(4), account: accounts[3], value: new BN(0) },
+        // Reputation for the miner
+        { id: 1, skill: metaRootSkillId, account: undefined, value: META_ROOT_SKILL_TOTAL },
+        { id: 2, skill: miningSkillId, account: undefined, value: REWARD },
+        { id: 3, skill: metaRootSkillId, account: MINER1, value: REWARD },
+        { id: 4, skill: miningSkillId, account: MINER1, value: REWARD },
+
+        // Completing 3 claimed expenditures
+        { id: 5, skill: metaRootSkillId, account: MANAGER, value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).muln(3) },
+        { id: 6, skill: metaRootSkillId, account: WORKER, value: WORKER_PAYOUT.muln(3) },
+        { id: 7, skill: rootLocalSkillId, account: undefined, value: WORKER_PAYOUT.muln(3) },
+        { id: 8, skill: localSkillId, account: undefined, value: WORKER_PAYOUT.muln(3) },
+        { id: 9, skill: rootLocalSkillId, account: WORKER, value: WORKER_PAYOUT.muln(3) },
+        { id: 10, skill: localSkillId, account: WORKER, value: WORKER_PAYOUT.muln(3) },
+
+        // Manual reputation updates, rewards flow up and penalties flow down
+        { id: 11, skill: getMultichainSkillId(chainId, 6), account: undefined, value: new BN(0) },
+        { id: 12, skill: getMultichainSkillId(chainId, 7), account: undefined, value: new BN(0) },
+        { id: 13, skill: getMultichainSkillId(chainId, 8), account: undefined, value: new BN(0) },
+        { id: 14, skill: getMultichainSkillId(chainId, 9), account: undefined, value: new BN(0) },
+        { id: 15, skill: getMultichainSkillId(chainId, 10), account: undefined, value: new BN(0) },
+        { id: 16, skill: getMultichainSkillId(chainId, 11), account: undefined, value: new BN(0) },
+        { id: 17, skill: getMultichainSkillId(chainId, 5), account: undefined, value: new BN(1000000000) },
+        { id: 18, skill: getMultichainSkillId(chainId, 6), account: MANAGER, value: new BN(0) },
+        { id: 19, skill: getMultichainSkillId(chainId, 7), account: MANAGER, value: new BN(0) },
+        { id: 20, skill: getMultichainSkillId(chainId, 8), account: MANAGER, value: new BN(0) },
+        { id: 21, skill: getMultichainSkillId(chainId, 9), account: MANAGER, value: new BN(0) },
+        { id: 22, skill: getMultichainSkillId(chainId, 10), account: MANAGER, value: new BN(0) },
+        { id: 23, skill: getMultichainSkillId(chainId, 11), account: MANAGER, value: new BN(0) },
+        { id: 24, skill: getMultichainSkillId(chainId, 5), account: MANAGER, value: new BN(0) },
+        { id: 25, skill: metaRootSkillId, account: EVALUATOR, value: new BN(1000000000) },
+        { id: 26, skill: getMultichainSkillId(chainId, 5), account: EVALUATOR, value: new BN(1000000000) },
+        { id: 27, skill: getMultichainSkillId(chainId, 6), account: accounts[3], value: new BN(0) },
+        { id: 28, skill: getMultichainSkillId(chainId, 7), account: accounts[3], value: new BN(0) },
+        { id: 29, skill: getMultichainSkillId(chainId, 8), account: accounts[3], value: new BN(0) },
+        { id: 30, skill: getMultichainSkillId(chainId, 9), account: accounts[3], value: new BN(0) },
+        { id: 31, skill: getMultichainSkillId(chainId, 10), account: accounts[3], value: new BN(0) },
+        { id: 32, skill: getMultichainSkillId(chainId, 11), account: accounts[3], value: new BN(0) },
+        { id: 33, skill: metaRootSkillId, account: accounts[3], value: new BN(0) },
+        { id: 34, skill: getMultichainSkillId(chainId, 5), account: accounts[3], value: new BN(0) },
+        { id: 35, skill: rootLocalSkillId, account: accounts[3], value: new BN(0) },
+        { id: 36, skill: localSkillId, account: accounts[3], value: new BN(0) },
       ];
+
+      expect(Object.keys(goodClient.reputations).length).to.equal(reputationProps.length);
 
       reputationProps.forEach((reputationProp) => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
@@ -563,7 +556,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
         expect(
           goodClient.reputations[key],
-          `${reputationProp.id} failed. Actual value is ${decimalValue}, and expected ${reputationProp.value}`
+          `${reputationProp.id} failed. Actual value is ${decimalValue}, and expected ${reputationProp.value}`,
         ).to.eq.BN(value);
       });
     });
@@ -572,32 +565,21 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       // Earn some reputation for manager and worker in first task, then do badly in second task and lose some of it
-      await setupFinalizedTask({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 8,
-        evaluator: EVALUATOR,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 5000000000000,
-        managerRating: 3,
-        workerRating: 3,
-      });
 
-      await setupFinalizedTask({
-        colonyNetwork,
-        colony: metaColony,
-        domainId: 6,
-        evaluator: EVALUATOR,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
-        workerPayout: 4200000000000,
-        managerRating: 2,
-        workerRating: 1,
-      });
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(8, MANAGER, 1500000000000);
+      await metaColony.emitDomainReputationReward(8, EVALUATOR, 1000000000);
+      await metaColony.emitDomainReputationReward(8, WORKER, 7500000000000);
+      await metaColony.emitSkillReputationReward(localSkillId, WORKER, 7500000000000);
+
+      // Manager, evaluator, worker
+      await metaColony.emitDomainReputationReward(6, MANAGER, 1000000000000);
+      await metaColony.emitDomainReputationReward(6, EVALUATOR, 1000000000);
+      await metaColony.emitDomainReputationPenalty(1, 5, 6, WORKER, -4200000000000);
+      await metaColony.emitSkillReputationPenalty(localSkillId, WORKER, -4200000000000);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -607,7 +589,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       expect(nInactiveLogEntries).to.eq.BN(13);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-      expect(Object.keys(goodClient.reputations).length).to.equal(37);
+      expect(Object.keys(goodClient.reputations).length).to.equal(39);
 
       // = 1550000005802000000000
       const META_ROOT_SKILL_TOTAL = REWARD.add(MANAGER_PAYOUT)
@@ -619,46 +601,30 @@ contract("Reputation Mining - happy paths", (accounts) => {
       // deduct the worker payout from the poorly performed task -4200000000000
       // = 3300000000000
 
+      const rootLocalSkillId = await metaColony.getRootLocalSkill();
+
       const reputationProps = [
-        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: META_ROOT_SKILL_TOTAL },
-        { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD },
-        { id: 3, skill: META_ROOT_SKILL, account: MINER1, value: REWARD },
-        { id: 4, skill: MINING_SKILL, account: MINER1, value: REWARD },
-        { id: 5, skill: META_ROOT_SKILL, account: MANAGER, value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(new BN(2500000000000)) },
-        { id: 6, skill: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
-        { id: 7, skill: GLOBAL_SKILL_ID, account: undefined, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
-        { id: 8, skill: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
+        // Reputation for the miner
+        { id: 1, skill: metaRootSkillId, account: undefined, value: META_ROOT_SKILL_TOTAL },
+        { id: 2, skill: miningSkillId, account: undefined, value: REWARD },
+        { id: 3, skill: metaRootSkillId, account: MINER1, value: REWARD },
+        { id: 4, skill: miningSkillId, account: MINER1, value: REWARD },
+
+        { id: 5, skill: metaRootSkillId, account: MANAGER, value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(new BN(2500000000000)) },
+        { id: 6, skill: metaRootSkillId, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
+        { id: 7, skill: rootLocalSkillId, account: undefined, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
+        { id: 8, skill: localSkillId, account: undefined, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
+        { id: 9, skill: rootLocalSkillId, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
+        { id: 10, skill: localSkillId, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
         {
-          id: 9,
-          skill: new BN(10),
+          id: 11,
+          skill: getMultichainSkillId(chainId, 10),
           account: undefined,
           value: new BN(1500000000000).add(new BN(7500000000000)).add(new BN(1000000000)).sub(new BN(4200000000000)),
         },
         {
-          id: 10,
-          skill: new BN(9),
-          account: undefined,
-          value: new BN(1500000000000)
-            .add(new BN(7500000000000))
-            .add(new BN(1000000000))
-            .sub(new BN(4200000000000))
-            .add(new BN(1000000000000))
-            .add(new BN(1000000000)),
-        },
-        {
-          id: 11,
-          skill: new BN(8),
-          account: undefined,
-          value: new BN(1500000000000)
-            .add(new BN(7500000000000))
-            .add(new BN(1000000000))
-            .sub(new BN(4200000000000))
-            .add(new BN(1000000000000))
-            .add(new BN(1000000000)),
-        },
-        {
           id: 12,
-          skill: new BN(7),
+          skill: getMultichainSkillId(chainId, 9),
           account: undefined,
           value: new BN(1500000000000)
             .add(new BN(7500000000000))
@@ -669,7 +635,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         },
         {
           id: 13,
-          skill: new BN(6),
+          skill: getMultichainSkillId(chainId, 8),
           account: undefined,
           value: new BN(1500000000000)
             .add(new BN(7500000000000))
@@ -680,7 +646,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         },
         {
           id: 14,
-          skill: new BN(5),
+          skill: getMultichainSkillId(chainId, 7),
           account: undefined,
           value: new BN(1500000000000)
             .add(new BN(7500000000000))
@@ -691,33 +657,57 @@ contract("Reputation Mining - happy paths", (accounts) => {
         },
         {
           id: 15,
-          skill: new BN(11),
+          skill: getMultichainSkillId(chainId, 6),
+          account: undefined,
+          value: new BN(1500000000000)
+            .add(new BN(7500000000000))
+            .add(new BN(1000000000))
+            .sub(new BN(4200000000000))
+            .add(new BN(1000000000000))
+            .add(new BN(1000000000)),
+        },
+        {
+          id: 16,
+          skill: getMultichainSkillId(chainId, 5),
+          account: undefined,
+          value: new BN(1500000000000)
+            .add(new BN(7500000000000))
+            .add(new BN(1000000000))
+            .sub(new BN(4200000000000))
+            .add(new BN(1000000000000))
+            .add(new BN(1000000000)),
+        },
+        {
+          id: 17,
+          skill: getMultichainSkillId(chainId, 11),
           account: undefined,
           value: new BN(1500000000000).add(new BN(7500000000000)).add(new BN(1000000000)).sub(new BN(4200000000000)),
         },
-        { id: 16, skill: new BN(10), account: MANAGER, value: new BN(1500000000000) },
-        { id: 17, skill: new BN(9), account: MANAGER, value: new BN(2500000000000) },
-        { id: 18, skill: new BN(8), account: MANAGER, value: new BN(2500000000000) },
-        { id: 19, skill: new BN(7), account: MANAGER, value: new BN(2500000000000) },
-        { id: 20, skill: new BN(6), account: MANAGER, value: new BN(2500000000000) },
-        { id: 21, skill: new BN(5), account: MANAGER, value: new BN(2500000000000) },
-        { id: 22, skill: new BN(11), account: MANAGER, value: new BN(1500000000000) },
-        { id: 23, skill: new BN(10), account: EVALUATOR, value: new BN(1000000000) },
-        { id: 24, skill: new BN(9), account: EVALUATOR, value: new BN(2000000000) },
-        { id: 25, skill: new BN(8), account: EVALUATOR, value: new BN(2000000000) },
-        { id: 26, skill: new BN(7), account: EVALUATOR, value: new BN(2000000000) },
-        { id: 27, skill: new BN(6), account: EVALUATOR, value: new BN(2000000000) },
-        { id: 28, skill: new BN(5), account: EVALUATOR, value: new BN(2000000000) },
-        { id: 29, skill: META_ROOT_SKILL, account: EVALUATOR, value: new BN(2000000000) },
-        { id: 30, skill: new BN(11), account: EVALUATOR, value: new BN(1000000000) },
-        { id: 31, skill: new BN(10), account: WORKER, value: new BN(3300000000000) },
-        { id: 32, skill: new BN(9), account: WORKER, value: new BN(3300000000000) },
-        { id: 33, skill: new BN(8), account: WORKER, value: new BN(3300000000000) },
-        { id: 34, skill: new BN(7), account: WORKER, value: new BN(3300000000000) },
-        { id: 35, skill: new BN(6), account: WORKER, value: new BN(3300000000000) },
-        { id: 36, skill: new BN(5), account: WORKER, value: new BN(3300000000000) },
-        { id: 37, skill: new BN(11), account: WORKER, value: new BN(3300000000000) },
+        { id: 18, skill: getMultichainSkillId(chainId, 10), account: MANAGER, value: new BN(1500000000000) },
+        { id: 19, skill: getMultichainSkillId(chainId, 9), account: MANAGER, value: new BN(2500000000000) },
+        { id: 20, skill: getMultichainSkillId(chainId, 8), account: MANAGER, value: new BN(2500000000000) },
+        { id: 21, skill: getMultichainSkillId(chainId, 7), account: MANAGER, value: new BN(2500000000000) },
+        { id: 22, skill: getMultichainSkillId(chainId, 6), account: MANAGER, value: new BN(2500000000000) },
+        { id: 23, skill: getMultichainSkillId(chainId, 5), account: MANAGER, value: new BN(2500000000000) },
+        { id: 24, skill: getMultichainSkillId(chainId, 11), account: MANAGER, value: new BN(1500000000000) },
+        { id: 25, skill: getMultichainSkillId(chainId, 10), account: EVALUATOR, value: new BN(1000000000) },
+        { id: 26, skill: getMultichainSkillId(chainId, 9), account: EVALUATOR, value: new BN(2000000000) },
+        { id: 27, skill: getMultichainSkillId(chainId, 8), account: EVALUATOR, value: new BN(2000000000) },
+        { id: 28, skill: getMultichainSkillId(chainId, 7), account: EVALUATOR, value: new BN(2000000000) },
+        { id: 29, skill: getMultichainSkillId(chainId, 6), account: EVALUATOR, value: new BN(2000000000) },
+        { id: 30, skill: getMultichainSkillId(chainId, 5), account: EVALUATOR, value: new BN(2000000000) },
+        { id: 31, skill: metaRootSkillId, account: EVALUATOR, value: new BN(2000000000) },
+        { id: 32, skill: getMultichainSkillId(chainId, 11), account: EVALUATOR, value: new BN(1000000000) },
+        { id: 33, skill: getMultichainSkillId(chainId, 10), account: WORKER, value: new BN(3300000000000) },
+        { id: 34, skill: getMultichainSkillId(chainId, 9), account: WORKER, value: new BN(3300000000000) },
+        { id: 35, skill: getMultichainSkillId(chainId, 8), account: WORKER, value: new BN(3300000000000) },
+        { id: 36, skill: getMultichainSkillId(chainId, 7), account: WORKER, value: new BN(3300000000000) },
+        { id: 37, skill: getMultichainSkillId(chainId, 6), account: WORKER, value: new BN(3300000000000) },
+        { id: 38, skill: getMultichainSkillId(chainId, 5), account: WORKER, value: new BN(3300000000000) },
+        { id: 39, skill: getMultichainSkillId(chainId, 11), account: WORKER, value: new BN(3300000000000) },
       ];
+
+      expect(Object.keys(goodClient.reputations).length).to.equal(reputationProps.length);
 
       reputationProps.forEach((reputationProp) => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
@@ -732,10 +722,11 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await fundColonyWithTokens(metaColony, clnyToken);
 
       // Do the task
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
         domainId: 8,
+        skillId: localSkillId,
         manager: MANAGER,
         evaluator: EVALUATOR,
         worker: WORKER,
@@ -753,50 +744,54 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       await goodClient.addLogContentsToReputationTree();
 
+      const rootLocalSkillId = await metaColony.getRootLocalSkill();
+
       const reputationProps = [
-        { id: 1, skillId: META_ROOT_SKILL, account: undefined, value: REWARD.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT) }, // eslint-disable-line prettier/prettier
-        { id: 2, skillId: MINING_SKILL, account: undefined, value: REWARD },
-        { id: 3, skillId: META_ROOT_SKILL, account: MINER1, value: REWARD },
-        { id: 4, skillId: MINING_SKILL, account: MINER1, value: REWARD },
-        { id: 5, skillId: 10, account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
-        { id: 6, skillId: 9, account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
-        { id: 7, skillId: 8, account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
-        { id: 8, skillId: 7, account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
-        { id: 9, skillId: 6, account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
-        { id: 10, skillId: 5, account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
-        { id: 11, skillId: 11, account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
-        { id: 12, skillId: 10, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 13, skillId: 9, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 14, skillId: 8, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 15, skillId: 7, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 16, skillId: 6, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 17, skillId: 5, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 18, skillId: META_ROOT_SKILL, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 19, skillId: 11, account: MANAGER, value: MANAGER_PAYOUT },
-        { id: 20, skillId: 10, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 21, skillId: 9, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 22, skillId: 8, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 23, skillId: 7, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 24, skillId: 6, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 25, skillId: 5, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 26, skillId: META_ROOT_SKILL, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 27, skillId: 11, account: EVALUATOR, value: EVALUATOR_PAYOUT },
-        { id: 28, skillId: 10, account: WORKER, value: WORKER_PAYOUT },
-        { id: 29, skillId: 9, account: WORKER, value: WORKER_PAYOUT },
-        { id: 30, skillId: 8, account: WORKER, value: WORKER_PAYOUT },
-        { id: 31, skillId: 7, account: WORKER, value: WORKER_PAYOUT },
-        { id: 32, skillId: 6, account: WORKER, value: WORKER_PAYOUT },
-        { id: 33, skillId: 5, account: WORKER, value: WORKER_PAYOUT },
-        { id: 34, skillId: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT },
-        { id: 35, skillId: 11, account: WORKER, value: WORKER_PAYOUT },
-        { id: 36, skillId: GLOBAL_SKILL_ID, account: undefined, value: WORKER_PAYOUT },
-        { id: 37, skillId: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT },
+        { id: 1, skillId: metaRootSkillId, account: undefined, value: REWARD.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT) }, // eslint-disable-line prettier/prettier
+        { id: 2, skillId: miningSkillId, account: undefined, value: REWARD },
+        { id: 3, skillId: metaRootSkillId, account: MINER1, value: REWARD },
+        { id: 4, skillId: miningSkillId, account: MINER1, value: REWARD },
+        { id: 5, skillId: getMultichainSkillId(chainId, 10), account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
+        { id: 6, skillId: getMultichainSkillId(chainId, 9), account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
+        { id: 7, skillId: getMultichainSkillId(chainId, 8), account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
+        { id: 8, skillId: getMultichainSkillId(chainId, 7), account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
+        { id: 9, skillId: getMultichainSkillId(chainId, 6), account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
+        { id: 10, skillId: getMultichainSkillId(chainId, 5), account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
+        { id: 11, skillId: getMultichainSkillId(chainId, 11), account: undefined, value: WORKER_PAYOUT.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT) },
+        { id: 12, skillId: getMultichainSkillId(chainId, 10), account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 13, skillId: getMultichainSkillId(chainId, 9), account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 14, skillId: getMultichainSkillId(chainId, 8), account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 15, skillId: getMultichainSkillId(chainId, 7), account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 16, skillId: getMultichainSkillId(chainId, 6), account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 17, skillId: getMultichainSkillId(chainId, 5), account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 18, skillId: metaRootSkillId, account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 19, skillId: getMultichainSkillId(chainId, 11), account: MANAGER, value: MANAGER_PAYOUT },
+        { id: 20, skillId: getMultichainSkillId(chainId, 10), account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 21, skillId: getMultichainSkillId(chainId, 9), account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 22, skillId: getMultichainSkillId(chainId, 8), account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 23, skillId: getMultichainSkillId(chainId, 7), account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 24, skillId: getMultichainSkillId(chainId, 6), account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 25, skillId: getMultichainSkillId(chainId, 5), account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 26, skillId: metaRootSkillId, account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 27, skillId: getMultichainSkillId(chainId, 11), account: EVALUATOR, value: EVALUATOR_PAYOUT },
+        { id: 28, skillId: getMultichainSkillId(chainId, 10), account: WORKER, value: WORKER_PAYOUT },
+        { id: 29, skillId: getMultichainSkillId(chainId, 9), account: WORKER, value: WORKER_PAYOUT },
+        { id: 30, skillId: getMultichainSkillId(chainId, 8), account: WORKER, value: WORKER_PAYOUT },
+        { id: 31, skillId: getMultichainSkillId(chainId, 7), account: WORKER, value: WORKER_PAYOUT },
+        { id: 32, skillId: getMultichainSkillId(chainId, 6), account: WORKER, value: WORKER_PAYOUT },
+        { id: 33, skillId: getMultichainSkillId(chainId, 5), account: WORKER, value: WORKER_PAYOUT },
+        { id: 34, skillId: metaRootSkillId, account: WORKER, value: WORKER_PAYOUT },
+        { id: 35, skillId: getMultichainSkillId(chainId, 11), account: WORKER, value: WORKER_PAYOUT },
+        { id: 36, skillId: rootLocalSkillId, account: undefined, value: WORKER_PAYOUT },
+        { id: 37, skillId: localSkillId, account: undefined, value: WORKER_PAYOUT },
+        { id: 38, skillId: rootLocalSkillId, account: WORKER, value: WORKER_PAYOUT },
+        { id: 39, skillId: localSkillId, account: WORKER, value: WORKER_PAYOUT },
       ];
 
       expect(Object.keys(goodClient.reputations).length).to.equal(reputationProps.length);
 
       reputationProps.forEach((reputationProp) => {
-        const key = makeReputationKey(metaColony.address, new BN(reputationProp.skillId), reputationProp.account);
+        const key = makeReputationKey(metaColony.address, new BN(reputationProp.skillId.toString()), reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
         expect(goodClient.reputations[key], `${reputationProp.id} failed. Actual value is ${decimalValue}`).to.eq.BN(value);
@@ -807,9 +802,9 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, domainId: 8 });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId, domainId: 8 });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -842,7 +837,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       await repCycle.submitRootHash(newRootHash, 10, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0, { from: MINER1 });
 
-      const key = makeReputationKey(metaColony.address, MINING_SKILL, MINER1);
+      const key = makeReputationKey(metaColony.address, miningSkillId, MINER1);
       const value = goodClient.reputations[key];
       const [branchMask, siblings] = await goodClient.getProof(key);
       // Checking all good parameters confirms a good proof
@@ -850,7 +845,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       expect(isValid).to.be.true;
 
       // Check using a bad key confirms an invalid proof
-      const badKey = makeReputationKey("0xdeadbeef", MINING_SKILL, MINER1);
+      const badKey = makeReputationKey("0xdeadbeef", miningSkillId, MINER1);
       isValid = await metaColony.verifyReputationProof(badKey, value, branchMask, siblings, { from: MINER1 });
       expect(isValid).to.be.false;
 
@@ -873,7 +868,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
         value,
         branchMask,
         ["0xbfb84f69f3b58ba43019d6e253d476669af78901fe05eaedfc98ed345dbd8221"],
-        { from: MINER1 }
+        { from: MINER1 },
       );
       expect(isValid).to.be.false;
     });
@@ -904,7 +899,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Check we have exactly one reputation.
       expect(
-        "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002"
+        "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
       ).to.equal(goodClient.reputations[userKey]);
 
       repCycle = await getActiveRepCycle(colonyNetwork);
@@ -925,7 +920,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Check it decayed from 1 to 0.
       expect(
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
       ).to.equal(goodClient.reputations[userKey]);
 
       // If we use the existing badClient we get `Error: invalid BigNumber value`, not sure why.
@@ -951,7 +946,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
 
       // Check it 'decayed' from 0 to 0
       expect(
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
       ).to.equal(goodClient.reputations[userKey]);
     });
 

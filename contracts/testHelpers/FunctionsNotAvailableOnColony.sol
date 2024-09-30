@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,12 +16,11 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../colony/Colony.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-
+import { Colony } from "./../colony/Colony.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 contract FunctionsNotAvailableOnColony is Colony {
   function registerUserLabel(string memory username, string memory orbitdb) public {

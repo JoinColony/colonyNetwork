@@ -5,15 +5,23 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, WAD, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
 const { setupRandomColony } = require("../../helpers/test-data-generator");
 const {
+  UINT256_MAX,
+  WAD,
+  MINING_CYCLE_DURATION,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  ADDRESS_ZERO,
+  ADDRESS_FULL,
+} = require("../../helpers/constants");
+const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
   forwardTime,
+  expectEvent,
+  expectNoEvent,
 } = require("../../helpers/test-helper");
 
 const PatriciaTree = require("../../packages/reputation-miner/patricia");
@@ -47,12 +55,15 @@ contract("StakedExpenditure", (accounts) => {
 
   const USER0 = accounts[0];
   const USER1 = accounts[1];
+  const USER2 = accounts[2];
   const MINER = accounts[5];
 
   const CANCELLED = 1;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
@@ -73,26 +84,28 @@ contract("StakedExpenditure", (accounts) => {
     await colony.setArbitrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
     await colony.setAdministrationRole(1, UINT256_MAX, stakedExpenditure.address, 1, true);
 
+    await colony.setArbitrationRole(1, UINT256_MAX, USER1, 1, true);
+
     const domain1 = await colony.getDomain(1);
 
     reputationTree = new PatriciaTree();
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId), // Colony total
-      makeReputationValue(WAD.muln(3), 1)
+      makeReputationValue(WAD.muln(3), 1),
     );
 
     // Used to create invalid proofs
     await reputationTree.insert(
       makeReputationKey(ADDRESS_ZERO, domain1.skillId), // Bad colony
-      makeReputationValue(WAD, 2)
+      makeReputationValue(WAD, 2),
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, 100), // Bad skill
-      makeReputationValue(WAD, 3)
+      makeReputationValue(WAD, 3),
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER0), // Bad user
-      makeReputationValue(WAD, 4)
+      makeReputationValue(WAD, 4),
     );
 
     domain1Key = makeReputationKey(colony.address, domain1.skillId);
@@ -124,8 +137,8 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.deprecate(true);
       await stakedExpenditure.uninstall();
 
-      const code = await web3GetCode(stakedExpenditure.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await stakedExpenditure.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
@@ -139,16 +152,49 @@ contract("StakedExpenditure", (accounts) => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(STAKED_EXPENDITURE, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(colony.installExtension(STAKED_EXPENDITURE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(STAKED_EXPENDITURE, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
+    });
+
+    it("setStakeFraction will emit the correct event if stakeFraction == 0", async () => {
+      let tx = await stakedExpenditure.setStakeFraction(WAD, { from: USER0 });
+      await expectEvent(tx, "ExtensionInitialised", []);
+
+      // But not the second time
+      tx = await stakedExpenditure.setStakeFraction(WAD, { from: USER0 });
+      await expectNoEvent(tx, "ExtensionInitialised", []);
+    });
+
+    it("can't call initialise if initialised", async () => {
+      await stakedExpenditure.initialise(WAD, { from: USER0 });
+      await checkErrorRevert(stakedExpenditure.initialise(WAD, { from: USER0 }), "staked-expenditure-already-initialised");
+    });
+
+    it("must be root to initialise", async () => {
+      await checkErrorRevert(stakedExpenditure.initialise(WAD, { from: USER1 }), "staked-expenditure-caller-not-root");
+    });
+
+    it("can't call makeExpenditureWithStake if not initialised", async () => {
+      await checkErrorRevert(
+        stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 }),
+        "staked-expenditure-not-initialised",
+      );
     });
   });
 
   describe("using stakes to manage expenditures", async () => {
     beforeEach(async () => {
-      await stakedExpenditure.setStakeFraction(WAD.divn(10)); // Stake of .3 WADs
+      await stakedExpenditure.initialise(WAD.divn(10)); // Stake of .3 WADs
       requiredStake = WAD.muln(3).divn(10);
 
       await token.mint(USER0, WAD);
@@ -171,6 +217,9 @@ contract("StakedExpenditure", (accounts) => {
 
       // Also not greater than WAD!
       await checkErrorRevert(stakedExpenditure.setStakeFraction(WAD.addn(1), { from: USER0 }), "staked-expenditure-value-too-large");
+
+      // Also not zero!
+      await checkErrorRevert(stakedExpenditure.setStakeFraction(0, { from: USER0 }), "staked-expenditure-value-too-small");
     });
 
     it("can create an expenditure by submitting a stake", async () => {
@@ -201,7 +250,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "colony-extension-invalid-root-hash"
+        "colony-extension-invalid-root-hash",
       );
 
       key = makeReputationKey(ADDRESS_ZERO, domain1.skillId);
@@ -209,7 +258,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "colony-extension-invalid-colony-address"
+        "colony-extension-invalid-colony-address",
       );
 
       key = makeReputationKey(colony.address, 100);
@@ -217,7 +266,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "colony-extension-invalid-skill-id"
+        "colony-extension-invalid-skill-id",
       );
 
       key = makeReputationKey(colony.address, domain1.skillId, USER0);
@@ -225,7 +274,7 @@ contract("StakedExpenditure", (accounts) => {
       [mask, siblings] = await reputationTree.getProof(key);
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, key, value, mask, siblings),
-        "colony-extension-invalid-user-address"
+        "colony-extension-invalid-user-address",
       );
     });
 
@@ -234,7 +283,7 @@ contract("StakedExpenditure", (accounts) => {
 
       await checkErrorRevert(
         stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 }),
-        "colony-extension-deprecated"
+        "colony-extension-deprecated",
       );
     });
 
@@ -243,7 +292,10 @@ contract("StakedExpenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true);
+      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true, { from: USER1 });
+
+      await expectEvent(tx, "ExpenditureCancelled", [USER1, expenditureId]);
+      await expectEvent(tx, "ExpenditureStakerPunished", [USER1, expenditureId, true]);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
@@ -273,8 +325,8 @@ contract("StakedExpenditure", (accounts) => {
       await colony.lockExpenditure(expenditureId);
 
       await checkErrorRevert(
-        stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true, { from: USER1 }),
-        "staked-expenditure-caller-not-arbitration"
+        stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, true, { from: USER2 }),
+        "staked-expenditure-caller-not-arbitration",
       );
     });
 
@@ -283,7 +335,10 @@ contract("StakedExpenditure", (accounts) => {
       const expenditureId = await colony.getExpenditureCount();
       await colony.lockExpenditure(expenditureId);
 
-      await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, false);
+      const tx = await stakedExpenditure.cancelAndPunish(1, UINT256_MAX, 1, UINT256_MAX, expenditureId, false, { from: USER1 });
+
+      await expectEvent(tx, "ExpenditureCancelled", [USER1, expenditureId]);
+      await expectEvent(tx, "ExpenditureStakerPunished", [USER1, expenditureId, false]);
 
       let obligation;
       let userLock;
@@ -327,7 +382,8 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
 
-      await colony.cancelExpenditure(expenditureId);
+      const tx = await colony.cancelExpenditure(expenditureId);
+      await expectEvent(tx, "ExpenditureCancelled", [USER0, expenditureId]);
 
       await stakedExpenditure.reclaimStake(expenditureId);
 
@@ -342,7 +398,8 @@ contract("StakedExpenditure", (accounts) => {
       await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
       const expenditureId = await colony.getExpenditureCount();
 
-      await stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId);
+      const tx = await stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId);
+      await expectEvent(tx, "ExpenditureCancelled", [USER0, expenditureId]);
 
       const obligation = await tokenLocking.getObligation(USER0, token.address, colony.address);
       expect(obligation).to.be.zero;
@@ -357,8 +414,17 @@ contract("StakedExpenditure", (accounts) => {
 
       await checkErrorRevert(
         stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId, { from: USER1 }),
-        "staked-expenditure-must-be-owner"
+        "staked-expenditure-must-be-owner",
       );
+    });
+
+    it("cannot cancel and reclaim the stake in one transaction if finalized", async () => {
+      await stakedExpenditure.makeExpenditureWithStake(1, UINT256_MAX, 1, domain1Key, domain1Value, domain1Mask, domain1Siblings, { from: USER0 });
+      const expenditureId = await colony.getExpenditureCount();
+
+      await colony.finalizeExpenditure(expenditureId);
+
+      await checkErrorRevert(stakedExpenditure.cancelAndReclaimStake(1, UINT256_MAX, expenditureId), "staked-expenditure-expenditure-not-draft");
     });
 
     it("can reclaim the stake by finalizing the expenditure", async () => {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,20 +16,20 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../ens/ENS.sol";
-import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
+import { ENS } from "./../ens/ENS.sol";
+import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
 
-
-contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
-
+contract ColonyNetworkENS is ColonyNetworkStorage {
   bytes32 constant USER_HASH = keccak256("user");
   bytes32 constant COLONY_HASH = keccak256("colony");
 
   modifier unowned(bytes32 node, string memory domainName) {
-    address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(domainName)))));
+    address currentOwner = ENS(ens).owner(
+      keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(domainName))))
+    );
     require(currentOwner == address(0x0), "colony-label-already-owned");
     _;
   }
@@ -37,8 +38,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
   bytes4 constant ADDR_INTERFACE_ID = 0x3b3b57de;
 
   function supportsInterface(bytes4 interfaceID) external pure returns (bool) {
-    return (interfaceID == INTERFACE_META_ID ||
-      interfaceID == ADDR_INTERFACE_ID );
+    return (interfaceID == INTERFACE_META_ID || interfaceID == ADDR_INTERFACE_ID);
   }
 
   function setupRegistrar(address _ens, bytes32 _rootNode) public stoppable auth {
@@ -53,12 +53,15 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     emit RegistrarInitialised(_ens, _rootNode);
   }
 
-  function registerUserLabel(string memory username, string memory orbitdb)
-  public
-  stoppable
-  // NB there is no way to call this as a colony yet - this is just future proofing us once there is
-  notCalledByColony
-  unowned(userNode, username)
+  function registerUserLabel(
+    string memory username,
+    string memory orbitdb
+  )
+    public
+    stoppable
+    // NB there is no way to call this as a colony yet - this is just future proofing us once there is
+    notCalledByColony
+    unowned(userNode, username)
   {
     require(bytes(username).length > 0, "colony-user-label-invalid");
     require(bytes(userLabels[msgSender()]).length == 0, "colony-user-label-already-owned");
@@ -76,12 +79,10 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     emit UserLabelRegistered(msgSender(), subnode);
   }
 
-  function registerColonyLabel(string memory colonyName, string memory orbitdb)
-  public
-  calledByColony
-  unowned(colonyNode, colonyName)
-  stoppable
-  {
+  function registerColonyLabel(
+    string memory colonyName,
+    string memory orbitdb
+  ) public calledByColony unowned(colonyNode, colonyName) stoppable {
     require(bytes(colonyName).length > 0, "colony-colony-label-invalid");
     require(bytes(colonyLabels[msgSender()]).length == 0, "colony-already-labeled");
 
@@ -98,11 +99,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     emit ColonyLabelRegistered(msgSender(), subnode);
   }
 
-  function updateColonyOrbitDB(string memory orbitdb)
-  public
-  calledByColony
-  stoppable
-  {
+  function updateColonyOrbitDB(string memory orbitdb) public calledByColony stoppable {
     string storage label = colonyLabels[msgSender()];
     require(bytes(label).length > 0, "colony-colony-not-labeled");
     bytes32 subnode = keccak256(abi.encodePacked(label));
@@ -110,11 +107,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     records[node].orbitdb = orbitdb;
   }
 
-  function updateUserOrbitDB(string memory orbitdb)
-  public
-  notCalledByColony
-  stoppable
-  {
+  function updateUserOrbitDB(string memory orbitdb) public notCalledByColony stoppable {
     string storage label = userLabels[msgSender()];
     require(bytes(label).length > 0, "colony-user-not-labeled");
     bytes32 subnode = keccak256(abi.encodePacked(label));
@@ -126,7 +119,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage, MultiChain {
     return records[node].orbitdb;
   }
 
-  function lookupRegisteredENSDomain(address addr) public view returns(string memory domain) {
+  function lookupRegisteredENSDomain(address addr) public view returns (string memory domain) {
     if (bytes(userLabels[addr]).length != 0) {
       return string(abi.encodePacked(userLabels[addr], ".user.", getGlobalENSDomain()));
     } else if (bytes(colonyLabels[addr]).length != 0) {

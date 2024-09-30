@@ -6,3 +6,4 @@ coverage/*
 keys/*
 lib/*
 packages/**/node_modules
+scripts/mockGuardianSpy.js

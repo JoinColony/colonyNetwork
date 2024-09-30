@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,13 +16,12 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../common/CommonAuthority.sol";
-
+import { CommonAuthority } from "./../common/CommonAuthority.sol";
 
 contract ColonyNetworkAuthority is CommonAuthority {
-  constructor(address colonyNetwork) CommonAuthority(colonyNetwork) { // solhint-disable-line no-empty-blocks
-
+  constructor(address colonyNetwork) CommonAuthority(colonyNetwork) {
+    // solhint-disable-line no-empty-blocks
   }
 }

@@ -1,5 +1,5 @@
-pragma solidity 0.8.20;
-
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.25;
 
 contract Migrations {
   address public immutable owner;
@@ -7,7 +7,9 @@ contract Migrations {
   uint public last_completed_migration;
 
   modifier restricted() {
-    if (msg.sender == owner) { _; }
+    if (msg.sender == owner) {
+      _;
+    }
   }
 
   constructor() {

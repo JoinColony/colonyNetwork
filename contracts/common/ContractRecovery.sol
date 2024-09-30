@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,16 +16,18 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../colony/ColonyDataTypes.sol";
-import "./ContractRecoveryDataTypes.sol";
-import "./CommonAuthority.sol";
-import "./CommonStorage.sol";
-import "./IRecovery.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { ContractRecoveryDataTypes } from "./ContractRecoveryDataTypes.sol";
+import { CommonAuthority } from "./CommonAuthority.sol";
+import { CommonStorage } from "./CommonStorage.sol";
+import { IRecovery } from "./IRecovery.sol";
 
-
-contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignore-swc-123
+contract ContractRecovery is
+  ContractRecoveryDataTypes,
+  CommonStorage // ignore-swc-123
+{
   uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
@@ -83,7 +86,10 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
   }
 
   function approveExitRecovery() public recovery auth {
-    require(recoveryApprovalTimestamps[msgSender()] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");  // ignore-swc-116
+    require(
+      recoveryApprovalTimestamps[msgSender()] < recoveryEditedTimestamp,
+      "colony-recovery-approval-already-given"
+    ); // ignore-swc-116
     recoveryApprovalTimestamps[msgSender()] = block.timestamp;
     recoveryApprovalCount++;
 
@@ -93,7 +99,10 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
   function exitRecoveryMode() public recovery auth {
     uint totalAuthorized = recoveryRolesCount;
     // Don't double count the owner (if set);
-    if (owner != address(0x0) && !CommonAuthority(address(authority)).hasUserRole(owner, RECOVERY_ROLE)) {
+    if (
+      owner != address(0x0) &&
+      !CommonAuthority(address(authority)).hasUserRole(owner, RECOVERY_ROLE)
+    ) {
       totalAuthorized += 1;
     }
     uint numRequired = totalAuthorized / 2 + 1;
@@ -107,7 +116,8 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
 
-    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113
+    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
+      // ignore-swc-113
       recoveryRolesCount++;
       CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, true);
 
@@ -117,7 +127,8 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
 
   // Can only be called by the root role.
   function removeRecoveryRole(address _user) public stoppable auth {
-    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) { // ignore-swc-113 ignore-swc-128
+    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
+      // ignore-swc-113 ignore-swc-128
       recoveryRolesCount--; // ignore-swc-107 ignore-swc-101
       CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false); // ignore-swc-113 ignore-swc-107
 
@@ -125,7 +136,7 @@ contract ContractRecovery is ContractRecoveryDataTypes, CommonStorage { // ignor
     }
   }
 
-  function numRecoveryRoles() public view returns(uint64) {
+  function numRecoveryRoles() public view returns (uint64) {
     return recoveryRolesCount;
   }
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,13 +16,12 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20; // ignore-swc-103
+pragma solidity 0.8.25; // ignore-swc-103
 
-import "./../../lib/dappsys/roles.sol";
-
+import { DSRoles } from "./../../lib/dappsys/roles.sol";
 
 contract DomainRoles is DSRoles {
-  mapping(address=>mapping(uint256=>bytes32)) internal userDomainRoles;
+  mapping(address => mapping(uint256 => bytes32)) internal userDomainRoles;
 
   // New function signatures taking arbitrary domains
 
@@ -45,13 +45,24 @@ contract DomainRoles is DSRoles {
     return bytes32(0) != roles & shifted;
   }
 
-  function canCall(address caller, uint256 where, address code, bytes4 sig) public view returns (bool) {
+  function canCall(
+    address caller,
+    uint256 where,
+    address code,
+    bytes4 sig
+  ) public view returns (bool) {
     bytes32 hasRoles = getUserRoles(caller, where);
     bytes32 needsOneOf = getCapabilityRoles(code, sig);
     return bytes32(0) != hasRoles & needsOneOf;
   }
 
-  function canCallOnlyBecause(address caller, uint256 where, uint8 role, address code, bytes4 sig) public view returns (bool) {
+  function canCallOnlyBecause(
+    address caller,
+    uint256 where,
+    uint8 role,
+    address code,
+    bytes4 sig
+  ) public view returns (bool) {
     bytes32 hasRoles = getUserRoles(caller, where);
     bytes32 needsOneOf = getCapabilityRoles(code, sig);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
@@ -72,5 +83,4 @@ contract DomainRoles is DSRoles {
   function canCall(address caller, address code, bytes4 sig) public view override returns (bool) {
     return canCall(caller, 1, code, sig);
   }
-
 }

@@ -3,7 +3,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
-const { UINT256_MAX, WAD, INITIAL_FUNDING, ADDRESS_ZERO } = require("../../helpers/constants");
+const { UINT256_MAX, WAD, INITIAL_FUNDING, ADDRESS_ZERO, SLOT0, SLOT1 } = require("../../helpers/constants");
 const { fundColonyWithTokens, setupRandomColony, setupColony } = require("../../helpers/test-data-generator");
 const { checkErrorRevert, expectEvent } = require("../../helpers/test-helper");
 
@@ -28,7 +28,9 @@ contract("Colony Staking", (accounts) => {
   let token;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
@@ -38,17 +40,17 @@ contract("Colony Staking", (accounts) => {
     await colony.setArbitrationRole(1, UINT256_MAX, USER2, 1, true);
 
     await colony.makeExpenditure(1, UINT256_MAX, 1);
-    await colony.setExpenditureRecipient(1, 0, USER0);
-    await colony.setExpenditureRecipient(1, 1, USER1);
+    await colony.setExpenditureRecipient(1, SLOT0, USER0);
+    await colony.setExpenditureRecipient(1, SLOT1, USER1);
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
     await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 3, WAD.muln(200), token.address);
-    await colony.setExpenditurePayout(1, 0, token.address, WAD.muln(100));
-    await colony.setExpenditurePayout(1, 1, token.address, WAD.muln(100));
+    await colony.setExpenditurePayout(1, SLOT0, token.address, WAD.muln(100));
+    await colony.setExpenditurePayout(1, SLOT1, token.address, WAD.muln(100));
 
     await colony.finalizeExpenditure(1);
-    await colony.claimExpenditurePayout(1, 0, token.address);
-    await colony.claimExpenditurePayout(1, 1, token.address);
+    await colony.claimExpenditurePayout(1, SLOT0, token.address);
+    await colony.claimExpenditurePayout(1, SLOT1, token.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     await token.approve(tokenLockingAddress, DEPOSIT, { from: USER0 });
@@ -126,6 +128,25 @@ contract("Colony Staking", (accounts) => {
       expect(deposit.balance).to.eq.BN(WAD.muln(49));
     });
 
+    it("should not let users call stake management functions on tokenLocking directly", async () => {
+      await checkErrorRevert(
+        tokenLocking.approveStake(USER1, WAD, token.address, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+      await checkErrorRevert(
+        tokenLocking.obligateStake(USER1, WAD, token.address, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+      await checkErrorRevert(
+        tokenLocking.deobligateStake(USER1, WAD, token.address, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+      await checkErrorRevert(
+        tokenLocking.transferStake(USER1, WAD, token.address, USER0, { from: USER0 }),
+        "colony-token-locking-sender-not-colony-or-network",
+      );
+    });
+
     it("should not let users obligate more than is approved for obligator", async () => {
       await colony.approveStake(USER0, 1, WAD, { from: USER1 });
 
@@ -162,7 +183,7 @@ contract("Colony Staking", (accounts) => {
 
       await checkErrorRevert(
         colony.transferStake(1, UINT256_MAX, USER0, USER1, 1, WAD.addn(1), ethers.constants.AddressZero, { from: USER2 }),
-        "Panic: Arithmetic overflow"
+        "Panic: Arithmetic overflow",
       );
     });
 
@@ -172,7 +193,7 @@ contract("Colony Staking", (accounts) => {
 
       await checkErrorRevert(
         tokenLocking.methods["withdraw(address,uint256,bool)"](token.address, 1, false, { from: USER1 }),
-        "colony-token-locking-excess-obligation"
+        "colony-token-locking-excess-obligation",
       );
     });
 
@@ -182,7 +203,7 @@ contract("Colony Staking", (accounts) => {
 
       await checkErrorRevert(
         tokenLocking.transfer(token.address, 1, ethers.constants.AddressZero, false, { from: USER1 }),
-        "colony-token-locking-excess-obligation"
+        "colony-token-locking-excess-obligation",
       );
     });
 

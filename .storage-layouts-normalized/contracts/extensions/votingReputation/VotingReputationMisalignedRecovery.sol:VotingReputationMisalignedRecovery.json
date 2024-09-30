@@ -1,0 +1,545 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColony",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_state",
+      "offset": 21,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "enum VotingReputationDataTypes.ExtensionState",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "colonyNetwork",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColonyNetwork",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "tokenLocking",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract ITokenLocking",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "token",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "totalStakeFraction",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_voterRewardFraction",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_userMinStakeFraction",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_maxVoteFraction",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_stakePeriod",
+      "offset": 0,
+      "slot": "11",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_submitPeriod",
+      "offset": 0,
+      "slot": "12",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_revealPeriod",
+      "offset": 0,
+      "slot": "13",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_escalationPeriod",
+      "offset": 0,
+      "slot": "14",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_metatransactionNonces",
+      "offset": 0,
+      "slot": "15",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_motionCount",
+      "offset": 0,
+      "slot": "16",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "motions",
+      "offset": 0,
+      "slot": "17",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct VotingReputationDataTypes.Motion)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct VotingReputationDataTypes.Motion",
+          "members": [
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "events",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint64",
+                  "numberOfBytes": "8"
+                },
+                "encoding": "inplace",
+                "label": "uint64[3]",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "rootHash",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes32",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "domainId",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "skillId",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "skillRep",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "repSubmitted",
+              "offset": 0,
+              "slot": "5",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "paidVoterComp",
+              "offset": 0,
+              "slot": "6",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "pastVoterComp",
+              "offset": 0,
+              "slot": "7",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "inplace",
+                "label": "uint256[2]",
+                "numberOfBytes": "64"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "stakes",
+              "offset": 0,
+              "slot": "9",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "inplace",
+                "label": "uint256[2]",
+                "numberOfBytes": "64"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "votes",
+              "offset": 0,
+              "slot": "11",
+              "type": {
+                "base": {
+                  "encoding": "inplace",
+                  "label": "uint256",
+                  "numberOfBytes": "32"
+                },
+                "encoding": "inplace",
+                "label": "uint256[2]",
+                "numberOfBytes": "64"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "escalated",
+              "offset": 0,
+              "slot": "13",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "finalized",
+              "offset": 1,
+              "slot": "13",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "altTarget",
+              "offset": 2,
+              "slot": "13",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "sig",
+              "offset": 22,
+              "slot": "13",
+              "type": {
+                "encoding": "inplace",
+                "label": "bytes4",
+                "numberOfBytes": "4"
+              }
+            },
+            {
+              "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+              "label": "action",
+              "offset": 0,
+              "slot": "14",
+              "type": {
+                "encoding": "bytes",
+                "label": "bytes",
+                "numberOfBytes": "32"
+              }
+            }
+          ],
+          "numberOfBytes": "480"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "stakes",
+      "offset": 0,
+      "slot": "18",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(address => mapping(uint256 => uint256)))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => mapping(uint256 => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            },
+            "label": "mapping(uint256 => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_voteSecrets",
+      "offset": 0,
+      "slot": "19",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(address => bytes32))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => bytes32)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_expenditurePastVotes",
+      "offset": 0,
+      "slot": "20",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(bytes32 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol:VotingReputationMisalignedRecovery",
+      "label": "DO_NOT_USE_expenditureMotionCounts",
+      "offset": 0,
+      "slot": "21",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "bytes32",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(bytes32 => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,75 +16,72 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyExtension.sol";
-import "./../common/BasicMetaTransaction.sol";
+import { ColonyDataTypes } from "../colony/IColony.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
-
 
 contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
   ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
   ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
+  ColonyDataTypes.ColonyRole constant ARBITRATION = ColonyDataTypes.ColonyRole.Arbitration;
 
   mapping(address => uint256) metatransactionNonces;
 
+  // Interface overrides
+
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param userAddress The user's address
-  /// @return nonce The nonce
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  /// @param _user The user's address
+  /// @return _nonce The nonce
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("OneTxPayment");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
-    return 5;
-  }
-
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
+  function version() public pure override returns (uint256 _version) {
+    return 8;
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {} // solhint-disable-line no-empty-blocks
+  function finishUpgrade() public override auth {
+    // Check colony has been upgraded first
+    require(colony.version() >= 14, "voting-rep-upgrade-colony-first");
+  } // solhint-disable-line no-empty-blocks
 
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {} // solhint-disable-line no-empty-blocks
+  bytes4 constant MAKE_PAYMENT_SIG =
+    bytes4(
+      keccak256(
+        "makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
+      )
+    );
 
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
-  }
+  bytes4 constant MAKE_PAYMENT_DOMAIN_SIG =
+    bytes4(
+      keccak256(
+        "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
+      )
+    );
 
-  bytes4 constant MAKE_PAYMENT_SIG = bytes4(keccak256(
-    "makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
-  ));
-
-  bytes4 constant MAKE_PAYMENT_DOMAIN_SIG = bytes4(keccak256(
-    "makePaymentFundedFromDomain(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"
-  ));
-
+  // prettier-ignore
   bytes32 constant REQUIRED_ROLES = (
+    bytes32(uint256(1)) << uint8(ARBITRATION) |
     bytes32(uint256(1)) << uint8(FUNDING) |
     bytes32(uint256(1)) << uint8(ADMINISTRATION)
   );
@@ -91,13 +89,15 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Return the permissions required for each function
   /// @param _sig The function signature
   /// @return _roles The byte32 of permissions required
-  function getCapabilityRoles(bytes4 _sig) public view override returns (bytes32 _roles) {
+  function getCapabilityRoles(bytes4 _sig) public pure override returns (bytes32 _roles) {
     if (_sig == MAKE_PAYMENT_SIG || _sig == MAKE_PAYMENT_DOMAIN_SIG) {
       return REQUIRED_ROLES;
     } else {
       return bytes32(0);
     }
   }
+
+  // Public
 
   /// @notice Completes a colony payment in a single transaction
   /// @dev Assumes that each entity holds administration and funding roles in the root domain
@@ -120,61 +120,48 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256[] memory _amounts,
     uint256 _domainId,
     uint256 _skillId
-  )
-    public
-  {
-    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
+  ) public {
+    require(
+      _workers.length == _tokens.length && _workers.length == _amounts.length,
+      "one-tx-payment-invalid-input"
+    );
 
+    // prettier-ignore
     require(
       colony.hasInheritedUserRole(msgSender(), 1, FUNDING, _childSkillIndex, _domainId) &&
-      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ARBITRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
-    if (_workers.length == 1) {
-      uint256 paymentId = colony.addPayment(1, _childSkillIndex, _workers[0], _tokens[0], 0, _domainId, _skillId);
-      uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
+    uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
+    uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-      colony.moveFundsBetweenPots(1, UINT256_MAX, _childSkillIndex, 1, fundingPotId, _amounts[0], _tokens[0]);
-      colony.setPaymentPayout(1, _childSkillIndex, paymentId, _tokens[0], _amounts[0]);
+    prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
 
-      colony.finalizePayment(1, _childSkillIndex, paymentId);
-      colony.claimPayment(paymentId, _tokens[0]);
+    uint256 slot;
 
-      emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
-    } else {
+    for (uint256 idx; idx < _workers.length; idx++) {
+      // If a new worker, start a new slot
+      if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
+        require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
-      uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
-      uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
+        slot++;
+        colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
 
-      prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
-
-      uint256 idx;
-      uint256 slot;
-
-      for (idx = 0; idx < _workers.length; idx++) {
-
-         // If a new worker, start a new slot
-        if (idx == 0 || _workers[idx] != _workers[idx-1]) {
-          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
-
-          slot++;
-          colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
-
-          if (_skillId != 0) {
-            colony.setExpenditureSkill(expenditureId, slot, _skillId);
-          }
-        } else {
-          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
+        if (_skillId != 0) {
+          colony.setExpenditureSkill(expenditureId, slot, _skillId);
         }
-
-        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      } else {
+        require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
 
-      finalizeAndClaim(expenditureId, _workers, _tokens);
-
-      emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
+      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
     }
+
+    finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
+
+    emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
   }
 
   /// @notice Completes a colony payment in a single transaction
@@ -195,85 +182,76 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 _childSkillIndex,
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
-    address payable[] memory  _workers,
+    address payable[] memory _workers,
     address[] memory _tokens,
     uint256[] memory _amounts,
     uint256 _domainId,
     uint256 _skillId
-  )
-    public
-  {
-    require(_workers.length == _tokens.length && _workers.length == _amounts.length, "one-tx-payment-invalid-input");
+  ) public {
+    require(
+      _workers.length == _tokens.length && _workers.length == _amounts.length,
+      "one-tx-payment-invalid-input"
+    );
 
+    // prettier-ignore
     require(
       colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, FUNDING, _callerChildSkillIndex, _domainId) &&
-      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId),
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ADMINISTRATION, _callerChildSkillIndex, _domainId) &&
+      colony.hasInheritedUserRole(msgSender(), _callerPermissionDomainId, ARBITRATION, _callerChildSkillIndex, _domainId),
       "one-tx-payment-not-authorized"
     );
 
-    if (_workers.length == 1) {
+    uint256 expenditureId = colony.makeExpenditure(
+      _permissionDomainId,
+      _childSkillIndex,
+      _domainId
+    );
+    uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
+    uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
 
-      uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _workers[0], _tokens[0], _amounts[0], _domainId, _skillId);
-      uint256 fundingPotId = colony.getPayment(paymentId).fundingPotId;
-      uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
+    prepareFundingWithinDomain(
+      _permissionDomainId,
+      _childSkillIndex,
+      domainPotId,
+      fundingPotId,
+      _tokens,
+      _amounts
+    );
 
-      // We use a separate function to get around the local variable limit :(
-      moveFundsWithinDomain(_permissionDomainId, _childSkillIndex, domainPotId, fundingPotId, _amounts[0], _tokens[0]);
+    uint256 slot;
 
-      colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
-      colony.claimPayment(paymentId, _tokens[0]);
+    for (uint256 idx; idx < _workers.length; idx++) {
+      // If a new worker, start a new slot
+      if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
+        require(idx == 0 || _workers[idx] > _workers[idx - 1], "one-tx-payment-bad-worker-order");
 
-      emit OneTxPaymentMade(msgSender(), paymentId, _workers.length);
-    } else {
+        slot++;
+        colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
 
-      uint256 expenditureId = colony.makeExpenditure(_permissionDomainId, _childSkillIndex, _domainId);
-      uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
-      uint256 domainPotId = colony.getDomain(_domainId).fundingPotId;
-
-      prepareFundingWithinDomain(_permissionDomainId, _childSkillIndex, domainPotId, fundingPotId, _tokens, _amounts);
-
-      uint256 idx;
-      uint256 slot;
-
-      for (idx = 0; idx < _workers.length; idx++) {
-
-         // If a new worker, start a new slot
-        if (idx == 0 || _workers[idx] != _workers[idx-1]) {
-          require(idx == 0 || _workers[idx] > _workers[idx-1], "one-tx-payment-bad-worker-order");
-
-          slot++;
-          colony.setExpenditureRecipient(expenditureId, slot, _workers[idx]);
-
-          if (_skillId != 0) {
-            colony.setExpenditureSkill(expenditureId, slot, _skillId);
-          }
-        } else {
-          require(_tokens[idx] > _tokens[idx-1], "one-tx-payment-bad-token-order");
+        if (_skillId != 0) {
+          colony.setExpenditureSkill(expenditureId, slot, _skillId);
         }
-
-        colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      } else {
+        require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
 
-      finalizeAndClaim(expenditureId, _workers, _tokens);
-
-      emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
+      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
     }
+
+    finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
+
+    emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
   }
 
   function calculateUniqueAmounts(
     address[] memory _tokens,
     uint256[] memory _amounts
-  )
-    internal
-    pure
-    returns (uint256, address[] memory, uint256[] memory)
-  {
+  ) internal pure returns (uint256, address[] memory, uint256[] memory) {
     uint256 uniqueTokensIdx;
     address[] memory uniqueTokens = new address[](_tokens.length);
     uint256[] memory uniqueAmounts = new uint256[](_tokens.length);
 
     for (uint256 i; i < _tokens.length; i++) {
-
       bool isMatch;
       uint256 j;
 
@@ -290,7 +268,6 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         uniqueAmounts[uniqueTokensIdx] = _amounts[i];
         uniqueTokensIdx++;
       }
-
     }
 
     return (uniqueTokensIdx, uniqueTokens, uniqueAmounts);
@@ -348,26 +325,38 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     }
   }
 
-  function moveFundsWithinDomain(
+  bool constant ARRAY = true;
+  uint256 constant EXPENDITURES_SLOT = 25;
+  bytes32 constant CLAIM_DELAY_OFFSET = bytes32(uint256(4));
+
+  function finalizeAndClaim(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
-    uint256 _domainPotId,
-    uint256 _fundingPotId,
-    uint256 _amount,
-    address _token
-  )
-    internal
-  {
-    colony.moveFundsBetweenPots(_permissionDomainId, _childSkillIndex, _childSkillIndex, _domainPotId, _fundingPotId, _amount, _token);
-  }
-
-  function finalizeAndClaim(uint256 _expenditureId, address payable[] memory  _workers, address[] memory _tokens) internal {
+    uint256 _expenditureId,
+    address payable[] memory _workers,
+    address[] memory _tokens
+  ) internal {
     colony.finalizeExpenditure(_expenditureId);
+
+    bool[] memory mask = new bool[](1);
+    mask[0] = ARRAY;
+    bytes32[] memory keys = new bytes32[](1);
+    keys[0] = CLAIM_DELAY_OFFSET;
+
+    colony.setExpenditureState(
+      _permissionDomainId,
+      _childSkillIndex,
+      _expenditureId,
+      EXPENDITURES_SLOT,
+      mask,
+      keys,
+      bytes32(0)
+    );
 
     uint256 slot;
 
     for (uint256 idx; idx < _workers.length; idx++) {
-      if (idx == 0 || _workers[idx] != _workers[idx-1]) {
+      if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
         slot++;
       }
       colony.claimExpenditurePayout(_expenditureId, slot, _tokens[idx]);

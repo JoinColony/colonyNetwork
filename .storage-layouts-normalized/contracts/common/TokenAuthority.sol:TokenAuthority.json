@@ -1,0 +1,35 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/common/TokenAuthority.sol:TokenAuthority",
+      "label": "authorizations",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => mapping(bytes4 => bool))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "bytes4",
+            "numberOfBytes": "4"
+          },
+          "label": "mapping(bytes4 => bool)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "bool",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  ]
+}

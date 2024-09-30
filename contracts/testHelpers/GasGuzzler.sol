@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,20 +16,21 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../extensions/ColonyExtensionMeta.sol";
+import { ColonyExtensionMeta } from "./../extensions/ColonyExtensionMeta.sol";
+import { IColony } from "../colony/IColony.sol";
 
 contract GasGuzzler is ColonyExtensionMeta {
   uint256 storageVar;
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  function identifier() public pure override returns (bytes32) {
     return keccak256("GasGuzzler");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
+  function version() public pure override returns (uint256) {
     return 1;
   }
 
@@ -41,8 +43,7 @@ contract GasGuzzler is ColonyExtensionMeta {
   }
 
   /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {
-  }
+  function finishUpgrade() public override auth {}
 
   /// @notice Called when deprecating (or undeprecating) the extension
   function deprecate(bool _deprecated) public override auth {
@@ -54,9 +55,8 @@ contract GasGuzzler is ColonyExtensionMeta {
     selfdestruct(payable(address(colony)));
   }
 
-
   function fun(uint256 a) public {
-    for (uint256 i; i < a; i++){
+    for (uint256 i; i < a; i++) {
       storageVar = i;
     }
   }

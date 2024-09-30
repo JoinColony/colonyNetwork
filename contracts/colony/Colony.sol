@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,21 +16,25 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../common/ERC20Extended.sol";
-import "./../common/Multicall.sol";
-import "./../common/IEtherRouter.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./ColonyStorage.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { Multicall } from "./../common/Multicall.sol";
+import { IEtherRouter } from "./../common/IEtherRouter.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
+import { ColonyStorage } from "./ColonyStorage.sol";
+import { ColonyAuthority } from "./ColonyAuthority.sol";
+import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 
 contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
-
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256 colonyVersion) { return 13; }
+  // prettier-ignore
+  function version() public pure returns (uint256 colonyVersion) { return 16; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -43,19 +48,27 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit Annotation(msgSender(), _txHash, _metadata);
   }
 
-  function emitDomainReputationReward(uint256 _domainId, address _user, int256 _amount)
-  public stoppable auth
-  {
+  function emitDomainReputationReward(
+    uint256 _domainId,
+    address _user,
+    int256 _amount
+  ) public stoppable auth {
     require(_amount > 0, "colony-reward-must-be-positive");
     require(domainExists(_domainId), "colony-domain-does-not-exist");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(
+      _user,
+      _amount,
+      domains[_domainId].skillId
+    );
 
     emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
-  function emitSkillReputationReward(uint256 _skillId, address _user, int256 _amount)
-  public stoppable auth validGlobalOrLocalSkill(_skillId)
-  {
+  function emitSkillReputationReward(
+    uint256 _skillId,
+    address _user,
+    int256 _amount
+  ) public stoppable auth validLocalSkill(_skillId) {
     require(_amount > 0, "colony-reward-must-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
@@ -68,53 +81,64 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 _domainId,
     address _user,
     int256 _amount
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
-    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, domains[_domainId].skillId);
+    IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(
+      _user,
+      _amount,
+      domains[_domainId].skillId
+    );
 
     emit ArbitraryReputationUpdate(msgSender(), _user, domains[_domainId].skillId, _amount);
   }
 
-  function emitSkillReputationPenalty(uint256 _skillId, address _user, int256 _amount)
-  public stoppable auth validGlobalOrLocalSkill(_skillId)
-  {
+  function emitSkillReputationPenalty(
+    uint256 _skillId,
+    address _user,
+    int256 _amount
+  ) public stoppable auth validLocalSkill(_skillId) {
     require(_amount <= 0, "colony-penalty-cannot-be-positive");
     IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_user, _amount, _skillId);
 
     emit ArbitraryReputationUpdate(msgSender(), _user, _skillId, _amount);
   }
 
-  function editColony(string memory _metadata) public
-  stoppable
-  auth {
+  function editColony(string memory _metadata) public stoppable auth {
     emit ColonyMetadata(msgSender(), _metadata);
   }
 
-  function editColonyByDelta(string memory _metadataDelta) public
-  stoppable
-  auth {
+  function editColonyByDelta(string memory _metadataDelta) public stoppable auth {
     emit ColonyMetadataDelta(msgSender(), _metadataDelta);
   }
 
-  function bootstrapColony(address[] memory _users, int[] memory _amounts) public
-  stoppable
-  auth
-  isInBootstrapPhase
-  {
+  function bootstrapColony(address[] memory _users, int[] memory _amounts) public stoppable auth {
+    require(
+      DEPRECATED_taskCount == 0 && DEPRECATED_paymentCount == 0 && expenditureCount == 0,
+      "colony-not-in-bootstrap-mode"
+    );
     require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
     for (uint256 i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
-      require(uint256(_amounts[i]) <= fundingPots[1].balance[token], "colony-bootstrap-not-enough-tokens");
+      require(
+        uint256(_amounts[i]) <= fundingPots[1].balance[token],
+        "colony-bootstrap-not-enough-tokens"
+      );
       fundingPots[1].balance[token] = fundingPots[1].balance[token] - uint256(_amounts[i]);
       nonRewardPotsTotal[token] = nonRewardPotsTotal[token] - uint256(_amounts[i]);
     }
 
     // After doing all the local storage changes, then do all the external calls
     for (uint256 i = 0; i < _users.length; i++) {
-      require(ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])), "colony-bootstrap-token-transfer-failed");
-      IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
+      require(
+        ERC20Extended(token).transfer(_users[i], uint256(_amounts[i])),
+        "colony-bootstrap-token-transfer-failed"
+      );
+      IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(
+        _users[i],
+        _amounts[i],
+        domains[1].skillId
+      );
     }
 
     emit ColonyBootstrapped(msgSender(), _users, _amounts);
@@ -130,39 +154,22 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit TokensBurned(msgSender(), _token, _amount);
   }
 
-  function mintTokens(uint _wad) public
-  stoppable
-  auth
-  {
+  function mintTokens(uint _wad) public stoppable auth {
     ERC20Extended(token).mint(address(this), _wad); // ignore-swc-107
 
     emit TokensMinted(msgSender(), address(this), _wad);
   }
 
-  function mintTokensFor(address _guy, uint _wad) public
-  stoppable
-  auth
-  {
+  function mintTokensFor(address _guy, uint _wad) public stoppable auth {
     ERC20Extended(token).mint(_guy, _wad); // ignore-swc-107
 
     emit TokensMinted(msgSender(), _guy, _wad);
   }
 
-  function mintTokensForColonyNetwork(uint _wad) public stoppable {
-    // Only the colony Network can call this function
-    require(msgSender() == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
-    // Function only valid on the Meta Colony
-    require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
-    // Not callable on Xdai
-    require(!isXdai(), "colony-network-forbidden-on-xdai");
-
-    ERC20Extended(token).mint(_wad);
-    assert(ERC20Extended(token).transfer(colonyNetworkAddress, _wad));
-
-    emit TokensMinted(msgSender(), colonyNetworkAddress, _wad);
-  }
-
-  function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {
+  function registerColonyLabel(
+    string memory colonyName,
+    string memory orbitdb
+  ) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
   }
 
@@ -170,77 +177,55 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     IColonyNetwork(colonyNetworkAddress).updateColonyOrbitDB(orbitdb);
   }
 
-  function addGlobalSkill() public
-  stoppable
-  auth
-  returns (uint256)
-  {
-    return IColonyNetwork(colonyNetworkAddress).addSkill(0); // ignore-swc-107
-  }
-
-  // slither-disable-next-line unused-return
-  function deprecateGlobalSkill(uint256 _skillId) public
-  stoppable
-  auth
-  {
-    IColonyNetwork(colonyNetworkAddress).deprecateSkill(_skillId, true);
-  }
-
-  function setNetworkFeeInverse(uint256 _feeInverse) public
-  stoppable
-  auth
-  {
+  function setNetworkFeeInverse(uint256 _feeInverse) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).setFeeInverse(_feeInverse); // ignore-swc-107
   }
 
-  function setPayoutWhitelist(address _token, bool _status) public
-  stoppable
-  auth
-  {
+  function setPayoutWhitelist(address _token, bool _status) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).setPayoutWhitelist(_token, _status); // ignore-swc-107
   }
 
-  function setReputationMiningCycleReward(uint256 _amount) public
-  stoppable
-  auth
-  {
+  function setReputationMiningCycleReward(uint256 _amount) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).setReputationMiningCycleReward(_amount);
   }
 
-  function addNetworkColonyVersion(uint256 _version, address _resolver) public
-  stoppable
-  auth
-  {
+  function addNetworkColonyVersion(uint256 _version, address _resolver) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).addColonyVersion(_version, _resolver);
   }
 
-  function addExtensionToNetwork(bytes32 _extensionId, address _resolver)
-  public stoppable auth
-  {
+  function setColonyBridgeAddress(address _bridgeAddress) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).setColonyBridgeAddress(_bridgeAddress);
+  }
+
+  function initialiseReputationMining(
+    uint256 miningChainId,
+    bytes32 newHash,
+    uint256 newNLeaves
+  ) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).initialiseReputationMining(
+      miningChainId,
+      newHash,
+      newNLeaves
+    );
+  }
+
+  function addExtensionToNetwork(bytes32 _extensionId, address _resolver) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).addExtensionToNetwork(_extensionId, _resolver);
   }
 
-  function installExtension(bytes32 _extensionId, uint256 _version)
-  public stoppable auth
-  {
+  function installExtension(bytes32 _extensionId, uint256 _version) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).installExtension(_extensionId, _version);
   }
 
-  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion)
-  public stoppable auth
-  {
+  function upgradeExtension(bytes32 _extensionId, uint256 _newVersion) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).upgradeExtension(_extensionId, _newVersion);
   }
 
-  function deprecateExtension(bytes32 _extensionId, bool _deprecated)
-  public stoppable auth
-  {
+  function deprecateExtension(bytes32 _extensionId, bool _deprecated) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).deprecateExtension(_extensionId, _deprecated);
   }
 
-  function uninstallExtension(bytes32 _extensionId)
-  public stoppable auth
-  {
+  function uninstallExtension(bytes32 _extensionId) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).uninstallExtension(_extensionId);
   }
 
@@ -263,23 +248,28 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     return rootLocalSkill;
   }
 
-  function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public view
-  returns (bool)
-  {
+  function verifyReputationProof(
+    bytes memory key,
+    bytes memory value,
+    uint256 branchMask,
+    bytes32[] memory siblings
+  ) public view returns (bool) {
     uint256 colonyAddress;
     uint256 skillid;
     uint256 userAddress;
     assembly {
-        colonyAddress := mload(add(key,32))
-        skillid := mload(add(key,52)) // Colony address was 20 bytes long, so add 20 bytes
-        userAddress := mload(add(key,84)) // Skillid was 32 bytes long, so add 32 bytes
+      colonyAddress := mload(add(key, 32))
+      skillid := mload(add(key, 52)) // Colony address was 20 bytes long, so add 20 bytes
+      userAddress := mload(add(key, 84)) // Skillid was 32 bytes long, so add 32 bytes
     }
     colonyAddress >>= 96;
     userAddress >>= 96;
 
     // Require that the user is proving their own reputation in this colony.
-    if (address(uint160(colonyAddress)) != address(this) || address(uint160(userAddress)) != msgSender()) {
+    if (
+      address(uint160(colonyAddress)) != address(this) ||
+      address(uint160(userAddress)) != msgSender()
+    ) {
       return false;
     }
 
@@ -298,7 +288,9 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 currentVersion = version();
     require(_newVersion == currentVersion + 1, "colony-version-must-be-one-newer");
     // Requested version has to be registered
-    address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
+    address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(
+      _newVersion
+    );
     require(newResolver != address(0x0), "colony-version-must-be-registered");
     IEtherRouter currentColony = IEtherRouter(address(this));
     currentColony.setResolver(newResolver);
@@ -310,36 +302,40 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     emit ColonyUpgraded(msgSender(), currentVersion, _newVersion);
   }
 
-  // v11 to v12
   function finishUpgrade() public always {
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("makeArbitraryTransactions(address[],bytes[],bool)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setDefaultGlobalClaimDelay(uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("setExpenditureMetadata(uint256,uint256,uint256,string)"));
+    sig = bytes4(keccak256("cancelExpenditureViaArbitration(uint256,uint256,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    sig = bytes4(keccak256("finalizeExpenditureViaArbitration(uint256,uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    sig = bytes4(keccak256("setColonyBridgeAddress(address)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("initialiseReputationMining(uint256,bytes32,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
-  function getMetatransactionNonce(address _user) override public view returns (uint256 nonce){
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address _user) override internal {
+  function incrementMetatransactionNonce(address _user) internal override {
     // We need to protect the metatransaction nonce slots, otherwise those with recovery
     // permissions could replay metatransactions, which would be a disaster.
     // What slot are we setting?
     // This mapping is in slot 34 (see ColonyStorage.sol);
-    uint256 slot = uint256(keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT))));
+    uint256 slot = uint256(
+      keccak256(abi.encode(uint256(uint160(_user)), uint256(METATRANSACTION_NONCES_SLOT)))
+    );
     protectSlot(slot);
     metatransactionNonces[_user] += 1;
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public pure {
     require(_slot != COLONY_NETWORK_SLOT, "colony-protected-variable");
     require(_slot != ROOT_LOCAL_SKILL_SLOT, "colony-protected-variable");
   }
@@ -371,18 +367,25 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     uint256 _domainId,
     uint256 _amount,
     address _beneficiary
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
     obligations[_user][_obligator][_domainId] -= _amount;
 
     ITokenLocking(tokenLockingAddress).transferStake(_user, _amount, token, _beneficiary);
   }
 
-  function getApproval(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {
+  function getApproval(
+    address _user,
+    address _obligator,
+    uint256 _domainId
+  ) public view returns (uint256) {
     return approvals[_user][_obligator][_domainId];
   }
 
-  function getObligation(address _user, address _obligator, uint256 _domainId) public view returns (uint256) {
+  function getObligation(
+    address _user,
+    address _obligator,
+    uint256 _domainId
+  ) public view returns (uint256) {
     return obligations[_user][_obligator][_domainId];
   }
 
@@ -400,4 +403,53 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     return tokenApprovalTotals[_token];
   }
 
+  // Deprecated view functions for Tasks and Payments
+
+  function getTaskCount() public view returns (uint256) {
+    return DEPRECATED_taskCount;
+  }
+
+  function getTaskChangeNonce(uint256 _id) public view returns (uint256) {
+    return DEPRECATED_taskChangeNonces[_id];
+  }
+
+  function getTaskWorkRatingSecretsInfo(uint256 _id) public view returns (uint256, uint256) {
+    return (DEPRECATED_taskWorkRatings[_id].count, DEPRECATED_taskWorkRatings[_id].timestamp);
+  }
+
+  function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32) {
+    return DEPRECATED_taskWorkRatings[_id].secret[_role];
+  }
+
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role memory role) {
+    role = DEPRECATED_tasks[_id].roles[_role];
+  }
+
+  function getTask(
+    uint256 _id
+  )
+    public
+    view
+    returns (bytes32, bytes32, TaskStatus, uint256, uint256, uint256, uint256, uint256[] memory)
+  {
+    Task storage t = DEPRECATED_tasks[_id];
+    return (
+      t.specificationHash,
+      t.deliverableHash,
+      t.status,
+      t.dueDate,
+      t.fundingPotId,
+      t.completionTimestamp,
+      t.domainId,
+      t.skills
+    );
+  }
+
+  function getPayment(uint256 _id) public view returns (Payment memory) {
+    return DEPRECATED_payments[_id];
+  }
+
+  function getPaymentCount() public view returns (uint256) {
+    return DEPRECATED_paymentCount;
+  }
 }

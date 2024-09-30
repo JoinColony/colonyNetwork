@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "downlevelIteration": true,
+    "types": ["node"],
+  },
+  "include": ["scripts/*.ts", "./packages/**/*.tsx"]
+}

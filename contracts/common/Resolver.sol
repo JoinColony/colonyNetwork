@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,28 +16,25 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../../lib/dappsys/auth.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
 
 // ignore-file-swc-101 This is due to ConsenSys/truffle-security#245 and the bad-line reporting associated with it
 // (It's really the abi.encodepacked later)
 
-
 contract Resolver is DSAuth {
-  mapping (bytes4 => address) public pointers;
+  mapping(bytes4 => address) public pointers;
 
-  function register(string memory signature, address destination) public
-  auth
-  {
+  function register(string memory signature, address destination) public auth {
     pointers[stringToSig(signature)] = destination;
   }
 
-  function lookup(bytes4 sig) public view returns(address) {
+  function lookup(bytes4 sig) public view returns (address) {
     return pointers[sig];
   }
 
-  function stringToSig(string memory signature) public pure returns(bytes4) {
+  function stringToSig(string memory signature) public pure returns (bytes4) {
     return bytes4(keccak256(abi.encodePacked(signature)));
   }
 }

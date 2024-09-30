@@ -5,6 +5,7 @@ const { ethers } = require("ethers");
 
 const HASHZERO = ethers.constants.HashZero;
 const ADDRESS_ZERO = ethers.constants.AddressZero;
+const ADDRESS_FULL = "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF";
 
 const UINT256_MAX = new BN(0).notn(256);
 const UINT128_MAX = new BN(0).notn(128);
@@ -13,7 +14,7 @@ const INT256_MIN = new BN(2).pow(new BN(255)).mul(new BN(-1));
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
 const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
 
-const CURR_VERSION = 13;
+const CURR_VERSION = 16;
 
 const RECOVERY_ROLE = 0;
 const ROOT_ROLE = 1;
@@ -71,7 +72,16 @@ const DECAY_RATE = {
   DENOMINATOR: new BN("1000000000000000"),
 };
 
-const GLOBAL_SKILL_ID = new BN("4"); // Not a root global skill ID or anything, just the first global skill's ID
+const SLOT0 = 0;
+const SLOT1 = 1;
+const SLOT2 = 2;
+
+const XDAI_CHAINID = 100;
+const FORKED_XDAI_CHAINID = 265669100;
+const MAINNET_CHAINID = 1;
+const FORKED_MAINNET_CHAINID = 2656691;
+
+const CREATEX_ADDRESS = "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed";
 
 module.exports = {
   UINT256_MAX,
@@ -118,8 +128,16 @@ module.exports = {
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ALL_ENTRIES_ALLOWED_END_OF_WINDOW,
   DECAY_RATE,
-  GLOBAL_SKILL_ID,
   IPFS_HASH,
   HASHZERO,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
+  SLOT0,
+  SLOT1,
+  SLOT2,
+  XDAI_CHAINID,
+  FORKED_XDAI_CHAINID,
+  MAINNET_CHAINID,
+  FORKED_MAINNET_CHAINID,
+  CREATEX_ADDRESS,
 };

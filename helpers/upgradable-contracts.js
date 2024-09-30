@@ -3,13 +3,37 @@ const namehash = require("eth-ens-namehash");
 const assert = require("assert");
 const fs = require("fs");
 
-exports.parseImplementation = function parseImplementation(contractName, functionsToResolve, deployedImplementations) {
+function readArtifact(contractDir, contractName) {
+  const artifactPath = `./artifacts/contracts/${contractDir}/${contractName}.sol/${contractName}.json`;
+  try {
+    return JSON.parse(fs.readFileSync(artifactPath, "utf8"));
+  } catch (err) {
+    const commonArtifactPath = `./artifacts/contracts/common/${contractName}.sol/${contractName}.json`;
+    return JSON.parse(fs.readFileSync(commonArtifactPath, "utf8"));
+  }
+}
+
+function readSource(contractDir, contractName) {
+  const contractPath = `./contracts/${contractDir}/${contractName}.sol`;
+  try {
+    return fs.readFileSync(contractPath, "utf8");
+  } catch (err) {
+    const commonContractPath = `./contracts/common/${contractName}.sol`;
+    return fs.readFileSync(commonContractPath, "utf8");
+  }
+}
+
+exports.parseImplementation = function parseImplementation(contractDir, contractName, functionsToResolve, deployedImplementations) {
   // Goes through a contract, and sees if anything in it is in the interface. If it is, then wire up the resolver to point at it
-  const { abi } = JSON.parse(fs.readFileSync(`./build/contracts/${contractName}.json`));
-  abi.map((value) => {
+  const contract = readArtifact(contractDir, contractName);
+  contract.abi.map((value) => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
-      if (functionsToResolve[fName].definedIn !== "" && functionsToResolve[fName].definedIn !== deployedImplementations[contractName]) {
+      if (
+        functionsToResolve[fName].definedIn !== "" &&
+        functionsToResolve[fName].definedIn !== deployedImplementations[contractName] &&
+        readSource(contractDir, contractName).indexOf(`function ${fName}`) >= 0 // Avoid inheritence false positives
+      ) {
         // We allow function overloads so long as they are in the same file.
         // eslint-disable-next-line no-console
         console.log(
@@ -19,7 +43,7 @@ exports.parseImplementation = function parseImplementation(contractName, functio
           " in ",
           contractName,
           "and ",
-          functionsToResolve[fName].definedIn
+          functionsToResolve[fName].definedIn,
         );
         process.exit(1);
       }
@@ -29,18 +53,18 @@ exports.parseImplementation = function parseImplementation(contractName, functio
   });
 };
 
-exports.setupEtherRouter = async function setupEtherRouter(interfaceContract, deployedImplementations, resolver) {
+exports.setupEtherRouter = async function setupEtherRouter(contractDir, interfaceName, deployedImplementations, resolver) {
   const functionsToResolve = {};
 
   // Load ABI of the interface of the contract we're trying to stich together
-  const iAbi = JSON.parse(fs.readFileSync(`./build/contracts/${interfaceContract}.json`, "utf8")).abi;
+  const iAbi = readArtifact(contractDir, interfaceName).abi;
   iAbi.map((value) => {
     const fName = value.name;
     const fType = value.type;
-    // These are from DSAuth, and so are on EtherRouter itself without any more help.
-    if (fName !== "authority" && fName !== "owner" && !fName.includes("c_0x")) {
-      // We only care about functions.
-      if (fType === "function") {
+    // We only care about functions.
+    if (fType === "function") {
+      // These are from DSAuth, and so are on EtherRouter itself without any more help.
+      if (fName !== "authority" && fName !== "owner" && !fName.includes("c_0x")) {
         // Gets the types of the parameters, which is all we care about for function signatures.
         const fInputs = value.inputs.map((parameter) => parameter.type);
         // Record function name
@@ -49,7 +73,9 @@ exports.setupEtherRouter = async function setupEtherRouter(interfaceContract, de
     }
     return functionsToResolve;
   });
-  Object.keys(deployedImplementations).map((name) => exports.parseImplementation(name, functionsToResolve, deployedImplementations));
+  Object.keys(deployedImplementations).map((name) => {
+    return exports.parseImplementation(contractDir, name, functionsToResolve, deployedImplementations);
+  });
   // Iterate over the ABI again to make sure we get overloads - the functionToResolve is only indexed by name, not signature.
   for (let i = 0; i < iAbi.length; i += 1) {
     // We do it like this rather than a nice await Promise.all on a mapped array of promises because of
@@ -61,6 +87,7 @@ exports.setupEtherRouter = async function setupEtherRouter(interfaceContract, de
       try {
         await resolver.register(sig, address);
       } catch (err) {
+        console.log(err);
         throw new Error(`${sig} could not be registered. Is it defined?`);
       }
       const sigHash = soliditySha3(sig).substr(0, 10);
@@ -75,27 +102,23 @@ exports.setupColonyVersionResolver = async function setupColonyVersionResolver(
   colonyDomains,
   colonyExpenditure,
   colonyFunding,
-  colonyPayment,
   colonyRewards,
   colonyRoles,
-  colonyTask,
   contractRecovery,
   colonyArbitraryTransaction,
-  resolver
+  resolver,
 ) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
   deployedImplementations.ColonyDomains = colonyDomains.address;
   deployedImplementations.ColonyExpenditure = colonyExpenditure.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
-  deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyRewards = colonyRewards.address;
   deployedImplementations.ColonyRoles = colonyRoles.address;
-  deployedImplementations.ColonyTask = colonyTask.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
   deployedImplementations.ColonyArbitraryTransaction = colonyArbitraryTransaction.address;
 
-  await exports.setupEtherRouter("IMetaColony", deployedImplementations, resolver);
+  await exports.setupEtherRouter("colony", "IMetaColony", deployedImplementations, resolver);
 };
 
 exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwork(
@@ -107,7 +130,8 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   colonyNetworkAuction,
   colonyNetworkENS,
   colonyNetworkExtensions,
-  contractRecovery
+  colonyNetworkSkills,
+  contractRecovery,
 ) {
   const deployedImplementations = {};
   deployedImplementations.ColonyNetwork = colonyNetwork.address;
@@ -115,17 +139,19 @@ exports.setupUpgradableColonyNetwork = async function setupUpgradableColonyNetwo
   deployedImplementations.ColonyNetworkMining = colonyNetworkMining.address;
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
   deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;
+  deployedImplementations.ColonyNetworkSkills = colonyNetworkSkills.address;
   deployedImplementations.ColonyNetworkExtensions = colonyNetworkExtensions.address;
+  deployedImplementations.ColonyNetworkSkills = colonyNetworkSkills.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
-  await exports.setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
+  await exports.setupEtherRouter("colonyNetwork", "IColonyNetwork", deployedImplementations, resolver);
   await etherRouter.setResolver(resolver.address);
 };
 
 exports.setupUpgradableTokenLocking = async function setupUpgradableTokenLocking(etherRouter, resolver, tokenLocking) {
   const deployedImplementations = {};
   deployedImplementations.TokenLocking = tokenLocking.address;
-  await exports.setupEtherRouter("ITokenLocking", deployedImplementations, resolver);
+  await exports.setupEtherRouter("tokenLocking", "ITokenLocking", deployedImplementations, resolver);
 
   await etherRouter.setResolver(resolver.address);
   const registeredResolver = await etherRouter.resolver();
@@ -137,20 +163,20 @@ exports.setupReputationMiningCycleResolver = async function setupReputationMinin
   reputationMiningCycleRespond,
   reputationMiningCycleBinarySearch,
   resolver,
-  colonyNetwork
+  colonyNetwork,
 ) {
   const deployedImplementations = {};
   deployedImplementations.ReputationMiningCycle = reputationMiningCycle.address;
   deployedImplementations.ReputationMiningCycleRespond = reputationMiningCycleRespond.address;
   deployedImplementations.ReputationMiningCycleBinarySearch = reputationMiningCycleBinarySearch.address;
 
-  await exports.setupEtherRouter("IReputationMiningCycle", deployedImplementations, resolver);
+  await exports.setupEtherRouter("reputationMiningCycle", "IReputationMiningCycle", deployedImplementations, resolver);
 
   await colonyNetwork.setMiningResolver(resolver.address);
 };
 
-exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner) {
-  const rootNode = namehash.hash("joincolony.eth");
+exports.setupENSRegistrar = async function setupENSRegistrar(colonyNetwork, ensRegistry, registrarOwner, suffix) {
+  const rootNode = namehash.hash(`joincolony.${suffix}`);
   const USER_HASH = soliditySha3("user");
   const COLONY_HASH = soliditySha3("colony");
 

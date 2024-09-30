@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,67 +16,47 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyExtension.sol";
-import "./../common/BasicMetaTransaction.sol";
+import { ColonyExtension } from "./ColonyExtension.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
-
 contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
-
   uint256 constant EXPENDITURESLOTS_SLOT = 26;
   uint256 constant PAYOUT_MODIFIER_OFFSET = 2;
   bool constant MAPPING = false;
   bool constant ARRAY = true;
   mapping(address => uint256) metatransactionNonces;
 
+  // Interface overrides
+
   /// @notice Returns the identifier of the extension
   /// @return _identifier The extension's identifier
-  function identifier() public override pure returns (bytes32 _identifier) {
+  function identifier() public pure override returns (bytes32 _identifier) {
     return keccak256("EvaluatedExpenditure");
   }
 
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
-  function version() public override pure returns (uint256 _version) {
-    return 4;
-  }
-
-  /// @notice Configures the extension
-  /// @param _colony The colony in which the extension holds permissions
-  function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
-
-    colony = IColony(_colony);
-  }
-
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  /// @param _deprecated Indicates whether the extension should be deprecated or undeprecated
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
-  /// @notice Called when uninstalling the extension
-  function uninstall() public override auth {
-    selfdestruct(payable(address(colony)));
+  function version() public pure override returns (uint256 _version) {
+    return 7;
   }
 
   /// @notice Gets the next nonce for a meta-transaction
-  /// @param _userAddress The user's address
+  /// @param _user The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address _userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[_userAddress];
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address _user) override internal {
+  function incrementMetatransactionNonce(address _user) internal override {
     metatransactionNonces[_user] += 1;
   }
+
+  // Public
 
   /// @notice Sets the payout modifiers in given expenditure slots, using the arbitration permission
   /// @param _permissionDomainId The domainId in which the extension has the arbitration permission
@@ -89,9 +70,7 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
     uint256 _id,
     uint256[] memory _slots,
     int256[] memory _payoutModifiers
-  )
-    public
-  {
+  ) public {
     require(_slots.length == _payoutModifiers.length, "evaluated-expenditure-bad-slots");
     require(colony.getExpenditure(_id).owner == msgSender(), "evaluated-expenditure-not-owner");
 
@@ -117,5 +96,4 @@ contract EvaluatedExpenditure is ColonyExtension, BasicMetaTransaction {
       );
     }
   }
-
 }

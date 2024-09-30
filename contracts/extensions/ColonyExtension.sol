@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,20 +16,21 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/math.sol";
-import "./../common/EtherRouter.sol";
-import "./../common/Multicall.sol";
-import "./../colony/IColony.sol";
-import "./../colony/ColonyDataTypes.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../patriciaTree/PatriciaTreeProofs.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
+import { EtherRouter } from "./../common/EtherRouter.sol";
+import { Multicall } from "./../common/Multicall.sol";
+import { IColony } from "./../colony/IColony.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
 
-
-abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall {
-  uint256 constant UINT256_MAX = 2**256 - 1;
+abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall, MultiChain {
+  uint256 constant UINT256_MAX = 2 ** 256 - 1;
 
   event ExtensionInitialised();
 
@@ -43,11 +45,29 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
   }
 
   function identifier() public pure virtual returns (bytes32);
+
   function version() public pure virtual returns (uint256);
-  function install(address _colony) public virtual;
-  function finishUpgrade() public virtual;
-  function deprecate(bool _deprecated) public virtual;
-  function uninstall() public virtual;
+
+  function install(address _colony) public virtual auth {
+    require(address(colony) == address(0x0), "extension-already-installed");
+    colony = IColony(_colony);
+  }
+
+  function finishUpgrade() public virtual auth {} // solhint-disable-line no-empty-blocks
+
+  function deprecate(bool _deprecated) public virtual auth {
+    deprecated = _deprecated;
+  }
+
+  address constant FULL_ADDRESS = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
+
+  // slither-disable reentrancy-no-eth
+  function uninstall() public virtual auth {
+    payable(address(colony)).transfer(address(this).balance);
+
+    resolver = address(0x0);
+    colony = IColony(FULL_ADDRESS);
+  }
 
   function getCapabilityRoles(bytes4 _sig) public view virtual returns (bytes32) {
     return bytes32(0);
@@ -57,7 +77,7 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     return deprecated;
   }
 
-  function getColony() public view returns(address) {
+  function getColony() public view returns (address) {
     return address(colony);
   }
 
@@ -69,11 +89,7 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    internal
-    view
-    returns (uint256)
-  {
+  ) internal view returns (uint256) {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
     require(_rootHash == impliedRoot, "colony-extension-invalid-root-hash");
 

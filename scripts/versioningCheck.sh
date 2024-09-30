@@ -1,3 +1,5 @@
+set -e
+
 LATEST_RELEASE=`curl --silent "https://api.github.com/repos/joinColony/colonyNetwork/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")'`
 
 CURRENT_BRANCH=`git branch --show-current`
@@ -6,15 +8,35 @@ CURRENT_BRANCH=`git branch --show-current`
 
 git checkout $LATEST_RELEASE
 
+
+if (command -v nvm &> /dev/null)
+then
+  NODE_MANAGER="nvm"
+elif (command -v n &> /dev/null)
+then
+  NODE_MANAGER="n"
+elif (command -v fnm &> /dev/null)
+then
+  NODE_MANAGER="fnm"
+else
+  echo "No node manager found"
+  exit 1
+fi
+
 # Compile release
-npm ci --force && npx truffle compile
-rm -rf build-$LATEST_RELEASE || true
-mv build build-$LATEST_RELEASE
+$NODE_MANAGER install
+$NODE_MANAGER use
+npm ci --force && npx hardhat compile
+rm -rf artifacts-$LATEST_RELEASE || true
+mv artifacts artifacts-$LATEST_RELEASE
 
 # Compile current commit
+git checkout .
 git checkout $CURRENT_BRANCH
+$NODE_MANAGER install
+$NODE_MANAGER use
 find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
-npm ci && npx truffle compile
+pnpm install --frozen-lockfile && npx hardhat compile
 
 version_from_commit() {
 	COMMIT=$1;
@@ -60,28 +82,30 @@ relevant_bytecode() {
 	echo $BYTECODE
 }
 
-compare_bytecodes_check_version() {
-	CONTRACT_NAME=`basename $1 .sol`
+compare_bytecodes_check_extension_version() {
+	PATH_TO_CONTRACT=$1
 	FILE_WITH_VERSION=$2
+	CONTRACT_NAME=`basename $PATH_TO_CONTRACT .sol`
 
-	LAST_RELEASE_FILE="build-$LATEST_RELEASE/contracts/$CONTRACT_NAME.json"
-	THIS_COMMIT_FILE="build/contracts/$CONTRACT_NAME.json"
+	LAST_RELEASE_FILE="artifacts-$LATEST_RELEASE/$PATH_TO_CONTRACT/$CONTRACT_NAME.json"
+	THIS_COMMIT_FILE="artifacts/$PATH_TO_CONTRACT/$CONTRACT_NAME.json"
 
 	if [ ! -f "$LAST_RELEASE_FILE" ]; then
 	    echo "$LAST_RELEASE_FILE does not exist in last release, skipping."
 	    return
 	fi
 
-	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./build-$LATEST_RELEASE/contracts/$CONTRACT_NAME.json)
-
-	NEW_BYTECODE=$(relevant_bytecode ./build/contracts/$CONTRACT_NAME.json)
-
+	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./artifacts-$LATEST_RELEASE/$PATH_TO_CONTRACT/$CONTRACT_NAME.json)
+	NEW_BYTECODE=$(relevant_bytecode ./artifacts/$PATH_TO_CONTRACT/$CONTRACT_NAME.json)
 	# If the bytecode is different, check the version in the appropriate file
 	if [ "$LAST_RELEASE_BYTECODE" != "$NEW_BYTECODE" ]; then
+		echo "Bytecode changed for $CONTRACT_NAME"
 		oldVersion="$(version_from_commit_extensions $LATEST_RELEASE $FILE_WITH_VERSION)"
 
 		# What version does the staged version have?
 		newVersion="$(version_from_commit_extensions '' $FILE_WITH_VERSION)"
+		echo "Old version: $oldVersion"
+		echo "New version: $newVersion"
 		if [ $oldVersion -eq -1 ]; then
 			# It didn't exist in the old commit, so allow without further comparison
 			echo "Skipping $CONTRACT_NAME as $2 doesn't exist in latest release. If it's been moved, check if version bump necessary manually"
@@ -92,15 +116,11 @@ compare_bytecodes_check_version() {
 	fi
 }
 
-check_and_dependencies() {
+extension_check_and_dependencies() {
 	local BASE_CONTRACT_NAME=`basename $1 .sol`
 	local FILE_WITH_VERSION=$2
-	compare_bytecodes_check_version $BASE_CONTRACT_NAME $FILE_WITH_VERSION
-	# Anything that relies on that file
-	for extensionFile in $(grep -ilr "^contract.* is .*$BASE_CONTRACT_NAME[, {]" ./contracts/extensions/)
-	do
-		check_and_dependencies $extensionFile $extensionFile
-	done
+	local PATH_TO_CONTRACT=`find ./contracts/ -name $BASE_CONTRACT_NAME.sol`
+	compare_bytecodes_check_extension_version $PATH_TO_CONTRACT $FILE_WITH_VERSION
 }
 
 # Are there changes in the colony contract that need colony version bumped?
@@ -108,8 +128,8 @@ check_and_dependencies() {
 for file in contracts/colony/*
 do
 	CONTRACT_NAME=`basename $file .sol`
-	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./build-$LATEST_RELEASE/contracts/$CONTRACT_NAME.json)
-	NEW_BYTECODE=$(relevant_bytecode ./build/contracts/$CONTRACT_NAME.json)
+	LAST_RELEASE_BYTECODE=$(relevant_bytecode ./artifacts-$LATEST_RELEASE/contracts/colony/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
+	NEW_BYTECODE=$(relevant_bytecode ./artifacts/contracts/colony/$CONTRACT_NAME.sol/$CONTRACT_NAME.json)
 
 	# If the bytecode is different, check the version in colony
 	if [ "$LAST_RELEASE_BYTECODE" != "$NEW_BYTECODE" ]; then
@@ -123,19 +143,17 @@ do
 			STATUS=1;
 		fi
 	fi
-
-
 done
 
 # Now the same for the extensions
-for file in contracts/extensions/*
+for file in contracts/extensions/* contracts/extensions/**/*
 do
 	# Skip directories
 	if [ ! -d "$file" ]; then
-		if [ $file = "contracts/extensions/votingReputation/VotingReputation*.sol" ]; then
-			check_and_dependencies $file contracts/extensions/votingReputation/VotingReputation.sol
+		if [[ $file == contracts/extensions/votingReputation/*.sol ]]; then
+			extension_check_and_dependencies $file contracts/extensions/votingReputation/VotingReputationStorage.sol
 		else
-			check_and_dependencies $file $file
+			extension_check_and_dependencies $file $file
 		fi
 	fi
 done

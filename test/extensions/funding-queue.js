@@ -13,11 +13,11 @@ const {
   SECONDS_PER_DAY,
   CHALLENGE_RESPONSE_WINDOW_DURATION,
   ADDRESS_ZERO,
+  ADDRESS_FULL,
 } = require("../../helpers/constants");
 
 const {
   checkErrorRevert,
-  web3GetCode,
   makeReputationKey,
   makeReputationValue,
   getActiveRepCycle,
@@ -82,7 +82,9 @@ contract("Funding Queues", (accounts) => {
   const STATE_CANCELLED = 3;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     metaColonyAddress = await colonyNetwork.getMetaColony();
 
@@ -122,36 +124,36 @@ contract("Funding Queues", (accounts) => {
     reputationTree = new PatriciaTree();
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId), // Colony total, domain 1
-      makeReputationValue(WAD.muln(3), 1)
+      makeReputationValue(WAD.muln(3), 1),
     );
 
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER0), // User0
-      makeReputationValue(WAD, 2)
+      makeReputationValue(WAD, 2),
     );
     await reputationTree.insert(
       makeReputationKey(metaColonyAddress, domain1.skillId, USER0), // Wrong colony
-      makeReputationValue(WAD, 3)
+      makeReputationValue(WAD, 3),
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, 1234, USER0), // Wrong skill
-      makeReputationValue(WAD, 4)
+      makeReputationValue(WAD, 4),
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain1.skillId, USER1), // User1 (and 2x value)
-      makeReputationValue(WAD2, 5)
+      makeReputationValue(WAD2, 5),
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId), // Colony total, domain 2
-      makeReputationValue(WAD.muln(3), 6)
+      makeReputationValue(WAD.muln(3), 6),
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId, USER1), // User1 (and 2x value)
-      makeReputationValue(WAD2, 7)
+      makeReputationValue(WAD2, 7),
     );
     await reputationTree.insert(
       makeReputationKey(colony.address, domain2.skillId, USER0), // User0
-      makeReputationValue(WAD, 8)
+      makeReputationValue(WAD, 8),
     );
 
     colonyKey = makeReputationKey(colony.address, domain1.skillId);
@@ -190,18 +192,26 @@ contract("Funding Queues", (accounts) => {
       await fundingQueue.deprecate(true);
       await fundingQueue.uninstall();
 
-      const code = await web3GetCode(fundingQueue.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await fundingQueue.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(FUNDING_QUEUE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(FUNDING_QUEUE, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(colony.installExtension(FUNDING_QUEUE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(FUNDING_QUEUE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(FUNDING_QUEUE, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can't use the network-level functions if installed via ColonyNetwork", async () => {
@@ -247,7 +257,7 @@ contract("Funding Queues", (accounts) => {
 
       await checkErrorRevert(
         fundingQueue.createProposal(1, UINT256_MAX, 0, 1, 2, WAD, token.address, { from: USER0 }),
-        "colony-extension-deprecated"
+        "colony-extension-deprecated",
       );
 
       deprecated = await fundingQueue.getDeprecated();
@@ -265,7 +275,7 @@ contract("Funding Queues", (accounts) => {
 
       await checkErrorRevert(
         fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER1 }),
-        "funding-queue-not-creator"
+        "funding-queue-not-creator",
       );
 
       await fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 });
@@ -277,7 +287,7 @@ contract("Funding Queues", (accounts) => {
       // But can't stake twice
       await checkErrorRevert(
         fundingQueue.stakeProposal(proposalId, colonyKey, colonyValue, colonyMask, colonySiblings, { from: USER0 }),
-        "funding-queue-not-inactive"
+        "funding-queue-not-inactive",
       );
     });
 
@@ -368,21 +378,21 @@ contract("Funding Queues", (accounts) => {
     it("cannot back a basic proposal with more than your reputation", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD.addn(1), proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-insufficient-reputation"
+        "funding-queue-insufficient-reputation",
       );
     });
 
     it("cannot back a basic proposal with a bad reputation proof", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, "0x0", "0x0", "0x0", [], { from: USER0 }),
-        "colony-extension-invalid-root-hash"
+        "colony-extension-invalid-root-hash",
       );
     });
 
     it("cannot back a basic proposal with the wrong user address", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER1 }),
-        "colony-extension-invalid-user-address"
+        "colony-extension-invalid-user-address",
       );
     });
 
@@ -393,7 +403,7 @@ contract("Funding Queues", (accounts) => {
 
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
-        "colony-extension-invalid-skill-id"
+        "colony-extension-invalid-skill-id",
       );
     });
 
@@ -404,35 +414,35 @@ contract("Funding Queues", (accounts) => {
 
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, key, value, mask, siblings, { from: USER0 }),
-        "colony-extension-invalid-colony-address"
+        "colony-extension-invalid-colony-address",
       );
     });
 
     it("cannot back a nonexistent basic proposal", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(0, WAD, 0, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-proposal-not-active"
+        "funding-queue-proposal-not-active",
       );
     });
 
     it("cannot put a basic proposal after itself", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, proposalId, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-cannot-insert-after-self"
+        "funding-queue-cannot-insert-after-self",
       );
     });
 
     it("cannot put a basic proposal after a nonexistent proposal", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, 10, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-excess-support"
+        "funding-queue-excess-support",
       );
     });
 
     it("cannot pass a false current location", async () => {
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, 10, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-bad-prev-id"
+        "funding-queue-bad-prev-id",
       );
     });
 
@@ -455,13 +465,13 @@ contract("Funding Queues", (accounts) => {
       // Can't put proposal in position 1
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, HEAD, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-insufficient-support"
+        "funding-queue-insufficient-support",
       );
 
       // Can't put proposal in position 2
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD, proposalId, proposal2Id, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 }),
-        "funding-queue-insufficient-support"
+        "funding-queue-insufficient-support",
       );
 
       // But can in position 3 (1 wad support)
@@ -488,13 +498,13 @@ contract("Funding Queues", (accounts) => {
       // Can't put proposal in position 1
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD2, proposalId, HEAD, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
-        "funding-queue-insufficient-support"
+        "funding-queue-insufficient-support",
       );
 
       // Can't put proposal in position 3
       await checkErrorRevert(
         fundingQueue.backProposal(proposalId, WAD2, proposalId, proposal3Id, user1Key, user1Value, user1Mask, user1Siblings, { from: USER1 }),
-        "funding-queue-excess-support"
+        "funding-queue-excess-support",
       );
 
       // But can in position 2 (2 wad support) and bump proposal3 to position 3

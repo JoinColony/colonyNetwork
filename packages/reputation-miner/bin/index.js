@@ -5,9 +5,9 @@ const { argv } = require("yargs")
   .option('minerAddress', {string:true})
   .option('providerAddress', {type: "array", default: []});
 const ethers = require("ethers");
-const backoff = require("exponential-backoff").backOff;
 
 const ReputationMinerClient = require("../ReputationMinerClient");
+const {RetryProvider} = require("../../package-utils");
 
 const { ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../package-utils");
 
@@ -31,32 +31,6 @@ const {
   adapterLabel,
 } = argv;
 
-class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
-  constructor(connectionInfo, adapterObject){
-    super(connectionInfo);
-    this.adapter = adapterObject;
-  }
-
-  static attemptCheck(err, attemptNumber){
-    console.log("Retrying RPC request #", attemptNumber);
-    if (attemptNumber === 5){
-      return false;
-    }
-    return true;
-  }
-
-  getNetwork(){
-    return backoff(() => super.getNetwork(), {retry: RetryProvider.attemptCheck});
-  }
-
-  // This should return a Promise (and may throw erros)
-  // method is the method name (e.g. getBalance) and params is an
-  // object with normalized values passed in, depending on the method
-  perform(method, params) {
-    return backoff(() => super.perform(method, params), {retry: RetryProvider.attemptCheck, startingDelay: 1000});
-  }
-}
-
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
   console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress and --syncFrom on the command line!");
   process.exit();
@@ -74,7 +48,7 @@ if (adapter === 'slack') {
 }
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "..", "build", "contracts")
+  contractRoot: path.resolve(__dirname, "..", "..", "..", "artifacts", "contracts")
 });
 
 let provider;
@@ -86,7 +60,7 @@ if (network) {
   provider = new ethers.providers.InfuraProvider(network);
 } else if (providerAddress.length === 0){
   const rpcEndpoint = `${localProviderAddress || "http://localhost"}:${localPort || "8545"}`;
-  provider = new ethers.providers.JsonRpcProvider(rpcEndpoint);
+  provider = new RetryProvider(rpcEndpoint);
 } else {
   const providers = providerAddress.map(endpoint => {
     const {protocol, username, password, host, pathname} = new URL(endpoint);
@@ -94,6 +68,12 @@ if (network) {
       url: `${protocol}//${host}${pathname}`,
       user: decodeURI(username),
       password: decodeURI(password.replace(/%23/, '#')),
+    }
+    if (connectionInfo.user === "") {
+      delete connectionInfo.user;
+    }
+    if (connectionInfo.password === "") {
+      delete connectionInfo.password;
     }
     return new RetryProvider(connectionInfo, adapterObject);
   })

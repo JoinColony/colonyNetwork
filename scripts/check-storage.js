@@ -16,6 +16,7 @@ walkSync("./contracts/").forEach((contractName) => {
   // Contracts listed here are allowed to have storage variables
   if (
     [
+      "contracts/bridging/WormholeBridgeForColony.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colonyNetwork/ColonyNetworkAuthority.sol",
@@ -33,21 +34,31 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/FundingQueue.sol",
       "contracts/extensions/ColonyExtension.sol",
       "contracts/extensions/ColonyExtensionMeta.sol",
+      "contracts/extensions/MultisigPermissions.sol",
       "contracts/extensions/OneTxPayment.sol",
       "contracts/extensions/ReputationBootstrapper.sol",
       "contracts/extensions/StreamingPayments.sol",
       "contracts/extensions/TokenSupplier.sol",
+      "contracts/extensions/StagedExpenditure.sol",
       "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol",
-      "contracts/extensions/votingReputation/VotingReputation.sol",
+      "contracts/extensions/votingReputation/VotingReputationStorage.sol",
       "contracts/extensions/Whitelist.sol",
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
       "contracts/patriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/reputationMiningCycle/ReputationMiningCycleStorage.sol",
+      "contracts/testHelpers/BridgeMock.sol",
+      "contracts/testHelpers/ERC20Like.sol",
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/ToggleableToken.sol",
-      "contracts/testHelpers/TestExtensions.sol",
+      "contracts/testHelpers/testExtensions/TestExtensionBase.sol",
+      "contracts/testHelpers/testExtensions/TestExtension0.sol",
+      "contracts/testHelpers/testExtensions/TestExtension1.sol",
+      "contracts/testHelpers/testExtensions/TestExtension2.sol",
+      "contracts/testHelpers/testExtensions/TestExtension3.sol",
+      "contracts/testHelpers/testExtensions/TestVotingToken.sol",
       "contracts/testHelpers/GasGuzzler.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
+      "contracts/testHelpers/WormholeMock.sol",
       "contracts/tokenLocking/TokenLockingStorage.sol",
       "contracts/Migrations.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
@@ -70,14 +81,19 @@ walkSync("./contracts/").forEach((contractName) => {
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
-  // Check for non-constant storage variables
 
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
+  if (!contract) {
+    return;
+  }
+
+  // Check for non-constant storage variables
   if (contract.subNodes.filter((child) => child.type === "StateVariableDeclaration" && !child.variables[0].isDeclaredConst).length > 0) {
     console.log(
       "The contract ",
       contractName,
       " contains state variable declarations. ",
-      "Add new state variables to relevant Storage contract instead, to guarantee that the storage layout is the same between contracts."
+      "Add new state variables to relevant Storage contract instead, to guarantee that the storage layout is the same between contracts.",
     );
     process.exit(1);
   }

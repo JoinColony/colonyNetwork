@@ -1,6 +1,6 @@
-pragma solidity 0.8.20;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.25;
 pragma experimental "ABIEncoderV2";
-
 
 library Bits {
   // Bits library
@@ -8,7 +8,7 @@ library Bits {
   // only these parts are used by the PatriciaTree implementation, so removed the unused functions
   // for brevity
 
-  uint constant internal ONE = uint(1);
+  uint internal constant ONE = uint(1);
 
   /// @notice Computes the index of the highest bit set in 'self'.
   /// Returns the highest bit set as an `uint8`
@@ -18,7 +18,7 @@ library Bits {
     require(self != 0, "colony-patricia-tree-zero-self");
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
-      if (val & (ONE << i) - 1 << i != 0) {
+      if (val & (((ONE << i) - 1) << i) != 0) {
         highest += i;
         val >>= i;
       }
@@ -33,11 +33,11 @@ library Bits {
     require(self != 0, "colony-patricia-tree-zero-self");
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
-      if (val & (ONE << i) - 1 == 0) { // ignore-swc-101 TODO: this one also only shows up if analysing PatricaTree.sol
+      if (val & ((ONE << i) - 1) == 0) {
+        // ignore-swc-101 TODO: this one also only shows up if analysing PatricaTree.sol
         lowest += i;
         val >>= i;
       }
     }
   }
-
 }

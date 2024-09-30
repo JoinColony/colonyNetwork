@@ -1,24 +1,39 @@
 /* globals artifacts */
+
+const fs = require("fs");
 const shortid = require("shortid");
 const chai = require("chai");
 const { asciiToHex, isBN } = require("web3-utils");
 const BN = require("bn.js");
 const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
+const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
-const { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("./constants");
+const {
+  UINT256_MAX,
+  MIN_STAKE,
+  MINING_CYCLE_DURATION,
+  DEFAULT_STAKE,
+  CHALLENGE_RESPONSE_WINDOW_DURATION,
+  FORKED_MAINNET_CHAINID,
+  MAINNET_CHAINID,
+  XDAI_CHAINID,
+  FORKED_XDAI_CHAINID,
+  CREATEX_ADDRESS,
+  CURR_VERSION,
+} = require("./constants");
+const { RetryProvider } = require("../packages/package-utils");
 
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
-const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const Resolver = artifacts.require("Resolver");
-const ContractEditing = artifacts.require("ContractEditing");
 const ColonyDomains = artifacts.require("ColonyDomains");
+const ChainId = artifacts.require("ChainId");
 
 const { expect } = chai;
 
@@ -119,6 +134,29 @@ exports.web3GetChainId = async function web3GetChainId() {
   });
 };
 
+exports.getChainId = async function getChainId() {
+  // Why do we do this? Because with the check-if-we-are-on-the-minign chain setup for
+  // tests, we've introduced a new transaction in the setup process. This causes the
+  // past-version-caching to fail, because we end up deploying different code to the same
+  // addresses. This is a workaround for that, but should be considered temporary.
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_accounts",
+    params: [],
+    id: new Date().getTime(),
+  };
+
+  return new Promise((resolve, reject) => {
+    ChainId.currentProvider.send(packet, async function (err, res) {
+      if (err !== null) return reject(err);
+      const accounts = res.result;
+      const c = await ChainId.new({ from: accounts.slice(-1)[0] });
+      const chainId = await c.getChainId();
+      return resolve(chainId.toNumber());
+    });
+  });
+};
+
 exports.web3SignTypedData = function web3SignTypedData(address, typedData) {
   const packet = {
     jsonrpc: "2.0",
@@ -208,25 +246,36 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
     receipt = await promise;
   } catch (err) {
     const txid = err.transactionHash;
-    const tx = await exports.web3GetTransaction(txid);
-    receipt = await exports.web3GetTransactionReceipt(txid);
 
-    const response = await exports.web3GetRawCall(
-      {
-        from: tx.from,
-        to: tx.to,
-        data: tx.input,
-        gas: tx.gas,
-        value: ethers.utils.hexlify(parseInt(tx.value, 10)),
-      },
-      receipt.blockNumber
-    );
-    const reason = exports.extractReasonString(response);
+    const TRUFFLE_PORT = 8545;
+    const OTHER_RPC_PORT = 8546;
+    let provider = new RetryProvider(`http://127.0.0.1:${TRUFFLE_PORT}`);
+    receipt = await provider.getTransactionReceipt(txid);
+    if (!receipt) {
+      provider = new RetryProvider(`http://127.0.0.1:${OTHER_RPC_PORT}`);
+      receipt = await provider.getTransactionReceipt(txid);
+    }
+
+    const tx = await provider.getTransaction(txid);
+    let reason;
+    try {
+      const callResult = await provider.call(
+        {
+          from: tx.from,
+          to: tx.to,
+          data: tx.data,
+          gas: ethers.utils.hexValue(tx.gasLimit),
+          value: ethers.utils.hexValue(parseInt(tx.value, 10)),
+        },
+        receipt.blockNumber,
+      );
+      reason = web3.eth.abi.decodeParameter("string", callResult.slice(10));
+    } catch (err2) {
+      reason = web3.eth.abi.decodeParameter("string", err2.error.error.data.slice(10));
+    }
     expect(reason).to.equal(errorMessage);
-    return;
   }
-
-  expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.be.zero;
+  expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.equal(0);
 };
 
 // Sometimes we might have to use this function because of
@@ -274,15 +323,7 @@ exports.getTokenArgs = function getTokenArgs() {
 };
 
 exports.currentBlockTime = async function currentBlockTime() {
-  const p = new Promise((resolve, reject) => {
-    web3.eth.getBlock("latest", (err, res) => {
-      if (err) {
-        return reject(err);
-      }
-      return resolve(res.timestamp);
-    });
-  });
-  return p;
+  return helpers.time.latest();
 };
 
 exports.currentBlock = async function currentBlock() {
@@ -362,7 +403,7 @@ async function eventMatches(tx, nameOrSig, args) {
 
         event.args = iface.parseLog(event).args;
         return eventMatchArgs(event, args);
-      })
+      }),
     );
   } else {
     const { logs } = await tx;
@@ -418,17 +459,30 @@ exports.expectAllEvents = async function expectAllEvents(tx, eventNames) {
   return expect(events).to.be.true;
 };
 
-exports.forwardTime = async function forwardTime(seconds, test) {
+exports.forwardTime = async function forwardTime(seconds, test, _web3provider) {
   if (typeof seconds !== "number") {
     throw new Error("typeof seconds is not a number");
   }
+
+  if (!_web3provider) {
+    const client = await exports.web3GetClient();
+    if (client.indexOf("Hardhat") !== -1) {
+      return helpers.time.increase(seconds);
+    }
+  }
+
+  const web3provider = _web3provider || web3.currentProvider;
+  // eslint-disable-next-line no-warning-comments
+  // FIXME: not strictly correct, but it's late.
+  // Should really call the rpc node with web3provider.send
   const client = await exports.web3GetClient();
+
   const p = new Promise((resolve, reject) => {
-    if (client.indexOf("TestRPC") === -1) {
+    if (client.indexOf("TestRPC") === -1 && client.indexOf("Hardhat") === -1) {
       resolve(test.skip());
     } else {
       // console.log(`Forwarding time with ${seconds}s ...`);
-      web3.currentProvider.send(
+      web3provider.send(
         {
           jsonrpc: "2.0",
           method: "evm_increaseTime",
@@ -439,7 +493,7 @@ exports.forwardTime = async function forwardTime(seconds, test) {
           if (err) {
             return reject(err);
           }
-          return web3.currentProvider.send(
+          return web3provider.send(
             {
               jsonrpc: "2.0",
               method: "evm_mine",
@@ -451,29 +505,68 @@ exports.forwardTime = async function forwardTime(seconds, test) {
                 return reject(err2);
               }
               return resolve(res);
-            }
+            },
           );
-        }
+        },
       );
     }
   });
   return p;
 };
 
-exports.forwardTimeTo = async function forwardTimeTo(timestamp, test) {
-  const lastBlockTime = await exports.getBlockTime("latest");
-  const amountToForward = new BN(timestamp).sub(new BN(lastBlockTime));
-  // Forward that much
-  await exports.forwardTime(amountToForward.toNumber(), test);
+exports.forwardTimeTo = async function forwardTimeTo(timestamp) {
+  return helpers.time.increaseTo(timestamp);
 };
 
-exports.mineBlock = async function mineBlock(timestamp) {
+exports.mineBlock = async function mineBlock() {
+  return helpers.mine();
+};
+
+exports.getHardhatAutomine = async function checkHardhatAutomine() {
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
         jsonrpc: "2.0",
-        method: "evm_mine",
-        params: timestamp ? [timestamp] : [],
+        method: "hardhat_getAutomine",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(Boolean(res.result));
+      },
+    );
+  });
+};
+
+exports.snapshot = async function snapshot(provider) {
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_snapshot",
+        params: [],
+        id: new Date().getTime(),
+      },
+      (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(res.result);
+      },
+    );
+  });
+};
+
+exports.revert = async function revert(provider, snapshotId) {
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_revert",
+        params: [snapshotId],
         id: new Date().getTime(),
       },
       (err) => {
@@ -481,12 +574,51 @@ exports.mineBlock = async function mineBlock(timestamp) {
           return reject(err);
         }
         return resolve();
-      }
+      },
     );
   });
 };
 
+exports.hardhatSnapshot = async function hardhatSnapshot(provider) {
+  const res = await provider.request({
+    method: "evm_snapshot",
+    params: [],
+  });
+  return res;
+};
+
+exports.hardhatRevert = async function hardhatRevert(provider, snapshotId) {
+  await provider.request({
+    method: "evm_revert",
+    params: [snapshotId],
+  });
+};
+
 exports.stopMining = async function stopMining() {
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    return new Promise((resolve, reject) => {
+      web3.currentProvider.send(
+        {
+          jsonrpc: "2.0",
+          method: "evm_setAutomine",
+          params: [false],
+          id: new Date().getTime(),
+        },
+        async (err) => {
+          if (err) {
+            return reject(err);
+          }
+          // Wait until actually reports that it's stopped mining
+          while (await exports.getHardhatAutomine()) {
+            await exports.sleep(1000);
+          }
+          return resolve();
+        },
+      );
+    });
+  }
+
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
@@ -500,12 +632,32 @@ exports.stopMining = async function stopMining() {
           return reject(err);
         }
         return resolve();
-      }
+      },
     );
   });
 };
 
 exports.startMining = async function startMining() {
+  const client = await exports.web3GetClient();
+  if (client.indexOf("Hardhat") !== -1) {
+    return new Promise((resolve, reject) => {
+      web3.currentProvider.send(
+        {
+          jsonrpc: "2.0",
+          method: "evm_setAutomine",
+          params: [true],
+          id: new Date().getTime(),
+        },
+        (err) => {
+          if (err) {
+            return reject(err);
+          }
+          return resolve();
+        },
+      );
+    });
+  }
+
   return new Promise((resolve, reject) => {
     web3.currentProvider.send(
       {
@@ -519,50 +671,46 @@ exports.startMining = async function startMining() {
           return reject(err);
         }
         return resolve();
-      }
+      },
     );
   });
 };
 
-exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp, test) {
-  const client = await exports.web3GetClient();
-  if (client.indexOf("TestRPC") === -1) {
-    test.skip();
+exports.setStorageSlot = async function (_contract, _slot, _value) {
+  let slot = _slot;
+  if (typeof _slot === "string") {
+    if (!_slot.startsWith("0x")) {
+      slot = `0x${_slot}`;
+    } else {
+      slot = _slot;
+    }
+  } else if (isBN(_slot)) {
+    slot = `0x${_slot.toString(16)}`;
   }
-  await exports.stopMining();
-  let mined;
-  // Send the transaction to the RPC endpoint. This might be a truffle contract object, which doesn't
-  // return until the transaction has been mined... but we've stopped mining. So we can't await it
-  // now. But if we `mineBlock` straight away, the transaction might not have pecolated all the way through
-  // to the pending transaction pool, especially on CI.
 
-  // I have tried lots of better ways to solve this problem. The problem is, while mining is stopped, the
-  // 'pending' block isn't updated and, even when mining, in some cases it is interpreted to mean 'latest' in
-  // ganache cli. The sender's nonce isn't updated, the number of pending transactions is not updated... I'm at a
-  // loss for how to do this better.
-  // This works for ethers and truffle
-  const promise = f(...args);
-  // Chaining these directly on the above declaration doesn't work in the case of being passed an ethers function
-  // (They don't seem to return the original promise, somehow?)
-  promise
-    .then(() => {
-      mined = true;
-    })
-    .catch(() => {
-      mined = true;
-    });
-  while (!mined) {
-    // eslint-disable-next-line no-await-in-loop
-    await exports.mineBlock(timestamp);
-  }
-  // Turn auto-mining back on
-  await exports.startMining();
+  const slotString = `${ethers.BigNumber.from(slot).toHexString()}`;
+  // Accommodate both ethers and truffle contract objects
+  const provider = _contract.provider || _contract.contract.currentProvider;
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "hardhat_setStorageAt",
+        params: [_contract.address, slotString, _value],
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      },
+    );
+  });
+};
 
-  // Tests are written assuming all future blocks will be from this time, which used to be
-  // how ganache operated. It's not any more, so explicitly forward time.
-  await exports.forwardTimeTo(timestamp, test);
-
-  return promise;
+exports.makeTxAtTimestamp = async function makeTxAtTimestamp(f, args, timestamp) {
+  await helpers.time.setNextBlockTimestamp(timestamp);
+  return f(...args);
 };
 
 exports.bnSqrt = function bnSqrt(bn, isGreater) {
@@ -704,7 +852,7 @@ exports.advanceMiningCycleNoContest = async function advanceMiningCycleNoContest
 exports.accommodateChallengeAndInvalidateHashViaTimeout = async function accommodateChallengeAndInvalidateHashViaTimeout(
   colonyNetwork,
   _test,
-  client1
+  client1,
 ) {
   const repCycle = await exports.getActiveRepCycle(colonyNetwork);
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
@@ -803,7 +951,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   const submission2before = await repCycle.getReputationHashSubmission(client2.minerAddress);
   expect(
     idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
-    "Clients are not facing each other in this round"
+    "Clients are not facing each other in this round",
   ).to.be.true;
 
   await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION);
@@ -831,25 +979,25 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
       await exports.checkErrorRevertEthers(
         client1.respondToBinarySearchForChallenge(),
-        errors.client1.respondToBinarySearchForChallenge[binarySearchStep]
+        errors.client1.respondToBinarySearchForChallenge[binarySearchStep],
       );
       binarySearchError = true;
     } else {
       await exports.checkSuccessEthers(
         client1.respondToBinarySearchForChallenge(),
-        `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+        `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`,
       );
     }
     if (errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
       await exports.checkErrorRevertEthers(
         client2.respondToBinarySearchForChallenge(),
-        errors.client2.respondToBinarySearchForChallenge[binarySearchStep]
+        errors.client2.respondToBinarySearchForChallenge[binarySearchStep],
       );
       binarySearchError = true;
     } else {
       await exports.checkSuccessEthers(
         client2.respondToBinarySearchForChallenge(),
-        `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+        `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`,
       );
     }
     disputeRound = await repCycle.getDisputeRound(round1);
@@ -952,7 +1100,7 @@ exports.withdrawAllMinerStakes = async function withdrawAllMinerStakes(colonyNet
       if (userBalance.gt(new BN(0))) {
         await clny.burn(userBalance, { from: user });
       }
-    })
+    }),
   );
 };
 
@@ -971,15 +1119,6 @@ exports.restoreSubdomainLimit = async function restoreSubdomainLimit(colonyNetwo
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
   await resolver.register("addDomain(uint256,uint256,uint256)", originalSubdomains.address);
-};
-
-exports.addTaskSkillEditingFunctions = async function addTaskSkillEditingFunctions(colonyNetwork) {
-  const taskSkillEditing = await TaskSkillEditing.new();
-  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
-  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
-  const resolver = await Resolver.at(resolverAddress);
-  await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
-  await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
 };
 
 exports.getChildSkillIndex = async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {
@@ -1002,62 +1141,74 @@ exports.getChildSkillIndex = async function getChildSkillIndex(colonyNetwork, co
   throw Error("Supplied child domain is not a child of the supplied parent domain");
 };
 
-exports.getColonyEditable = async function getColonyEditable(colony, colonyNetwork) {
-  const colonyVersion = await colony.version();
-  const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(colonyVersion);
-  const colonyResolver = await Resolver.at(colonyResolverAddress);
-  const contractEditing = await ContractEditing.new();
-  await colonyResolver.register("setStorageSlot(uint256,bytes32)", contractEditing.address);
-  const colonyUnderRecovery = await ContractEditing.at(colony.address);
-  return colonyUnderRecovery;
-};
+exports.getWaitForNSubmissionsPromise = function getWaitForNSubmissionsPromise(repCycleEthers, fromBlock, rootHash, nLeaves, jrh, n) {
+  if (!repCycleEthers || !fromBlock) {
+    throw new Error("repCycleEthers and fromBlock must be defined when calling getWaitForNSubmissionsPromise");
+  }
 
-exports.getWaitForNSubmissionsPromise = async function getWaitForNSubmissionsPromise(repCycleEthers, rootHash, nLeaves, jrh, n) {
   return new Promise(function (resolve, reject) {
-    repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nLeaves, _jrh, _entryIndex, event) => {
-      let nSubmissions;
-      // We want to see when our hash hits N submissions
-      // If we've passed in our hash, we check how many submissions that hash has
-      // If not, we're waiting for N submissions from any hash
-      if (rootHash) {
-        nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
-      } else {
-        nSubmissions = await repCycleEthers.getNSubmissionsForHash(_hash, _nLeaves, _jrh);
-      }
-      if (nSubmissions.toNumber() >= n) {
-        event.removeListener();
-        resolve();
-      } else {
-        await exports.mineBlock();
-      }
-    });
+    const intervalId = setInterval(async () => {
+      const filter = repCycleEthers.filters.ReputationRootHashSubmitted();
+      const events = await repCycleEthers.queryFilter(filter, fromBlock);
 
-    // After 60s, we throw a timeout error
+      if (events.length > 0) {
+        if (rootHash) {
+          const nSubmissions = await repCycleEthers.getNSubmissionsForHash(rootHash, nLeaves, jrh);
+          if (nSubmissions.toNumber() >= n) {
+            clearInterval(intervalId);
+            resolve();
+          }
+        } else {
+          // Check all events
+          await Promise.all(
+            events.map(async (event) => {
+              const nSubmissions = await repCycleEthers.getNSubmissionsForHash(event.args._newHash, event.args._nLeaves, event.args._jrh);
+              if (nSubmissions.toNumber() >= n) {
+                clearInterval(intervalId);
+                resolve();
+              }
+            }),
+          );
+        }
+      }
+    }, 1000);
+
+    // After 60s, throw a timeout error
     setTimeout(() => {
+      clearInterval(intervalId);
       reject(new Error("Timeout while waiting for 12 hash submissions"));
     }, 60 * 1000);
   });
 };
 
-exports.getMiningCycleCompletePromise = async function getMiningCycleCompletePromise(colonyNetworkEthers, oldHash, expectedHash) {
+exports.getMiningCycleCompletePromise = function getMiningCycleCompletePromise(colonyNetworkEthers, fromBlock, oldHash, expectedHash) {
+  if (!colonyNetworkEthers || !fromBlock) {
+    throw new Error("colonyNetworkEthers and fromBlock must be defined when calling getMiningCycleCompletePromise");
+  }
+
   return new Promise(function (resolve, reject) {
-    colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nLeaves, event) => {
-      const colonyNetwork = await IColonyNetwork.at(colonyNetworkEthers.address);
-      const newHash = await colonyNetwork.getReputationRootHash();
-      if (oldHash) {
-        expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+    const intervalId = setInterval(async () => {
+      const filter = colonyNetworkEthers.filters.ReputationMiningCycleComplete();
+      const events = await colonyNetworkEthers.queryFilter(filter, fromBlock);
+      if (events.length > 0) {
+        const event = events[events.length - 1];
+        const newHash = event.args[0];
+        if (oldHash) {
+          expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
+        }
+        if (expectedHash) {
+          expect(newHash).to.equal(expectedHash, "The network root hash doesn't match the one submitted");
+        }
+        clearInterval(intervalId);
+        resolve();
       }
-      if (expectedHash) {
-        expect(newHash).to.equal(expectedHash, "The network root hash doesn't match the one submitted");
-      }
-      event.removeListener();
-      resolve();
-    });
+    }, 1000);
 
     // After 30s, we throw a timeout error
     setTimeout(() => {
+      clearInterval(intervalId);
       reject(new Error("ERROR: timeout while waiting for confirming hash"));
-    }, 30000);
+    }, 30 * 1000);
   });
 };
 
@@ -1124,6 +1275,116 @@ exports.sleep = function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+};
+
+exports.getMultichainSkillId = function getMultichainSkillId(chainId, skillId) {
+  if (chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID) {
+    return skillId;
+  }
+  return ethers.BigNumber.from(chainId).mul(ethers.BigNumber.from(2).pow(128)).add(ethers.BigNumber.from(skillId));
+};
+
+exports.upgradeColonyOnceThenToLatest = async function (colony) {
+  // Assume that we need to do one 'proper' upgrade, and then we just
+  // set the version to the desired version. The idea here is that we are testing either
+  // * Support in the latest version for states that are only archievable historically in version X
+  // * A bug in version X that was fixed.
+  // In either case, installing version X, doing what we need in the test, and then upgrading to X+1
+  // and then the latest version should be sufficient. The 'proper' upgrade allows for a fix to be applied
+  // in `finishUpgrade`, and then upgrading to the latest version will let us check that whatever the state
+  // is, we can handle it 'correctly', whatever that means.
+  // This means that our tests don't get longer and longer to run from deploying and upgrading through every
+  // version in between.
+  const currentVersion = await colony.version();
+  await colony.upgrade(currentVersion.addn(1));
+
+  const networkAddress = await colony.getColonyNetwork();
+  const colonyNetwork = await IColonyNetwork.at(networkAddress);
+
+  // Doing it this way preserves the items that share this storage slot with the address,
+  // which are recoverymode related.
+  const newestResolver = await colonyNetwork.getColonyVersionResolver(CURR_VERSION);
+
+  const existingSlot = await exports.web3GetStorageAt(colony.address, 2);
+  const newSlotValue = existingSlot.slice(0, 26) + newestResolver.slice(2);
+  await exports.setStorageSlot(colony, "0x2", newSlotValue);
+};
+
+exports.upgradeExtensionOnceThenToLatest = async function (extension) {
+  // Same logic as above, but for extensions
+  const currentVersion = await extension.version();
+  const colonyAddress = await extension.getColony();
+  const colony = await IColony.at(colonyAddress);
+  const extensionId = await extension.identifier();
+  await colony.upgradeExtension(extensionId, currentVersion.addn(1));
+
+  const networkAddress = await colony.getColonyNetwork();
+  const colonyNetwork = await IColonyNetwork.at(networkAddress);
+
+  const events = await colonyNetwork.getPastEvents("ExtensionAddedToNetwork", {
+    fromBlock: 0,
+    toBlock: "latest",
+    filter: { extensionId },
+  });
+
+  events.sort((a, b) => b.returnValues.version - a.returnValues.version);
+
+  const newestVersion = events[0].returnValues.version;
+  const newestResolver = await colonyNetwork.getExtensionResolver(extensionId, newestVersion);
+
+  const existingSlot = await exports.web3GetStorageAt(extension.address, 2);
+  const newSlotValue = existingSlot.slice(0, 26) + newestResolver.slice(2);
+  await exports.setStorageSlot(extension, "0x2", newSlotValue);
+};
+
+exports.isMainnet = async function isMainnet() {
+  const chainId = await exports.web3GetChainId();
+  return chainId === MAINNET_CHAINID || chainId === FORKED_MAINNET_CHAINID;
+};
+
+exports.isXdai = async function isXdai() {
+  const chainId = await exports.web3GetChainId();
+  return chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID;
+};
+
+exports.deployCreateXIfNeeded = async function deployCreateXIfNeeded() {
+  // Deploy CreateX if it's not already deployed
+  const createXCode = await web3.eth.getCode(CREATEX_ADDRESS);
+  if (createXCode === "0x") {
+    const accounts = await web3.eth.getAccounts();
+    await web3.eth.sendTransaction({
+      from: accounts[0],
+      to: "0xeD456e05CaAb11d66C4c797dD6c1D6f9A7F352b5",
+      value: web3.utils.toWei("0.3", "ether"),
+      gasPrice: web3.utils.toWei("1", "gwei"),
+      gas: 300000,
+    });
+    const rawTx = fs
+      .readFileSync("lib/createx/scripts/presigned-createx-deployment-transactions/signed_serialised_transaction_gaslimit_3000000_.json", {
+        encoding: "utf8",
+      })
+      .replace(/"/g, "")
+      .replace("\n", "");
+    await web3.eth.sendSignedTransaction(rawTx);
+  }
+};
+
+exports.evmChainIdToWormholeChainId = function evmChainIdToWormholeChainId(_chainId) {
+  let chainId = _chainId;
+  if (typeof chainId === "string") {
+    if (chainId.startsWith("0x")) {
+      chainId = parseInt(chainId, 16);
+    } else {
+      chainId = parseInt(chainId, 10);
+    }
+  }
+  if (chainId === FORKED_XDAI_CHAINID) {
+    return 10003;
+  }
+  if (chainId === FORKED_XDAI_CHAINID + 1) {
+    return 10002;
+  }
+  throw new Error("Unsupported chainId");
 };
 
 class TestAdapter {

@@ -3,6 +3,7 @@ const BN = require("bn.js");
 const { toBN } = require("web3-utils");
 const chai = require("chai");
 const bnChai = require("bn-chai");
+const ethers = require("ethers");
 
 const { TruffleLoader } = require("../../packages/package-utils");
 const {
@@ -15,24 +16,18 @@ const {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
+  getChainId,
 } = require("../../helpers/test-helper");
 
 const {
   giveUserCLNYTokensAndStake,
-  setupFinalizedTask,
+  setupClaimedExpenditure,
   fundColonyWithTokens,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
 } = require("../../helpers/test-data-generator");
 
-const {
-  INT128_MAX,
-  DEFAULT_STAKE,
-  INITIAL_FUNDING,
-  MINING_CYCLE_DURATION,
-  CHALLENGE_RESPONSE_WINDOW_DURATION,
-  GLOBAL_SKILL_ID,
-} = require("../../helpers/constants");
+const { INT128_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
@@ -49,25 +44,29 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "../..", "build", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
 });
 
 const useJsTree = true;
 
-let metaColony;
 let colonyNetwork;
+let metaColony;
 let clnyToken;
+let localSkillId;
 let goodClient;
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = 8545;
 
 const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
+  await metaColony.addLocalSkill();
+  localSkillId = await colonyNetwork.getSkillCount();
+
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-  await colonyNetwork.initialiseReputationMining();
-  await colonyNetwork.startNextCycle();
+  const chainId = await getChainId();
+  await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
@@ -124,7 +123,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.initialise(colonyNetwork.address);
 
       await fundColonyWithTokens(metaColony, clnyToken);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -194,9 +193,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("should allow a binary search between opponents to take place to find their first disagreement", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -227,12 +226,14 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       let round0 = await repCycle.getDisputeRound(0);
       let goodDisputedEntry = round0[0];
       let badDisputedEntry = round0[1];
+      let upperBound = 34;
+      let lowerBound = 0;
       expect(goodDisputedEntry.challengeStepCompleted).to.eq.BN(1); // Challenge steps completed
-      expect(goodDisputedEntry.lowerBound).to.be.zero; // Lower bound for binary search
-      expect(goodDisputedEntry.upperBound).to.eq.BN(28); // Upper bound for binary search
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound); // Lower bound for binary search
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound); // Upper bound for binary search
       expect(badDisputedEntry.challengeStepCompleted).to.eq.BN(1);
-      expect(badDisputedEntry.lowerBound).to.be.zero;
-      expect(badDisputedEntry.upperBound).to.eq.BN(28);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -240,19 +241,20 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       round0 = await repCycle.getDisputeRound(0);
       [goodDisputedEntry, badDisputedEntry] = round0;
       expect(goodDisputedEntry.challengeStepCompleted).to.eq.BN(2);
-      expect(goodDisputedEntry.lowerBound).to.be.zero;
-      expect(goodDisputedEntry.upperBound).to.eq.BN(28);
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound);
       expect(badDisputedEntry.challengeStepCompleted).to.eq.BN(1);
-      expect(badDisputedEntry.lowerBound).to.be.zero;
-      expect(badDisputedEntry.upperBound).to.eq.BN(28);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
 
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
       [goodDisputedEntry, badDisputedEntry] = round0;
-      expect(goodDisputedEntry.lowerBound).to.be.zero;
-      expect(goodDisputedEntry.upperBound).to.eq.BN(15);
-      expect(badDisputedEntry.lowerBound).to.be.zero;
-      expect(badDisputedEntry.upperBound).to.eq.BN(15);
+      upperBound = 31;
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -260,10 +262,11 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
       [goodDisputedEntry, badDisputedEntry] = round0;
-      expect(goodDisputedEntry.lowerBound).to.eq.BN(8);
-      expect(goodDisputedEntry.upperBound).to.eq.BN(15);
-      expect(badDisputedEntry.lowerBound).to.eq.BN(8);
-      expect(badDisputedEntry.upperBound).to.eq.BN(15);
+      upperBound = 15;
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -271,10 +274,11 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
       [goodDisputedEntry, badDisputedEntry] = round0;
-      expect(goodDisputedEntry.lowerBound).to.eq.BN(12);
-      expect(goodDisputedEntry.upperBound).to.eq.BN(15);
-      expect(badDisputedEntry.lowerBound).to.eq.BN(12);
-      expect(badDisputedEntry.upperBound).to.eq.BN(15);
+      lowerBound = 8;
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -282,10 +286,11 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
       [goodDisputedEntry, badDisputedEntry] = round0;
-      expect(goodDisputedEntry.lowerBound).to.eq.BN(12);
-      expect(goodDisputedEntry.upperBound).to.eq.BN(13);
-      expect(badDisputedEntry.lowerBound).to.eq.BN(12);
-      expect(badDisputedEntry.upperBound).to.eq.BN(13);
+      lowerBound = 12;
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -293,10 +298,24 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       await badClient.respondToBinarySearchForChallenge();
       round0 = await repCycle.getDisputeRound(0);
       [goodDisputedEntry, badDisputedEntry] = round0;
-      expect(goodDisputedEntry.lowerBound).to.eq.BN(13);
-      expect(goodDisputedEntry.upperBound).to.eq.BN(13);
-      expect(badDisputedEntry.lowerBound).to.eq.BN(13);
-      expect(badDisputedEntry.upperBound).to.eq.BN(13);
+      upperBound = 13;
+      lowerBound = 12;
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
+
+      await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      round0 = await repCycle.getDisputeRound(0);
+      [goodDisputedEntry, badDisputedEntry] = round0;
+      lowerBound = 13;
+      expect(goodDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(goodDisputedEntry.upperBound).to.eq.BN(upperBound);
+      expect(badDisputedEntry.lowerBound).to.eq.BN(lowerBound);
+      expect(badDisputedEntry.upperBound).to.eq.BN(upperBound);
 
       await forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, this);
 
@@ -323,9 +342,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("if respondToChallenge is attempted to be called multiple times, it should fail", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -370,9 +389,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("if someone tries to insert a second copy of an existing reputation as a new one, it should fail", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -398,7 +417,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
   describe("should correctly resolve dispute over nLeaves", () => {
     it("where the submitted nLeaves is lied about", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -439,7 +458,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("where the number of leaves has been incremented during an update of an existing reputation", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -464,7 +483,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
   describe("should correctly resolve dispute over JRH", () => {
     it("because a leaf in the JT is wrong", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -488,7 +507,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("with an extra leaf causing proof 1 to be too long", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -515,7 +534,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("with an extra leaf inserted and a leaf removed causing proof lengths to be right, but JT wrong", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -527,7 +546,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const badClient = new MaliciousReputationMinerWrongJRHRightNLeaves(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
         [500000],
-        [1, 11, 10, 9, 8]
+        [1, 11, 10, 9, 8],
       );
       await badClient.initialise(colonyNetwork.address);
 
@@ -546,9 +565,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("with an extra leaf causing proof 2 to be too long", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -559,7 +578,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nInactiveLogEntries).to.eq.BN(13);
 
-      const badClient = new MaliciousReputationMinerWrongJRH({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 30);
+      const badClient = new MaliciousReputationMinerWrongJRH({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 35);
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -572,9 +591,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
   describe("should correctly resolve dispute over reputation UID", () => {
     it("if an existing reputation's uniqueID is changed", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -583,7 +602,7 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nInactiveLogEntries).to.eq.BN(13);
 
-      const badClient = new MaliciousReputationMinerWrongUID({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 12, 0xfffffffff);
+      const badClient = new MaliciousReputationMinerWrongUID({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 15, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
@@ -617,9 +636,9 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
     it("if a new reputation's uniqueID is wrong", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
+      await setupClaimedExpenditure({ colonyNetwork, colony: metaColony, skillId: localSkillId });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -682,30 +701,25 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
       const fundsRequired = INT128_MAX.add(new BN(1000000000000).muln(2)).add(new BN(1000000000).muln(2));
       await fundColonyWithTokens(metaColony, clnyToken, fundsRequired);
 
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
-        skillId: GLOBAL_SKILL_ID,
+        skillId: localSkillId,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout: 1000000000000,
-        managerRating: 2,
-        workerRating: 2,
         worker: accounts[4],
       });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const workerPayout = INT128_MAX.sub(new BN(1000000000000));
-      await setupFinalizedTask({
+      await setupClaimedExpenditure({
         colonyNetwork,
         colony: metaColony,
-        skillId: GLOBAL_SKILL_ID,
+        skillId: localSkillId,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
-        workerPayout,
-        managerRating: 2,
-        workerRating: 2,
+        workerPayout: INT128_MAX.sub(new BN(1000000000000)),
         worker: accounts[4],
       });
 
@@ -723,8 +737,8 @@ contract("Reputation Mining - types of disagreement", (accounts) => {
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
-        17,
-        toBN("170141183460469231731687302715884105727").mul(toBN(-1))
+        20,
+        toBN("170141183460469231731687302715884105727").mul(toBN(-1)),
       );
       await badClient.initialise(colonyNetwork.address);
 

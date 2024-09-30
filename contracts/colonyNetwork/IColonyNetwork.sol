@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,18 +16,16 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.8.20; // ignore-swc-103
+pragma solidity >=0.8.25; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import "./../common/IRecovery.sol";
-import "./../common/IBasicMetaTransaction.sol";
-import "./../common/IMulticall.sol";
+import { IRecovery } from "./../common/IRecovery.sol";
+import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
+import { IMulticall } from "./../common/IMulticall.sol";
 
-import "./ColonyNetworkDataTypes.sol";
-
+import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
 
 interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
-
   /// @notice Query if a contract implements an interface
   /// @param _interfaceID The interface identifier, as specified in ERC-165
   /// @dev Interface identification is specified in ERC-165.
@@ -54,20 +53,24 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     address _colony,
     uint128 _nUpdates,
     uint128 _nPreviousUpdates
-    ) external;
+  ) external;
 
   /// @notice Get a replacement log entry (if set) for the log entry `_id` in the mining cycle that was at the address `_reputationMiningCycle`.
   /// @param _reputationMiningCycle The address of the reputation mining cycle we are asking about
   /// @param _id The log entry number we wish to see if there is a replacement for
   /// @return _reputationLogEntry ReputationLogEntry instance with the details of the log entry (if it exists)
-  function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) external view returns
-    (ReputationLogEntry memory _reputationLogEntry);
+  function getReplacementReputationUpdateLogEntry(
+    address _reputationMiningCycle,
+    uint256 _id
+  ) external view returns (ReputationLogEntry memory _reputationLogEntry);
 
   /// @notice Get whether any replacement log entries have been set for the supplied reputation mining cycle.
   /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
   /// @param _reputationMiningCycle The reputation mining cycle address we want to know if any entries have been replaced in.
   /// @return _exists Boolean indicating whether there is a replacement log
-  function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) external view returns (bool _exists);
+  function getReplacementReputationUpdateLogsExist(
+    address _reputationMiningCycle
+  ) external view returns (bool _exists);
 
   /// @notice Get the Meta Colony address.
   /// @return _colonyAddress The Meta colony address, if no colony was found, returns 0x0
@@ -82,8 +85,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _addressIsColony true if specified address is a colony, otherwise false
   function isColony(address _colony) external view returns (bool _addressIsColony);
 
-  /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`.
-  /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`.
+  /// @notice Adds a new skill to the domain or local skills tree, under skill `_parentSkillId`.
   /// Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`.
   /// @dev Errors if the parent skill does not exist or if this is called by an unauthorised sender.
   /// @param _parentSkillId Id of the skill under which the new skill will be added. If 0, a global skill is added with no parent.
@@ -98,11 +100,13 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @notice Set deprecation status for a skill
   /// @param _skillId Id of the skill
   /// @param _deprecated Deprecation status
+  /// @dev Currently disabled, and will error if called even by a colony
   /// @return _changed Whether the deprecated state was changed
   function deprecateSkill(uint256 _skillId, bool _deprecated) external returns (bool _changed);
 
   /// @notice Mark a skill as deprecated which stops new tasks and payments from using it.
   /// @dev This function is deprecated and will be removed in a future release
+  /// @dev Currently disabled, and will error if called even by a colony
   /// @param _skillId Id of the skill
   function deprecateSkill(uint256 _skillId) external;
 
@@ -110,7 +114,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _rootLocalSkillId The root local skill
   function initialiseRootLocalSkill() external returns (uint256 _rootLocalSkillId);
 
-  /// @notice Adds a reputation update entry to log.
+  /// @notice Adds a reputation update entry to the log.
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or.
   /// @param _user The address of the user for the reputation update
   /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
@@ -154,8 +158,13 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _orbitdb DEPRECATED Currently a no-op
   /// @param _useExtensionManager DEPRECATED Currently a no-op
   /// @return _colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _orbitdb, bool _useExtensionManager)
-    external returns (address _colonyAddress);
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _orbitdb,
+    bool _useExtensionManager
+  ) external returns (address _colonyAddress);
 
   /// @notice Creates a new colony in the network, with an optional ENS name
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
@@ -163,8 +172,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _version The version of colony to deploy (pass 0 for the current version)
   /// @param _colonyName The label to register (if null, no label is registered)
   /// @return _colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName)
-    external returns (address _colonyAddress);
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName
+  ) external returns (address _colonyAddress);
 
   /// @notice Creates a new colony in the network, with an optional ENS name
   /// @dev For the colony to mint tokens, token ownership must be transferred to the new colony
@@ -174,8 +186,12 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _metadata The metadata associated with the new colony
   /// @return _colonyAddress Address of the newly created colony
   /// @dev We expect this function to only be used by the dapp
-  function createColony(address _tokenAddress, uint256 _version, string memory _colonyName, string memory _metadata)
-    external returns (address _colonyAddress);
+  function createColony(
+    address _tokenAddress,
+    uint256 _version,
+    string memory _colonyName,
+    string memory _metadata
+  ) external returns (address _colonyAddress);
 
   /// @notice Creates a new colony in the network, possibly with a token and token authority,
   /// with an optional ENS name
@@ -198,8 +214,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     uint256 _version,
     string memory _colonyName,
     string memory _metadata
-  )
-    external returns (address token, address colony);
+  ) external returns (address token, address colony);
+
+  /// @notice Pseudo-randomly generates a salt used for colony creation
+  /// @return salt The generated salt
+  function getColonyCreationSalt() external view returns (bytes32 salt);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
   /// Allowed to be called by the Meta Colony only.
@@ -227,43 +246,74 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _parentSkillIndex Index of the `skill.parents` array to get
   /// Note that not all parent skill ids are stored here. See `Skill.parents` member for definition on which parents are stored
   /// @return _parentSkillId Skill Id of the requested parent skill
-  function getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex) external view returns (uint256 _parentSkillId);
+  function getParentSkillId(
+    uint256 _skillId,
+    uint256 _parentSkillIndex
+  ) external view returns (uint256 _parentSkillId);
 
   /// @notice Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.
   /// @param _skillId Id of the skill
   /// @param _childSkillIndex Index of the `skill.children` array to get
   /// @return _childSkillId Skill Id of the requested child skill
-  function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) external view returns (uint256 _childSkillId);
+  function getChildSkillId(
+    uint256 _skillId,
+    uint256 _childSkillIndex
+  ) external view returns (uint256 _childSkillId);
 
   /// @notice Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle
   /// is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to.
   /// @param _active Whether the user wants the active or inactive reputation mining cycle
   /// @return _repMiningCycleAddress address of active or inactive ReputationMiningCycle
-  function getReputationMiningCycle(bool _active) external view returns (address _repMiningCycleAddress);
+  function getReputationMiningCycle(
+    bool _active
+  ) external view returns (address _repMiningCycleAddress);
 
   /// @notice Calculate raw miner weight in WADs.
   /// @param _timeStaked Amount of time (in seconds) that the miner has staked their CLNY
   /// @param _submissonIndex Index of reputation hash submission (between 0 and 11)
   /// @return _minerWeight The weight of miner reward
-  function calculateMinerWeight(uint256 _timeStaked, uint256 _submissonIndex) external pure returns (uint256 _minerWeight);
+  function calculateMinerWeight(
+    uint256 _timeStaked,
+    uint256 _submissonIndex
+  ) external pure returns (uint256 _minerWeight);
 
   /// @notice Get the `Resolver` address for Colony contract version `_version`.
   /// @param _version The Colony contract version
   /// @return _resolverAddress Address of the `Resolver` contract
-  function getColonyVersionResolver(uint256 _version) external view returns (address _resolverAddress);
+  function getColonyVersionResolver(
+    uint256 _version
+  ) external view returns (address _resolverAddress);
 
   /// @notice Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
   /// @param _newHash The reputation root hash
   /// @param _newNLeaves The updated leaves count value
   /// @param _stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-  function setReputationRootHash(bytes32 _newHash, uint256 _newNLeaves, address[] memory _stakers) external;
+  function setReputationRootHash(
+    bytes32 _newHash,
+    uint256 _newNLeaves,
+    address[] memory _stakers
+  ) external;
 
   /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`.
   function startNextCycle() external;
 
   /// @notice Creates initial inactive reputation mining cycle.
-  function initialiseReputationMining() external;
+  /// @dev Only callable from metacolony
+  /// @param miningChainId The chainId of the chain the mining cycle is being created on
+  /// Can either be this chain or another chain, and the function will behave differently depending
+  /// on which is the case.
+  /// @param newHash The root hash of the reputation state tree
+  /// @param newNLeaves The number of leaves in the state tree
+  function initialiseReputationMining(
+    uint256 miningChainId,
+    bytes32 newHash,
+    uint256 newNLeaves
+  ) external;
+
+  /// @notice Returns the chainId the network is expecting reputation mining to be one
+  /// @return reputationMiningChainId The chainId
+  function getMiningChainId() external view returns (uint256 reputationMiningChainId);
 
   /// @notice Get the root hash of the current reputation state tree.
   /// @return rootHash The current Reputation Root Hash
@@ -315,7 +365,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @notice Reverse lookup a username from an address.
   /// @param _addr The address we wish to find the corresponding ENS domain for (if any)
   /// @return _domain A string containing the colony-based ENS name corresponding to addr
-  function lookupRegisteredENSDomain(address _addr) external view returns(string memory _domain);
+  function lookupRegisteredENSDomain(address _addr) external view returns (string memory _domain);
 
   /// @notice Returns the address the supplied node resolves do, if we are the resolver.
   /// @param _node The namehash of the ENS address being requested
@@ -364,13 +414,19 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _version Version of the extension
   /// @return _resolver The address of the deployed resolver
-  function getExtensionResolver(bytes32 _extensionId, uint256 _version) external view returns (address _resolver);
+  function getExtensionResolver(
+    bytes32 _extensionId,
+    uint256 _version
+  ) external view returns (address _resolver);
 
   /// @notice Get an extension's installation.
   /// @param _extensionId keccak256 hash of the extension name, used as an indentifier
   /// @param _colony Address of the colony the extension is installed in
   /// @return _installation The address of the installed extension
-  function getExtensionInstallation(bytes32 _extensionId, address _colony) external view returns (address _installation);
+  function getExtensionInstallation(
+    bytes32 _extensionId,
+    address _colony
+  ) external view returns (address _installation);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100.
   /// @return _feeInverse The inverse of the network fee
@@ -442,7 +498,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _decimals The number of decimal places that 1 user-facing token can be divided up in to
   /// In the case of ETH, and most tokens, this is 18.
   /// @return _token The address of the newly deployed token
-  function deployTokenViaNetwork(string memory _name, string memory _symbol, uint8 _decimals) external returns (address _token);
+  function deployTokenViaNetwork(
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals
+  ) external returns (address _token);
 
   /// @notice Called to deploy a token authority
   /// @dev This is more expensive than deploying a token directly, but is able to be done via
@@ -451,7 +511,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @param _colony The address of the colony in control of the token
   /// @param _allowedToTransfer An array of addresses that are allowed to transfer the token even if it's locked
   /// @return _tokenAuthority The address of the newly deployed TokenAuthority
-  function deployTokenAuthority(address _token, address _colony, address[] memory _allowedToTransfer) external returns (address _tokenAuthority);
+  function deployTokenAuthority(
+    address _token,
+    address _colony,
+    address[] memory _allowedToTransfer
+  ) external returns (address _tokenAuthority);
 
   /// @notice Called to give or remove another address's permission to mine on your behalf
   /// @param _delegate The address you're giving or removing permission from
@@ -463,4 +527,103 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _delegator The address they are allowed to mine on behalf of
   function getMiningDelegator(address _delegate) external view returns (address _delegator);
 
+  // @notice Called to set the address of the colony bridge contract
+  /// @param _bridgeAddress The address of the bridge
+  function setColonyBridgeAddress(address _bridgeAddress) external;
+
+  /// @notice Called to get the next bridge in the list after bridge _bridgeAddress
+  /// @return bridge The address of the bridge to the mining chain, if set
+  function getColonyBridgeAddress() external view returns (address bridge);
+
+  /// @notice Update the reputation on a foreign chain from the mining chain
+  /// @dev Should error if called by anyone other than the known bridge from the mining chain
+  /// @param newHash The new root hash
+  /// @param newNLeaves The new nLeaves in the root hash
+  /// @param nonce The nonce to ensure these txs can't be replayed
+  function setReputationRootHashFromBridge(
+    bytes32 newHash,
+    uint256 newNLeaves,
+    uint256 nonce
+  ) external;
+
+  /// @notice Initiate a cross-chain update of the current reputation state
+  /// @param chainId The chainid we want to bridge to
+  function bridgeCurrentRootHash(uint256 chainId) external;
+
+  /// @notice Called to re-send the bridging transaction for a skill to the
+  /// @param skillId The skillId we're bridging the creation of
+  function bridgeSkillIfNotMiningChain(uint256 skillId) external;
+
+  /// @notice Function called by bridge transactions to add a new skill
+  /// @param _parentSkillId The parent id of the new skill
+  /// @param _skillCount The number of the new skill being created
+  function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount) external;
+
+  /// @notice Called to add a bridged skill that wasn't next when it was bridged,
+  /// but now is
+  /// @param _skillId The skillId of the skill being bridged
+  function addPendingSkill(uint256 _skillId) external;
+
+  /// @notice Called to get the information about a skill that has been bridged out of order
+  /// @param _chainId The chainId we're bridging from
+  /// @param _skillCount The skill count
+  /// @return parentId The parent id of the skill being added
+  function getPendingSkillAddition(
+    uint256 _chainId,
+    uint256 _skillCount
+  ) external view returns (uint256 parentId);
+
+  /// @notice Get the (currently bridged) skill count of another chain
+  /// @param _chainId The chainid of foreign chain
+  /// @return skillCount The skillCount of the corresponding chain
+  function getBridgedSkillCounts(uint256 _chainId) external view returns (uint256 skillCount);
+
+  /// @notice Adds a reputation update entry to log.
+  /// @dev Errors if it is called by anyone but a known bridge
+  /// @param _colony The colony the reputation is being awarded in
+  /// @param _user The address of the user for the reputation update
+  /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
+  /// @param _skillId The skill for the reputation update
+  /// @param _updateNumber The counter used for ordering bridged updates
+  function addReputationUpdateLogFromBridge(
+    address _colony,
+    address _user,
+    int _amount,
+    uint _skillId,
+    uint256 _updateNumber
+  ) external;
+
+  /// @notice Get the (currently bridged) reputation update count of a chain
+  /// @param _chainId The chainid of the chain
+  /// @param _colony The colony being queried
+  /// @return bridgedReputationCount The bridge reputation count of the corresponding chain
+  /// @dev  On the non-mining chain, this tracks the number of reputation updates that have either been bridged, or attempted to
+  /// be bridged (and failed, and are now pending bridging). On the mining chain, it tracks how many have been successfully bridged
+  /// and added to the log.
+  function getBridgedReputationUpdateCount(
+    uint256 _chainId,
+    address _colony
+  ) external view returns (uint256 bridgedReputationCount);
+
+  /// @notice Try to bridge a reputation update that (previously) failed
+  /// @param _colony The colony being queried
+  /// @param _updateNumber the emission index to bridge
+  function bridgePendingReputationUpdate(address _colony, uint256 _updateNumber) external;
+
+  /// @notice Get the details of a reputation update that was bridged but was not added to the log because it was
+  /// bridged out of order
+  /// @param _chainId The chainId the update was bridged from
+  /// @param _colony The colony being queried
+  /// @param _updateNumber the updatenumber being queries
+  /// @return update The update stored for that chain/colony/updateNumber
+  function getPendingReputationUpdate(
+    uint256 _chainId,
+    address _colony,
+    uint256 _updateNumber
+  ) external view returns (PendingReputationUpdate memory update);
+
+  /// @notice Try to emit the next reputation update that was bridged but previously failed, if any
+  /// @param _chainId The chainId the update was bridged from
+  /// @param _colony The colony being queried
+  function addPendingReputationUpdate(uint256 _chainId, address _colony) external;
 }

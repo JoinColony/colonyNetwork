@@ -8,6 +8,8 @@ quickly the proposal is fulfilled, up to a maximum of half of the source domain'
 assets per week. By creating and bacing funding proposals throughout the colony,
 a steady flow of resources from the root through the domains can be achieved.
 
+_This is a Colony Extension which conforms to the extension interface found [here](icolonyextension.md)._
+
   
 ## Interface Methods
 
@@ -61,26 +63,7 @@ Create a new funding proposal
 |_token|address|The token being transferred
 
 
-### ▸ `deprecate(bool _deprecated)`
-
-Called when deprecating (or undeprecating) the extension
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
-
-
-### ▸ `finishUpgrade()`
-
-Called when upgrading the extension
-
-
-
-
-### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+### ▸ `getMetatransactionNonce(address _user):uint256 _nonce`
 
 Gets the next nonce for a meta-transaction
 
@@ -89,13 +72,13 @@ Gets the next nonce for a meta-transaction
 
 |Name|Type|Description|
 |---|---|---|
-|userAddress|address|The user's address
+|_user|address|The user's address
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|nonce|uint256|The nonce
+|_nonce|uint256|The nonce
 
 ### ▸ `getNextProposalId(uint256 _id):uint256 nextId`
 
@@ -223,13 +206,6 @@ Stake a funding proposal
 |_value|bytes|Reputation value indicating the total reputation in _domainId
 |_branchMask|uint256|The branchmask of the proof
 |_siblings|bytes32[]|The siblings of the proof
-
-
-### ▸ `uninstall()`
-
-Called when uninstalling the extension
-
-
 
 
 ### ▸ `version():uint256 _version`

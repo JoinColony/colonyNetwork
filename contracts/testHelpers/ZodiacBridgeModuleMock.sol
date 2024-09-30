@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
 interface IAvatar {
   function execTransactionFromModule(
@@ -30,11 +31,17 @@ contract ZodiacBridgeModuleMock {
   event SafeTransactionExecuted(bool success);
 
   address avatar;
-  constructor (address _avatar) {
+
+  constructor(address _avatar) {
     avatar = _avatar;
   }
 
-  function executeTransaction(address _target, uint256 _value, bytes memory _data, uint8 _operation) public {
+  function executeTransaction(
+    address _target,
+    uint256 _value,
+    bytes memory _data,
+    uint8 _operation
+  ) public {
     require(_operation == 0, "operation-must-be-zero");
     bool success = IAvatar(avatar).execTransactionFromModule(_target, _value, _data, _operation);
     emit SafeTransactionExecuted(success);

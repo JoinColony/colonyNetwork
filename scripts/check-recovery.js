@@ -21,10 +21,12 @@ function correctRecoveryModifier(functionDef) {
 
 walkSync("./contracts/").forEach((contractName) => {
   // These contracts don't need to be checked, since they're not used in recovery mode
-  // Basically only Colony.sol, ColonyFunding.sol, ColonyTask.sol and ColonyPayment.sol are
+  // Basically only Colony.sol, ColonyFunding.sol, ColonyExpenditure.sol are
   // ColonyNetwork, ColonyNetworkAuction, ColonyNetworkENS, ColonyNetworkMining
   if (
     [
+      "contracts/bridging/IColonyBridge.sol",
+      "contracts/bridging/WormholeBridgeForColony.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colony/IColony.sol",
@@ -38,6 +40,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/DomainRoles.sol",
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
+      "contracts/common/EtherRouterCreate3.sol",
       "contracts/common/IEtherRouter.sol",
       "contracts/common/IMulticall.sol",
       "contracts/common/IRecovery.sol",
@@ -52,12 +55,16 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/extensions/ColonyExtensionMeta.sol",
       "contracts/extensions/EvaluatedExpenditure.sol",
       "contracts/extensions/StakedExpenditure.sol",
+      "contracts/extensions/StagedExpenditure.sol",
       "contracts/extensions/FundingQueue.sol",
+      "contracts/extensions/MultisigPermissions.sol",
       "contracts/extensions/OneTxPayment.sol",
       "contracts/extensions/ReputationBootstrapper.sol",
       "contracts/extensions/StreamingPayments.sol",
       "contracts/extensions/TokenSupplier.sol",
       "contracts/extensions/votingReputation/VotingReputation.sol",
+      "contracts/extensions/votingReputation/VotingReputationStaking.sol",
+      "contracts/extensions/votingReputation/VotingReputationStorage.sol",
       "contracts/extensions/votingReputation/VotingReputationMisalignedRecovery.sol",
       "contracts/extensions/votingReputation/IVotingReputation.sol",
       "contracts/extensions/Whitelist.sol",
@@ -77,16 +84,24 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/reputationMiningCycle/ReputationMiningCycleRespond.sol",
       "contracts/testHelpers/BridgeMock.sol",
       "contracts/testHelpers/ContractEditing.sol",
+      "contracts/testHelpers/ERC20Like.sol",
+      "contracts/testHelpers/ERC20PresetMinterPauser.sol",
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/NoLimitSubdomains.sol",
       "contracts/testHelpers/GasGuzzler.sol",
-      "contracts/testHelpers/TaskSkillEditing.sol",
+      "contracts/testHelpers/TasksPayments.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/FunctionsNotAvailableOnColony.sol",
-      "contracts/testHelpers/TestExtensions.sol",
+      "contracts/testHelpers/testExtensions/TestExtensionBase.sol",
+      "contracts/testHelpers/testExtensions/TestExtension0.sol",
+      "contracts/testHelpers/testExtensions/TestExtension1.sol",
+      "contracts/testHelpers/testExtensions/TestExtension2.sol",
+      "contracts/testHelpers/testExtensions/TestExtension3.sol",
+      "contracts/testHelpers/testExtensions/TestVotingToken.sol",
       "contracts/testHelpers/TransferTest.sol",
       "contracts/testHelpers/RequireExecuteCall.sol",
       "contracts/testHelpers/VotingReputationMisaligned.sol",
+      "contracts/testHelpers/WormholeMock.sol",
       "contracts/testHelpers/ZodiacBridgeModuleMock.sol",
       "contracts/tokenLocking/ITokenLocking.sol",
       "contracts/tokenLocking/TokenLocking.sol",
@@ -112,6 +127,11 @@ walkSync("./contracts/").forEach((contractName) => {
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter((child) => child.type === "ContractDefinition")[0];
+
+  // Skip import-only files (such as testHelpers/SafeContracts.sol)
+  if (!contract) {
+    return;
+  }
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes

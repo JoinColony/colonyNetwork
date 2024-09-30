@@ -6,11 +6,10 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const { UINT256_MAX, UINT128_MAX, WAD } = require("../../helpers/constants");
+const { UINT256_MAX, UINT128_MAX, ADDRESS_FULL, WAD } = require("../../helpers/constants");
 
 const {
   checkErrorRevert,
-  web3GetCode,
   forwardTime,
   web3GetBalance,
   makeTxAtTimestamp,
@@ -27,9 +26,10 @@ chai.use(bnChai(web3.utils.BN));
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
 const CoinMachine = artifacts.require("CoinMachine");
 const Whitelist = artifacts.require("Whitelist");
+
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 const COIN_MACHINE = soliditySha3("CoinMachine");
 
@@ -48,7 +48,9 @@ contract("Coin Machine", (accounts) => {
   const ADDRESS_ZERO = ethers.constants.AddressZero;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const cnAddress = (await EtherRouter.deployed()).address;
+
+    const etherRouter = await EtherRouter.at(cnAddress);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const extension = await CoinMachine.new();
@@ -87,18 +89,26 @@ contract("Coin Machine", (accounts) => {
       await coinMachine.deprecate(true);
       await coinMachine.uninstall();
 
-      const code = await web3GetCode(coinMachine.address);
-      expect(code).to.equal("0x");
+      const colonyAddress = await coinMachine.getColony();
+      expect(colonyAddress).to.equal(ADDRESS_FULL);
     });
 
     it("can install the extension with the extension manager", async () => {
       ({ colony } = await setupRandomColony(colonyNetwork));
       await colony.installExtension(COIN_MACHINE, version, { from: USER0 });
 
+      const extensionAddress = await colonyNetwork.getExtensionInstallation(COIN_MACHINE, colony.address);
+      const etherRouter = await EtherRouter.at(extensionAddress);
+      let resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.not.equal(ethers.constants.AddressZero);
+
       await checkErrorRevert(colony.installExtension(COIN_MACHINE, version, { from: USER0 }), "colony-network-extension-already-installed");
       await checkErrorRevert(colony.uninstallExtension(COIN_MACHINE, { from: USER1 }), "ds-auth-unauthorized");
 
       await colony.uninstallExtension(COIN_MACHINE, { from: USER0 });
+
+      resolverAddress = await etherRouter.resolver();
+      expect(resolverAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("can send unsold tokens back to the colony", async () => {
@@ -116,7 +126,7 @@ contract("Coin Machine", (accounts) => {
       await expectEvent(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, WAD, 0, ADDRESS_ZERO),
         "ExtensionInitialised",
-        []
+        [],
       );
     });
 
@@ -132,35 +142,35 @@ contract("Coin Machine", (accounts) => {
     it("cannot initialise with bad arguments", async () => {
       await checkErrorRevert(
         coinMachine.initialise(ADDRESS_ZERO, purchaseToken.address, 60, 511, 10, 10, WAD, 0, ADDRESS_ZERO),
-        "coin-machine-invalid-token"
+        "coin-machine-invalid-token",
       );
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 0, 511, 10, 10, WAD, 0, ADDRESS_ZERO),
-        "coin-machine-period-too-small"
+        "coin-machine-period-too-small",
       );
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 0, 10, 10, WAD, 0, ADDRESS_ZERO),
-        "coin-machine-window-too-small"
+        "coin-machine-window-too-small",
       );
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 512, 10, 10, WAD, 0, ADDRESS_ZERO),
-        "coin-machine-window-too-large"
+        "coin-machine-window-too-large",
       );
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 0, 10, WAD, 0, ADDRESS_ZERO),
-        "coin-machine-target-too-small"
+        "coin-machine-target-too-small",
       );
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 9, WAD, 0, ADDRESS_ZERO),
-        "coin-machine-max-too-small"
+        "coin-machine-max-too-small",
       );
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, WAD.addn(1), 0, ADDRESS_ZERO),
-        "coin-machine-limit-too-large"
+        "coin-machine-limit-too-large",
       );
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, 0, 0, ADDRESS_ZERO),
-        "coin-machine-limit-too-small"
+        "coin-machine-limit-too-small",
       );
     });
 
@@ -169,14 +179,14 @@ contract("Coin Machine", (accounts) => {
 
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, WAD, 0, ADDRESS_ZERO),
-        "coin-machine-already-initialised"
+        "coin-machine-already-initialised",
       );
     });
 
     it("cannot initialise if not root", async () => {
       await checkErrorRevert(
         coinMachine.initialise(token.address, purchaseToken.address, 60, 511, 10, 10, WAD, 0, ADDRESS_ZERO, { from: USER1 }),
-        "coin-machine-caller-not-root"
+        "coin-machine-caller-not-root",
       );
     });
 
@@ -201,7 +211,7 @@ contract("Coin Machine", (accounts) => {
         WAD.muln(200), // max per period
         WAD, // user limit percentage
         WAD, // starting price
-        ADDRESS_ZERO // whitelist address
+        ADDRESS_ZERO, // whitelist address
       );
     });
 
@@ -666,7 +676,7 @@ contract("Coin Machine", (accounts) => {
           coinMachine.buyTokens,
           [WAD.div(currentPrice).mul(WAD), { from: USER0 }],
           currentBlockTimestamp + periodLength.toNumber(),
-          this
+          this,
         );
       }
     });
@@ -882,7 +892,7 @@ contract("Coin Machine", (accounts) => {
         WAD.muln(1000),
         WAD.divn(4),
         WAD,
-        whitelist.address
+        whitelist.address,
       );
 
       const periodLength = await coinMachine.getPeriodLength();
@@ -971,7 +981,7 @@ contract("Coin Machine", (accounts) => {
         WAD.muln(200),
         WAD.divn(2),
         WAD,
-        whitelist.address
+        whitelist.address,
       );
 
       const periodLength = await coinMachine.getPeriodLength();

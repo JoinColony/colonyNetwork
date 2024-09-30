@@ -1,0 +1,432 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract IColony",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "deprecated",
+      "offset": 20,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "metatransactionNonces",
+      "offset": 0,
+      "slot": "4",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        }
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder00",
+      "offset": 0,
+      "slot": "5",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder01",
+      "offset": 0,
+      "slot": "6",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder02",
+      "offset": 0,
+      "slot": "7",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder03",
+      "offset": 0,
+      "slot": "8",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder04",
+      "offset": 0,
+      "slot": "9",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder05",
+      "offset": 0,
+      "slot": "10",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder06",
+      "offset": 0,
+      "slot": "11",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder07",
+      "offset": 0,
+      "slot": "12",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder08",
+      "offset": 0,
+      "slot": "13",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder09",
+      "offset": 0,
+      "slot": "14",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder10",
+      "offset": 0,
+      "slot": "15",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder11",
+      "offset": 0,
+      "slot": "16",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder12",
+      "offset": 0,
+      "slot": "17",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder13",
+      "offset": 0,
+      "slot": "18",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder14",
+      "offset": 0,
+      "slot": "19",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder15",
+      "offset": 0,
+      "slot": "20",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder16",
+      "offset": 0,
+      "slot": "21",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder17",
+      "offset": 0,
+      "slot": "22",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder18",
+      "offset": 0,
+      "slot": "23",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder19",
+      "offset": 0,
+      "slot": "24",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder20",
+      "offset": 0,
+      "slot": "25",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder21",
+      "offset": 0,
+      "slot": "26",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder22",
+      "offset": 0,
+      "slot": "27",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder23",
+      "offset": 0,
+      "slot": "28",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder24",
+      "offset": 0,
+      "slot": "29",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder25",
+      "offset": 0,
+      "slot": "30",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder26",
+      "offset": 0,
+      "slot": "31",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder27",
+      "offset": 0,
+      "slot": "32",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder28",
+      "offset": 0,
+      "slot": "33",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder29",
+      "offset": 0,
+      "slot": "34",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder30",
+      "offset": 0,
+      "slot": "35",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    },
+    {
+      "contract": "contracts/extensions/ColonyExtensionMeta.sol:ColonyExtensionMeta",
+      "label": "placeholder31",
+      "offset": 0,
+      "slot": "36",
+      "type": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  ]
+}

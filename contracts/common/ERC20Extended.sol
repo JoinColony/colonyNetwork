@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,10 +16,9 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20; // ignore-swc-103
+pragma solidity 0.8.25; // ignore-swc-103
 
-import "./../../lib/dappsys/erc20.sol";
-
+import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 
 abstract contract ERC20Extended is ERC20 {
   event Mint(address indexed guy, uint wad);

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,36 +16,42 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./ColonyNetworkStorage.sol";
-import "./../common/MultiChain.sol";
-import "./../common/BasicMetaTransaction.sol";
+import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
+import { MultiChain } from "./../common/MultiChain.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { DSMath } from "./../../lib/dappsys/math.sol";
 
-contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
-  function startTokenAuction(address _token) public
-  stoppable
-  auth
-  {
+contract ColonyNetworkAuction is ColonyNetworkStorage {
+  function startTokenAuction(address _token) public stoppable auth {
     require(_token != address(0x0), "colony-auction-invalid-token");
 
     uint lastAuctionTimestamp = recentAuctions[_token];
-    require(lastAuctionTimestamp == 0 || block.timestamp - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
+    require(
+      lastAuctionTimestamp == 0 || block.timestamp - lastAuctionTimestamp >= 30 days,
+      "colony-auction-start-too-soon"
+    );
 
     address clny = IMetaColony(metaColony).getToken();
     require(clny != address(0x0), "colony-auction-invalid-clny-token");
 
     uint availableTokens = ERC20Extended(_token).balanceOf(address(this));
 
-    if (_token==clny) {
+    if (_token == clny) {
       // We don't auction CLNY. We just burn it instead.
       // Note we can do this more often than every 30 days.
-      if (isXdai()){
-        // On Xdai, we can't burn bridged tokens
-        // so let's send them to the metacolony for now.
-        require(ERC20Extended(clny).transfer(metaColony, availableTokens), "colony-network-transfer-failed");
-      } else {
+      if (isMainnet()) {
         ERC20Extended(clny).burn(availableTokens);
+      } else {
+        // Elsewhere, we can't burn bridged tokens
+        // so let's send them to the metacolony for now.
+        require(
+          ERC20Extended(clny).transfer(metaColony, availableTokens),
+          "colony-network-transfer-failed"
+        );
       }
       return;
     }
@@ -58,7 +65,6 @@ contract ColonyNetworkAuction is ColonyNetworkStorage, MultiChain {
     emit AuctionCreated(address(auction), _token, availableTokens);
   }
 }
-
 
 contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   address payable public immutable colonyNetwork;
@@ -84,16 +90,16 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
   bool public finalized;
   mapping(address => uint256) metatransactionNonces;
 
-  mapping (address => uint256) public bids;
+  mapping(address => uint256) public bids;
 
-  modifier auctionNotStarted {
+  modifier auctionNotStarted() {
     // slither-disable-next-line incorrect-equality
     require(startTime == 0, "colony-auction-already-started");
     require(!started, "colony-auction-already-started");
     _;
   }
 
-  modifier auctionStartedAndOpen {
+  modifier auctionStartedAndOpen() {
     require(started, "colony-auction-not-started");
     require(startTime > 0, "colony-auction-not-started");
     // slither-disable-next-line incorrect-equality
@@ -101,7 +107,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     _;
   }
 
-  modifier auctionClosed {
+  modifier auctionClosed() {
     require(endTime > 0, "colony-auction-not-closed");
     _;
   }
@@ -111,12 +117,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     _;
   }
 
-  modifier auctionFinalized {
+  modifier auctionFinalized() {
     require(finalized, "colony-auction-not-finalized");
     _;
   }
 
-  modifier allBidsClaimed  {
+  modifier allBidsClaimed() {
     require(claimCount == bidCount, "colony-auction-not-all-bids-claimed");
     _;
   }
@@ -135,17 +141,15 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     token = ERC20Extended(_token);
   }
 
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user] += 1;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user] += 1;
   }
 
-  function start() public
-  auctionNotStarted
-  {
+  function start() public auctionNotStarted {
     quantity = token.balanceOf(address(this));
     assert(quantity > 0);
 
@@ -158,10 +162,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     emit AuctionStarted(address(token), quantity, minPrice);
   }
 
-  function remainingToEndAuction() public view
-  auctionStartedAndOpen
-  returns (uint256)
-  {
+  function remainingToEndAuction() public view auctionStartedAndOpen returns (uint256) {
     // Total amount to end the auction at the current price
     uint totalToEndAuctionAtCurrentPrice;
     // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
@@ -169,7 +170,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     if (quantity < TOKEN_MULTIPLIER && price() == minPrice) {
       totalToEndAuctionAtCurrentPrice = 1;
     } else {
-      totalToEndAuctionAtCurrentPrice = quantity * price() / TOKEN_MULTIPLIER;
+      totalToEndAuctionAtCurrentPrice = (quantity * price()) / TOKEN_MULTIPLIER;
     }
 
     uint _remainingToEndAuction = 0;
@@ -182,10 +183,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
 
   // Get the price in CLNY per 10**18 Tokens (min 1 max 1e36)
   // Starting price is 10**36, after 1 day price is 10**35, after 2 days price is 10**34 and so on
-  function price() public view
-  auctionStartedAndOpen
-  returns (uint256)
-  {
+  function price() public view auctionStartedAndOpen returns (uint256) {
     uint duration = block.timestamp - startTime;
     uint daysOpen = duration / 86400;
     if (daysOpen > 36) {
@@ -196,14 +194,12 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     //slither-disable-next-line weak-prng
     uint r = duration % 86400;
 
-    uint x = 10**(36 - daysOpen) * (864000 - 9 * r) / 864000;
+    uint x = (10 ** (36 - daysOpen) * (864000 - 9 * r)) / 864000;
     uint p = x < minPrice ? minPrice : x;
     return p;
   }
 
-  function bid(uint256 _amount) public
-  auctionStartedAndOpen
-  {
+  function bid(uint256 _amount) public auctionStartedAndOpen {
     // Adjust the amount for final bid in case that takes us over the offered quantity at current price
     require(_amount > 0, "colony-auction-invalid-bid");
     uint _remainingToEndAuction = remainingToEndAuction();
@@ -228,16 +224,16 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     bids[msgSender()] = bids[msgSender()] + amount;
     receivedTotal = receivedTotal + amount;
 
-    require(clnyToken.transferFrom(msgSender(), address(this), amount), "colony-auction-bid-transfer-failed");
+    require(
+      clnyToken.transferFrom(msgSender(), address(this), amount),
+      "colony-auction-bid-transfer-failed"
+    );
 
     emit AuctionBid(msgSender(), amount, _remainingToEndAuction - amount);
   }
 
   // Finalize the auction and set the final Token price
-  function finalize() public
-  auctionClosed
-  auctionNotFinalized
-  {
+  function finalize() public auctionClosed auctionNotFinalized {
     finalPrice = (receivedTotal * TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
@@ -245,20 +241,20 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     finalized = true;
 
     // Burn all CLNY received
-    if (isXdai()){
+    if (isMainnet()) {
+      clnyToken.burn(receivedTotal);
+    } else {
       // On Xdai, we can't burn bridged tokens
       // so let's send them to the metacolony for now.
-      require(clnyToken.transfer(metaColonyAddress, receivedTotal), "colony-network-transfer-failed");
-    } else {
-      clnyToken.burn(receivedTotal);
+      require(
+        clnyToken.transfer(metaColonyAddress, receivedTotal),
+        "colony-network-transfer-failed"
+      );
     }
     emit AuctionFinalized(finalPrice);
   }
 
-  function claim(address recipient) public
-  auctionFinalized
-  returns (bool)
-  {
+  function claim(address recipient) public auctionFinalized returns (bool) {
     uint amount = bids[recipient];
     require(amount > 0, "colony-auction-zero-bid-total");
 
@@ -287,22 +283,24 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     return true;
   }
 
-  // slither-disable-next-line suicidal
-  function destruct() public
-  auctionFinalized
-  allBidsClaimed
-  {
+  function destruct() public auctionFinalized allBidsClaimed {
     // Transfer token remainder to the network
-    uint auctionTokenBalance = token.balanceOf(address(this));
-    assert(token.transfer(colonyNetwork, auctionTokenBalance));
-    // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
-    uint auctionClnyBalance = clnyToken.balanceOf(address(this));
-    assert(clnyToken.transfer(metaColonyAddress, auctionClnyBalance));
-    // Check this contract balances in the working tokens is 0 before we kill it
-    // slither-disable-next-line incorrect-equality
-    assert(clnyToken.balanceOf(address(this)) == 0);
+    assert(token.transfer(colonyNetwork, token.balanceOf(address(this))));
+    // Check this contract balances in the token is 0 before we kill it
     // slither-disable-next-line incorrect-equality
     assert(token.balanceOf(address(this)) == 0);
-    selfdestruct(colonyNetwork);
+
+    // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
+    assert(clnyToken.transfer(metaColonyAddress, clnyToken.balanceOf(address(this))));
+    // Check this contract balances in the token is 0 before we kill it
+    // slither-disable-next-line incorrect-equality
+    assert(clnyToken.balanceOf(address(this)) == 0);
+
+    // Send ether to the metaColony
+    // slither-disable-next-line arbitrary-send-eth
+    payable(metaColonyAddress).transfer(address(this).balance);
+    // Check this contract balances in the token is 0 before we kill it
+    // slither-disable-next-line incorrect-equality
+    assert(address(this).balance == 0);
   }
 }

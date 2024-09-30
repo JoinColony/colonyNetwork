@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,34 +16,24 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
-
-
+pragma solidity 0.8.25;
 
 contract MultiChain {
-  function getChainId() public view returns (uint256) {
-    uint256 id;
-    assembly {
-        id := chainid()
-    }
-    return id;
-  }
-
   // Prefixes of 265669 indicate a private forked version of the network
   // used for testing
 
   function isXdai() internal view returns (bool) {
-    uint256 chainId = getChainId();
+    uint256 chainId = block.chainid;
     return (chainId == 100 || chainId == 265669100);
   }
 
   function isMainnet() internal view returns (bool) {
-    uint256 chainId = getChainId();
+    uint256 chainId = block.chainid;
     return (chainId == 1 || chainId == 2656691);
   }
 
   function isGoerli() internal view returns (bool) {
-    uint256 chainId = getChainId();
+    uint256 chainId = block.chainid;
     return (chainId == 5 || chainId == 2656695);
   }
 }

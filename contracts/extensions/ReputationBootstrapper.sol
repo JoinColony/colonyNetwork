@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,22 +16,21 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../../lib/dappsys/erc20.sol";
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./ColonyExtensionMeta.sol";
+import { ERC20 } from "./../../lib/dappsys/erc20.sol";
+import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
+import { ColonyDataTypes } from "./../colony/IColony.sol";
 
 // ignore-file-swc-108
 
-
 contract ReputationBootstrapper is ColonyExtensionMeta {
-
   // Constants
 
-  uint256 constant INT128_MAX = 2**127 - 1;
+  uint256 constant INT128_MAX = 2 ** 127 - 1;
   uint256 constant SECURITY_DELAY = 1 hours;
 
   // Events
@@ -54,34 +54,37 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   uint256 decayDenominator;
 
   uint256 totalPayableGrants;
-  mapping (bool => mapping (bytes32 => Grant)) grants;
-  mapping (bytes32 => uint256) committedSecrets;
+  mapping(bool => mapping(bytes32 => Grant)) grants;
+  mapping(bytes32 => uint256) committedSecrets;
 
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "reputation-bootstrapper-caller-not-root");
+    require(
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      "reputation-bootstrapper-caller-not-root"
+    );
     _;
   }
 
-  // Overrides
+  // Interface overrides
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  function identifier() public pure override returns (bytes32) {
     return keccak256("ReputationBootstrapper");
   }
 
   /// @notice Returns the version of the extension
-  function version() public override pure returns (uint256) {
-    return 2;
+  /// @return _version The extension's version number
+  function version() public pure override returns (uint256) {
+    return 5;
   }
 
   /// @notice Configures the extension
   /// @param _colony The colony in which the extension holds permissions
   function install(address _colony) public override auth {
-    require(address(colony) == address(0x0), "extension-already-installed");
+    super.install(_colony);
 
-    colony = IColony(_colony);
     token = colony.getToken();
 
     address colonyNetwork = colony.getColonyNetwork();
@@ -90,20 +93,15 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     (decayNumerator, decayDenominator) = IReputationMiningCycle(repCycle).getDecayConstant();
   }
 
-  /// @notice Called when upgrading the extension
-  function finishUpgrade() public override auth {}
-
-  /// @notice Called when deprecating (or undeprecating) the extension
-  function deprecate(bool _deprecated) public override auth {
-    deprecated = _deprecated;
-  }
-
   /// @notice Called when uninstalling the extension
   function uninstall() public override auth {
     uint256 balance = ERC20(token).balanceOf(address(this));
-    require(ERC20(token).transfer(address(colony), balance), "reputation-bootstrapper-transfer-failed");
+    require(
+      ERC20(token).transfer(address(colony), balance),
+      "reputation-bootstrapper-transfer-failed"
+    );
 
-    selfdestruct(payable(address(colony)));
+    super.uninstall();
   }
 
   // Public
@@ -112,7 +110,11 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
   /// @param _paid An array of booleans indicated pair or unpaid
   /// @param _hashedSecrets An array of (hashed) secrets
   /// @param _amounts An array of reputation amounts claimable by the secret
-  function setGrants(bool[] memory _paid, bytes32[] memory _hashedSecrets, uint256[] memory _amounts) public onlyRoot notDeprecated {
+  function setGrants(
+    bool[] memory _paid,
+    bytes32[] memory _hashedSecrets,
+    uint256[] memory _amounts
+  ) public onlyRoot notDeprecated {
     require(_paid.length == _hashedSecrets.length, "reputation-bootstrapper-invalid-arguments");
     require(_hashedSecrets.length == _amounts.length, "reputation-bootstrapper-invalid-arguments");
     uint256 balance = ERC20(token).balanceOf(address(this));
@@ -162,7 +164,10 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
     if (_paid) {
       totalPayableGrants -= grantAmount;
-      require(ERC20(token).transfer(msgSender(), grantAmount), "reputation-bootstrapper-transfer-failed");
+      require(
+        ERC20(token).transfer(msgSender(), grantAmount),
+        "reputation-bootstrapper-transfer-failed"
+      );
     }
 
     uint256 decayEpochs = (block.timestamp - grantTimestamp) / decayPeriod;
@@ -171,14 +176,14 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     // This algorithm successively doubles the decay factor while halving the number of epochs
     // This allows us to perform the decay in O(log(n)) time
     // For example, a decay of 50 epochs would be applied as (k**2)(k**16)(k**32)
-    while (decayEpochs > 0){
+    while (decayEpochs > 0) {
       // slither-disable-next-line weak-prng
       if (decayEpochs % 2 >= 1) {
         // slither-disable-next-line divide-before-multiply
-        grantAmount = grantAmount * adjustedNumerator / decayDenominator;
+        grantAmount = (grantAmount * adjustedNumerator) / decayDenominator;
       }
       // slither-disable-next-line divide-before-multiply
-      adjustedNumerator = adjustedNumerator * adjustedNumerator / decayDenominator;
+      adjustedNumerator = (adjustedNumerator * adjustedNumerator) / decayDenominator;
       decayEpochs >>= 1;
     }
 
@@ -187,7 +192,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
     emit GrantClaimed(msgSender(), grantAmount, _paid);
   }
 
-// View
+  // View
 
   function getToken() external view returns (address) {
     return token;

@@ -1,4 +1,5 @@
 {
+  "root": true,
   "extends": "@colony/eslint-config-colony",
   "env": {
     "node": true,
@@ -9,8 +10,18 @@
     "assert": true,
     "contract": true
   },
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "project" : "./tsconfig.json"
+      },
+      "node": {
+        "extensions": [".js", ".ts", ".tsx"]
+      }
+    }
+  },
   "rules": {
-    "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"]}],
+    "import/no-extraneous-dependencies": [2, {"devDependencies": true}],
     "max-len": [2, { "code": 150, "ignoreComments": true }],
     "prettier/prettier": ["error", {"printWidth": 150}],
     "import/named": "off",
@@ -19,16 +30,40 @@
     "no-unused-expressions": "off",
     "eslint-comments/no-unlimited-disable": "off",
     "no-await-in-loop": "off",
+    "no-underscore-dangle": "off",
     "no-trailing-spaces": "error",
     "no-multi-spaces": ["error", {"ignoreEOLComments": true}],
     "no-only-tests/no-only-tests": ["error", {"block": ["contract", "it"], "focus": ["only"]}],
     "eslint-comments/disable-enable-pair": ["error", {"allowWholeFile": true}],
-    "space-infix-ops": ["error"]
+    "space-infix-ops": ["error"],
+    "no-restricted-syntax": "off",
+    "import/no-unresolved": "off", // This is handled by the typescript resolver
+    "import/no-relative-packages": "off", // Required for monorepo-esque structure
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "jsx": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+   ]
   },
   "parserOptions": {
     "ecmaVersion": 2018
   },
   "plugins": [
     "no-only-tests"
+  ],
+  "overrides": [
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "plugins": [
+        "@typescript-eslint"
+      ],
+      "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+      "parser": "@typescript-eslint/parser"
+    }
   ]
 }

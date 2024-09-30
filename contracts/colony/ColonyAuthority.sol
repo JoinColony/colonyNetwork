@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,12 +16,12 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 
-import "./../common/CommonAuthority.sol";
-import "./ColonyDataTypes.sol";
+import { CommonAuthority } from "./../common/CommonAuthority.sol";
+import { ColonyDataTypes } from "./ColonyDataTypes.sol";
 
-
+// prettier-ignore
 contract ColonyAuthority is CommonAuthority {
   uint8 constant FUNDING_ROLE = uint8(ColonyDataTypes.ColonyRole.Funding);
   uint8 constant ADMINISTRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Administration);
@@ -33,17 +34,17 @@ contract ColonyAuthority is CommonAuthority {
   address internal colony;
 
   constructor(address _colony) CommonAuthority(_colony) {
-    require(_colony  != address(0x0), "colony-authority-colony-cannot-be-zero");
+    require(_colony != address(0x0), "colony-authority-colony-cannot-be-zero");
 
     colony = _colony;
 
     // Add permissions for the Administration role
-    addRoleCapability(ADMINISTRATION_ROLE, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)");
-    addRoleCapability(ADMINISTRATION_ROLE, "addPayment(uint256,uint256,address,address,uint256,uint256,uint256)");
-    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentRecipient(uint256,uint256,uint256,address)");
-    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256,uint256,uint256)");
-    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,uint256,uint256,address,uint256)");
-    addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentRecipient(uint256,uint256,uint256,address)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256,uint256,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,uint256,uint256,address,uint256)"); // Only for versions < 14
+    addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)"); // Only for versions < 14
 
     // Add permissions for the Funding role
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
@@ -75,8 +76,6 @@ contract ColonyAuthority is CommonAuthority {
     //  Meta Colony functions
     addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
     addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
-    addRoleCapability(ROOT_ROLE, "addGlobalSkill()");
-    addRoleCapability(ROOT_ROLE, "deprecateGlobalSkill(uint256)");
 
     // Added in colony v3 (auburn-glider)
     addRoleCapability(ROOT_ROLE, "updateColonyOrbitDB(string)");
@@ -129,6 +128,12 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v10 (ginger-lwss)
     addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)");
+
+    // Added in colony v15 (hazel-lwss-2)
+    addRoleCapability(ARBITRATION_ROLE, "cancelExpenditureViaArbitration(uint256,uint256,uint256)");
+    addRoleCapability(ARBITRATION_ROLE, "finalizeExpenditureViaArbitration(uint256,uint256,uint256)");
+    addRoleCapability(ROOT_ROLE, "setColonyBridgeAddress(address)");
+    addRoleCapability(ROOT_ROLE, "initialiseReputationMining(uint256,bytes32,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

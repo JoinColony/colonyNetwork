@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,27 +16,14 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
+import { CallWithGuards } from "./../common/CallWithGuards.sol";
 
-contract RequireExecuteCall {
+contract RequireExecuteCall is CallWithGuards {
   function executeCall(address target, bytes memory action) public {
-    bool success;
-    bytes memory returndata;
-    (success, returndata) = target.call(action);
-    if (!success){
-      // Stolen shamelessly from
-      // https://ethereum.stackexchange.com/questions/83528/how-can-i-get-the-revert-reason-of-a-call-in-solidity-so-that-i-can-use-it-in-th
-      // If the _res length is less than 68, then the transaction failed silently (without a revert message)
-      if (returndata.length >= 68) {
-        assembly {
-          // Slice the sighash.
-          returndata := add(returndata, 0x04)
-        }
-        require(false, abi.decode(returndata, (string))); // All that remains is the revert string
-      }
-      require(false, "require-execute-call-reverted-with-no-error");
-    }
+    (bool success, bytes memory returndata) = callWithGuards(target, action);
+    require(success, abi.decode(returndata, (string)));
   }
 }

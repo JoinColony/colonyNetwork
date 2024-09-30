@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,15 +16,14 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental "ABIEncoderV2";
 
-import "./../../lib/dappsys/auth.sol";
-import "./../tokenLocking/TokenLockingDataTypes.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
+import { TokenLockingDataTypes } from "./../tokenLocking/TokenLockingDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
-
 
 contract TokenLockingStorage is TokenLockingDataTypes, DSAuth {
   address resolver;
@@ -32,20 +32,20 @@ contract TokenLockingStorage is TokenLockingDataTypes, DSAuth {
   address colonyNetwork;
 
   // Maps token to user to Lock struct
-  mapping (address => mapping (address => Lock)) userLocks;
+  mapping(address => mapping(address => Lock)) userLocks;
 
   // Maps token to total token lock count. If user token lock count is the same as global, that means that their tokens are unlocked.
   // If user token lock count is less than global, that means that their tokens are locked.
   // User's lock count should never be greater than total lock count.
-  mapping (address => uint256) totalLockCount;
+  mapping(address => uint256) totalLockCount;
 
   // Used for stake management ([user][token]{[colony]} => amount)
-  mapping (address => mapping (address => mapping (address => uint256))) approvals;
-  mapping (address => mapping (address => mapping (address => uint256))) obligations;
-  mapping (address => mapping (address => uint256)) totalObligations;
+  mapping(address => mapping(address => mapping(address => uint256))) approvals;
+  mapping(address => mapping(address => mapping(address => uint256))) obligations;
+  mapping(address => mapping(address => uint256)) totalObligations;
 
   // Keep track of which colony is placing which lock ([token][lockId] => colony)
-  mapping (address => mapping (uint256 => address)) lockers;
+  mapping(address => mapping(uint256 => address)) lockers;
 
   mapping(address => uint256) metatransactionNonces;
 }

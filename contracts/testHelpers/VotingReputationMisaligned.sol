@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /*
   This file is part of The Colony Network.
 
@@ -15,31 +16,45 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.20;
+pragma solidity 0.8.25;
 pragma experimental ABIEncoderV2;
 
-import "./../colonyNetwork/IColonyNetwork.sol";
-import "./../colony/ColonyRoles.sol";
-import "./../common/BasicMetaTransaction.sol";
-import "./../common/ERC20Extended.sol";
-import "./../tokenLocking/ITokenLocking.sol";
-import "./../extensions/ColonyExtension.sol";
-
+import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ColonyRoles } from "./../colony/ColonyRoles.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
 
 contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
-
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
-  event MotionStaked(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
+  event MotionStaked(
+    uint256 indexed motionId,
+    address indexed staker,
+    uint256 indexed vote,
+    uint256 amount
+  );
   event MotionVoteSubmitted(uint256 indexed motionId, address indexed voter);
   event MotionVoteRevealed(uint256 indexed motionId, address indexed voter, uint256 indexed vote);
   event MotionFinalized(uint256 indexed motionId, bytes action, bool executed);
-  event MotionEscalated(uint256 indexed motionId, address escalator, uint256 indexed domainId, uint256 indexed newDomainId);
-  event MotionRewardClaimed(uint256 indexed motionId, address indexed staker, uint256 indexed vote, uint256 amount);
+  event MotionEscalated(
+    uint256 indexed motionId,
+    address escalator,
+    uint256 indexed domainId,
+    uint256 indexed newDomainId
+  );
+  event MotionRewardClaimed(
+    uint256 indexed motionId,
+    address indexed staker,
+    uint256 indexed vote,
+    uint256 amount
+  );
   event MotionEventSet(uint256 indexed motionId, uint256 eventIndex);
 
   // Constants
-  uint256 constant UINT128_MAX = 2**128 - 1;
+  uint256 constant UINT128_MAX = 2 ** 128 - 1;
 
   uint256 constant NAY = 0;
   uint256 constant YAY = 1;
@@ -48,20 +63,25 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   uint256 constant SUBMIT_END = 1;
   uint256 constant REVEAL_END = 2;
 
-  bytes32 constant ROOT_ROLES = (
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Recovery) |
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)
-  );
+  bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
+    uint8(ColonyDataTypes.ColonyRole.Recovery)) |
+    (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
 
-  bytes4 constant CHANGE_FUNCTION_SIG = bytes4(keccak256(
-    "setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)"
-  ));
+  bytes4 constant CHANGE_FUNCTION_SIG =
+    bytes4(
+      keccak256("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)")
+    );
 
-  bytes4 constant OLD_MOVE_FUNDS_SIG = bytes4(keccak256(
-    "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"
-  ));
+  bytes4 constant OLD_MOVE_FUNDS_SIG =
+    bytes4(
+      keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)")
+    );
 
-  enum ExtensionState { Deployed, Active, Deprecated }
+  enum ExtensionState {
+    Deployed,
+    Active,
+    Deprecated
+  }
 
   // Initialization data
   ExtensionState state;
@@ -91,25 +111,29 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   uint256 revealPeriod; // Length of time for revealing votes
   uint256 escalationPeriod; // Length of time for escalating after a vote
   mapping(address => uint256) metatransactionNonces;
-  function getMetatransactionNonce(address userAddress) override public view returns (uint256 nonce){
-    return metatransactionNonces[userAddress];
+
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+    return metatransactionNonces[_user];
   }
 
-  function incrementMetatransactionNonce(address user) override internal {
-    metatransactionNonces[user]++;
+  function incrementMetatransactionNonce(address _user) internal override {
+    metatransactionNonces[_user]++;
   }
 
   // Modifiers
 
   modifier onlyRoot() {
-    require(colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root), "voting-rep-caller-not-root");
+    require(
+      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      "voting-rep-caller-not-root"
+    );
     _;
   }
 
   // Public
 
   /// @notice Returns the identifier of the extension
-  function identifier() public override pure returns (bytes32) {
+  function identifier() public pure override returns (bytes32) {
     return keccak256("VotingReputation");
   }
 
@@ -148,10 +172,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     uint256 _submitPeriod,
     uint256 _revealPeriod,
     uint256 _escalationPeriod
-  )
-    public
-    onlyRoot
-  {
+  ) public onlyRoot {
     require(state == ExtensionState.Deployed, "voting-rep-already-initialised");
 
     require(_totalStakeFraction <= WAD / 2, "voting-rep-greater-than-half-wad");
@@ -195,7 +216,16 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   }
 
   // Data structures
-  enum MotionState { Null, Staking, Submit, Reveal, Closed, Finalizable, Finalized, Failed }
+  enum MotionState {
+    Null,
+    Staking,
+    Submit,
+    Reveal,
+    Closed,
+    Finalizable,
+    Finalized,
+    Failed
+  }
 
   struct Motion {
     uint64[3] events; // For recording motion lifecycle timestamps (STAKE, SUBMIT, REVEAL)
@@ -216,12 +246,12 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
   // Storage
   uint256 motionCount;
-  mapping (uint256 => Motion) motions;
-  mapping (uint256 => mapping (address => mapping (uint256 => uint256))) stakes;
-  mapping (uint256 => mapping (address => bytes32)) voteSecrets;
+  mapping(uint256 => Motion) motions;
+  mapping(uint256 => mapping(address => mapping(uint256 => uint256))) stakes;
+  mapping(uint256 => mapping(address => bytes32)) voteSecrets;
 
-  mapping (bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
-  mapping (bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
+  mapping(bytes32 => uint256) expenditurePastVotes; // expenditure slot signature => voting power
+  mapping(bytes32 => uint256) expenditureMotionCounts; // expenditure struct signature => count
 
   // Public functions (interface)
 
@@ -234,7 +264,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   /// @param _value Reputation tree value for the root domain
   /// @param _branchMask The branchmask of the proof
   /// @param _siblings The siblings of the proof
- function createMotion(
+  function createMotion(
     uint256 _domainId,
     uint256 _childSkillIndex,
     address _altTarget,
@@ -243,10 +273,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-    notDeprecated
-  {
+  ) public notDeprecated {
     require(state == ExtensionState.Active, "voting-rep-not-active");
     require(_altTarget != address(colony), "voting-rep-alt-target-cannot-be-base-colony");
 
@@ -258,13 +285,10 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     uint256 skillId;
 
     if (ColonyRoles(target).getCapabilityRoles(action) | ROOT_ROLES == ROOT_ROLES) {
-
       // A root or unpermissioned function
       require(_domainId == 1 && _childSkillIndex == UINT256_MAX, "voting-rep-invalid-domain-id");
       skillId = colony.getDomain(1).skillId;
-
     } else {
-
       // A domain permissioned function
       skillId = colony.getDomain(_domainId).skillId;
       uint256 actionDomainSkillId = getActionDomainSkillId(_action);
@@ -288,7 +312,14 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     motion.domainId = _domainId;
     motion.skillId = skillId;
 
-    motion.skillRep = getReputationFromProof(motionCount, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.skillRep = getReputationFromProof(
+      motionCount,
+      address(0x0),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
     motion.altTarget = _altTarget;
     motion.action = _action;
 
@@ -309,9 +340,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     createMotion(1, UINT256_MAX, _altTarget, _action, _key, _value, _branchMask, _siblings);
   }
 
@@ -331,10 +360,17 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
-    createMotion(_domainId, _childSkillIndex, address(0x0), _action, _key, _value, _branchMask, _siblings);
+  ) public {
+    createMotion(
+      _domainId,
+      _childSkillIndex,
+      address(0x0),
+      _action,
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
   }
 
   /// @notice Stake on a motion
@@ -357,9 +393,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(_vote <= 1, "voting-rep-bad-vote");
     require(getMotionState(_motionId) == MotionState.Staking, "voting-rep-motion-not-staking");
@@ -371,12 +405,13 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     uint256 stakerTotalAmount = stakes[_motionId][msgSender()][_vote] + amount;
 
     require(
-      stakerTotalAmount <= getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings),
+      stakerTotalAmount <=
+        getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings),
       "voting-rep-insufficient-rep"
     );
     require(
       stakerTotalAmount >= wmul(requiredStake, userMinStakeFraction) ||
-      (motion.stakes[_vote] + amount) == requiredStake, // To prevent a residual stake from being un-stakable
+        (motion.stakes[_vote] + amount) == requiredStake, // To prevent a residual stake from being un-stakable
       "voting-rep-insufficient-stake"
     );
 
@@ -409,7 +444,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
       emit MotionEventSet(_motionId, STAKE_END);
 
-    // Move to second staking window once one side is fully staked
+      // Move to second staking window once one side is fully staked
     } else if (
       (_vote == NAY && motion.stakes[NAY] == requiredStake) ||
       (_vote == YAY && motion.stakes[YAY] == requiredStake)
@@ -428,7 +463,15 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     // Do the external bookkeeping
     tokenLocking.deposit(token, 0, true); // Faux deposit to clear any locks
     colony.obligateStake(msgSender(), motion.domainId, amount);
-    colony.transferStake(_permissionDomainId, _childSkillIndex, address(this), msgSender(), motion.domainId, amount, address(this));
+    colony.transferStake(
+      _permissionDomainId,
+      _childSkillIndex,
+      address(this),
+      msgSender(),
+      motion.domainId,
+      amount,
+      address(this)
+    );
   }
 
   /// @notice Submit a vote secret for a motion
@@ -445,14 +488,19 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Submit, "voting-rep-motion-not-open");
     require(_voteSecret != bytes32(0), "voting-rep-invalid-secret");
 
-    uint256 userRep = getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings);
+    uint256 userRep = getReputationFromProof(
+      _motionId,
+      msgSender(),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
 
     // Count reputation if first submission
     if (voteSecrets[_motionId][msgSender()] == bytes32(0)) {
@@ -487,14 +535,19 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Reveal, "voting-rep-motion-not-reveal");
     require(_vote <= 1, "voting-rep-bad-vote");
 
-    uint256 userRep = getReputationFromProof(_motionId, msgSender(), _key, _value, _branchMask, _siblings);
+    uint256 userRep = getReputationFromProof(
+      _motionId,
+      msgSender(),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
     motion.votes[_vote] += userRep;
 
     bytes32 voteSecret = voteSecrets[_motionId][msgSender()];
@@ -532,9 +585,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(getMotionState(_motionId) == MotionState.Closed, "voting-rep-motion-not-closed");
 
@@ -545,7 +596,14 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     uint256 domainId = motion.domainId;
     motion.domainId = _newDomainId;
     motion.skillId = newDomainSkillId;
-    motion.skillRep = getReputationFromProof(_motionId, address(0x0), _key, _value, _branchMask, _siblings);
+    motion.skillRep = getReputationFromProof(
+      _motionId,
+      address(0x0),
+      _key,
+      _value,
+      _branchMask,
+      _siblings
+    );
 
     uint256 loser = (motion.votes[NAY] < motion.votes[YAY]) ? NAY : YAY;
     motion.stakes[loser] -= motion.paidVoterComp;
@@ -553,8 +611,10 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     delete motion.paidVoterComp;
 
     uint256 requiredStake = getRequiredStake(_motionId);
-    motion.events[STAKE_END] = (motion.stakes[NAY] < requiredStake || motion.stakes[YAY] < requiredStake) ?
-      uint64(block.timestamp + stakePeriod) : uint64(block.timestamp);
+    motion.events[STAKE_END] = (motion.stakes[NAY] < requiredStake ||
+      motion.stakes[YAY] < requiredStake)
+      ? uint64(block.timestamp + stakePeriod)
+      : uint64(block.timestamp);
 
     motion.events[SUBMIT_END] = motion.events[STAKE_END] + uint64(submitPeriod);
     motion.events[REVEAL_END] = motion.events[SUBMIT_END] + uint64(revealPeriod);
@@ -570,23 +630,23 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
   function finalizeMotion(uint256 _motionId) public {
     Motion storage motion = motions[_motionId];
-    require(getMotionState(_motionId) == MotionState.Finalizable, "voting-rep-motion-not-finalizable");
+    require(
+      getMotionState(_motionId) == MotionState.Finalizable,
+      "voting-rep-motion-not-finalizable"
+    );
 
     assert(
       motion.stakes[YAY] == getRequiredStake(_motionId) ||
-      (motion.votes[NAY] + motion.votes[YAY]) > 0
+        (motion.votes[NAY] + motion.votes[YAY]) > 0
     );
 
     motion.finalized = true;
 
-    bool canExecute = (
-      motion.stakes[NAY] < motion.stakes[YAY] ||
-      motion.votes[NAY] < motion.votes[YAY]
-    );
+    bool canExecute = (motion.stakes[NAY] < motion.stakes[YAY] ||
+      motion.votes[NAY] < motion.votes[YAY]);
 
     if (
-      getSig(motion.action) == CHANGE_FUNCTION_SIG &&
-      getTarget(motion.altTarget) == address(colony)
+      getSig(motion.action) == CHANGE_FUNCTION_SIG && getTarget(motion.altTarget) == address(colony)
     ) {
       bytes32 structHash = hashExpenditureActionStruct(motion.action);
       expenditureMotionCounts[structHash] -= 1;
@@ -599,8 +659,9 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
       }
 
       bytes32 actionHash = hashExpenditureAction(motion.action);
-      uint256 votePower = ((motion.votes[NAY] + motion.votes[YAY]) > 0) ?
-        motion.votes[YAY] : motion.stakes[YAY];
+      uint256 votePower = ((motion.votes[NAY] + motion.votes[YAY]) > 0)
+        ? motion.votes[YAY]
+        : motion.stakes[YAY];
 
       if (expenditurePastVotes[actionHash] < votePower) {
         expenditurePastVotes[actionHash] = votePower;
@@ -613,12 +674,14 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
     if (canExecute) {
       executed = executeCall(_motionId, motion.action);
-      require(executed || failingExecutionAllowed(_motionId), "voting-execution-failed-not-one-week");
+      require(
+        executed || failingExecutionAllowed(_motionId),
+        "voting-execution-failed-not-one-week"
+      );
     }
 
     emit MotionFinalized(_motionId, motion.action, executed);
   }
-
 
   /// @notice Return whether a motion, assuming it's in the finalizable state,
   // is allowed to finalize without the call executing successfully.
@@ -651,13 +714,11 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     uint256 _childSkillIndex,
     address _staker,
     uint256 _vote
-  )
-    public
-  {
+  ) public {
     Motion storage motion = motions[_motionId];
     require(
       getMotionState(_motionId) == MotionState.Finalized ||
-      getMotionState(_motionId) == MotionState.Failed,
+        getMotionState(_motionId) == MotionState.Failed,
       "voting-rep-motion-not-claimable"
     );
 
@@ -749,7 +810,11 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   /// @param _staker The staker address
   /// @param _vote The side being supported (0 = NAY, 1 = YAY)
   /// @return The user's stake
-  function getStake(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256) {
+  function getStake(
+    uint256 _motionId,
+    address _staker,
+    uint256 _vote
+  ) public view returns (uint256) {
     return stakes[_motionId][_staker][_vote];
   }
 
@@ -775,50 +840,41 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
     // Check for valid motion Id
     if (_motionId == 0 || _motionId > motionCount) {
-
       return MotionState.Null;
 
-    // If finalized, we're done
+      // If finalized, we're done
     } else if (motion.finalized) {
-
       return MotionState.Finalized;
 
-    // Not fully staked
-    } else if (
-      motion.stakes[YAY] < requiredStake ||
-      motion.stakes[NAY] < requiredStake
-    ) {
-
+      // Not fully staked
+    } else if (motion.stakes[YAY] < requiredStake || motion.stakes[NAY] < requiredStake) {
       // Are we still staking?
       if (block.timestamp < motion.events[STAKE_END]) {
         return MotionState.Staking;
-      // If not, did the YAY side stake?
+        // If not, did the YAY side stake?
       } else if (motion.stakes[YAY] == requiredStake) {
         return MotionState.Finalizable;
-      // If not, was there a prior vote we can fall back on?
+        // If not, was there a prior vote we can fall back on?
       } else if ((motion.votes[NAY] + motion.votes[YAY]) > 0) {
         return MotionState.Finalizable;
-      // Otherwise, the motion failed
+        // Otherwise, the motion failed
       } else {
         return MotionState.Failed;
       }
 
-    // Fully staked, go to a vote
+      // Fully staked, go to a vote
     } else {
-
       if (block.timestamp < motion.events[SUBMIT_END]) {
         return MotionState.Submit;
       } else if (block.timestamp < motion.events[REVEAL_END]) {
         return MotionState.Reveal;
       } else if (
-        block.timestamp < motion.events[REVEAL_END] + escalationPeriod &&
-        motion.domainId > 1
+        block.timestamp < motion.events[REVEAL_END] + escalationPeriod && motion.domainId > 1
       ) {
         return MotionState.Closed;
       } else {
         return MotionState.Finalizable;
       }
-
     }
   }
 
@@ -837,12 +893,16 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Get the range of potential rewards for a voter on a specific motion, intended to be
   /// used when the motion is in the reveal state.
-  /// Once a motion is in the reveal state the reward is known, and getVoterRewardRange should be used.
+  /// Once a motion is in the reveal state and the reward is known, getVoterReward should be used.
   /// @param _motionId The id of the motion
   /// @param _voterRep The reputation the voter has in the domain
   /// @param _voterAddress The address the user will be voting as
   /// @return The voter reward
-  function getVoterRewardRange(uint256 _motionId, uint256 _voterRep, address _voterAddress) public view returns (uint256, uint256) {
+  function getVoterRewardRange(
+    uint256 _motionId,
+    uint256 _voterRep,
+    address _voterAddress
+  ) public view returns (uint256, uint256) {
     Motion storage motion = motions[_motionId];
     // The minimum reward is when everyone has voted, with a total weight of motion.skillRep
     uint256 minFractionUserReputation = wdiv(_voterRep, motion.skillRep);
@@ -869,11 +929,17 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   /// @param _staker The staker's address
   /// @param _vote The vote (0 = NAY, 1 = YAY)
   /// @return The staker reward and the reputation penalty (if any)
-  function getStakerReward(uint256 _motionId, address _staker, uint256 _vote) public view returns (uint256, uint256) {
+  function getStakerReward(
+    uint256 _motionId,
+    address _staker,
+    uint256 _vote
+  ) public view returns (uint256, uint256) {
     Motion storage motion = motions[_motionId];
 
     uint256 totalSideStake = motion.stakes[_vote] + motion.pastVoterComp[_vote];
-    if (totalSideStake == 0) { return (0, 0); }
+    if (totalSideStake == 0) {
+      return (0, 0);
+    }
 
     uint256 stakeFraction = wdiv(stakes[_motionId][_staker][_vote], totalSideStake);
 
@@ -884,10 +950,9 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
     // Went to a vote, use vote to determine reward or penalty
     if (motion.votes[NAY] + motion.votes[YAY] > 0) {
-
       uint256 loserStake;
       uint256 winnerStake;
-      if (motion.votes[YAY] > motion.votes[NAY]){
+      if (motion.votes[YAY] > motion.votes[NAY]) {
         loserStake = motion.stakes[NAY];
         winnerStake = motion.stakes[YAY];
       } else {
@@ -908,37 +973,29 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
         repPenalty = realStake - stakerReward;
       }
 
-    // Determine rewards based on stakes alone
+      // Determine rewards based on stakes alone
     } else {
       assert(motion.paidVoterComp == 0);
       uint256 requiredStake = getRequiredStake(_motionId);
 
       // Your side fully staked, receive 10% (proportional) of loser's stake
-      if (
-        motion.stakes[_vote] == requiredStake &&
-        motion.stakes[flip(_vote)] < requiredStake
-      ) {
-
+      if (motion.stakes[_vote] == requiredStake && motion.stakes[flip(_vote)] < requiredStake) {
         uint256 loserStake = motion.stakes[flip(_vote)];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, (requiredStake + totalPenalty));
 
-      // Opponent's side fully staked, pay 10% penalty
+        // Opponent's side fully staked, pay 10% penalty
       } else if (
-        motion.stakes[_vote] < requiredStake &&
-        motion.stakes[flip(_vote)] == requiredStake
+        motion.stakes[_vote] < requiredStake && motion.stakes[flip(_vote)] == requiredStake
       ) {
-
         uint256 loserStake = motion.stakes[_vote];
         uint256 totalPenalty = wmul(loserStake, WAD / 10);
         stakerReward = wmul(stakeFraction, (loserStake - totalPenalty));
         repPenalty = realStake - stakerReward;
 
-      // Neither side fully staked (or no votes were revealed), no reward or penalty
+        // Neither side fully staked (or no votes were revealed), no reward or penalty
       } else {
-
         stakerReward = realStake;
-
       }
     }
 
@@ -970,9 +1027,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     bytes memory _value,
     uint256 _branchMask,
     bytes32[] memory _siblings
-  )
-    internal view returns (uint256)
-  {
+  ) internal view returns (uint256) {
     bytes32 impliedRoot = getImpliedRootHashKey(_key, _value, _branchMask, _siblings);
     require(motions[_motionId].rootHash == impliedRoot, "voting-rep-invalid-root-hash");
 
@@ -1012,11 +1067,11 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     address to = getTarget(motions[motionId].altTarget);
 
     assembly {
-              // call contract at address a with input mem[in…(in+insize))
-              //   providing g gas and v wei and output area mem[out…(out+outsize))
-              //   returning 0 on error (eg. out of gas) and 1 on success
+      // call contract at address a with input mem[in…(in+insize))
+      //   providing g gas and v wei and output area mem[out…(out+outsize))
+      //   returning 0 on error (eg. out of gas) and 1 on success
 
-              // call(g,   a,  v, in,                insize,        out, outsize)
+      //         call(g,   a,  v, in,                insize,        out, outsize)
       success := call(gas(), to, 0, add(action, 0x20), mload(action), 0, 0)
     }
   }
@@ -1060,10 +1115,10 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
     }
   }
 
-  function createClaimDelayAction(bytes memory action, uint256 value)
-    public
-    returns (bytes memory)
-  {
+  function createClaimDelayAction(
+    bytes memory action,
+    uint256 value
+  ) public returns (bytes memory) {
     // See https://solidity.readthedocs.io/en/develop/abi-spec.html#use-of-dynamic-types
     //  for documentation on how the action `bytes` is encoded
     // In brief, the first byte32 is the length of the array. Then we have
@@ -1088,50 +1143,47 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
     // If we are editing the main expenditure struct
     if (storageSlot == 25) {
-
       bytes memory mainClaimDelayAction = new bytes(4 + 32 * 11); // 356 bytes
       assembly {
-          mstore(add(mainClaimDelayAction, 0x20), functionSignature)
-          mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
-          mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
-          mstore(add(mainClaimDelayAction, 0x64), expenditureId)
-          mstore(add(mainClaimDelayAction, 0x84), 25)     // expenditure storage slot
-          mstore(add(mainClaimDelayAction, 0xa4), 0xe0)   // mask location
-          mstore(add(mainClaimDelayAction, 0xc4), 0x120)  // keys location
-          mstore(add(mainClaimDelayAction, 0xe4), value)
-          mstore(add(mainClaimDelayAction, 0x104), 1)     // mask length
-          mstore(add(mainClaimDelayAction, 0x124), 1)     // offset
-          mstore(add(mainClaimDelayAction, 0x144), 1)     // keys length
-          mstore(add(mainClaimDelayAction, 0x164), 4)     // globalClaimDelay offset
+        mstore(add(mainClaimDelayAction, 0x20), functionSignature)
+        mstore(add(mainClaimDelayAction, 0x24), permissionDomainId)
+        mstore(add(mainClaimDelayAction, 0x44), childSkillIndex)
+        mstore(add(mainClaimDelayAction, 0x64), expenditureId)
+        mstore(add(mainClaimDelayAction, 0x84), 25) // expenditure storage slot
+        mstore(add(mainClaimDelayAction, 0xa4), 0xe0) // mask location
+        mstore(add(mainClaimDelayAction, 0xc4), 0x120) // keys location
+        mstore(add(mainClaimDelayAction, 0xe4), value)
+        mstore(add(mainClaimDelayAction, 0x104), 1) // mask length
+        mstore(add(mainClaimDelayAction, 0x124), 1) // offset
+        mstore(add(mainClaimDelayAction, 0x144), 1) // keys length
+        mstore(add(mainClaimDelayAction, 0x164), 4) // globalClaimDelay offset
       }
       return mainClaimDelayAction;
 
-    // If we are editing an expenditure slot
+      // If we are editing an expenditure slot
     } else {
-
       bytes memory slotClaimDelayAction = new bytes(4 + 32 * 13); // 420 bytes
       uint256 expenditureSlot;
 
       assembly {
-          expenditureSlot := mload(add(action, 0x184))
+        expenditureSlot := mload(add(action, 0x184))
 
-          mstore(add(slotClaimDelayAction, 0x20), functionSignature)
-          mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
-          mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
-          mstore(add(slotClaimDelayAction, 0x64), expenditureId)
-          mstore(add(slotClaimDelayAction, 0x84), 26)     // expenditureSlot storage slot
-          mstore(add(slotClaimDelayAction, 0xa4), 0xe0)   // mask location
-          mstore(add(slotClaimDelayAction, 0xc4), 0x140)  // keys location
-          mstore(add(slotClaimDelayAction, 0xe4), value)
-          mstore(add(slotClaimDelayAction, 0x104), 2)     // mask length
-          mstore(add(slotClaimDelayAction, 0x124), 0)     // mapping
-          mstore(add(slotClaimDelayAction, 0x144), 1)     // offset
-          mstore(add(slotClaimDelayAction, 0x164), 2)     // keys length
-          mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
-          mstore(add(slotClaimDelayAction, 0x1a4), 1)     // claimDelay offset
+        mstore(add(slotClaimDelayAction, 0x20), functionSignature)
+        mstore(add(slotClaimDelayAction, 0x24), permissionDomainId)
+        mstore(add(slotClaimDelayAction, 0x44), childSkillIndex)
+        mstore(add(slotClaimDelayAction, 0x64), expenditureId)
+        mstore(add(slotClaimDelayAction, 0x84), 26) // expenditureSlot storage slot
+        mstore(add(slotClaimDelayAction, 0xa4), 0xe0) // mask location
+        mstore(add(slotClaimDelayAction, 0xc4), 0x140) // keys location
+        mstore(add(slotClaimDelayAction, 0xe4), value)
+        mstore(add(slotClaimDelayAction, 0x104), 2) // mask length
+        mstore(add(slotClaimDelayAction, 0x124), 0) // mapping
+        mstore(add(slotClaimDelayAction, 0x144), 1) // offset
+        mstore(add(slotClaimDelayAction, 0x164), 2) // keys length
+        mstore(add(slotClaimDelayAction, 0x184), expenditureSlot)
+        mstore(add(slotClaimDelayAction, 0x1a4), 1) // claimDelay offset
       }
       return slotClaimDelayAction;
-
     }
   }
 }
