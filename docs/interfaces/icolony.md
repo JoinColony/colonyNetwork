@@ -393,6 +393,25 @@ Emit a positive skill reputation update. Available only to Root role holders
 |_amount|int256|The (positive) amount of reputation to gain
 
 
+### ▸ `exchangeProxyHeldTokensViaLiFi(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _txdata, uint256 _value, uint256 _chainId, address _token, uint256 _amount)`
+
+Exchange funds between two tokens, potentially between chains The tokens being swapped are held by a proxy contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which I have the permission to take this action
+|_childSkillIndex|uint256|The child index in `_permissionDomainId` where we can find `_domainId`
+|_domainId|uint256|Id of the domain
+|_txdata|bytes|Transaction data for the exchange
+|_value|uint256|Value of the transaction
+|_chainId|uint256|The chainId of the token
+|_token|address|Address of the token. If the native token is being swapped, can be anything and _amount should be 0.
+|_amount|uint256|Amount of tokens to exchange
+
+
 ### ▸ `exchangeTokensViaLiFi(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _txdata, uint256 _value, address _token, uint256 _amount)`
 
 Exchange funds between two tokens, potentially between chains

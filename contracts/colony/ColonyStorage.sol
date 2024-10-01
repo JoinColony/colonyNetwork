@@ -254,7 +254,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return
-      (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
+      // TODO: Is there a reason we didn't have (src==address(this)?)
+      (src == owner) ||
+      (src == address(this)) ||
+      DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
   }
 
   function isContract(address addr) internal returns (bool) {
