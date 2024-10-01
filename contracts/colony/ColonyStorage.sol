@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { DSMath } from "./../../lib/dappsys/math.sol";
@@ -196,11 +196,8 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     _;
   }
 
-  modifier authDomain(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _childDomainId
-  ) {
+  modifier authDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _childDomainId)
+  {
     require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
     require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
     require(isAuthorized(msgSender(), _permissionDomainId, msg.sig), "ds-auth-unauthorized");

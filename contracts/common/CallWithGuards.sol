@@ -1,4 +1,4 @@
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 
 contract CallWithGuards {
   function isContract(address addr) internal view returns (bool) {
