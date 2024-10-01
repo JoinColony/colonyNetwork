@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 
 contract ERC721Mock {
   event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);

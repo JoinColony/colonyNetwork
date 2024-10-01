@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 
 import { DSMath } from "../../lib/dappsys/math.sol";
 import { MetaTransactionMsgSender } from "./MetaTransactionMsgSender.sol";

@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 
 import { IWormhole } from "../../lib/wormhole/ethereum/contracts/interfaces/IWormhole.sol";
 import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";

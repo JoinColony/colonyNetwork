@@ -22,7 +22,7 @@ import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { Bytes4Includes } from "./Bytes4Includes.sol";
 
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 struct ActionSummary {

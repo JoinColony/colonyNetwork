@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.25;
+pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
