@@ -26,7 +26,8 @@ fi
 # Compile release
 $NODE_MANAGER install
 $NODE_MANAGER use
-npm ci --force && npx hardhat compile
+pnpm install --frozen-lockfile
+npx hardhat compile
 rm -rf artifacts-$LATEST_RELEASE || true
 mv artifacts artifacts-$LATEST_RELEASE
 
@@ -36,7 +37,8 @@ git checkout $CURRENT_BRANCH
 $NODE_MANAGER install
 $NODE_MANAGER use
 find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
-pnpm install --frozen-lockfile && npx hardhat compile
+pnpm install --frozen-lockfile
+npx hardhat compile
 
 version_from_commit() {
 	COMMIT=$1;
