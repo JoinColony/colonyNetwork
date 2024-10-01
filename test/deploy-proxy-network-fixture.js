@@ -6,6 +6,7 @@ const Resolver = artifacts.require("Resolver");
 const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
 
 const truffleContract = require("@truffle/contract");
+const { setCode } = require("@nomicfoundation/hardhat-network-helpers");
 const createXABI = require("../lib/createx/artifacts/src/ICreateX.sol/ICreateX.json");
 
 const { setupEtherRouter } = require("../helpers/upgradable-contracts");
@@ -15,6 +16,7 @@ const { setupProxyColonyNetwork } = require("../helpers/upgradable-contracts");
 
 const ProxyColonyNetwork = artifacts.require("ProxyColonyNetwork");
 const ProxyColony = artifacts.require("ProxyColony");
+const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
 
 module.exports = async () => {
   const accounts = await web3.eth.getAccounts();
@@ -63,4 +65,18 @@ module.exports = async () => {
   const domainTokenReceiverImplementation = await DomainTokenReceiver.new();
   await setupEtherRouter("common", "DomainTokenReceiver", { DomainTokenReceiver: domainTokenReceiverImplementation.address }, resolver);
   await proxyColonyNetwork.setDomainTokenReceiverResolver(resolver.address);
+
+  // Deploy LiFiMock to LiFi address
+  try {
+    await setCode("0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE", LiFiFacetProxyMock.deployedBytecode);
+  } catch (error) {
+    if (error.message.includes("OnlyHardhatNetworkError")) {
+      await new Promise(function (resolve) {
+        web3.provider.send(
+          { method: "evm_setCode", params: ["0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE", LiFiFacetProxyMock.deployedBytecode] },
+          resolve,
+        );
+      });
+    }
+  }
 };

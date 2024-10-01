@@ -22,7 +22,9 @@ pragma experimental "ABIEncoderV2";
 import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
+import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColony } from "./IColony.sol";
 import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
 
 contract ColonyFunding is
@@ -298,6 +300,69 @@ contract ColonyFunding is
     (bool success, ) = LIFI_ADDRESS.call{ value: _value }(_txdata);
 
     require(success, "colony-exchange-tokens-failed");
+  }
+
+  function exchangeProxyHeldTokensViaLiFi(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bytes memory _txdata,
+    uint256 _value,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
+    // TODO: Colony Network fee
+
+    Domain storage d = domains[_domainId];
+
+    // Check the domain has enough for what is
+    if (_token == address(0x0)) {
+      require(
+        _value + _amount <= getFundingPotBalance(d.fundingPotId, _chainId, _token),
+        "colony-insufficient-funds"
+      );
+    } else {
+      require(
+        _amount <= getFundingPotBalance(d.fundingPotId, _chainId, _token),
+        "colony-insufficient-funds"
+      );
+      require(
+        _value <= getFundingPotBalance(d.fundingPotId, _chainId, _token),
+        "colony-insufficient-funds"
+      );
+    }
+
+    // Deduct the amount from the domain
+    setFundingPotBalance(
+      d.fundingPotId,
+      _chainId,
+      _token,
+      getFundingPotBalance(d.fundingPotId, _chainId, _token) - _amount
+    );
+
+    // Deduct the value from the domain
+    setFundingPotBalance(
+      d.fundingPotId,
+      _chainId,
+      address(0x0),
+      getFundingPotBalance(d.fundingPotId, _chainId, _token) - _value
+    );
+
+    // Build and send the transaction
+    if (_token == address(0)) {
+      revert("not yet implemented");
+    } else {
+      address[] memory targets = new address[](2);
+      targets[0] = _token;
+      targets[1] = LIFI_ADDRESS;
+
+      bytes[] memory payloads = new bytes[](2);
+      payloads[0] = abi.encodeCall(ERC20.approve, (LIFI_ADDRESS, _amount));
+      payloads[1] = _txdata;
+
+      IColony(address(this)).makeProxyArbitraryTransactions(_chainId, targets, payloads);
+    }
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {

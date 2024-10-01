@@ -959,6 +959,27 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _amount
   ) external;
 
+  /// @notice Exchange funds between two tokens, potentially between chains
+  /// The tokens being swapped are held by a proxy contract
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`
+  /// @param _domainId Id of the domain
+  /// @param _txdata Transaction data for the exchange
+  /// @param _value Value of the transaction
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token. If the native token is being swapped, can be anything and _amount should be 0.
+  /// @param _amount Amount of tokens to exchange
+  function exchangeProxyHeldTokensViaLiFi(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bytes memory _txdata,
+    uint256 _value,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  ) external;
+
   /// @notice Used by the bridge to indicate that funds have been claimed on another chain.
   /// @param _chainId Chain id of the chain where the funds were claimed
   /// @param _token Address of the token, `0x0` value indicates Ether

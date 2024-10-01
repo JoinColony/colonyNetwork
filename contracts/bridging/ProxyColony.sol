@@ -122,7 +122,7 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
       // TODO: Stop, or otherwise handle, approve / transferFrom
       require(_targets[i] != bridgeAddress, "colony-cannot-target-bridge");
       require(_targets[i] != owner, "colony-cannot-target-network");
-
+      // TODO: Allowing calling ourselves is okay for now, but as we add functionality might not be?
       (bool success, bytes memory returndata) = callWithGuards(_targets[i], _payloads[i]);
 
       // Note that this is not a require because returndata might not be a string, and if we try
