@@ -126,7 +126,7 @@ contract VotingReputationStorage is
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 12;
+    return 13;
   }
 
   function install(address _colony) public override {
