@@ -70,7 +70,7 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 7;
+    return 8;
   }
 
   // Public
