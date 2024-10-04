@@ -1,5 +1,5 @@
 import { Environment, StandardRelayerContext, RelayerApp, providers } from "@wormhole-foundation/relayer-engine";
-import { CHAIN_ID_ARBITRUM_SEPOLIA, CHAIN_ID_SEPOLIA } from "@certusone/wormhole-sdk";
+// import { CHAIN_ID_ARBITRUM_SEPOLIA, CHAIN_ID_SEPOLIA } from "@certusone/wormhole-sdk";
 
 import * as path from "path";
 
@@ -112,17 +112,32 @@ const loader = new TruffleLoader({
 
     console.log(`Got a VAA with sequence: ${vaa.sequence} from with txhash: ${hash}`);
 
-    let destinationBridge;
+    const [
+      destinationEvmChainId,
+      // destinationAddress,
+      // payload
+    ] = new ethers.utils.AbiCoder().decode(["uint256", "address", "bytes"], `0x${vaa.payload.toString("hex")}`);
 
-    if (vaa.emitterChain === CHAIN_ID_ARBITRUM_SEPOLIA) {
-      destinationBridge = colonyBridges[CHAIN_ID_SEPOLIA];
-    } else if (vaa.emitterChain === CHAIN_ID_SEPOLIA) {
-      destinationBridge = colonyBridges[CHAIN_ID_ARBITRUM_SEPOLIA];
-    } else {
-      console.log("Unknown chain", vaa.emitterChain);
+    const destinationChainConfig = Object.values(config.chains).find((c) => c.evmChainId === destinationEvmChainId.toNumber());
+    if (!destinationChainConfig) {
+      console.log("No destination chain config found for chain id", destinationEvmChainId.toNumber());
       return next();
     }
 
+    if (!destinationChainConfig.payForGas) {
+      console.log("We do not pay for gas on destination chain. Skipping");
+      return next();
+    }
+
+    const destinationWormholeId = Object.keys(config.chains).find((wormholeChainId) => {
+      return config.chains[wormholeChainId].evmChainId === destinationEvmChainId.toNumber();
+    });
+    if (!destinationWormholeId) {
+      console.log("No wormhole chain id found for destination chain id", destinationEvmChainId.toNumber());
+      return next();
+    }
+
+    const destinationBridge = colonyBridges[destinationWormholeId];
     try {
       // TODO: Explicit gas limit is a nod to tests...
       const tx = await destinationBridge.receiveMessage(ctx.vaaBytes, { gasLimit: 1000000 });
