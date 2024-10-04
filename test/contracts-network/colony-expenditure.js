@@ -1,4 +1,4 @@
-/* global artifacts */
+/* globals artifacts */
 const chai = require("chai");
 const bnChai = require("bn-chai");
 const { BN } = require("bn.js");
@@ -15,7 +15,7 @@ const {
   bn2bytes32,
   upgradeColonyOnceThenToLatest,
 } = require("../../helpers/test-helper");
-const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
+const { fundColonyWithTokens, setupRandomColony, getEIP712Parameters } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const {
   deployColonyVersionGLWSS4,
@@ -107,6 +107,26 @@ contract("Colony Expenditure", (accounts) => {
       const fundingPot = await colony.getFundingPot(fundingPotId);
       expect(fundingPot.associatedType).to.eq.BN(4); // 4 = FundingPotAssociatedType.Expenditure
       expect(fundingPot.associatedTypeId).to.eq.BN(expendituresCountAfter);
+    });
+
+    it("should allow admins to add expenditure via EIP712 metatransactions", async () => {
+      const expendituresCountBefore = await colony.getExpenditureCount();
+
+      const timestamp = await getBlockTime();
+      const deadline = timestamp + 3600;
+      const nonce = await colony.getMetatransactionNonce(ROOT);
+
+      const { r, s, v } = await getEIP712Parameters(
+        "MakeExpenditure(uint256 domainId,uint256 nonce,uint256 deadline)",
+        [1, nonce, deadline],
+        ROOT,
+        colony.address,
+      );
+
+      await colony.makeExpenditureViaSig(1, UINT256_MAX, 1, { r, s, v, signer: ROOT, deadline }, { from: USER });
+
+      const expendituresCountAfter = await colony.getExpenditureCount();
+      expect(expendituresCountAfter.sub(expendituresCountBefore)).to.eq.BN(1);
     });
 
     it("should not allow non-admins to add expenditure", async () => {

@@ -1,8 +1,9 @@
-/* globals artifacts */
+/* globals artifacts, hre */
 
 const BN = require("bn.js");
 const { signTypedData_v4: signTypedData } = require("eth-sig-util");
 
+const { ethers } = require("hardhat");
 const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
 
 const { getTokenArgs, web3GetAccounts, getChildSkillIndex, getChainId } = require("./test-helper");
@@ -391,6 +392,81 @@ exports.getPermitParameters = async function getPermitParameters(owner, privateK
     },
   };
 
+  const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), "hex"));
+  const sig = signTypedData(privateKeyArray, { data: sigObject });
+
+  const r = `0x${sig.substring(2, 66)}`;
+  const s = `0x${sig.substring(66, 130)}`;
+  const v = parseInt(sig.substring(130), 16);
+
+  return { r, s, v };
+};
+
+// exports.getEIP712Parameters = async function getEIP712Parameters(privateKey, sigObject, targetAddress) {
+exports.getEIP712Parameters = async function getEIP712Parameters(typeString, args, signingAddress, targetAddress) {
+  // MakeExpenditure(uint256 domainId,uint256 nonce,uint256 deadline)
+  let privateKey;
+  for (let i = 0; i < hre.config.networks.hardhat.accounts.length; i += 1) {
+    if (ethers.utils.computeAddress(hre.config.networks.hardhat.accounts[i].privateKey) === signingAddress) {
+      privateKey = hre.config.networks.hardhat.accounts[i].privateKey;
+    }
+  }
+  if (privateKey === undefined) {
+    throw new Error("No private key found for signing address");
+  }
+
+  const sigObject = {};
+  sigObject.types = {};
+  sigObject.domain = {};
+  sigObject.message = {};
+
+  const typeName = typeString.split("(")[0];
+  sigObject.primaryType = typeName;
+  const typeArgs = typeString.split("(")[1].split(")")[0].split(",");
+
+  sigObject.types[typeName] = [];
+  for (let i = 0; i < typeArgs.length; i += 1) {
+    sigObject.types[typeName].push({
+      name: typeArgs[i].split(" ")[1],
+      type: typeArgs[i].split(" ")[0],
+    });
+  }
+
+  for (let i = 0; i < args.length; i += 1) {
+    sigObject.message[sigObject.types[typeName][i].name] = args[i];
+  }
+
+  const contract = await MetaTxToken.at(targetAddress);
+
+  const nonce = await contract.getMetatransactionNonce(signingAddress);
+  const chainId = await getChainId();
+  const name = "Colony";
+
+  sigObject.types.EIP712Domain = [
+    {
+      name: "name",
+      type: "string",
+    },
+    {
+      name: "version",
+      type: "string",
+    },
+    {
+      name: "verifyingContract",
+      type: "address",
+    },
+    {
+      name: "salt",
+      type: "bytes32",
+    },
+  ];
+
+  sigObject.domain.name = name;
+  sigObject.domain.version = "1";
+  sigObject.domain.salt = ethers.utils.keccak256(ethers.utils.hexZeroPad(`0x${chainId.toString(16)}`, 32));
+  sigObject.domain.verifyingContract = contract.address;
+
+  sigObject.message.nonce = nonce;
   const privateKeyArray = new Uint8Array(Buffer.from(privateKey.slice(2), "hex"));
   const sig = signTypedData(privateKeyArray, { data: sigObject });
 

@@ -23,8 +23,15 @@ import { IRecovery } from "./../common/IRecovery.sol";
 import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
 import { IMulticall } from "./../common/IMulticall.sol";
 import { ColonyDataTypes } from "./ColonyDataTypes.sol";
+import { EIP712MetaTransactionDataTypes } from "./../common/EIP712MetaTransactionDataTypes.sol";
 
-interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
+interface IColony is
+  ColonyDataTypes,
+  IRecovery,
+  IBasicMetaTransaction,
+  IMulticall,
+  EIP712MetaTransactionDataTypes
+{
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony.
   /// @return colonyAuthority The `ColonyAuthority` contract address
@@ -454,6 +461,19 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId
+  ) external returns (uint256 expenditureId);
+
+  /// @notice Add a new expenditure in the colony via metatransaction
+  /// @param _permissionDomainId The domainId in which the signer has the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
+  /// @param _domainId The domain where the expenditure belongs
+  /// @param _signature EIP712 signature
+  /// @return expenditureId Identifier of the newly created expenditure
+  function makeExpenditureViaSig(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    EIP712Signature memory _signature
   ) external returns (uint256 expenditureId);
 
   /// @notice Updates the expenditure owner. Can only be called by expenditure owner.

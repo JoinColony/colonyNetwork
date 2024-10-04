@@ -65,6 +65,43 @@ contract ColonyExpenditure is ColonyStorage {
     return expenditureCount;
   }
 
+  bytes32 constant MAKE_EXPENDITURE_TYPEHASH =
+    keccak256("MakeExpenditure(uint256 domainId,uint256 nonce,uint256 deadline)");
+
+  function makeExpenditureViaSig(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    EIP712Signature memory _signature
+  ) public stoppable returns (uint256) {
+    bytes32 digest = keccak256(
+      abi.encodePacked(
+        EIP_712_PREFIX,
+        domainSeparator(),
+        keccak256(
+          abi.encode(
+            MAKE_EXPENDITURE_TYPEHASH,
+            _domainId,
+            metatransactionNonces[_signature.signer]++,
+            _signature.deadline
+          )
+        )
+      )
+    );
+
+    checkEIP712MetaTransaction(digest, _signature);
+
+    bytes memory _payload = abi.encodeWithSelector(
+      this.makeExpenditure.selector,
+      _permissionDomainId,
+      _childSkillIndex,
+      _domainId
+    );
+
+    bytes memory returnData = sendMetaTransaction(_payload, _signature.signer);
+    return abi.decode(returnData, (uint256));
+  }
+
   function transferExpenditure(
     uint256 _id,
     address _newOwner

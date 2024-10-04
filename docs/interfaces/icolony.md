@@ -1044,6 +1044,26 @@ Add a new expenditure in the colony. Secured function to authorised members.
 |---|---|---|
 |expenditureId|uint256|Identifier of the newly created expenditure
 
+### ▸ `makeExpenditureViaSig(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, EIP712Signature _signature):uint256 expenditureId`
+
+Add a new expenditure in the colony via metatransaction
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_permissionDomainId|uint256|The domainId in which the signer has the permission to take this action
+|_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`,
+|_domainId|uint256|The domain where the expenditure belongs
+|_signature|EIP712Signature|EIP712 signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|expenditureId|uint256|Identifier of the newly created expenditure
+
 ### ▸ `makeSingleArbitraryTransaction(address _target, bytes memory _action):bool success`
 
 Executes a single arbitrary transaction

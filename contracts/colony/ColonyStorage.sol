@@ -29,11 +29,18 @@ import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
 import { ColonyDataTypes } from "./ColonyDataTypes.sol";
+import { EIP712MetaTransaction } from "./../common/EIP712MetaTransaction.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyStorage is
+  ColonyDataTypes,
+  ColonyNetworkDataTypes,
+  DSMath,
+  CommonStorage,
+  EIP712MetaTransaction
+{
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 

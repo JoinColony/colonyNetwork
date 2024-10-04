@@ -53,6 +53,42 @@ exports.parseImplementation = function parseImplementation(contractDir, contract
   });
 };
 
+const getSignatureTypes = function getSignatureTypes(inputs) {
+  const types = [];
+  if (inputs.length == 0) {
+    return types;
+  }
+  for (let i = 0; i < inputs.length; i += 1) {
+    if (inputs[i].type === "tuple") {
+      types.push(getSignatureTypes(inputs[i].components));
+    } else {
+      types.push(inputs[i].type);
+    }
+  }
+  return types;
+};
+
+const getCanonicalSig = function getCanonicalSig(fName, fInputs) {
+  function sigArgs(inputs) {
+    let sig = "(";
+    for (let i = 0; i < inputs.length; i += 1) {
+      if (typeof inputs[i] === "object") {
+        sig += sigArgs(inputs[i]);
+      } else {
+        sig += inputs[i];
+      }
+      sig += ",";
+    }
+    if (sig[sig.length - 1] === ",") {
+      sig = sig.slice(0, -1);
+    }
+    sig += ")";
+    return sig;
+  }
+
+  return `${fName}${sigArgs(fInputs)}`;
+};
+
 exports.setupEtherRouter = async function setupEtherRouter(contractDir, interfaceName, deployedImplementations, resolver) {
   const functionsToResolve = {};
 
@@ -66,7 +102,8 @@ exports.setupEtherRouter = async function setupEtherRouter(contractDir, interfac
       // These are from DSAuth, and so are on EtherRouter itself without any more help.
       if (fName !== "authority" && fName !== "owner" && !fName.includes("c_0x")) {
         // Gets the types of the parameters, which is all we care about for function signatures.
-        const fInputs = value.inputs.map((parameter) => parameter.type);
+        // const fInputs = value.inputs.map((parameter) => parameter.type);
+        const fInputs = getSignatureTypes(value.inputs);
         // Record function name
         functionsToResolve[fName] = { inputs: fInputs, definedIn: "" };
       }
@@ -82,7 +119,8 @@ exports.setupEtherRouter = async function setupEtherRouter(contractDir, interfac
     // https://github.com/paritytech/parity-ethereum/issues/9155
     const fName = iAbi[i].name;
     if (functionsToResolve[fName]) {
-      const sig = `${fName}(${iAbi[i].inputs.map((parameter) => parameter.type).join(",")})`;
+      // const sig = `${fName}(${iAbi[i].inputs.map((parameter) => parameter.type).join(",")})`;
+      const sig = getCanonicalSig(fName, getSignatureTypes(iAbi[i].inputs));
       const address = functionsToResolve[fName].definedIn;
       try {
         await resolver.register(sig, address);
