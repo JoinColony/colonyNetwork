@@ -101,9 +101,9 @@ contract ColonyDomains is ColonyStorage {
     uint256 _domainId,
     bool _deprecated
   ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
-    if (
-      IColonyNetwork(colonyNetworkAddress).deprecateSkill(domains[_domainId].skillId, _deprecated)
-    ) {
+    if (domains[_domainId].deprecated != _deprecated) {
+      domains[_domainId].deprecated = _deprecated;
+
       emit DomainDeprecated(msgSender(), _domainId, _deprecated);
     }
   }
@@ -132,7 +132,11 @@ contract ColonyDomains is ColonyStorage {
     fundingPots[fundingPotCount].associatedTypeId = domainCount;
 
     // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({ skillId: _skillId, fundingPotId: fundingPotCount });
+    domains[domainCount] = Domain({
+      skillId: _skillId,
+      fundingPotId: fundingPotCount,
+      deprecated: false
+    });
 
     emit DomainAdded(msgSender(), domainCount);
     emit FundingPotAdded(fundingPotCount);

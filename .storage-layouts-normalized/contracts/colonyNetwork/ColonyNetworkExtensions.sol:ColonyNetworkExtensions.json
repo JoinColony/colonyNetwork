@@ -378,7 +378,7 @@
             },
             {
               "contract": "contracts/colonyNetwork/ColonyNetworkExtensions.sol:ColonyNetworkExtensions",
-              "label": "deprecated",
+              "label": "DEPRECATED_deprecated",
               "offset": 1,
               "slot": "3",
               "type": {

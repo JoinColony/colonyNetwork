@@ -349,6 +349,11 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return rootLocalSkill The root local skill id
   function getRootLocalSkill() external view returns (uint256 rootLocalSkill);
 
+  /// @notice Get the local skill
+  /// @param localSkillId Id for the local skill
+  /// @return localSkill The local skill
+  function getLocalSkill(uint256 localSkillId) external view returns (LocalSkill memory localSkill);
+
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`.
   /// New funding pot is created and associated with the domain here.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action

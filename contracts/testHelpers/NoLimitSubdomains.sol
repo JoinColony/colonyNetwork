@@ -46,7 +46,11 @@ contract NoLimitSubdomains is ColonyStorage {
     fundingPots[fundingPotCount].associatedTypeId = domainCount;
 
     // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({ skillId: _skillId, fundingPotId: fundingPotCount });
+    domains[domainCount] = Domain({
+      skillId: _skillId,
+      fundingPotId: fundingPotCount,
+      deprecated: false
+    });
 
     emit DomainAdded(msg.sender, domainCount);
     emit FundingPotAdded(fundingPotCount);

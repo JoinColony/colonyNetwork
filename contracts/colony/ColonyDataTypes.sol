@@ -318,10 +318,12 @@ interface ColonyDataTypes {
   struct Domain {
     uint256 skillId;
     uint256 fundingPotId;
+    bool deprecated;
   }
 
   struct LocalSkill {
     bool exists;
+    bool deprecated;
   }
 
   // Deprecated Task and Payment events

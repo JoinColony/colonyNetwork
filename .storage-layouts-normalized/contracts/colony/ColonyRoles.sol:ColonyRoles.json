@@ -770,9 +770,20 @@
                 "label": "uint256",
                 "numberOfBytes": "32"
               }
+            },
+            {
+              "contract": "contracts/colony/ColonyRoles.sol:ColonyRoles",
+              "label": "deprecated",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
             }
           ],
-          "numberOfBytes": "64"
+          "numberOfBytes": "96"
         }
       }
     },
@@ -1335,7 +1346,7 @@
     },
     {
       "contract": "contracts/colony/ColonyRoles.sol:ColonyRoles",
-      "label": "localSkills",
+      "label": "DEPRECATED_localSkills",
       "offset": 0,
       "slot": "37",
       "type": {
@@ -1351,6 +1362,51 @@
           "encoding": "inplace",
           "label": "bool",
           "numberOfBytes": "1"
+        }
+      }
+    },
+    {
+      "contract": "contracts/colony/ColonyRoles.sol:ColonyRoles",
+      "label": "localSkills",
+      "offset": 0,
+      "slot": "38",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => struct ColonyDataTypes.LocalSkill)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyDataTypes.LocalSkill",
+          "members": [
+            {
+              "contract": "contracts/colony/ColonyRoles.sol:ColonyRoles",
+              "label": "exists",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            },
+            {
+              "contract": "contracts/colony/ColonyRoles.sol:ColonyRoles",
+              "label": "deprecated",
+              "offset": 1,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "bool",
+                "numberOfBytes": "1"
+              }
+            }
+          ],
+          "numberOfBytes": "32"
         }
       }
     }
