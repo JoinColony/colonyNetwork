@@ -36,7 +36,6 @@ const {
   deployColonyVersionGLWSS4,
   deployColonyNetworkVersionGLWSS4,
   deployColonyVersionHMWSS,
-  deployColonyVersionIMWSS,
 } = require("../../scripts/deployOldUpgradeableVersion");
 
 contract("One transaction payments", (accounts) => {
@@ -576,7 +575,6 @@ contract("One transaction payments", (accounts) => {
       await deployColonyNetworkVersionGLWSS4();
       await deployColonyVersionGLWSS4(colonyNetwork);
       await deployColonyVersionHMWSS(colonyNetwork);
-      await deployColonyVersionIMWSS(colonyNetwork);
     });
 
     beforeEach(async () => {
@@ -637,10 +635,7 @@ contract("One transaction payments", (accounts) => {
       await token.mint(colony.address, INITIAL_FUNDING);
       await colony.claimColonyFunds(token.address);
 
-      await colony.upgrade(14);
-      await colony.upgrade(15);
-      await colony.upgrade(16);
-
+      await upgradeColonyOnceThenToLatest(colony);
       // Confirm this colony has the new domain structure
       const domain = await colony.getDomain(1);
       expect(domain.deprecated).to.be.false;
