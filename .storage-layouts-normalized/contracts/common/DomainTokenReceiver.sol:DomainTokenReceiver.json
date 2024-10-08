@@ -1,0 +1,48 @@
+{
+  "storage": [
+    {
+      "contract": "contracts/common/DomainTokenReceiver.sol:DomainTokenReceiver",
+      "label": "authority",
+      "offset": 0,
+      "slot": "0",
+      "type": {
+        "encoding": "inplace",
+        "label": "contract DSAuthority",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/common/DomainTokenReceiver.sol:DomainTokenReceiver",
+      "label": "owner",
+      "offset": 0,
+      "slot": "1",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/common/DomainTokenReceiver.sol:DomainTokenReceiver",
+      "label": "resolver",
+      "offset": 0,
+      "slot": "2",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    },
+    {
+      "contract": "contracts/common/DomainTokenReceiver.sol:DomainTokenReceiver",
+      "label": "colony",
+      "offset": 0,
+      "slot": "3",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
+    }
+  ]
+}

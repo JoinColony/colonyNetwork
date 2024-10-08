@@ -1347,7 +1347,7 @@ exports.isXdai = async function isXdai() {
   return chainId === XDAI_CHAINID || chainId === FORKED_XDAI_CHAINID;
 };
 
-exports.deployCreateXIfNeeded = async function deployCreateXIfNeeded() {
+exports.idempotentDeployCreateX = async function idempotentDeployCreateX() {
   // Deploy CreateX if it's not already deployed
   const createXCode = await web3.eth.getCode(CREATEX_ADDRESS);
   if (createXCode === "0x") {

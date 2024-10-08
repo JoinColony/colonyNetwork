@@ -158,6 +158,16 @@ exports.setupUpgradableTokenLocking = async function setupUpgradableTokenLocking
   assert.equal(registeredResolver, resolver.address);
 };
 
+exports.setupDomainTokenReceiverResolver = async function setupDomainTokenReceiver(colonyNetwork, domainTokenReceiver, resolver) {
+  const deployedImplementations = {};
+  deployedImplementations.DomainTokenReceiver = domainTokenReceiver.address;
+  await exports.setupEtherRouter("domainTokenReceiver", "DomainTokenReceiver", deployedImplementations, resolver);
+
+  await colonyNetwork.setDomainTokenReceiverResolver(resolver.address);
+  const registeredResolver = await colonyNetwork.getDomainTokenReceiverResolver();
+  assert.equal(registeredResolver, resolver.address);
+};
+
 exports.setupReputationMiningCycleResolver = async function setupReputationMiningCycleResolver(
   reputationMiningCycle,
   reputationMiningCycleRespond,
