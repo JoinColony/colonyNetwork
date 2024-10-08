@@ -5,8 +5,10 @@ const fs = require("fs");
 const Promise = require("bluebird");
 const exec = Promise.promisify(require("child_process").exec);
 const contract = require("@truffle/contract");
+const { ethers } = require("ethers");
 const { web3GetCode, setStorageSlot } = require("../helpers/test-helper");
 const { ROOT_ROLE, RECOVERY_ROLE, ADMINISTRATION_ROLE, ARCHITECTURE_ROLE, ADDRESS_ZERO } = require("../helpers/constants");
+const { setupEtherRouter } = require("../helpers/upgradable-contracts");
 
 let colonyDeployed = {};
 let colonyNetworkDeployed = {};
@@ -171,13 +173,36 @@ module.exports.deployOldColonyVersion = async (contractName, interfaceName, impl
   }
 };
 
-module.exports.deployNextColonyVersion = async (colonyNetwork) => {
+const getNodeVersionCommand = async (_nodeVersion) => {
+  let nodeVersion = _nodeVersion;
+  console.log(_nodeVersion);
+  if (_nodeVersion.startsWith("14.")) {
+    // 14.x is not supported by truffle, our .nvmrc was incorrect for some releases
+    nodeVersion = "16";
+  }
+  try {
+    await exec(". $HOME/.nvm/nvm.sh ");
+    return `. $HOME/.nvm/nvm.sh && nvm install ${nodeVersion} && nvm use ${nodeVersion}`;
+  } catch (error) {
+    console.log("No nvm found, try fnm");
+  }
+  try {
+    await exec("fnm --version");
+    return `eval "$(fnm env)" && fnm install ${nodeVersion} && fnm use ${nodeVersion}`;
+  } catch (error) {
+    console.log("No fnm found");
+  }
+  // Try n?
+  throw new Error("No node version manager found");
+};
+
+async function setupNextVersionRepo() {
   console.log("Cloning the network...");
   await exec(`rm -rf colonyNetwork-next`);
   await exec(`git clone --depth 1 --branch develop https://github.com/JoinColony/colonyNetwork.git colonyNetwork-next`);
   await exec(`cd colonyNetwork-next && git submodule update --init --recursive`);
-  const nodeVersion = fs.readFileSync(`colonyNetwork-next/.nvmrc`);
-  await exec(`cd colonyNetwork-next && npm install node@${nodeVersion}`);
+  const nodeVersion = fs.readFileSync(`colonyNetwork-next/.nvmrc`, "utf8").trim();
+  await exec(`cd colonyNetwork-next && ${await getNodeVersionCommand(nodeVersion)}`);
 
   console.log("Installing the network...");
   let packageManagerCommand;
@@ -188,6 +213,11 @@ module.exports.deployNextColonyVersion = async (colonyNetwork) => {
   }
 
   await exec(`cd colonyNetwork-next && ${packageManagerCommand} install`);
+}
+
+module.exports.deployNextColonyVersion = async (colonyNetwork) => {
+  await setupNextVersionRepo();
+  const nodeVersion = fs.readFileSync(`colonyNetwork-next/.nvmrc`, "utf8").trim();
 
   // Bump version number in Colony.sol
   const version = (
@@ -205,7 +235,9 @@ module.exports.deployNextColonyVersion = async (colonyNetwork) => {
     `sed -i.bak "s/function version() public pure returns (uint256 colonyVersion) { return ${version}/function version() public pure returns (uint256 colonyVersion) { return ${nextVersion}/g" ./colonyNetwork-next/contracts/colony/Colony.sol`,
   );
 
-  const resolverAddress = await deployViaHardhat("next", "Colony", "IMetaColony", [
+  const cmdBase = `cd colonyNetwork-next && ${await getNodeVersionCommand(nodeVersion)}`;
+
+  const resolverAddress = await deployViaHardhat("next", cmdBase, "IMetaColony", [
     // eslint-disable-next-line max-len
     "Colony",
     "ColonyDomains",
@@ -219,6 +251,55 @@ module.exports.deployNextColonyVersion = async (colonyNetwork) => {
 
   await module.exports.registerOldColonyVersion(resolverAddress, colonyNetwork);
   console.log('Deployed "next" version of Colony contract with resolver', resolverAddress);
+};
+
+module.exports.deployNextExtensionVersion = async (colonyNetwork, extensionName) => {
+  if (extensionName === "VotingReputation") {
+    throw new Error("VotingReputation extension not supported in this script");
+  }
+  await setupNextVersionRepo();
+
+  const nodeVersion = fs.readFileSync(`colonyNetwork-next/.nvmrc`, "utf8").trim();
+  // Bump version number in extension
+  const version = (
+    await exec(
+      `cd colonyNetwork-next/contracts/extensions/ &&
+       grep -A 1 'function version() public pure override' ./${extensionName}.sol | tail -n 1 | awk '{print $2}' | sed 's/;//'`,
+    )
+  ).trim();
+  console.log(`Current extension version is ${version}`);
+  const nextVersion = parseInt(version, 10) + 1;
+
+  await exec(
+    // eslint-disable-next-line max-len
+    `sed -i.bak "s/return ${version}/return ${nextVersion}/g" ./colonyNetwork-next/contracts/extensions/${extensionName}.sol`,
+  );
+
+  const cmdBase = `cd colonyNetwork-next && ${await getNodeVersionCommand(nodeVersion)}`;
+  await exec(`${cmdBase} && npx hardhat compile`);
+  const resolver = await artifacts.require("Resolver").new();
+  const resolverAddress = resolver.address;
+  const nextArtifact = JSON.parse(
+    fs.readFileSync(`./colonyNetwork-next/artifacts/contracts/extensions/${extensionName}.sol/${extensionName}.json`, "utf8"),
+  );
+
+  const signer = new ethers.providers.JsonRpcProvider().getSigner();
+  const factory = new ethers.ContractFactory(nextArtifact.abi, nextArtifact.bytecode, signer);
+  const res = await factory.deploy();
+  await res.deployed();
+
+  const implementationInterface = await artifacts.require(extensionName);
+  const implementation = await implementationInterface.at(res.address);
+  const deployedImplementations = {};
+  deployedImplementations[extensionName] = implementation.address;
+
+  await setupEtherRouter("extensions", extensionName, deployedImplementations, resolver);
+
+  const metaColonyAddress = await colonyNetwork.getMetaColony();
+  const metaColony = await artifacts.require("IMetaColony").at(metaColonyAddress);
+  await metaColony.addExtensionToNetwork(web3.utils.soliditySha3(extensionName), resolverAddress);
+
+  console.log(`Deployed "next" version of extension ${extensionName} with resolver`, resolverAddress);
 };
 
 module.exports.downgradeColony = async (colonyNetwork, colony, version) => {
@@ -298,28 +379,6 @@ module.exports.deployOldColonyNetworkVersion = async (contractName, interfaceNam
     console.log(e);
     return process.exit(1);
   }
-};
-
-const getNodeVersionCommand = async (_nodeVersion) => {
-  let nodeVersion = _nodeVersion;
-  if (_nodeVersion.startsWith("14.")) {
-    // 14.x is not supported by truffle, our .nvmrc was incorrect for some releases
-    nodeVersion = "16";
-  }
-  try {
-    await exec(". $HOME/.nvm/nvm.sh ");
-    return `. $HOME/.nvm/nvm.sh && nvm install ${nodeVersion} && nvm use ${nodeVersion}`;
-  } catch (error) {
-    console.log("No nvm found, try fnm");
-  }
-  try {
-    await exec("fnm --version");
-    return `eval "$(fnm env)" && fnm install ${nodeVersion} && fnm use ${nodeVersion}`;
-  } catch (error) {
-    console.log("No fnm found");
-  }
-  // Try n?
-  throw new Error("No node version manager found");
 };
 
 module.exports.deployOldUpgradeableVersion = async (contractName, interfaceName, implementationNames, versionTag) => {
