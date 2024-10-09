@@ -458,7 +458,7 @@ importers:
         version: 0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)
       '@wormhole-foundation/relayer-engine':
         specifier: ^0.3.2
-        version: 0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@14.18.63)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)(typescript@5.6.2)
+        version: 0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.11)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)(typescript@5.6.2)
       ethers:
         specifier: '5'
         version: 5.7.2
@@ -691,7 +691,6 @@ packages:
       - react-dom
       - subscriptions-transport-ws
       - utf-8-validate
-    dev: false
 
   /@certusone/wormhole-sdk@0.10.18(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2):
     resolution: {integrity: sha512-VuN4AGB018ELkzTT/jN+yWgE6TWqXsHilxxCVWqGctzow2hKSFd8ADUhxhHigies436rS0vPvrgXi6m0J1+Ecw==}
@@ -4226,105 +4225,12 @@ packages:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
     dev: true
 
-  /@wormhole-foundation/relayer-engine@0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@14.18.63)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)(typescript@5.6.2):
-    resolution: {integrity: sha512-6CAGZdxDpPZph+Gx1Tob5wEarEzvD27G7khoGhB9sc8KiOhRz8zDiBspFfLetzfBEHMiTyvAOibETV5G0ULilA==}
-    dependencies:
-      '@bull-board/api': 5.21.0(@bull-board/ui@5.21.0)
-      '@bull-board/koa': 5.21.0
-      '@certusone/wormhole-sdk': 0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)
-      '@certusone/wormhole-spydk': 0.0.1
-      '@datastructures-js/queue': 4.2.3
-      '@improbable-eng/grpc-web-node-http-transport': 0.15.0(@improbable-eng/grpc-web@0.15.0)
-      '@mysten/sui.js': 0.32.2
-      '@sei-js/core': 1.5.0
-      '@xlabs-xyz/wallet-monitor': 0.2.16(@types/node@14.18.63)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.2)
-      bech32: 2.0.0
-      bullmq: 3.15.8
-      ethers: 5.7.2
-      generic-pool: 3.9.0
-      ioredis: 5.4.1
-      koa: 2.15.3
-      lru-cache: 9.1.2
-      prom-client: 14.2.0
-      winston: 3.13.1
-    transitivePeerDependencies:
-      - '@bull-board/ui'
-      - '@improbable-eng/grpc-web'
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/koa'
-      - '@types/node'
-      - '@types/react'
-      - arc-templates
-      - atpl
-      - babel-core
-      - bracket-template
-      - bufferutil
-      - coffee-script
-      - debug
-      - dot
-      - dust
-      - dustjs-helpers
-      - dustjs-linkedin
-      - eco
-      - ect
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - google-protobuf
-      - graphql-ws
-      - haml-coffee
-      - hamlet
-      - hamljs
-      - handlebars
-      - hogan.js
-      - htmling
-      - jade
-      - jazz
-      - jqtpl
-      - just
-      - liquid-node
-      - liquor
-      - lodash
-      - marko
-      - mote
-      - mustache
-      - nunjucks
-      - plates
-      - pug
-      - qejs
-      - ractive
-      - razor-tmpl
-      - react
-      - react-dom
-      - slm
-      - squirrelly
-      - subscriptions-transport-ws
-      - supports-color
-      - swig
-      - swig-templates
-      - teacup
-      - templayed
-      - then-jade
-      - then-pug
-      - tinyliquid
-      - toffee
-      - twig
-      - twing
-      - typescript
-      - underscore
-      - utf-8-validate
-      - vash
-      - velocityjs
-      - walrus
-      - whiskers
-    dev: false
-
   /@wormhole-foundation/relayer-engine@0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.11)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)(typescript@5.6.2):
     resolution: {integrity: sha512-6CAGZdxDpPZph+Gx1Tob5wEarEzvD27G7khoGhB9sc8KiOhRz8zDiBspFfLetzfBEHMiTyvAOibETV5G0ULilA==}
     dependencies:
       '@bull-board/api': 5.21.0(@bull-board/ui@5.21.0)
       '@bull-board/koa': 5.21.0
-      '@certusone/wormhole-sdk': 0.10.18(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)
+      '@certusone/wormhole-sdk': 0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.2)
       '@certusone/wormhole-spydk': 0.0.1
       '@datastructures-js/queue': 4.2.3
       '@improbable-eng/grpc-web-node-http-transport': 0.15.0(@improbable-eng/grpc-web@0.15.0)
@@ -4410,7 +4316,6 @@ packages:
       - velocityjs
       - walrus
       - whiskers
-    dev: true
 
   /@wry/caches@1.0.1:
     resolution: {integrity: sha512-bXuaUNLVVkD20wcGBWRyo7j9N3TxePEWFZj2Y+r9OoUzfqmavM84+mFykRicNsBqatba5JLay1t48wxaXaWnlA==}
@@ -4452,37 +4357,6 @@ packages:
       tslib: 2.6.3
     optional: true
 
-  /@xlabs-xyz/wallet-monitor@0.2.16(@types/node@14.18.63)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.2):
-    resolution: {integrity: sha512-Fup24DcONFy3o5lrJP3i5gc5XXj7675gWhco3JkweWTFj86c17UrXYQOhZF1Z09b7WYt4rnXZx+wQ4W19HzOoQ==}
-    dependencies:
-      '@ethersproject/bignumber': 5.7.0
-      '@mysten/sui.js': 0.32.2
-      '@solana/spl-token': 0.3.11(@solana/web3.js@1.95.0)(fastestsmallesttextencoderdecoder@1.0.22)
-      '@solana/web3.js': 1.95.0
-      bluebird: 3.7.2
-      bs58: 5.0.0
-      ethers: 5.7.2
-      google-protobuf: 3.21.2
-      koa: 2.15.3
-      koa-router: 12.0.1
-      nice-grpc: 2.1.9
-      prom-client: 14.2.0
-      ts-node: 10.9.2(@types/node@14.18.63)(typescript@5.6.2)
-      ts-proto: 1.181.0
-      winston: 3.13.1
-      zod: 3.23.8
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - bufferutil
-      - encoding
-      - fastestsmallesttextencoderdecoder
-      - supports-color
-      - typescript
-      - utf-8-validate
-    dev: false
-
   /@xlabs-xyz/wallet-monitor@0.2.16(@types/node@20.16.11)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.6.2):
     resolution: {integrity: sha512-Fup24DcONFy3o5lrJP3i5gc5XXj7675gWhco3JkweWTFj86c17UrXYQOhZF1Z09b7WYt4rnXZx+wQ4W19HzOoQ==}
     dependencies:
@@ -4512,7 +4386,6 @@ packages:
       - supports-color
       - typescript
       - utf-8-validate
-    dev: true
 
   /@xpla/xpla.js@0.2.3:
     resolution: {integrity: sha512-Tfk7hCGWXtwr08reY3Pi6dmzIqFbzri9jcyzJdfNmdo4cN0PMwpRJuZZcPmtxiIUnNef3AN1E/6nJUD5MKniuA==}
@@ -5222,7 +5095,7 @@ packages:
   /axios@1.7.3:
     resolution: {integrity: sha512-Ar7ND9pU99eJ9GpoGQKhKf58GpUOgnzuaB7ueNQ5BMi0p+LZ5oaEnfF999fAArcTIBwXTCHAmGcHOZJaWPq9Nw==}
     dependencies:
-      follow-redirects: 1.15.6(debug@4.3.4)
+      follow-redirects: 1.15.6(debug@4.3.5)
       form-data: 4.0.0
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -16669,37 +16542,6 @@ packages:
       tslib: 2.6.3
     optional: true
 
-  /ts-node@10.9.2(@types/node@14.18.63)(typescript@5.6.2):
-    resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
-    hasBin: true
-    peerDependencies:
-      '@swc/core': '>=1.2.50'
-      '@swc/wasm': '>=1.2.50'
-      '@types/node': '*'
-      typescript: '>=2.7'
-    peerDependenciesMeta:
-      '@swc/core':
-        optional: true
-      '@swc/wasm':
-        optional: true
-    dependencies:
-      '@cspotcode/source-map-support': 0.8.1
-      '@tsconfig/node10': 1.0.11
-      '@tsconfig/node12': 1.0.11
-      '@tsconfig/node14': 1.0.3
-      '@tsconfig/node16': 1.0.4
-      '@types/node': 14.18.63
-      acorn: 8.12.1
-      acorn-walk: 8.3.3
-      arg: 4.1.3
-      create-require: 1.1.1
-      diff: 4.0.2
-      make-error: 1.3.6
-      typescript: 5.6.2
-      v8-compile-cache-lib: 3.0.1
-      yn: 3.1.1
-    dev: false
-
   /ts-node@10.9.2(@types/node@20.16.11)(typescript@5.6.2):
     resolution: {integrity: sha512-f0FFpIdcHgn8zcPSbf1dRevwt047YMnaiJM3u2w2RewrB+fob/zePZcrOyQoLMMO7aBIddLcQIEK5dYjkLnGrQ==}
     hasBin: true
@@ -16729,7 +16571,6 @@ packages:
       typescript: 5.6.2
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
-    dev: true
 
   /ts-node@8.10.2(typescript@5.6.2):
     resolution: {integrity: sha512-ISJJGgkIpDdBhWVu3jufsWpK3Rzo7bdiIXJjQc0ynKxVOVcg2oIrf2H2cejminGrptVc6q6/uynAHNCuWGbpVA==}
