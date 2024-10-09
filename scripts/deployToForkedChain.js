@@ -57,11 +57,13 @@ async function getMostRecentEvent(contract, _filter) {
 }
 
 async function main() {
+  // Need to send transactions as the account in control of the production network
   signer = await ethers.getImpersonatedSigner("0x56a9212f7f495fadce1f27967bef5158199b36c7");
   const forkedBlock = await provider.getBlockNumber();
 
   await hre.run("deploy");
 
+  // This is the address the network is deployed to in production
   const DEPLOYED_NETWORK_ADDRESS = "0x777760996135F0791E2e1a74aFAa060711197777";
 
   const fakeCN = await ethers.getContractAt("IColonyNetwork", DEPLOYED_NETWORK_ADDRESS, signer);
