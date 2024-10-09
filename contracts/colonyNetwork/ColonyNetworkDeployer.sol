@@ -19,6 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 import { EtherRouter } from "./../common/EtherRouter.sol";
+import { Resolver } from "./../common/Resolver.sol";
 import { ColonyAuthority } from "./../colony/ColonyAuthority.sol";
 import { IColony } from "./../colony/IColony.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
@@ -27,10 +28,11 @@ import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";
 import { DSAuth, DSAuthority } from "./../../lib/dappsys/auth.sol";
 import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouterCreate3 } from "./../common/EtherRouterCreate3.sol";
+import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
+import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
+import { DomainReceiverManagement } from "./../common/DomainReceiverManagement.sol";
 
-contract ColonyNetworkDeployer is ColonyNetworkStorage {
-  address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
-
+contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement {
   function createMetaColony(address _tokenAddress) public stoppable auth {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
@@ -129,6 +131,18 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
+  function createProxyColony(
+    uint256 _destinationChainId,
+    bytes32 _salt
+  ) public stoppable calledByColony {
+    // TODO: Check if the colony is allowed to use the salt
+    bytes memory payload = abi.encodeWithSignature("createProxyColonyFromBridge(bytes32)", _salt);
+    require(
+      IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, address(this), payload),
+      "colony-network-create-proxy-colony-failed"
+    );
+  }
+
   /**
    * @dev Generates pseudo-randomly a salt value using a diverse selection of block and
    * transaction properties.
@@ -175,6 +189,24 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // This is intentional, as we want to allow the same Colony to be deployed on different chains
   }
 
+  function setDomainTokenReceiverResolver(address _resolver) public stoppable auth {
+    domainReceiverResolverAddress = _resolver;
+  }
+
+  function getDomainTokenReceiverResolver() public view override stoppable returns (address) {
+    return domainReceiverResolverAddress;
+  }
+
+  function msgSenderIsColony() internal view override returns (bool) {
+    require(_isColony[msgSender()], "colony-caller-must-be-colony");
+    assert(msgSender() == msg.sender);
+    return true;
+  }
+
+  function isStopped() internal view override returns (bool) {
+    return recoveryMode;
+  }
+
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
@@ -213,9 +245,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
-
-    // If we're not mining chain, then bridge the skill
-    IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
 
     colony.initialiseColony(address(this), _tokenAddress);
 

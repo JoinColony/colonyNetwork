@@ -35,6 +35,19 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 |_resolver|address|Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
 
 
+### ▸ `callProxyNetwork(uint256 _chainId, bytes[] memory _actions)`
+
+Call (a) function(s) on the proxyColonyNetwork on a different chain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId of the chain the function is being called on
+|_actions|bytes[]|The actions to be called
+
+
 ### ▸ `initialiseReputationMining(uint256 miningChainId, bytes32 newHash, uint256 newNLeaves)`
 
 Creates initial inactive reputation mining cycle.

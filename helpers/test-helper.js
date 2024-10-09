@@ -244,6 +244,9 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
   let receipt;
   try {
     receipt = await promise;
+    if (receipt.status === 0) {
+      throw receipt;
+    }
   } catch (err) {
     const txid = err.transactionHash;
 

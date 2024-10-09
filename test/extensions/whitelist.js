@@ -258,5 +258,19 @@ contract("Whitelist", (accounts) => {
       status = await whitelist.isApproved(USER1);
       expect(status).to.be.false;
     });
+
+    it("cannot approve users if deprecated", async () => {
+      await whitelist.initialise(true, "");
+      await colony.deprecateExtension(WHITELIST, true, { from: USER0 });
+
+      await checkErrorRevert(whitelist.approveUsers([USER1], true, { from: USER0 }), "colony-extension-deprecated");
+    });
+
+    it("users can't sign an agreement if deprecated", async () => {
+      await whitelist.initialise(true, "");
+      await colony.deprecateExtension(WHITELIST, true, { from: USER0 });
+
+      await checkErrorRevert(whitelist.signAgreement(IPFS_HASH, { from: USER0 }), "colony-extension-deprecated");
+    });
   });
 });
