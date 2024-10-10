@@ -530,7 +530,15 @@ contract("Voting Reputation", (accounts) => {
       // Move funds between domain 2 and domain 3 pots using the old deprecated function
       // This should not be allowed - it doesn't conform to the standard permission proofs, and so can't
       // be checked
-      let action = await encodeTxData(colony, "moveFundsBetweenPots", [1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address]);
+      let action = await encodeTxData(colony, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)", [
+        1,
+        0,
+        1,
+        domain2.fundingPotId,
+        domain3.fundingPotId,
+        WAD,
+        token.address,
+      ]);
       const key = makeReputationKey(colony.address, domain2.skillId);
       const value = makeReputationValue(WAD, 6);
       const [mask, siblings] = reputationTree.getProof(key);
@@ -2113,7 +2121,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
-      const action = await encodeTxData(colony, "makeArbitraryTransaction", [colony.address, "0x00"]);
+      const action = await encodeTxData(colony, "makeArbitraryTransactions", [[colony.address], ["0x00"], true]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();
@@ -3114,7 +3122,15 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("cannot let an invalid motion involving multicalling OLD_MOVE_FUNDS be finalized", async () => {
-      const action1 = await encodeTxData(colony, "moveFundsBetweenPots", [1, 0, 2, 0, 0, 0, ADDRESS_ZERO]);
+      const action1 = await encodeTxData(colony, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)", [
+        1,
+        0,
+        2,
+        0,
+        0,
+        0,
+        ADDRESS_ZERO,
+      ]);
       const multicall = await encodeTxData(colony, "multicall", [[action1]]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
