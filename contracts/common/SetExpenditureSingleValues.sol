@@ -16,23 +16,21 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.23;
+pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { IColony } from "./../colony/IColony.sol";
 
 contract SetExpenditureSingleValues {
   struct SetExpenditureValuesCallData {
-    uint256[] slots;
-    uint256[][] wrappedSlots;
     address payable[] recipients;
+    uint256[] slots;
     uint256[] skills;
-    address[] tokens;
-    uint256[][] amounts;
+    uint256[] amounts;
   }
 
   function setExpenditureSingleValues(
-    address colony,
+    address _colony,
     uint256 _expenditureId,
     uint256 _slot,
     address payable _recipient,
@@ -41,44 +39,23 @@ contract SetExpenditureSingleValues {
     uint256 _amount
   ) internal {
     SetExpenditureValuesCallData memory data = SetExpenditureValuesCallData(
-      new uint256[](1),
-      new uint256[][](1),
       new address payable[](1),
-      new uint256[](0),
-      new address[](1),
-      new uint256[][](1)
+      new uint256[](1),
+      new uint256[](1),
+      new uint256[](1)
     );
-
-    if (_skillId != 0) {
-      data.skills = new uint256[](1);
-      data.skills[0] = _skillId;
-    }
-
-    data.slots[0] = _slot;
-    data.wrappedSlots[0] = new uint256[](1);
-    data.wrappedSlots[0][0] = _slot;
 
     data.recipients[0] = _recipient;
-    data.tokens[0] = _token;
-    data.amounts[0] = new uint256[](1);
-    data.amounts[0][0] = _amount;
+    data.slots[0] = _slot;
+    data.skills[0] = _skillId;
+    data.amounts[0] = _amount;
 
-    uint256[] memory emptyUint256Array;
-    int256[] memory emptyInt256Array;
+    IColony(_colony).setExpenditureRecipients(_expenditureId, data.slots, data.recipients);
 
-    IColony(colony).setExpenditureValues(
-      _expenditureId,
-      data.slots,
-      data.recipients,
-      data.slots,
-      data.skills,
-      emptyUint256Array,
-      emptyUint256Array,
-      emptyUint256Array,
-      emptyInt256Array,
-      data.tokens,
-      data.wrappedSlots,
-      data.amounts
-    );
+    if (data.skills[0] > 0) {
+      IColony(_colony).setExpenditureSkills(_expenditureId, data.slots, data.skills);
+    }
+
+    IColony(_colony).setExpenditurePayouts(_expenditureId, data.slots, _token, data.amounts);
   }
 }
