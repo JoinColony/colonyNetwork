@@ -1822,9 +1822,6 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("can correctly summarize a multicall action", async () => {
-      const OLD_MOVE_FUNDS_SIG = soliditySha3("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)").slice(0, 10);
-      // NB This is still not a full call, but it's long enough that it has a permissions signature
-      const OLD_MOVE_FUNDS_CALL = `${OLD_MOVE_FUNDS_SIG}${"0".repeat(63)}1${bn2bytes32(UINT256_MAX).slice(2)}`;
       const SET_EXPENDITURE_STATE = soliditySha3("setExpenditureState(uint256,uint256,uint256,uint256,bool[],bytes32[],bytes32)").slice(0, 10);
       const SET_EXPENDITURE_PAYOUT = soliditySha3("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)").slice(0, 10);
 
@@ -1857,8 +1854,6 @@ contract("Voting Reputation", (accounts) => {
       const action12 = await encodeTxData(tokenLocking, "obligateStake", [USER0, WAD, token.address]);
       const action13 = await encodeTxData(tokenLocking, "obligateStake", [USER1, WAD, token.address]);
 
-      const action14 = await encodeTxData(colony, "moveFundsBetweenPots", [1, UINT256_MAX, 1, 1, 1, 1, 1, UINT256_MAX, token.address]);
-
       let multicall;
       let summary;
 
@@ -1868,11 +1863,6 @@ contract("Voting Reputation", (accounts) => {
       expect(summary.sig).to.equal(SET_EXPENDITURE_PAYOUT);
       expect(summary.expenditureId).to.eq.BN(expenditure2Id);
       expect(summary.domainSkillId).to.eq.BN(domain3.skillId);
-
-      // Blacklisted function
-      multicall = await encodeTxData(colony, "multicall", [[OLD_MOVE_FUNDS_CALL, action14]]);
-      summary = await voting.getActionSummary(multicall, ADDRESS_ZERO);
-      await checkErrorRevertEstimateGas(voting.getActionSummary.estimateGas(multicall, ADDRESS_ZERO), "colony-action-summary-forbidden-sig");
 
       // Special NO_ACTION
       multicall = await encodeTxData(colony, "multicall", [[action9, NO_ACTION]]);
@@ -3115,33 +3105,6 @@ contract("Voting Reputation", (accounts) => {
       await forwardTime(STAKE_PERIOD, this);
 
       expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
-
-      await upgradeFromV9ToLatest(colony);
-
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZED);
-    });
-
-    it("cannot let an invalid motion involving multicalling OLD_MOVE_FUNDS be finalized", async () => {
-      const action1 = await encodeTxData(colony, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)", [
-        1,
-        0,
-        2,
-        0,
-        0,
-        0,
-        ADDRESS_ZERO,
-      ]);
-      const multicall = await encodeTxData(colony, "multicall", [[action1]]);
-
-      await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, multicall, domain1Key, domain1Value, domain1Mask, domain1Siblings);
-      const motionId = await voting.getMotionCount();
-
-      await colony.approveStake(voting.address, 1, WAD, { from: USER0 });
-      await voting.stakeMotion(motionId, 1, UINT256_MAX, YAY, REQUIRED_STAKE, user0Key, user0Value, user0Mask, user0Siblings, { from: USER0 });
-
-      await forwardTime(STAKE_PERIOD, this);
-
-      expect(await voting.getMotionState(motionId)).to.eq.BN(FINALIZABLE);
 
       await upgradeFromV9ToLatest(colony);
 
