@@ -114,6 +114,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   mapping(uint256 => bool) DEPRECATED_localSkills; // Storage slot 37
   mapping(uint256 => LocalSkill) localSkills; // Storage slot 38
 
+  // Mapping of domain id => token address => approval to receive if reputation-earning
+  mapping(uint256 => mapping(address => uint256)) domainReputationTokenApprovals; // Storage slot 39
+
   // Constants
 
   uint256 constant MAX_PAYOUT = 2 ** 128 - 1; // 340,282,366,920,938,463,463 WADs
