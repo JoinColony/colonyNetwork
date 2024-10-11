@@ -22,7 +22,6 @@ pragma experimental ABIEncoderV2;
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { SetExpenditureSingleValues } from "./../common/SetExpenditureSingleValues.sol";
-
 // ignore-file-swc-108
 
 contract StreamingPayments is ColonyExtensionMeta, SetExpenditureSingleValues {
