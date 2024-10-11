@@ -612,6 +612,23 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |---|---|---|
 |payout|uint256|Funding pot payout amount
 
+### ▸ `getLocalSkill(uint256 localSkillId):LocalSkill localSkill`
+
+Get the local skill
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|localSkillId|uint256|Id for the local skill
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|localSkill|LocalSkill|The local skill
+
 ### ▸ `getNonRewardPotsTotal(address _token):uint256 amount`
 
 Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.

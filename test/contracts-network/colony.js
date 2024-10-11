@@ -21,7 +21,7 @@ const {
   fundColonyWithTokens,
   setupColony,
 } = require("../../helpers/test-data-generator");
-const { deployColonyVersionGLWSS4, deployColonyVersionHMWSS } = require("../../scripts/deployOldUpgradeableVersion");
+const { downgradeColony, deployColonyVersionGLWSS4, deployColonyVersionHMWSS } = require("../../scripts/deployOldUpgradeableVersion");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -183,20 +183,41 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "LocalSkillAdded", [accounts[0], skillCount]);
     });
 
-    it.skip("should allow root users to deprecate local skills", async () => {
+    it("should allow root users to deprecate local skills", async () => {
       await colony.addLocalSkill();
       const skillCount = await colonyNetwork.getSkillCount();
+
+      await checkErrorRevert(colony.deprecateLocalSkill(skillCount, true, { from: USER1 }), "ds-auth-unauthorized");
 
       const tx = await colony.deprecateLocalSkill(skillCount, true);
       await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
     });
 
-    it("should revert when trying to deprecate a local skill", async () => {
+    it("should not be able to deprecate a skill on the network", async () => {
+      await deployColonyVersionHMWSS(colonyNetwork);
+      await downgradeColony(colonyNetwork, colony, "hmwss");
+
+      const version = await colony.version();
+      expect(version).to.eq.BN(14);
+
+      await checkErrorRevert(colony.deprecateLocalSkill(0, true), "colony-network-deprecate-skill-disabled");
+    });
+
+    it("should not emit events when repeatedly deprecating a local skill", async () => {
       await colony.addLocalSkill();
       const skillCount = await colonyNetwork.getSkillCount();
 
-      const tx = colony.deprecateLocalSkill(skillCount, false);
-      await checkErrorRevert(tx, "colony-network-deprecate-local-skills-temporarily-disabled");
+      // First deprecation
+      let tx = await colony.deprecateLocalSkill(skillCount, true);
+      await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, true]);
+
+      // Re-deprecate (no event)
+      tx = await colony.deprecateLocalSkill(skillCount, true);
+      await expectNoEvent(tx, "LocalSkillDeprecated");
+
+      // Un-deprecate
+      tx = await colony.deprecateLocalSkill(skillCount, false);
+      await expectEvent(tx, "LocalSkillDeprecated", [accounts[0], skillCount, false]);
     });
   });
 
@@ -231,7 +252,7 @@ contract("Colony", (accounts) => {
     });
   });
 
-  describe.skip("when deprecating domains", () => {
+  describe("when deprecating domains", () => {
     it("should log the DomainDeprecated event", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await expectEvent(colony.deprecateDomain(1, 0, 2, true), "DomainDeprecated", [USER0, 2, true]);
@@ -244,6 +265,38 @@ contract("Colony", (accounts) => {
       await checkErrorRevert(colony.addDomain(1, 0, 2), "colony-domain-deprecated");
       await checkErrorRevert(colony.makeExpenditure(1, 0, 2), "colony-domain-deprecated");
       await checkErrorRevert(colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, 1, 2, 100, token.address), "colony-domain-deprecated");
+    });
+
+    it("should only allow authorized users to deprecate domains", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const domainId = await colony.getDomainCount();
+
+      // Non-authorized user should not be able to deprecate
+      await checkErrorRevert(colony.deprecateDomain(1, 0, domainId, true, { from: USER1 }), "ds-auth-unauthorized");
+
+      // Root user should be able to deprecate
+      await expectEvent(colony.deprecateDomain(1, 0, domainId, true, { from: USER0 }), "DomainDeprecated", [USER0, domainId, true]);
+    });
+
+    it("should not re-emit events when repeatedly deprecating a domain", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const domainId = await colony.getDomainCount();
+
+      // Deprecate the domain for the first time
+      const tx1 = await colony.deprecateDomain(1, 0, domainId, true);
+      await expectEvent(tx1, "DomainDeprecated", [USER0, domainId, true]);
+
+      // Attempt to deprecate the domain again
+      const tx2 = await colony.deprecateDomain(1, 0, domainId, true);
+      await expectNoEvent(tx2, "DomainDeprecated");
+
+      // Undeprecate the domain
+      const tx3 = await colony.deprecateDomain(1, 0, domainId, false);
+      await expectEvent(tx3, "DomainDeprecated", [USER0, domainId, false]);
+
+      // Deprecate the domain once more
+      const tx4 = await colony.deprecateDomain(1, 0, domainId, true);
+      await expectEvent(tx4, "DomainDeprecated", [USER0, domainId, true]);
     });
   });
 

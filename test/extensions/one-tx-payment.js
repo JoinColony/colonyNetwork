@@ -612,17 +612,40 @@ contract("One transaction payments", (accounts) => {
       expect(await colony.hasUserRole(oneTxPayment.address, 1, ARBITRATION_ROLE)).to.be.false;
     });
 
-    it("a colony can still upgrade even if Voting Reputation not installed", async () => {
+    it("a colony can still upgrade even if OneTxPayment not installed", async () => {
       await colony.uninstallExtension(ONE_TX_PAYMENT);
       expect(await colony.version()).to.eq.BN(13);
       await colony.upgrade(14);
       expect(await colony.version()).to.eq.BN(14);
     });
 
-    it("a colony can still upgrade even if Voting Reputation is more up-to-date than we might expect", async () => {
+    it("a colony can still upgrade even if OneTxPayment is more up-to-date than we might expect", async () => {
       await colony.uninstallExtension(ONE_TX_PAYMENT);
       await colony.installExtension(ONE_TX_PAYMENT, 6);
       await colony.upgrade(14);
+    });
+
+    it("can call getDomain() without an error", async () => {
+      await colony.uninstallExtension(ONE_TX_PAYMENT);
+      await colony.installExtension(ONE_TX_PAYMENT, 6);
+      const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
+      oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
+
+      await colony.setUserRoles(1, UINT256_MAX, oneTxPayment.address, 1, ROLES);
+      await token.mint(colony.address, INITIAL_FUNDING);
+      await colony.claimColonyFunds(token.address);
+
+      await upgradeColonyOnceThenToLatest(colony);
+      // Confirm this colony has the new domain structure
+      const domain = await colony.getDomain(1);
+      expect(domain.deprecated).to.be.false;
+      await colony.deprecateDomain(1, UINT256_MAX, 1, true);
+      const deprecatedDomain = await colony.getDomain(1);
+      expect(deprecatedDomain.deprecated).to.be.true;
+
+      // Undeprecate
+      await colony.deprecateDomain(1, UINT256_MAX, 1, false);
+      await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 0);
     });
   });
 });

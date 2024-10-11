@@ -1,4 +1,3 @@
-// Input:
 /* globals artifacts */
 
 const Resolver = artifacts.require("./Resolver");
@@ -24,6 +23,7 @@ async function main() {
 
   await setupEtherRouter("colony", interfaceName, deployedImplementations, resolver);
   console.log(resolver.address); // This returns the address to the caller
+  process.exit(0);
 }
 
 main();

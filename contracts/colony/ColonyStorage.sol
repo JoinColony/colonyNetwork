@@ -111,7 +111,8 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   mapping(address => uint256) metatransactionNonces; // Storage slot 35
 
   uint256 rootLocalSkill; // Storage slot 36
-  mapping(uint256 => bool) localSkills; // Storage slot 37
+  mapping(uint256 => bool) DEPRECATED_localSkills; // Storage slot 37
+  mapping(uint256 => LocalSkill) localSkills; // Storage slot 38
 
   // Constants
 
@@ -124,10 +125,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Modifiers
 
   modifier domainNotDeprecated(uint256 _id) {
-    require(
-      !IColonyNetwork(colonyNetworkAddress).getSkill(domains[_id].skillId).deprecated,
-      "colony-domain-deprecated"
-    );
+    require(!domains[_id].deprecated, "colony-domain-deprecated");
     _;
   }
 
@@ -299,8 +297,16 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   }
 
   function isValidLocalSkill(uint256 skillId) internal view returns (bool) {
-    Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
-    return localSkills[skillId] && !skill.deprecated && !skill.DEPRECATED_globalSkill;
+    if (localSkills[skillId].exists) {
+      return !localSkills[skillId].deprecated;
+    }
+
+    if (DEPRECATED_localSkills[skillId]) {
+      Skill memory skill = IColonyNetwork(colonyNetworkAddress).getSkill(skillId);
+      return (!skill.DEPRECATED_deprecated && !skill.DEPRECATED_globalSkill);
+    }
+
+    return false;
   }
 
   function domainExists(uint256 domainId) internal view returns (bool) {
