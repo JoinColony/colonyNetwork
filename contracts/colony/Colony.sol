@@ -317,20 +317,11 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   }
 
   function finishUpgrade() public always {
-    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    bytes4 sig;
-
-    sig = bytes4(keccak256("cancelExpenditureViaArbitration(uint256,uint256,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
-
-    sig = bytes4(keccak256("finalizeExpenditureViaArbitration(uint256,uint256,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
-
-    sig = bytes4(keccak256("setColonyBridgeAddress(address)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
-
-    sig = bytes4(keccak256("initialiseReputationMining(uint256,bytes32,uint256)"));
-    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+    // Leaving as example for what is typically done here
+    // ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    // bytes4 sig;
+    // sig = bytes4(keccak256("cancelExpenditureViaArbitration(uint256,uint256,uint256)"));
+    // colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
