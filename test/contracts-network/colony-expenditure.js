@@ -189,10 +189,7 @@ contract("Colony Expenditure", (accounts) => {
     it("should error if the expenditure does not exist", async () => {
       await checkErrorRevert(colony.setExpenditureSkills(100, [SLOT0], [localSkillId]), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.transferExpenditure(100, USER), "colony-expenditure-does-not-exist");
-      await checkErrorRevert(
-        colony.transferExpenditureViaArbitration(0, UINT256_MAX, 100, USER, { from: ARBITRATOR }),
-        "colony-expenditure-does-not-exist",
-      );
+      await checkErrorRevert(colony.cancelExpenditureViaArbitration(0, UINT256_MAX, 100, { from: ARBITRATOR }), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.cancelExpenditure(100), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.lockExpenditure(100), "colony-expenditure-does-not-exist");
       await checkErrorRevert(colony.finalizeExpenditure(100), "colony-expenditure-does-not-exist");
