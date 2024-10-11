@@ -852,6 +852,27 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _domainId Id of the domain
   function claimDomainFunds(address _token, uint256 _domainId) external;
 
+  /// @notice Add or remove an amount from the amount of a reputation earning token that a domain can receive
+  /// @param _domainId Id of the domain
+  /// @param _token Address of the token
+  /// @param _amount Amount to add or remove
+  /// @param _add Whether to add or remove the amount. True is add, false is remove
+  function editAllowedDomainTokenReceipt(
+    uint256 _domainId,
+    address _token,
+    uint256 _amount,
+    bool _add
+  ) external;
+
+  /// @notice Get the amount of a reputation earning token that a domain can receive
+  /// @param _domainId Id of the domain
+  /// @param _token Address of the token
+  /// @return uint256 amount Amount of the token that the domain can receive
+  function getAllowedDomainTokenReceipt(
+    uint256 _domainId,
+    address _token
+  ) external view returns (uint256);
+
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
