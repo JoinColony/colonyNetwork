@@ -1409,6 +1409,37 @@
           "numberOfBytes": "32"
         }
       }
+    },
+    {
+      "contract": "contracts/colony/ColonyExpenditure.sol:ColonyExpenditure",
+      "label": "domainReputationTokenApprovals",
+      "offset": 0,
+      "slot": "39",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "uint256",
+          "numberOfBytes": "32"
+        },
+        "label": "mapping(uint256 => mapping(address => uint256))",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "mapping",
+          "key": {
+            "encoding": "inplace",
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "label": "mapping(address => uint256)",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "inplace",
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
     }
   ]
 }
