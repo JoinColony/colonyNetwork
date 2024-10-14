@@ -214,6 +214,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.updateApprovalAmount(ADDRESS_ZERO, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.finalizeRewardPayout(1), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimDomainFunds(ADDRESS_ZERO, 1), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.editAllowedDomainTokenReceipt(1, ADDRESS_ZERO, 1, true), "colony-in-recovery-mode");
     });
 
     it("recovery functions should be permissioned", async () => {
