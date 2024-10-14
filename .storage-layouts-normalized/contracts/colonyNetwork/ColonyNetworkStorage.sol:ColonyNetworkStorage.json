@@ -378,7 +378,7 @@
             },
             {
               "contract": "contracts/colonyNetwork/ColonyNetworkStorage.sol:ColonyNetworkStorage",
-              "label": "DEPRECATED_deprecated",
+              "label": "deprecated",
               "offset": 1,
               "slot": "3",
               "type": {
