@@ -14,6 +14,8 @@ const {
   SLOT0,
   SLOT1,
   SLOT2,
+  ROOT_ROLE,
+  ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
 const {
@@ -23,7 +25,7 @@ const {
   setupFundedExpenditure,
   setupClaimedExpenditure,
 } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent } = require("../../helpers/test-helper");
+const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -702,6 +704,38 @@ contract("Colony Funding", (accounts) => {
 
       allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
       expect(allowedReceipt).to.eq.BN(0);
+    });
+
+    it(`root permission is required to call editAllowedDomainTokenReceipt`, async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(2, token.address, 70, true, { from: WORKER }), "ds-auth-unauthorized");
+      const rootRole = rolesToBytes32([ROOT_ROLE]);
+
+      await colony.setUserRoles(1, UINT256_MAX, WORKER, 1, rootRole);
+      await colony.editAllowedDomainTokenReceipt(2, token.address, 70, true, { from: WORKER });
+    });
+
+    it(`cannot editAllowedDomainTokenReceipt for a domain that does not exist`, async () => {
+      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(2, token.address, 70, true), "colony-funding-domain-does-not-exist");
+    });
+
+    it(`cannot editAllowedDomainTokenReceipt for a token that does not earn reputation`, async () => {
+      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(1, ADDRESS_ZERO, 70, true), "colony-funding-token-does-not-earn-reputation");
+    });
+
+    it(`can add and remove allowed domain token receipts as expected`, async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.editAllowedDomainTokenReceipt(2, token.address, 70, true);
+      let allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      expect(allowedReceipt).to.eq.BN(70);
+
+      await colony.editAllowedDomainTokenReceipt(2, token.address, 20, false);
+      allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      expect(allowedReceipt).to.eq.BN(50);
+    });
+
+    it(`cannot editAllowedDomainTokenReceipt for the root domain`, async () => {
+      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(1, token.address, 70, true), "colony-funding-root-domain");
     });
 
     it(`when receiving native (reputation-earning) token, if full approval present for domain,
