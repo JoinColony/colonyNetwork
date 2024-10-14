@@ -169,6 +169,7 @@ contract ColonyFunding is
   ) public stoppable auth {
     require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
     require(tokenEarnsReputationOnPayout(_token), "colony-funding-token-does-not-earn-reputation");
+    require(_domainId > 1, "colony-funding-root-domain");
     if (_add) {
       domainReputationTokenApprovals[_domainId][_token] += _amount;
     } else {
@@ -180,8 +181,6 @@ contract ColonyFunding is
     uint256 _domainId,
     address _token
   ) public view returns (uint256) {
-    require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
-    require(tokenEarnsReputationOnPayout(_token), "colony-funding-token-does-not-earn-reputation");
     return domainReputationTokenApprovals[_domainId][_token];
   }
 

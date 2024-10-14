@@ -479,11 +479,14 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner");
     });
 
-    it("should allow owners to add a slot payout", async () => {
+    it("should allow only owners to add a slot payout", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
       const payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(payout).to.eq.BN(WAD);
+
+      await colony.transferExpenditure(expenditureId, USER, { from: ADMIN });
+      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN }), "colony-expenditure-not-owner");
     });
 
     it("should be able to add multiple payouts in different tokens", async () => {
