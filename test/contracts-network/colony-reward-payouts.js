@@ -778,8 +778,8 @@ contract("Colony Reward Payouts", (accounts) => {
       await newToken.approve(tokenLocking.address, userReputation, { from: userAddress1 });
       await tokenLocking.methods["deposit(address,uint256,bool)"](newToken.address, userReputation, true, { from: userAddress1 });
 
-      await colony1.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
-      await colony2.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await colony1.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await colony2.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       ({ logs } = await colony1.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof1));
       const payoutId1 = logs[0].args.rewardPayoutId;

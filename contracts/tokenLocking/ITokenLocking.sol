@@ -49,13 +49,6 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) external;
 
-  /// @notice @deprecated
-  /// @notice Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked.
-  /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
-  /// @param _token Address of the token to deposit
-  /// @param _amount Amount to deposit
-  function deposit(address _token, uint256 _amount) external;
-
   /// @notice Deposit `_amount` of colony tokens.
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract.
   /// @param _token Address of the token to deposit
@@ -76,23 +69,11 @@ interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {
   /// @param _force Pass true to forcibly unlock the token
   function transfer(address _token, uint256 _amount, address _recipient, bool _force) external;
 
-  /// @notice @deprecated
-  /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
-  /// @param _token Address of the token to withdraw from
-  /// @param _amount Amount to withdraw
-  function withdraw(address _token, uint256 _amount) external;
-
   /// @notice Withdraw `_amount` of deposited tokens. Set `_force` to `true` to forcibly unlock the token before the withdrawal.
   /// @param _token Address of the token to withdraw from
   /// @param _amount Amount to withdraw
   /// @param _force Pass true to forcibly unlock the token
   function withdraw(address _token, uint256 _amount, bool _force) external;
-
-  /// @notice This function is deprecated and only exists to aid upgrades.
-  /// @param _recipient The address to receive the reward
-  /// @param _amount The amount to reward
-  /// @dev It's a NOOP. You don't need to call this, and if you write a contract that does it will break in the future.
-  function reward(address _recipient, uint256 _amount) external;
 
   /// @notice Allow the colony to obligate some amount of tokens as a stake.
   /// @dev Can only be called by a colony or colonyNetwork

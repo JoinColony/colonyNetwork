@@ -4,6 +4,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
 const { checkErrorRevert } = require("../../helpers/test-helper");
+const { CURR_VERSION } = require("../../helpers/constants");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -11,7 +12,7 @@ chai.use(bnChai(web3.utils.BN));
 const MultiSigWallet = artifacts.require("gnosis/MultiSigWallet");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
-const ColonyNetworkDeployer = artifacts.require("ColonyNetworkDeployer");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 
 contract("EtherRouter / Resolver", (accounts) => {
   const COINBASE_ACCOUNT = accounts[0];
@@ -68,12 +69,17 @@ contract("EtherRouter / Resolver", (accounts) => {
 
   describe("Resolver", () => {
     it("should return correct destination for given function, including overloads", async () => {
-      const deployedColonyNetwork = await ColonyNetworkDeployer.deployed();
-      const signature = await resolver.stringToSig("createColony(address)");
-      const overloadedSignature = await resolver.stringToSig("createColony(address,uint256,string,string)");
-      const destination = await resolver.lookup(signature);
-      const overloadedDestination = await resolver.lookup(overloadedSignature);
-      expect(destination).to.equal(deployedColonyNetwork.address);
+      const networkEtherRouter = await EtherRouter.deployed();
+      const colonyNetwork = await IColonyNetwork.at(networkEtherRouter.address);
+      const colonyResolverAddress = await colonyNetwork.getColonyVersionResolver(CURR_VERSION);
+      const colonyResolver = await Resolver.at(colonyResolverAddress);
+      // This function is not overloaded, and exists on same contract
+      const colonyDomainsAddress = await colonyResolver.lookup(web3.utils.soliditySha3("getDomain(uint256)").slice(0, 10));
+      const signature = await resolver.stringToSig("addDomain(uint256,uint256,uint256)");
+      const overloadedSignature = await colonyResolver.stringToSig("addDomain(uint256,uint256,uint256,string)");
+      const destination = await colonyResolver.lookup(signature);
+      const overloadedDestination = await colonyResolver.lookup(overloadedSignature);
+      expect(destination).to.equal(colonyDomainsAddress);
       expect(destination).to.equal(overloadedDestination);
     });
 
