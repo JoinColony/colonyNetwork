@@ -628,7 +628,7 @@ contract("One transaction payments", (accounts) => {
 
     it("can call getDomain() without an error", async () => {
       await colony.uninstallExtension(ONE_TX_PAYMENT);
-      await colony.installExtension(ONE_TX_PAYMENT, 6);
+      await colony.installExtension(ONE_TX_PAYMENT, 9);
       const oneTxPaymentAddress = await colonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, colony.address);
       oneTxPayment = await OneTxPayment.at(oneTxPaymentAddress);
 
@@ -637,15 +637,18 @@ contract("One transaction payments", (accounts) => {
       await colony.claimColonyFunds(token.address);
 
       await upgradeColonyOnceThenToLatest(colony);
+
       // Confirm this colony has the new domain structure
       const domain = await colony.getDomain(1);
       expect(domain.deprecated).to.be.false;
+
+      // Test deprecation and undeprecation
       await colony.deprecateDomain(1, UINT256_MAX, 1, true);
       const deprecatedDomain = await colony.getDomain(1);
       expect(deprecatedDomain.deprecated).to.be.true;
-
-      // Undeprecate
       await colony.deprecateDomain(1, UINT256_MAX, 1, false);
+
+      // This calls getDomain() internally
       await oneTxPayment.makePaymentFundedFromDomain(1, UINT256_MAX, 1, UINT256_MAX, [USER1], [token.address], [10], 1, 0);
     });
   });
