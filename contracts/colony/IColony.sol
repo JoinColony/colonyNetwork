@@ -576,6 +576,22 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _amount
   ) external;
 
+  /// @notice @deprecated
+  /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
+  /// @param _id Id of the expenditure
+  /// @param _slot Number of the slot
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function setExpenditurePayout(
+    uint256 _id,
+    uint256 _slot,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  ) external;
+
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
   /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure

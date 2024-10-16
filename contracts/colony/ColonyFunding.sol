@@ -387,6 +387,20 @@ contract ColonyFunding is
     setExpenditurePayoutsInternal(_id, slots, block.chainid, _token, amounts);
   }
 
+  function setExpenditurePayout(
+    uint256 _id,
+    uint256 _slot,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  ) public stoppable expenditureDraft(_id) expenditureOnlyOwner(_id) {
+    uint256[] memory slots = new uint256[](1);
+    slots[0] = _slot;
+    uint256[] memory amounts = new uint256[](1);
+    amounts[0] = _amount;
+    setExpenditurePayoutsInternal(_id, slots, _chainId, _token, amounts);
+  }
+
   int256 constant MAX_PAYOUT_MODIFIER = int256(WAD);
   int256 constant MIN_PAYOUT_MODIFIER = -int256(WAD);
 

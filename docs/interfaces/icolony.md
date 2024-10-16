@@ -1497,6 +1497,23 @@ Set the token payout on an expenditure slot. Can only be called by expenditure o
 |_amount|uint256|Payout amount
 
 
+### ▸ `setExpenditurePayout(uint256 _id, uint256 _slot, uint256 _chainId, address _token, uint256 _amount)`
+
+Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+
+*Note: Can only be called while expenditure is in draft state.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256|Id of the expenditure
+|_slot|uint256|Number of the slot
+|_chainId|uint256|The chainId of the token
+|_token|address|Address of the token, `0x0` value indicates Ether
+|_amount|uint256|Payout amount
+
+
 ### ▸ `setExpenditurePayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _slot, address _token, uint256 _amount)`
 
 This function is deprecated and will be removed in a future version
