@@ -17,7 +17,6 @@ pragma solidity 0.8.27;
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 import { IsContract } from "./IsContract.sol";
 
 contract CallWithGuards is IsContract {

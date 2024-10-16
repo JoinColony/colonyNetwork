@@ -18,7 +18,6 @@ const {
   ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
-<<<<<<< HEAD
 const {
   fundColonyWithTokens,
   setupRandomColony,
@@ -28,14 +27,6 @@ const {
 } = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
-||||||| parent of 632eb6ca (Respect reward pots for domain-level claims; add event)
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent } = require("../../helpers/test-helper");
-=======
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent } = require("../../helpers/test-helper");
-const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
->>>>>>> 632eb6ca (Respect reward pots for domain-level claims; add event)
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -832,8 +823,6 @@ contract("Colony Funding", (accounts) => {
       expect(resolverAfter).to.equal(newResolver.address);
       expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
-    });
-
     it("should not be able to claim funds for a domain that does not exist", async () => {
       await checkErrorRevert(colony.claimDomainFunds(ethers.constants.AddressZero, 2), "colony-funding-domain-does-not-exist");
     });
