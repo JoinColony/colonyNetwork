@@ -30,6 +30,7 @@ const IColony = artifacts.require("IColony");
 const ProxyColonyNetwork = artifacts.require("ProxyColonyNetwork");
 const ProxyColony = artifacts.require("ProxyColony");
 const MetaTxToken = artifacts.require("MetaTxToken");
+const OneTxPayment = artifacts.require("OneTxPayment");
 const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
 // const { assert } = require("console");
 
@@ -44,8 +45,11 @@ const {
   NETWORK_ADDRESS,
   HASHZERO,
   LIFI_ADDRESS,
+  ARBITRATION_ROLE,
+  FUNDING_ROLE,
+  ADMINISTRATION_ROLE,
 } = require("../../helpers/constants");
-const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
+const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId, rolesToBytes32 } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -59,6 +63,7 @@ const contractLoader = new TruffleLoader({
 contract("Cross-chain", (accounts) => {
   let homeColony;
   let homeColonyNetwork;
+  let proxyColony;
   let remoteColonyNetwork;
   let homeBridge;
   let foreignBridge;
@@ -539,7 +544,6 @@ contract("Cross-chain", (accounts) => {
   describe("collecting and paying out tokens on another chain", async () => {
     let foreignToken;
     let colony;
-    let proxyColony;
     beforeEach(async () => {
       colony = await setupColony(homeColonyNetwork);
 
@@ -1011,7 +1015,6 @@ contract("Cross-chain", (accounts) => {
 
   describe("making arbitrary transactions on another chain", async () => {
     let colony;
-    let proxyColony;
     let foreignToken;
     beforeEach(async () => {
       colony = await setupColony(homeColonyNetwork);
@@ -1150,7 +1153,6 @@ contract("Cross-chain", (accounts) => {
 
   describe("ProxyColony functions are secure", async () => {
     let colony;
-    let proxyColony;
     beforeEach(async () => {
       colony = await setupColony(homeColonyNetwork);
 
@@ -1254,6 +1256,80 @@ contract("Cross-chain", (accounts) => {
       const tx = await remoteColonyBridge.receiveMessage(vaa, { gasLimit: 1000000 });
       // await tx.wait();
       await checkErrorRevertEthers(tx.wait(), "colony-bridge-destination-chain-id-mismatch");
+    });
+  });
+
+  describe("OneTxPayment", async () => {
+    let version;
+    before(async () => {
+      const oneTxPaymentFactory = new ethers.ContractFactory(OneTxPayment.abi, OneTxPayment.bytecode, ethersHomeSigner);
+      const extension = await oneTxPaymentFactory.deploy();
+      version = await extension.version();
+    });
+
+    beforeEach(async () => {
+      const events = await homeColonyNetwork.queryFilter(homeColonyNetwork.filters.ColonyAdded());
+      // homeColonyNetwork.fil
+      // Deploy a proxy colony on the foreign network
+
+      const colonyCreationSalt = await homeColonyNetwork.getColonyCreationSalt({ blockTag: events[events.length - 1].blockNumber });
+
+      const p = guardianSpy.getPromiseForNextBridgedTransaction();
+
+      const tx = await homeColony.createProxyColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
+      await tx.wait();
+
+      await p;
+      proxyColony = new ethers.Contract(homeColony.address, ProxyColony.abi, ethersForeignSigner);
+      // Deploy a token on the foreign network
+    });
+
+    it("Can make a OneTxPayment cross-chain", async () => {
+      const tokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersForeignSigner);
+      const foreignToken = await tokenFactory.deploy("Test Token", "TT", 18);
+      await (await foreignToken.unlock()).wait();
+
+      const tokenAmount = ethers.utils.parseEther("100");
+      await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
+
+      let p = guardianSpy.getPromiseForNextBridgedTransaction();
+
+      let tx = await proxyColony.claimTokens(foreignToken.address);
+      await tx.wait();
+
+      await p;
+
+      const paymentAmount = ethers.utils.parseEther("30");
+      const ONE_TX_PAYMENT = ethers.utils.id("OneTxPayment");
+      await homeColony.installExtension(ONE_TX_PAYMENT, version);
+
+      const oneTxPaymentAddress = await homeColonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, homeColony.address);
+      const oneTxPayment = await new ethers.Contract(oneTxPaymentAddress, OneTxPayment.abi, ethersHomeSigner);
+
+      const ROLES = rolesToBytes32([ARBITRATION_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]);
+      await homeColony.setUserRoles(1, UINT256_MAX_ETHERS, oneTxPayment.address, 1, ROLES);
+
+      const balanceBefore = await foreignToken.balanceOf(accounts[0]);
+
+      p = guardianSpy.getPromiseForNextBridgedTransaction();
+      console.log("amkepayment");
+      tx = await oneTxPayment["makePayment(uint256,uint256,uint256,uint256,address[],uint256[],address[],uint256[],uint256,uint256)"](
+        1,
+        UINT256_MAX_ETHERS,
+        1,
+        UINT256_MAX_ETHERS,
+        [accounts[0]],
+        [foreignChainId],
+        [foreignToken.address],
+        [paymentAmount],
+        1,
+        0,
+      );
+      await tx.wait();
+      await p;
+
+      const balanceAfter = await foreignToken.balanceOf(accounts[0]);
+      expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(paymentAmount.toHexString());
     });
   });
 });
