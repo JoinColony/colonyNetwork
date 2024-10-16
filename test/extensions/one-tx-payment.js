@@ -216,7 +216,18 @@ contract("One transaction payments", (accounts) => {
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await checkErrorRevert(
-        oneTxPayment.makePayment(2, UINT256_MAX, 2, UINT256_MAX, [USER1], [token.address], [10], 2, localSkillId, { from: USER1 }),
+        oneTxPayment.methods["makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"](
+          2,
+          UINT256_MAX,
+          2,
+          UINT256_MAX,
+          [USER1],
+          [token.address],
+          [10],
+          2,
+          localSkillId,
+          { from: USER1 },
+        ),
         "one-tx-payment-not-authorized",
       );
     });
@@ -229,7 +240,18 @@ contract("One transaction payments", (accounts) => {
       await colony.setArbitrationRole(1, 0, USER1, 2, true);
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await oneTxPayment.makePayment(1, 0, 2, UINT256_MAX, [USER1], [token.address], [10], 2, localSkillId, { from: USER1 });
+      await oneTxPayment.methods["makePayment(uint256,uint256,uint256,uint256,address[],address[],uint256[],uint256,uint256)"](
+        1,
+        0,
+        2,
+        UINT256_MAX,
+        [USER1],
+        [token.address],
+        [10],
+        2,
+        localSkillId,
+        { from: USER1 },
+      );
     });
 
     it("should allow a single-transaction to occur when user has different permissions than contract", async () => {
