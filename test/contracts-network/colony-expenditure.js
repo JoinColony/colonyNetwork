@@ -234,6 +234,10 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should allow arbitrators to update the metadata", async () => {
       const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"];
+
+      // Try with a bad proof
+      await checkErrorRevert(setExpenditureMetadata(1, 0, expenditureId, IPFS_HASH, { from: ARBITRATOR }), "ds-auth-invalid-domain-inheritance");
+
       const tx = await setExpenditureMetadata(1, UINT256_MAX, expenditureId, IPFS_HASH, { from: ARBITRATOR });
 
       await expectEvent(tx, "ExpenditureMetadataSet", [ARBITRATOR, expenditureId, IPFS_HASH]);
@@ -479,11 +483,14 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD), "colony-expenditure-not-owner");
     });
 
-    it("should allow owners to add a slot payout", async () => {
+    it("should allow only owners to add a slot payout", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
       const payout = await colony.getExpenditureSlotPayout(expenditureId, SLOT0, token.address);
       expect(payout).to.eq.BN(WAD);
+
+      await colony.transferExpenditure(expenditureId, USER, { from: ADMIN });
+      await checkErrorRevert(colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN }), "colony-expenditure-not-owner");
     });
 
     it("should be able to add multiple payouts in different tokens", async () => {
@@ -637,6 +644,15 @@ contract("Colony Expenditure", (accounts) => {
 
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-draft-or-locked");
+    });
+
+    it("should not allow expenditures to be finalized if they are not fully funded", async () => {
+      await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
+      await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-funded");
+      await checkErrorRevert(
+        colony.finalizeExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ARBITRATOR }),
+        "colony-expenditure-not-funded",
+      );
     });
 
     it("should allow owners to finalize expenditures from locked state", async () => {

@@ -36,48 +36,6 @@ Add a new extension resolver to the Extensions repository.
 |_resolver|address|The deployed resolver containing the extension contract logic
 
 
-### ▸ `addPendingReputationUpdate(uint256 _chainId, address _colony)`
-
-Try to emit the next reputation update that was bridged but previously failed, if any
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_chainId|uint256|The chainId the update was bridged from
-|_colony|address|The colony being queried
-
-
-### ▸ `addPendingSkill(uint256 _skillId)`
-
-Called to add a bridged skill that wasn't next when it was bridged, but now is
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_skillId|uint256|The skillId of the skill being bridged
-
-
-### ▸ `addReputationUpdateLogFromBridge(address _colony, address _user, int _amount, uint _skillId, uint256 _updateNumber)`
-
-Adds a reputation update entry to log.
-
-*Note: Errors if it is called by anyone but a known bridge*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_colony|address|The colony the reputation is being awarded in
-|_user|address|The address of the user for the reputation update
-|_amount|int|The amount of reputation change for the update, this can be a negative as well as a positive value
-|_skillId|uint|The skill for the reputation update
-|_updateNumber|uint256|The counter used for ordering bridged updates
-
-
 ### ▸ `addSkill(uint256 _parentSkillId):uint256 _skillId`
 
 Adds a new skill to the domain or local skills tree, under skill `_parentSkillId`. Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`.
@@ -95,19 +53,6 @@ Adds a new skill to the domain or local skills tree, under skill `_parentSkillId
 |Name|Type|Description|
 |---|---|---|
 |_skillId|uint256|Id of the added skill
-
-### ▸ `addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount)`
-
-Function called by bridge transactions to add a new skill
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_parentSkillId|uint256|The parent id of the new skill
-|_skillCount|uint256|The number of the new skill being created
-
 
 ### ▸ `addr(bytes32 _node):address _address`
 
@@ -141,41 +86,32 @@ Adds a reputation update entry to the log.
 |_skillId|uint256|The skill for the reputation update
 
 
-### ▸ `bridgeCurrentRootHash(uint256 chainId)`
+### ▸ `bridgeMessage(uint256 _chainId, bytes memory _payload)`
 
-Initiate a cross-chain update of the current reputation state
+Bridge a message to another chain
 
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|chainId|uint256|The chainid we want to bridge to
-
-
-### ▸ `bridgePendingReputationUpdate(address _colony, uint256 _updateNumber)`
-
-Try to bridge a reputation update that (previously) failed
-
+*Note: This will bridge the message to the same address that requested the bridge on the other chain*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_colony|address|The colony being queried
-|_updateNumber|uint256|the emission index to bridge
+|_chainId|uint256|The chainId of the chain to bridge to
+|_payload|bytes|The message to bridge
 
 
-### ▸ `bridgeSkillIfNotMiningChain(uint256 skillId)`
+### ▸ `bridgeMessageToNetwork(uint256 _chainId, bytes memory _payload)`
 
-Called to re-send the bridging transaction for a skill to the
+Bridge a message to the ProxyNetwork on another chain
 
+*Note: This should only be able to be called by the metacolony*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|skillId|uint256|The skillId we're bridging the creation of
+|_chainId|uint256|The chainId of the chain to bridge to
+|_payload|bytes|The message to bridge
 
 
 ### ▸ `burnUnneededRewards(uint256 _amount)`
@@ -208,6 +144,24 @@ Calculate raw miner weight in WADs.
 |Name|Type|Description|
 |---|---|---|
 |_minerWeight|uint256|The weight of miner reward
+
+### ▸ `checkDomainTokenReceiverDeployed(uint256 _domainId):address domainTokenReceiverAddress`
+
+Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly for a particular domain.
+
+*Note: Should only be called by a colony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|The domainId of the domain to check the deployment for
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainTokenReceiverAddress|address|The address of the DomainTokenReceiver
 
 ### ▸ `claimMiningReward(address _recipient)`
 
@@ -340,6 +294,20 @@ Create the Meta Colony, same as a normal colony plus the root skill.
 |_tokenAddress|address|Address of the CLNY token
 
 
+### ▸ `createProxyColony(uint256 _destinationChainId, bytes32 _salt)`
+
+Handles calls to create a new colony on another chain
+
+*Note: Should only be called by a colony, if you're trying to call this directly you're doing something wrong*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_destinationChainId|uint256|The chainId of the chain to create the colony on
+|_salt|bytes32|The salt to use for the colony creation
+
+
 ### ▸ `deployTokenAuthority(address _token, address _colony, address[] memory _allowedToTransfer):address _tokenAuthority`
 
 Called to deploy a token authority
@@ -411,42 +379,6 @@ DEPRECATED Set deprecation status for a skill
 |Name|Type|Description|
 |---|---|---|
 |_changed|bool|Whether the deprecated state was changed
-
-### ▸ `getBridgedReputationUpdateCount(uint256 _chainId, address _colony):uint256 bridgedReputationCount`
-
-Get the (currently bridged) reputation update count of a chain
-
-*Note:  On the non-mining chain, this tracks the number of reputation updates that have either been bridged, or attempted to be bridged (and failed, and are now pending bridging). On the mining chain, it tracks how many have been successfully bridged and added to the log.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_chainId|uint256|The chainid of the chain
-|_colony|address|The colony being queried
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|bridgedReputationCount|uint256|The bridge reputation count of the corresponding chain
-
-### ▸ `getBridgedSkillCounts(uint256 _chainId):uint256 skillCount`
-
-Get the (currently bridged) skill count of another chain
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_chainId|uint256|The chainid of foreign chain
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|skillCount|uint256|The skillCount of the corresponding chain
 
 ### ▸ `getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 _childSkillId`
 
@@ -547,6 +479,37 @@ Returns the latest Colony contract version. This is the version used to create a
 |Name|Type|Description|
 |---|---|---|
 |_version|uint256|The current / latest Colony contract version
+
+### ▸ `getDomainTokenReceiverAddress(address _colonyAddress, uint256 _domainId):address domainTokenReceiverAddress`
+
+Get the DomainTokenReceiver address for a particular domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colonyAddress|address|The address of the colony
+|_domainId|uint256|The domainId of the domain
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainTokenReceiverAddress|address|The address of the DomainTokenReceiver (which may or may not be deployed currently)
+
+### ▸ `getDomainTokenReceiverResolver():address resolver`
+
+Get the current DomainTokenReceiver resolver
+
+*Note: Note that some Receivers might be using an old resolver*
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|resolver|address|The address of the current resolver
 
 ### ▸ `getENSRegistrar():address _address`
 
@@ -712,43 +675,6 @@ Get a token's status in the payout whitelist
 |Name|Type|Description|
 |---|---|---|
 |_status|bool|Will be `true` if token is whitelisted
-
-### ▸ `getPendingReputationUpdate(uint256 _chainId, address _colony, uint256 _updateNumber):PendingReputationUpdate update`
-
-Get the details of a reputation update that was bridged but was not added to the log because it was bridged out of order
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_chainId|uint256|The chainId the update was bridged from
-|_colony|address|The colony being queried
-|_updateNumber|uint256|the updatenumber being queries
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|update|PendingReputationUpdate|The update stored for that chain/colony/updateNumber
-
-### ▸ `getPendingSkillAddition(uint256 _chainId, uint256 _skillCount):uint256 parentId`
-
-Called to get the information about a skill that has been bridged out of order
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_chainId|uint256|The chainId we're bridging from
-|_skillCount|uint256|The skill count
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|parentId|uint256|The parent id of the skill being added
 
 ### ▸ `getProfileDBAddress(bytes32 _node):string _orbitdb`
 
@@ -922,6 +848,24 @@ Get token locking contract address.
 |---|---|---|
 |_lockingAddress|address|Token locking contract address
 
+### ▸ `idempotentDeployDomainTokenReceiver(uint256 _domainId):address domainTokenReceiverAddress`
+
+Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly for a particular domain.
+
+*Note: Should only be called by a colony.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|The domainId of the domain to check the deployment for
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainTokenReceiverAddress|address|The address of the DomainTokenReceiver
+
 ### ▸ `initialise(address _resolver, uint256 _version)`
 
 Initialises the colony network by setting the first Colony version resolver to `_resolver` address.
@@ -1076,6 +1020,19 @@ Called to set the address of the colony bridge contract
 |_bridgeAddress|address|The address of the bridge
 
 
+### ▸ `setDomainTokenReceiverResolver(address _resolver)`
+
+Function to set the resolver that should be used by DomainTokenReceivers
+
+*Note: The next time a claim for a domain is called, they will first be updated to this resolver*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_resolver|address|The address of the resolver to use
+
+
 ### ▸ `setFeeInverse(uint256 _feeInverse)`
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as `_feeInverse`.
@@ -1171,21 +1128,6 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |_newHash|bytes32|The reputation root hash
 |_newNLeaves|uint256|The updated leaves count value
 |_stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-
-
-### ▸ `setReputationRootHashFromBridge(bytes32 newHash, uint256 newNLeaves, uint256 nonce)`
-
-Update the reputation on a foreign chain from the mining chain
-
-*Note: Should error if called by anyone other than the known bridge from the mining chain*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|newHash|bytes32|The new root hash
-|newNLeaves|uint256|The new nLeaves in the root hash
-|nonce|uint256|The nonce to ensure these txs can't be replayed
 
 
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`

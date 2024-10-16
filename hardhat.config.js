@@ -35,6 +35,12 @@ task("compile", "Compile Colony contracts with pinned Token").setAction(async ()
   }
 });
 
+task("ensureCreateXDeployed", "Ensure CreateX is deployed").setAction(async () => {
+  const { idempotentDeployCreateX } = require("./helpers/test-helper"); // eslint-disable-line global-require
+
+  await idempotentDeployCreateX();
+});
+
 task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
   const ganacheAccounts = { addresses: {}, private_keys: {} };
   // eslint-disable-next-line no-restricted-syntax
@@ -54,6 +60,12 @@ task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(asyn
   const deployNetwork = require("./test/truffle-fixture"); // eslint-disable-line global-require
 
   await deployNetwork();
+});
+
+task("deploy-proxy-network", "Deploy Proxy Colony Network").setAction(async () => {
+  const deployProxyNetwork = require("./test/deploy-proxy-network-fixture"); // eslint-disable-line global-require
+
+  await deployProxyNetwork();
 });
 
 task("coverage", "Run coverage with an open port").setAction(async () => {
@@ -83,6 +95,7 @@ module.exports = {
       {
         version: "0.8.27",
         settings: {
+          viaIR: true,
           optimizer: {
             enabled: true,
             runs: 200,
@@ -168,6 +181,11 @@ module.exports = {
       ],
       chains: {
         [FORKED_XDAI_CHAINID]: {
+          hardforkHistory: {
+            cancun: 0,
+          },
+        },
+        265669101: {
           hardforkHistory: {
             cancun: 0,
           },

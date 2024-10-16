@@ -26,7 +26,7 @@ const {
   setStorageSlot,
 } = require("../../helpers/test-helper");
 
-const { CURR_VERSION, MIN_STAKE, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
+const { CURR_VERSION, IPFS_HASH, ADDRESS_ZERO, WAD } = require("../../helpers/constants");
 const { setupENSRegistrar } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -202,16 +202,6 @@ contract("Colony Network", (accounts) => {
       await setStorageSlot(metaColony, 7, ethers.constants.HashZero);
 
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-clny-token-invalid-address");
-    });
-
-    it('should not allow "punishStakers" to be called from an account that is not the mining cycle', async () => {
-      const chainId = await getChainId();
-      await metaColony.initialiseReputationMining(chainId, ethers.constants.HashZero, 0);
-
-      await checkErrorRevert(
-        colonyNetwork.punishStakers([accounts[0], accounts[1]], MIN_STAKE),
-        "colony-reputation-mining-sender-not-active-reputation-cycle",
-      );
     });
   });
 
@@ -810,6 +800,16 @@ contract("Colony Network", (accounts) => {
       const token = await MetaTxToken.at(address);
       const owner = await token.owner();
       expect(owner).to.equal(accounts[1]);
+    });
+  });
+
+  describe("when working with DomainTokenReceivers", () => {
+    it("should only allow owner to set the DomainTokenReceiverResolver", async () => {
+      await checkErrorRevert(colonyNetwork.setDomainTokenReceiverResolver(ADDRESS_ZERO, { from: accounts[1] }), "ds-auth-unauthorized");
+      const cnAsEtherRouter = await EtherRouter.at(colonyNetwork.address);
+      const owner = await cnAsEtherRouter.owner();
+      expect(owner).to.equal(accounts[0]);
+      await colonyNetwork.setDomainTokenReceiverResolver(ADDRESS_ZERO);
     });
   });
 });

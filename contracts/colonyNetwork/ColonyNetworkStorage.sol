@@ -129,6 +129,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   // networkId -> colonyAddress -> updateCount -> update
   mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 49
 
+  address domainReceiverResolverAddress; // Storage slot 50
   // Modifiers
 
   modifier calledByColony() {
@@ -159,32 +160,19 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
     _;
   }
 
-  modifier onlyColonyBridge() {
-    require(msgSender() == colonyBridgeAddress, "colony-network-caller-must-be-colony-bridge");
-    _;
-  }
-
-  modifier onlyMiningChain() {
-    if (getMiningChainId() == block.chainid) {
-      require(
-        inactiveReputationMiningCycle != address(0x0),
-        "colony-reputation-mining-not-initialised"
-      );
-    }
-    require(isMiningChain(), "colony-only-valid-on-mining-chain");
-    _;
-  }
-
-  modifier onlyMiningChainOrDuringSetup() {
+  modifier miningInitialised() {
     require(
-      isMiningChain() || getMiningChainId() == 0,
-      "colony-only-valid-on-mining-chain-or-during-setup"
+      inactiveReputationMiningCycle != address(0x0),
+      "colony-reputation-mining-not-initialised"
     );
     _;
   }
 
-  modifier onlyNotMiningChain() {
-    require(!isMiningChain(), "colony-only-valid-not-on-mining-chain");
+  modifier miningInitialisedOrDuringSetup() {
+    require(
+      inactiveReputationMiningCycle != address(0x0) || getMiningChainId() == 0,
+      "colony-only-valid-on-mining-chain-or-during-setup"
+    );
     _;
   }
 
@@ -199,21 +187,7 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
     return _skillId >> 128;
   }
 
-  function isMiningChain() internal view returns (bool) {
-    return block.chainid == getMiningChainId();
-  }
-
   function getMiningChainId() public view returns (uint256) {
-    if (reputationMiningChainId == 0 && isXdai()) {
-      return block.chainid;
-    }
-    return reputationMiningChainId;
-  }
-
-  function getAndCacheReputationMiningChainId() internal returns (uint256) {
-    if (reputationMiningChainId == 0 && isXdai()) {
-      reputationMiningChainId = block.chainid;
-    }
     return reputationMiningChainId;
   }
 }

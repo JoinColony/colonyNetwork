@@ -93,6 +93,7 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     require(valid, reason);
 
     // Check came from a known colony bridge
+
     require(
       wormholeAddressToEVMAddress(wormholeMessage.emitterAddress) ==
         colonyBridges[wormholeMessage.emitterChainId],
@@ -101,10 +102,22 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
 
     // We ignore sequence numbers - bridging out of order is okay, because we have our own way of handling that
 
-    // Make the call requested to the colony network
+    bytes memory payload = wormholeMessage.payload;
+    // Strip off the chain id prefix, and make sure we are on that chain Id
+    uint256 destinationChainId;
+    address destinationAddress;
+    bytes memory payloadWithoutChainId;
+
+    (destinationChainId, destinationAddress, payloadWithoutChainId) = abi.decode(
+      payload,
+      (uint256, address, bytes)
+    );
+
+    require(destinationChainId == block.chainid, "colony-bridge-destination-chain-id-mismatch");
+    // Make the call requested to the destination address
     (bool success, bytes memory returndata) = callWithGuards(
-      colonyNetwork,
-      wormholeMessage.payload
+      destinationAddress,
+      payloadWithoutChainId
     );
 
     // Note that this is not a require because returndata might not be a string, and if we try
@@ -116,13 +129,20 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
 
   function sendMessage(
     uint256 _evmChainId,
+    address _destination,
     bytes memory _payload
   ) public onlyColonyNetwork returns (bool) {
     require(supportedEvmChainId(_evmChainId), "colony-bridge-not-known-chain");
     // This returns a sequence, but we don't care about it
     // The first sequence ID is, I believe 0, so all return values are potentially valid
     // slither-disable-next-line unused-return
-    try wormhole.publishMessage(0, _payload, 0) {
+
+    // For wormhole, we prefix the supplied payload with the _evmChainId
+    // This is because wormhole is a generic bridge, and we need to tell it which chain to send to
+
+    // We also prefix with the destination address, which we assume is the same as the sender.
+    // slither-disable-next-line unused-return
+    try wormhole.publishMessage(0, abi.encode(_evmChainId, _destination, _payload), 0) {
       return true;
     } catch {
       return false;

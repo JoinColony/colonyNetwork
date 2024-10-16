@@ -106,6 +106,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @param _callerPermissionDomainId The domainId in which the _caller_ has the administration permission (must have funding in root)
   /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
   /// @param _workers The addresses of the recipients of the payment
+  /// @param _chainIds The chainIds of the tokens being paid out
   /// @param _tokens Addresses of the tokens the payments are being made in. 0x00 for Ether.
   /// @param _amounts amounts of the tokens being paid out
   /// @param _domainId The domainId the payment should be coming from
@@ -116,6 +117,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
     address payable[] memory _workers,
+    uint256[] memory _chainIds,
     address[] memory _tokens,
     uint256[] memory _amounts,
     uint256 _domainId,
@@ -137,7 +139,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 expenditureId = colony.makeExpenditure(1, _childSkillIndex, _domainId);
     uint256 fundingPotId = colony.getExpenditure(expenditureId).fundingPotId;
 
-    prepareFunding(_childSkillIndex, fundingPotId, _tokens, _amounts);
+    prepareFunding(_childSkillIndex, fundingPotId, _chainIds, _tokens, _amounts);
 
     uint256 slot;
 
@@ -156,12 +158,58 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
 
-      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      colony.setExpenditurePayout(expenditureId, slot, _chainIds[idx], _tokens[idx], _amounts[idx]);
     }
 
-    finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
+    finalizeAndClaim(
+      _permissionDomainId,
+      _childSkillIndex,
+      expenditureId,
+      _workers,
+      _chainIds,
+      _tokens
+    );
 
     emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
+  }
+
+  /// @notice deprecated makePayment without explicit chainId paramters for multichain
+  /// @param _permissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
+  /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
+  /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
+  /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
+  /// @param _workers The addresses of the recipients of the payment
+  /// @param _tokens The addresses of the token the payments are being made in. 0x00 for Ether.
+  /// @param _amounts The amounts of the tokens being paid out
+  /// @param _domainId The domainId the payment should be coming from
+  /// @param _skillId The skillId that the payment should be marked with, possibly awarding reputation in this skill.
+  function makePayment(
+    uint256 _permissionDomainId, // Unused
+    uint256 _childSkillIndex,
+    uint256 _callerPermissionDomainId,
+    uint256 _callerChildSkillIndex,
+    address payable[] memory _workers,
+    address[] memory _tokens,
+    uint256[] memory _amounts,
+    uint256 _domainId,
+    uint256 _skillId
+  ) public {
+    uint256[] memory chainIds = new uint256[](_tokens.length);
+    for (uint256 i; i < _tokens.length; i++) {
+      chainIds[i] = block.chainid;
+    }
+    makePayment(
+      _permissionDomainId,
+      _childSkillIndex,
+      _callerPermissionDomainId,
+      _callerChildSkillIndex,
+      _workers,
+      chainIds,
+      _tokens,
+      _amounts,
+      _domainId,
+      _skillId
+    );
   }
 
   /// @notice Completes a colony payment in a single transaction
@@ -173,6 +221,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
   /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
   /// @param _workers The addresses of the recipients of the payment
+  /// @param _chainIds The chainIds of the tokens being paid out
   /// @param _tokens The addresses of the token the payments are being made in. 0x00 for Ether.
   /// @param _amounts The amounts of the tokens being paid out
   /// @param _domainId The domainId the payment should be coming from
@@ -183,6 +232,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 _callerPermissionDomainId,
     uint256 _callerChildSkillIndex,
     address payable[] memory _workers,
+    uint256[] memory _chainIds,
     address[] memory _tokens,
     uint256[] memory _amounts,
     uint256 _domainId,
@@ -212,8 +262,10 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     prepareFundingWithinDomain(
       _permissionDomainId,
       _childSkillIndex,
+      _domainId,
       domainPotId,
       fundingPotId,
+      _chainIds,
       _tokens,
       _amounts
     );
@@ -238,16 +290,65 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
     }
 
-    finalizeAndClaim(_permissionDomainId, _childSkillIndex, expenditureId, _workers, _tokens);
+    finalizeAndClaim(
+      _permissionDomainId,
+      _childSkillIndex,
+      expenditureId,
+      _workers,
+      _chainIds,
+      _tokens
+    );
 
     emit OneTxPaymentMade(msgSender(), expenditureId, _workers.length);
   }
 
+  /// @notice Deprecated makePaymentFundedFromDomain without explicit chainId paramters for multichain
+  /// @param _permissionDomainId The domainId in which the _contract_ has permissions to add a payment and fund it
+  /// @param _childSkillIndex Index of the _permissionDomainId skill.children array to get
+  /// @param _callerPermissionDomainId The domainId in which the _caller_ has permissions to add a payment and fund it
+  /// @param _callerChildSkillIndex Index of the _callerPermissionDomainId skill.children array to get
+  /// @param _workers The addresses of the recipients of the payment
+  /// @param _tokens The addresses of the token the payments are being made in. 0x00 for Ether.
+  /// @param _amounts The amounts of the tokens being paid out
+  /// @param _domainId The domainId the payment should be coming from
+  /// @param _skillId The skillId that the payment should be marked with, possibly awarding reputation in this skill.
+  function makePaymentFundedFromDomain(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _callerPermissionDomainId,
+    uint256 _callerChildSkillIndex,
+    address payable[] memory _workers,
+    address[] memory _tokens,
+    uint256[] memory _amounts,
+    uint256 _domainId,
+    uint256 _skillId
+  ) public {
+    uint256[] memory chainIds = new uint256[](_tokens.length);
+    for (uint256 i; i < _tokens.length; i++) {
+      chainIds[i] = block.chainid;
+    }
+
+    makePaymentFundedFromDomain(
+      _permissionDomainId,
+      _childSkillIndex,
+      _callerPermissionDomainId,
+      _callerChildSkillIndex,
+      _workers,
+      chainIds,
+      _tokens,
+      _amounts,
+      _domainId,
+      _skillId
+    );
+  }
+
   function calculateUniqueAmounts(
+    uint256[] memory _chainIds,
     address[] memory _tokens,
     uint256[] memory _amounts
-  ) internal pure returns (uint256, address[] memory, uint256[] memory) {
+  ) internal pure returns (uint256, uint256[] memory, address[] memory, uint256[] memory) {
     uint256 uniqueTokensIdx;
+    uint256[] memory uniqueChainIds = new uint256[](_tokens.length);
     address[] memory uniqueTokens = new address[](_tokens.length);
     uint256[] memory uniqueAmounts = new uint256[](_tokens.length);
 
@@ -264,35 +365,41 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       }
 
       if (!isMatch) {
+        uniqueChainIds[uniqueTokensIdx] = _chainIds[i];
         uniqueTokens[uniqueTokensIdx] = _tokens[i];
         uniqueAmounts[uniqueTokensIdx] = _amounts[i];
         uniqueTokensIdx++;
       }
     }
 
-    return (uniqueTokensIdx, uniqueTokens, uniqueAmounts);
+    return (uniqueTokensIdx, uniqueChainIds, uniqueTokens, uniqueAmounts);
   }
 
   function prepareFunding(
     uint256 _childSkillIndex,
     uint256 _fundingPotId,
+    uint256[] memory _chainIds,
     address[] memory _tokens,
     uint256[] memory _amounts
   ) internal {
     (
       uint256 uniqueTokensIdx,
+      uint256[] memory uniqueChainIds,
       address[] memory uniqueTokens,
       uint256[] memory uniqueAmounts
-    ) = calculateUniqueAmounts(_tokens, _amounts);
+    ) = calculateUniqueAmounts(_chainIds, _tokens, _amounts);
 
     for (uint256 i; i < uniqueTokensIdx; i++) {
       colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
         1,
         UINT256_MAX,
         _childSkillIndex,
         1,
         _fundingPotId,
         uniqueAmounts[i],
+        uniqueChainIds[i],
         uniqueTokens[i]
       );
     }
@@ -301,25 +408,31 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   function prepareFundingWithinDomain(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
+    uint256 _domainId,
     uint256 _domainPotId,
     uint256 _fundingPotId,
+    uint256[] memory _chainIds,
     address[] memory _tokens,
     uint256[] memory _amounts
   ) internal {
     (
       uint256 uniqueTokensIdx,
+      uint256[] memory uinqueChainIds,
       address[] memory uniqueTokens,
       uint256[] memory uniqueAmounts
-    ) = calculateUniqueAmounts(_tokens, _amounts);
+    ) = calculateUniqueAmounts(_chainIds, _tokens, _amounts);
 
     for (uint256 i; i < uniqueTokensIdx; i++) {
       colony.moveFundsBetweenPots(
         _permissionDomainId,
         _childSkillIndex,
-        _childSkillIndex,
+        _domainId,
+        UINT256_MAX,
+        UINT256_MAX,
         _domainPotId,
         _fundingPotId,
         uniqueAmounts[i],
+        uinqueChainIds[i],
         uniqueTokens[i]
       );
     }
@@ -334,6 +447,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
     uint256 _childSkillIndex,
     uint256 _expenditureId,
     address payable[] memory _workers,
+    uint256[] memory _chainIds,
     address[] memory _tokens
   ) internal {
     colony.finalizeExpenditure(_expenditureId);
@@ -359,7 +473,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
       if (idx == 0 || _workers[idx] != _workers[idx - 1]) {
         slot++;
       }
-      colony.claimExpenditurePayout(_expenditureId, slot, _tokens[idx]);
+      colony.claimExpenditurePayout(_expenditureId, slot, _chainIds[idx], _tokens[idx]);
     }
   }
 }

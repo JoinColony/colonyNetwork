@@ -529,95 +529,58 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return bridge The address of the bridge to the mining chain, if set
   function getColonyBridgeAddress() external view returns (address bridge);
 
-  /// @notice Update the reputation on a foreign chain from the mining chain
-  /// @dev Should error if called by anyone other than the known bridge from the mining chain
-  /// @param newHash The new root hash
-  /// @param newNLeaves The new nLeaves in the root hash
-  /// @param nonce The nonce to ensure these txs can't be replayed
-  function setReputationRootHashFromBridge(
-    bytes32 newHash,
-    uint256 newNLeaves,
-    uint256 nonce
-  ) external;
+  /// @notice Bridge a message to another chain
+  /// @param _chainId The chainId of the chain to bridge to
+  /// @param _payload The message to bridge
+  /// @dev This will bridge the message to the same address that requested the bridge on the other chain
+  function bridgeMessage(uint256 _chainId, bytes memory _payload) external;
 
-  /// @notice Initiate a cross-chain update of the current reputation state
-  /// @param chainId The chainid we want to bridge to
-  function bridgeCurrentRootHash(uint256 chainId) external;
+  /// @notice Bridge a message to the ProxyNetwork on another chain
+  /// @param _chainId The chainId of the chain to bridge to
+  /// @param _payload The message to bridge
+  /// @dev This should only be able to be called by the metacolony
+  function bridgeMessageToNetwork(uint256 _chainId, bytes memory _payload) external;
 
-  /// @notice Called to re-send the bridging transaction for a skill to the
-  /// @param skillId The skillId we're bridging the creation of
-  function bridgeSkillIfNotMiningChain(uint256 skillId) external;
+  /// @notice Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly
+  /// for a particular domain.
+  /// @dev Should only be called by a colony.
+  /// @param _domainId The domainId of the domain to check the deployment for
+  /// @return domainTokenReceiverAddress The address of the DomainTokenReceiver
+  function idempotentDeployDomainTokenReceiver(
+    uint256 _domainId
+  ) external returns (address domainTokenReceiverAddress);
 
-  /// @notice Function called by bridge transactions to add a new skill
-  /// @param _parentSkillId The parent id of the new skill
-  /// @param _skillCount The number of the new skill being created
-  function addSkillFromBridge(uint256 _parentSkillId, uint256 _skillCount) external;
+  /// @notice Handles calls to create a new colony on another chain
+  /// @dev Should only be called by a colony, if you're trying to call this directly you're doing something wrong
+  /// @param _destinationChainId The chainId of the chain to create the colony on
+  /// @param _salt The salt to use for the colony creation
+  function createProxyColony(uint256 _destinationChainId, bytes32 _salt) external;
 
-  /// @notice Called to add a bridged skill that wasn't next when it was bridged,
-  /// but now is
-  /// @param _skillId The skillId of the skill being bridged
-  function addPendingSkill(uint256 _skillId) external;
+  /// @notice Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly
+  /// for a particular domain.
+  /// @dev Should only be called by a colony.
+  /// @param _domainId The domainId of the domain to check the deployment for
+  /// @return domainTokenReceiverAddress The address of the DomainTokenReceiver
+  function checkDomainTokenReceiverDeployed(
+    uint256 _domainId
+  ) external returns (address domainTokenReceiverAddress);
 
-  /// @notice Called to get the information about a skill that has been bridged out of order
-  /// @param _chainId The chainId we're bridging from
-  /// @param _skillCount The skill count
-  /// @return parentId The parent id of the skill being added
-  function getPendingSkillAddition(
-    uint256 _chainId,
-    uint256 _skillCount
-  ) external view returns (uint256 parentId);
+  /// @notice Function to set the resolver that should be used by DomainTokenReceivers
+  /// @dev The next time a claim for a domain is called, they will first be updated to this resolver
+  /// @param _resolver The address of the resolver to use
+  function setDomainTokenReceiverResolver(address _resolver) external;
 
-  /// @notice Get the (currently bridged) skill count of another chain
-  /// @param _chainId The chainid of foreign chain
-  /// @return skillCount The skillCount of the corresponding chain
-  function getBridgedSkillCounts(uint256 _chainId) external view returns (uint256 skillCount);
+  /// @notice Get the current DomainTokenReceiver resolver
+  /// @dev Note that some Receivers might be using an old resolver
+  /// @return resolver The address of the current resolver
+  function getDomainTokenReceiverResolver() external view returns (address resolver);
 
-  /// @notice Adds a reputation update entry to log.
-  /// @dev Errors if it is called by anyone but a known bridge
-  /// @param _colony The colony the reputation is being awarded in
-  /// @param _user The address of the user for the reputation update
-  /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
-  /// @param _skillId The skill for the reputation update
-  /// @param _updateNumber The counter used for ordering bridged updates
-  function addReputationUpdateLogFromBridge(
-    address _colony,
-    address _user,
-    int _amount,
-    uint _skillId,
-    uint256 _updateNumber
-  ) external;
-
-  /// @notice Get the (currently bridged) reputation update count of a chain
-  /// @param _chainId The chainid of the chain
-  /// @param _colony The colony being queried
-  /// @return bridgedReputationCount The bridge reputation count of the corresponding chain
-  /// @dev  On the non-mining chain, this tracks the number of reputation updates that have either been bridged, or attempted to
-  /// be bridged (and failed, and are now pending bridging). On the mining chain, it tracks how many have been successfully bridged
-  /// and added to the log.
-  function getBridgedReputationUpdateCount(
-    uint256 _chainId,
-    address _colony
-  ) external view returns (uint256 bridgedReputationCount);
-
-  /// @notice Try to bridge a reputation update that (previously) failed
-  /// @param _colony The colony being queried
-  /// @param _updateNumber the emission index to bridge
-  function bridgePendingReputationUpdate(address _colony, uint256 _updateNumber) external;
-
-  /// @notice Get the details of a reputation update that was bridged but was not added to the log because it was
-  /// bridged out of order
-  /// @param _chainId The chainId the update was bridged from
-  /// @param _colony The colony being queried
-  /// @param _updateNumber the updatenumber being queries
-  /// @return update The update stored for that chain/colony/updateNumber
-  function getPendingReputationUpdate(
-    uint256 _chainId,
-    address _colony,
-    uint256 _updateNumber
-  ) external view returns (PendingReputationUpdate memory update);
-
-  /// @notice Try to emit the next reputation update that was bridged but previously failed, if any
-  /// @param _chainId The chainId the update was bridged from
-  /// @param _colony The colony being queried
-  function addPendingReputationUpdate(uint256 _chainId, address _colony) external;
+  /// @notice Get the DomainTokenReceiver address for a particular domain
+  /// @param _colonyAddress The address of the colony
+  /// @param _domainId The domainId of the domain
+  /// @return domainTokenReceiverAddress The address of the DomainTokenReceiver (which may or may not be deployed currently)
+  function getDomainTokenReceiverAddress(
+    address _colonyAddress,
+    uint256 _domainId
+  ) external view returns (address domainTokenReceiverAddress);
 }
