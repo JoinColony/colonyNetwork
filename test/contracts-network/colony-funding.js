@@ -843,8 +843,6 @@ contract("Colony Funding", (accounts) => {
       expect(resolverAfter).to.equal(newResolver.address);
       expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
-    });
-
     it("should not be able to claim funds for a domain that does not exist", async () => {
       await checkErrorRevert(colony.claimDomainFunds(ethers.constants.AddressZero, 2), "colony-funding-domain-does-not-exist");
     });
