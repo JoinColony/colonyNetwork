@@ -197,7 +197,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
     return domainReceiverResolverAddress;
   }
 
-<<<<<<< HEAD
   function idempotentDeployDomainTokenReceiver(
     uint256 _domainId
   ) public stoppable calledByColony returns (address domainTokenReceiverAddress) {
@@ -232,118 +231,10 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
     return domainTokenReceiverAddress;
   }
 
-  function getDomainTokenReceiverAddress(
-    address _colony,
-    uint256 _domainId
-  ) public view returns (address) {
-    bytes32 salt = getDomainTokenReceiverDeploySalt(_colony, _domainId);
-
-    // To get the correct address, we have to mimic the _guard functionality of CreateX
-    bytes32 guardedSalt = keccak256(abi.encode(bytes32(uint256(uint160(address(this)))), salt));
-    return ICreateX(CREATEX_ADDRESS).computeCreate3Address(guardedSalt);
-  }
-
-  function getDomainTokenReceiverDeploySalt(
-    address _colony,
-    uint256 _domainId
-  ) internal view returns (bytes32) {
-    // Calculate the address the domain should be receiving funds at
-    // We only want Colony Networks to be able to deploy to the same address,
-    // so we use the permissioned deploy protection feature of CreateX, and set
-    // the first 160 bits of the salt to the address of this contract.
-
-    bytes32 salt = bytes32(uint256(uint160(address(this)))) << 96;
-
-    bytes32 additionalSalt = keccak256(abi.encode(_colony, _domainId));
-    // We use the first 88 bits of the additional salt, which is a function of the colony and domainId,
-    // to add entropy in the last 88 bits of the salt
-    salt = salt | (additionalSalt >> 168);
-    // We have set the first 160 bits, and the last 88 bits of the salt
-    // Note that this leaves byte 21 of the salt as zero (0x00), which disables cross-chain
-    // redeployment protection in createX.
-    // This is intentional, as we want to allow the same receiver to be deployed on different chains
-    return salt;
-||||||| parent of 125a5a92 (First pass at cross-chain domain-level token swaps)
-  function checkDomainTokenReceiverDeployed(
-    uint256 _domainId
-  ) public calledByColony returns (address domainTokenReceiverAddress) {
-    // Calculate the address the domain should be receiving funds at
-    domainTokenReceiverAddress = getDomainTokenReceiverAddress(msgSender(), _domainId);
-
-    if (!isContract(domainTokenReceiverAddress)) {
-      // Then deploy the contract
-      bytes32 salt = getDomainTokenReceiverDeploySalt(msgSender(), _domainId);
-      ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
-        salt,
-        type(EtherRouterCreate3).creationCode,
-        abi.encodeWithSignature("setOwner(address)", (address(this))),
-        ICreateX.Values(0, 0)
-      );
-    }
-
-    // Check it's got the right resolver
-    try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
-      if (address(resolver) != domainReceiverResolverAddress) {
-        EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
-      }
-    } catch {
-      revert("colony-network-domain-receiver-not-etherrouter");
-    }
-
-    // Check it's set up correctly
-
-    if (DomainTokenReceiver(domainTokenReceiverAddress).getColonyAddress() != msgSender()) {
-      DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
-    }
-
-    return domainTokenReceiverAddress;
-  }
-
-  function isContract(address addr) internal view returns (bool) {
-    uint256 size;
-    assembly {
-      size := extcodesize(addr)
-    }
-    return size > 0;
-  }
-
-  function getDomainTokenReceiverAddress(
-    address _colony,
-    uint256 _domainId
-  ) public view returns (address) {
-    bytes32 salt = getDomainTokenReceiverDeploySalt(_colony, _domainId);
-
-    // To get the correct address, we have to mimic the _guard functionality of CreateX
-    bytes32 guardedSalt = keccak256(abi.encode(bytes32(uint256(uint160(address(this)))), salt));
-    return ICreateX(CREATEX_ADDRESS).computeCreate3Address(guardedSalt);
-  }
-
-  function getDomainTokenReceiverDeploySalt(
-    address _colony,
-    uint256 _domainId
-  ) internal view returns (bytes32) {
-    // Calculate the address the domain should be receiving funds at
-    // We only want Colony Networks to be able to deploy to the same address,
-    // so we use the permissioned deploy protection feature of CreateX, and set
-    // the first 160 bits of the salt to the address of this contract.
-
-    bytes32 salt = bytes32(uint256(uint160(address(this)))) << 96;
-
-    bytes32 additionalSalt = keccak256(abi.encode(_colony, _domainId));
-    // We use the first 88 bits of the additional salt, which is a function of the colony and domainId,
-    // to add entropy in the last 88 bits of the salt
-    salt = salt | (additionalSalt >> 168);
-    // We have set the first 160 bits, and the last 88 bits of the salt
-    // Note that this leaves byte 21 of the salt as zero (0x00), which disables cross-chain
-    // redeployment protection in createX.
-    // This is intentional, as we want to allow the same receiver to be deployed on different chains
-    return salt;
-=======
   function msgSenderIsColony() internal view override returns (bool) {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
     assert(msgSender() == msg.sender);
     return true;
->>>>>>> 125a5a92 (First pass at cross-chain domain-level token swaps)
   }
 
   function isStopped() internal view override returns (bool) {
