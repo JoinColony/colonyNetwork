@@ -36,9 +36,9 @@ task("compile", "Compile Colony contracts with pinned Token").setAction(async ()
 });
 
 task("ensureCreateXDeployed", "Ensure CreateX is deployed").setAction(async () => {
-  const { deployCreateXIfNeeded } = require("./helpers/test-helper"); // eslint-disable-line global-require
+  const { idempotentDeployCreateX } = require("./helpers/test-helper"); // eslint-disable-line global-require
 
-  await deployCreateXIfNeeded();
+  await idempotentDeployCreateX();
 });
 
 task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
