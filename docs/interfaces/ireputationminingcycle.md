@@ -379,7 +379,7 @@ Respond to a binary search step, to eventually discover where two submitted hash
 |_siblings|bytes32[]|The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetLeaf`
 
 
-### ▸ `respondToChallenge(uint256[[object Object]] memory _u, bytes32[[object Object]] memory _b32, bytes32[] memory _reputationSiblings, bytes32[] memory _agreeStateSiblings, bytes32[] memory _disagreeStateSiblings, bytes32[] memory _userOriginReputationSiblings, bytes32[] memory _childReputationSiblings, bytes32[] memory _adjacentReputationSiblings)`
+### ▸ `respondToChallenge(uint256[26] memory _u, bytes32[7] memory _b32, bytes32[] memory _reputationSiblings, bytes32[] memory _agreeStateSiblings, bytes32[] memory _disagreeStateSiblings, bytes32[] memory _userOriginReputationSiblings, bytes32[] memory _childReputationSiblings, bytes32[] memory _adjacentReputationSiblings)`
 
 Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
 

@@ -339,7 +339,9 @@ function astToSig(method) {
         return `${p.typeName.namePath} ${p.name}`;
       }
       if (p.typeName.type === "ArrayTypeName") {
-        return `${p.typeName.baseTypeName.name}[${p.typeName.length || ""}]${p.storageLocation ? ` ${p.storageLocation}` : ""} ${p.name}`;
+        return `${p.typeName.baseTypeName.name}[${p.typeName.length ? p.typeName.length.number : ""}]${
+          p.storageLocation ? ` ${p.storageLocation}` : ""
+        } ${p.name}`;
       }
       console.log("Unknown parameter type...");
       return process.exit(1);

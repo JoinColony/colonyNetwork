@@ -168,7 +168,7 @@ Claim the payout for an expenditure slot. Here the network receives a fee from e
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
-### ▸ `claimRewardPayout(uint256 _payoutId, uint256[[object Object]] memory _squareRoots, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)`
+### ▸ `claimRewardPayout(uint256 _payoutId, uint256[7] memory _squareRoots, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)`
 
 Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation which will be proven via Merkle proof inside this function. Can only be called if payout is active, i.e if 60 days have not passed from its creation. Can only be called if next in queue.
 
