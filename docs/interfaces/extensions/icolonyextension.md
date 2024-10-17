@@ -19,6 +19,27 @@ Called when deprecating (or undeprecating) the extension
 |_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
 
 
+### ▸ `executeMetaTransaction(address userAddress, bytes memory payload, bytes32 sigR, bytes32 sigS, uint8 sigV):bytes returnData`
+
+Executes a metatransaction targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that signed the metatransaction
+|payload|bytes|The transaction data that will be executed if signature valid
+|sigR|bytes32|The 'r' part of the signature
+|sigS|bytes32|The 's' part of the signature
+|sigV|uint8|The 'v' part of the signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|returnData|bytes|The return data of the executed transaction
+
 ### ▸ `finishUpgrade()`
 
 Called when upgrading the extension (can be a no-op)
@@ -66,6 +87,23 @@ Gets the boolean indicating whether or not the extension is deprecated
 |Name|Type|Description|
 |---|---|---|
 |deprecated|bool|Boolean indicating whether or not the extension is deprecated
+
+### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+
+Gets the next metatransaction nonce for user that should be used targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that will sign the metatransaction
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nonce|uint256|The nonce that should be used for the next metatransaction
 
 ### ▸ `identifier():bytes32 identifier`
 

@@ -58,6 +58,18 @@ Create a motion
 |_siblings|bytes32[]|The siblings of the proof
 
 
+### ▸ `deprecate(bool _deprecated)`
+
+Called when deprecating (or undeprecating) the extension
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_deprecated|bool|Indicates whether the extension should be deprecated or undeprecated
+
+
 ### ▸ `escalateMotion(uint256 _motionId, uint256 _newDomainId, uint256 _childSkillIndex, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
 Escalate a motion to a higher domain
@@ -75,6 +87,27 @@ Escalate a motion to a higher domain
 |_branchMask|uint256|The branchmask of the proof
 |_siblings|bytes32[]|The siblings of the proof
 
+
+### ▸ `executeMetaTransaction(address userAddress, bytes memory payload, bytes32 sigR, bytes32 sigS, uint8 sigV):bytes returnData`
+
+Executes a metatransaction targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that signed the metatransaction
+|payload|bytes|The transaction data that will be executed if signature valid
+|sigR|bytes32|The 'r' part of the signature
+|sigS|bytes32|The 's' part of the signature
+|sigV|uint8|The 'v' part of the signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|returnData|bytes|The return data of the executed transaction
 
 ### ▸ `failingExecutionAllowed(uint256 _motionId):bool _allowed`
 
@@ -118,6 +151,14 @@ Finalize a motion, executing its action if appropriate, without the call executi
 |_motionId|uint256|The id of the motion to finalize
 
 
+### ▸ `finishUpgrade()`
+
+A function to be called after an upgrade has been done from v2 to v3.
+
+*Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be external so it can be an external call.*
+
+
+
 ### ▸ `getActionSummary(bytes memory _action, address _altTarget):ActionSummary _summary`
 
 Return a summary of the multicall action
@@ -135,6 +176,47 @@ Return a summary of the multicall action
 |Name|Type|Description|
 |---|---|---|
 |_summary|ActionSummary|A summary of the multicall
+
+### ▸ `getCapabilityRoles(bytes4 _sig):bytes32 roles`
+
+Gets the bytes32 representation of the roles authorized to call a function
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_sig|bytes4|The function signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|roles|bytes32|bytes32 representation of the authorized roles
+
+### ▸ `getColony():address colony`
+
+Gets the address of the extension's colony
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colony|address|The address of the colony
+
+### ▸ `getDeprecated():bool deprecated`
+
+Gets the boolean indicating whether or not the extension is deprecated
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|deprecated|bool|Boolean indicating whether or not the extension is deprecated
 
 ### ▸ `getEscalationPeriod():uint256 _period`
 
@@ -229,6 +311,23 @@ Get the max vote fraction
 |Name|Type|Description|
 |---|---|---|
 |_fraction|uint256|The max vote fraction
+
+### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+
+Gets the next metatransaction nonce for user that should be used targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that will sign the metatransaction
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nonce|uint256|The nonce that should be used for the next metatransaction
 
 ### ▸ `getMotion(uint256 _motionId):Motion _motion`
 
@@ -426,6 +525,18 @@ Get the range of potential rewards for a voter on a specific motion, intended to
 |_rewardMin|uint256|The voter reward range lower bound
 |_rewardMax|uint256|The voter reward range upper bound
 
+### ▸ `identifier():bytes32 identifier`
+
+Returns the identifier of the extension
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|identifier|bytes32|The extension's identifier
+
 ### ▸ `initialise(uint256 _totalStakeFraction, uint256 _voterRewardFraction, uint256 _userMinStakeFraction, uint256 _maxVoteFraction, uint256 _stakePeriod, uint256 _submitPeriod, uint256 _revealPeriod, uint256 _escalationPeriod)`
 
 Initialise the extension
@@ -444,6 +555,36 @@ Initialise the extension
 |_revealPeriod|uint256|The length of the reveal period in seconds
 |_escalationPeriod|uint256|The length of the escalation period in seconds
 
+
+### ▸ `install(address _colony)`
+
+Configures the extension
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The colony in which the extension holds permissions
+
+
+### ▸ `multicall(bytes[] calldata _data):bytes[] results`
+
+Call multiple functions in the current contract and return the data from all of them if they all succeed
+
+*Note: The `msg.value` should not be trusted for any method callable from multicall.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_data|bytes[]|The encoded function data for each of the calls to make to this contract
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|results|bytes[]|The results from each of the calls passed in via data
 
 ### ▸ `revealVote(uint256 _motionId, bytes32 _salt, uint256 _vote, bytes memory _key, bytes memory _value, uint256 _branchMask, bytes32[] memory _siblings)`
 
@@ -498,3 +639,23 @@ Submit a vote secret for a motion
 |_value|bytes|Reputation tree value for the staker/domain
 |_branchMask|uint256|The branchmask of the proof
 |_siblings|bytes32[]|The siblings of the proof
+
+
+### ▸ `uninstall()`
+
+Called when uninstalling the extension
+
+
+
+
+### ▸ `version():uint256 colonyVersion`
+
+Get the Colony contract version. Starts from 1 and is incremented with every deployed contract change.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|colonyVersion|uint256|Version number

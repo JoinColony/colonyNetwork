@@ -80,6 +80,27 @@ Deposit `_amount` of colony tokens in the recipient's account. Goes into pending
 |_recipient|address|User to receive the tokens
 
 
+### ▸ `executeMetaTransaction(address userAddress, bytes memory payload, bytes32 sigR, bytes32 sigS, uint8 sigV):bytes returnData`
+
+Executes a metatransaction targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that signed the metatransaction
+|payload|bytes|The transaction data that will be executed if signature valid
+|sigR|bytes32|The 'r' part of the signature
+|sigS|bytes32|The 's' part of the signature
+|sigV|uint8|The 'v' part of the signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|returnData|bytes|The return data of the executed transaction
+
 ### ▸ `getApproval(address _user, address _token, address _obligator):uint256 approval`
 
 See how much an address has approved another address to obligate on their behalf.
@@ -110,6 +131,23 @@ Get ColonyNetwork address.
 |Name|Type|Description|
 |---|---|---|
 |networkAddress|address|ColonyNetwork address
+
+### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+
+Gets the next metatransaction nonce for user that should be used targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that will sign the metatransaction
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nonce|uint256|The nonce that should be used for the next metatransaction
 
 ### ▸ `getObligation(address _user, address _token, address _obligator):uint256 approval`
 
