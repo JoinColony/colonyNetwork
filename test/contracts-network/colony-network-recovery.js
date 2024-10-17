@@ -199,7 +199,8 @@ contract("Colony Network Recovery", (accounts) => {
       await checkErrorRevert(colonyNetwork.addReputationUpdateLogFromBridge(ADDRESS_ZERO, ADDRESS_ZERO, 0, 0, 0), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.addPendingReputationUpdate(0, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setReputationRootHashFromBridge(HASHZERO, 0, 0), "colony-in-recovery-mode");
-
+      await checkErrorRevert(colonyNetwork.setDomainTokenReceiverResolver(ADDRESS_ZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.idempotentDeployDomainTokenReceiver(ADDRESS_ZERO), "colony-in-recovery-mode");
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
     });

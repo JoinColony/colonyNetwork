@@ -23,6 +23,7 @@ import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
 
 contract ColonyFunding is
   ColonyStorage // ignore-swc-123
@@ -104,6 +105,84 @@ contract ColonyFunding is
     fundingPots[0].balance[_token] += feeToPay;
 
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
+  }
+
+  function claimDomainFunds(address _token, uint256 _domainId) public stoppable {
+    require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
+    address domainTokenReceiverAddress = IColonyNetwork(colonyNetworkAddress)
+      .idempotentDeployDomainTokenReceiver(_domainId);
+    uint256 fundingPotId = domains[_domainId].fundingPotId;
+    // It's deployed, so check current balance of pot
+
+    uint256 claimAmount;
+
+    if (_token == address(0x0)) {
+      claimAmount = address(domainTokenReceiverAddress).balance;
+    } else {
+      claimAmount = ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
+    }
+
+    uint256 feeToPay = claimAmount / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
+    // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set
+    // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
+    // able to do with recovery mode.
+    uint256 remainder = claimAmount - feeToPay;
+    nonRewardPotsTotal[_token] += remainder;
+
+    fundingPots[0].balance[_token] += feeToPay;
+
+    uint256 approvedAmount = domainReputationTokenApprovals[_domainId][_token];
+    if (!tokenEarnsReputationOnPayout(_token) || approvedAmount >= remainder) {
+      // Either the token doesn't earn reputation or there is enough approval
+      // Either way, the domain gets all the funds
+      fundingPots[fundingPotId].balance[_token] += remainder;
+      if (tokenEarnsReputationOnPayout(_token)) {
+        // If it does earn reputation, deduct the approved amount
+        domainReputationTokenApprovals[_domainId][_token] -= remainder;
+      }
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
+    } else {
+      // The token earns reputation and there is not enough approvalable
+      // The domain gets what was approved
+      fundingPots[fundingPotId].balance[_token] += approvedAmount;
+      // And the rest goes to the root pot
+      Domain storage rootDomain = domains[1];
+      fundingPots[rootDomain.fundingPotId].balance[_token] += remainder - approvedAmount;
+      domainReputationTokenApprovals[_domainId][_token] = 0;
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, approvedAmount);
+      emit ColonyFundsClaimed(msgSender(), _token, 0, remainder - approvedAmount);
+    }
+
+    // Claim funds
+
+    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+  }
+
+  function tokenEarnsReputationOnPayout(address _token) internal view returns (bool) {
+    return _token == token;
+  }
+
+  function editAllowedDomainTokenReceipt(
+    uint256 _domainId,
+    address _token,
+    uint256 _amount,
+    bool _add
+  ) public stoppable auth {
+    require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
+    require(tokenEarnsReputationOnPayout(_token), "colony-funding-token-does-not-earn-reputation");
+    require(_domainId > 1, "colony-funding-root-domain");
+    if (_add) {
+      domainReputationTokenApprovals[_domainId][_token] += _amount;
+    } else {
+      domainReputationTokenApprovals[_domainId][_token] -= _amount;
+    }
+  }
+
+  function getAllowedDomainTokenReceipt(
+    uint256 _domainId,
+    address _token
+  ) public view returns (uint256) {
+    return domainReputationTokenApprovals[_domainId][_token];
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
