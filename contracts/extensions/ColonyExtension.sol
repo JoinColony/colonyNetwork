@@ -28,6 +28,7 @@ import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
+import { IColonyExtension } from "./IColonyExtension.sol";
 
 abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall, MultiChain {
   uint256 constant UINT256_MAX = 2 ** 256 - 1;
