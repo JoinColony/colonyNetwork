@@ -63,6 +63,13 @@ Emit a metadata string for a transaction
 |_metadata|string|String of metadata for tx
 
 
+### ▸ `approveExitRecovery()`
+
+Indicate approval to exit recovery mode. Can only be called by user with recovery role.
+
+
+
+
 ### ▸ `approveStake(address _approvee, uint256 _domainId, uint256 _amount)`
 
 Allow the _approvee to obligate some amount of tokens as a stake.
@@ -140,6 +147,19 @@ Cancels the expenditure and prevents further editing.
 |_permissionDomainId|uint256|The domainId in which I have the permission to take this action
 |_childSkillIndex|uint256|The index that the `_domainId` is relative to `_permissionDomainId`, (only used if `_permissionDomainId` is different to `_domainId`)
 |_id|uint256|Expenditure identifier
+
+
+### ▸ `checkNotAdditionalProtectedVariable(uint256 _slot)`
+
+Check whether the supplied slot is a protected variable specific to this contract
+
+*Note: No return value, but should throw if protected.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_slot|uint256|The storage slot number to check.
 
 
 ### ▸ `claimColonyFunds(address _token)`
@@ -335,6 +355,41 @@ Emit a positive skill reputation update. Available only to Root role holders
 |_skillId|uint256|The skill where the user will gain reputation
 |_user|address|The user who will gain reputation
 |_amount|int256|The (positive) amount of reputation to gain
+
+
+### ▸ `enterRecoveryMode()`
+
+Put colony network mining into recovery mode. Can only be called by user with recovery role.
+
+
+
+
+### ▸ `executeMetaTransaction(address userAddress, bytes memory payload, bytes32 sigR, bytes32 sigS, uint8 sigV):bytes returnData`
+
+Executes a metatransaction targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that signed the metatransaction
+|payload|bytes|The transaction data that will be executed if signature valid
+|sigR|bytes32|The 'r' part of the signature
+|sigS|bytes32|The 's' part of the signature
+|sigV|uint8|The 'v' part of the signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|returnData|bytes|The return data of the executed transaction
+
+### ▸ `exitRecoveryMode()`
+
+Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
+
+
 
 
 ### ▸ `finalizeExpenditure(uint256 _id)`
@@ -629,6 +684,23 @@ Get the local skill
 |---|---|---|
 |localSkill|LocalSkill|The local skill
 
+### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+
+Gets the next metatransaction nonce for user that should be used targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that will sign the metatransaction
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nonce|uint256|The nonce that should be used for the next metatransaction
+
 ### ▸ `getNonRewardPotsTotal(address _token):uint256 amount`
 
 Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
@@ -907,46 +979,6 @@ Gets the bytes32 representation of the roles for a user in a given domain
 |---|---|---|
 |roles|bytes32|bytes32 representation of the held roles
 
-### ▸ `hasInheritedUserRole(address _user, uint256 _domainId, ColonyRole _role, uint256 _childSkillIndex, uint256 _childDomainId):bool hasRole`
-
-Check whether a given user has a given role for the colony, in a child domain. Calls the function of the same name on the colony's authority contract and an internal inheritance validator function
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_user|address|The user whose role we want to check
-|_domainId|uint256|Domain in which the caller has the role
-|_role|ColonyRole|The role we want to check for
-|_childSkillIndex|uint256|The index that the `_childDomainId` is relative to `_domainId`
-|_childDomainId|uint256|The domain where we want to use the role
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|hasRole|bool|Boolean indicating whether the given user has the given role in domain
-
-### ▸ `hasUserRole(address _user, uint256 _domainId, ColonyRole _role):bool hasRole`
-
-Check whether a given user has a given role for the colony. Calls the function of the same name on the colony's authority contract.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_user|address|The user whose role we want to check
-|_domainId|uint256|The domain where we want to check for the role
-|_role|ColonyRole|The role we want to check for
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|hasRole|bool|Boolean indicating whether the given user has the given role in domain
-
 ### ▸ `initialiseColony(address _colonyNetworkAddress, address _token)`
 
 Called once when the colony is created to initialise certain storage slot values.
@@ -980,6 +1012,18 @@ Install an extension to the colony. Secured function to authorised members.
 |extensionId|bytes32|keccak256 hash of the extension name, used as an indentifier
 |version|uint256|The new extension version to install
 
+
+### ▸ `isInRecoveryMode():bool inRecoveryMode`
+
+Is colony network in recovery mode.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|inRecoveryMode|bool|Return true if recovery mode is active, false otherwise
 
 ### ▸ `lockExpenditure(uint256 _id)`
 
@@ -1143,6 +1187,36 @@ Move a given amount: `_amount` of `_token` funds from funding pot with id `_from
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
+### ▸ `multicall(bytes[] calldata data):bytes[] results`
+
+Call multiple functions in the current contract and return the data from all of them if they all succeed
+
+*Note: The `msg.value` should not be trusted for any method callable from multicall.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|data|bytes[]|The encoded function data for each of the calls to make to this contract
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|results|bytes[]|The results from each of the calls passed in via data
+
+### ▸ `numRecoveryRoles():uint64 numRoles`
+
+Return number of recovery roles.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|numRoles|uint64|Number of users with the recovery role.
+
 ### ▸ `obligateStake(address _user, uint256 _domainId, uint256 _amount)`
 
 Obligate the user some amount of tokens as a stake.
@@ -1181,6 +1255,18 @@ Register colony's ENS label.
 |---|---|---|
 |colonyName|string|The label to register.
 |orbitdb|string|The path of the orbitDB database associated with the colony name
+
+
+### ▸ `removeRecoveryRole(address _user)`
+
+Remove colony recovery role. Can only be called by root role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User we want to remove recovery role from
 
 
 ### ▸ `setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo)`
@@ -1455,6 +1541,18 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
 
 
+### ▸ `setRecoveryRole(address _user)`
+
+Set new colony recovery role. Can be called by root.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User we want to give a recovery role to
+
+
 ### ▸ `setRewardInverse(uint256 _rewardInverse)`
 
 Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100.
@@ -1478,6 +1576,20 @@ Set new colony root role. Can be called by root role only.
 |---|---|---|
 |_user|address|User we want to give an root role to
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
+### ▸ `setStorageSlotRecovery(uint256 _slot, bytes32 _value)`
+
+Update value of arbitrary storage variable. Can only be called by user with recovery role.
+
+*Note: certain critical variables are protected from editing in this function*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_slot|uint256|Uint address of storage slot to be updated
+|_value|bytes32|word of data to be set
 
 
 ### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`
