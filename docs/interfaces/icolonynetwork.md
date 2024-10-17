@@ -141,6 +141,13 @@ Adds a reputation update entry to the log.
 |_skillId|uint256|The skill for the reputation update
 
 
+### ▸ `approveExitRecovery()`
+
+Indicate approval to exit recovery mode. Can only be called by user with recovery role.
+
+
+
+
 ### ▸ `bridgeCurrentRootHash(uint256 chainId)`
 
 Initiate a cross-chain update of the current reputation state
@@ -208,6 +215,19 @@ Calculate raw miner weight in WADs.
 |Name|Type|Description|
 |---|---|---|
 |_minerWeight|uint256|The weight of miner reward
+
+### ▸ `checkNotAdditionalProtectedVariable(uint256 _slot)`
+
+Check whether the supplied slot is a protected variable specific to this contract
+
+*Note: No return value, but should throw if protected.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_slot|uint256|The storage slot number to check.
+
 
 ### ▸ `claimMiningReward(address _recipient)`
 
@@ -411,6 +431,41 @@ DEPRECATED Set deprecation status for a skill
 |Name|Type|Description|
 |---|---|---|
 |_changed|bool|Whether the deprecated state was changed
+
+### ▸ `enterRecoveryMode()`
+
+Put colony network mining into recovery mode. Can only be called by user with recovery role.
+
+
+
+
+### ▸ `executeMetaTransaction(address userAddress, bytes memory payload, bytes32 sigR, bytes32 sigS, uint8 sigV):bytes returnData`
+
+Executes a metatransaction targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that signed the metatransaction
+|payload|bytes|The transaction data that will be executed if signature valid
+|sigR|bytes32|The 'r' part of the signature
+|sigS|bytes32|The 's' part of the signature
+|sigV|uint8|The 'v' part of the signature
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|returnData|bytes|The return data of the executed transaction
+
+### ▸ `exitRecoveryMode()`
+
+Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
+
+
+
 
 ### ▸ `getBridgedReputationUpdateCount(uint256 _chainId, address _colony):uint256 bridgedReputationCount`
 
@@ -619,6 +674,23 @@ Get the Meta Colony address.
 |Name|Type|Description|
 |---|---|---|
 |_colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
+
+### ▸ `getMetatransactionNonce(address userAddress):uint256 nonce`
+
+Gets the next metatransaction nonce for user that should be used targeting this contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|userAddress|address|The address of the user that will sign the metatransaction
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|nonce|uint256|The nonce that should be used for the next metatransaction
 
 ### ▸ `getMiningChainId():uint256 reputationMiningChainId`
 
@@ -993,6 +1065,18 @@ Check if specific address is a colony created on colony network.
 |---|---|---|
 |_addressIsColony|bool|true if specified address is a colony, otherwise false
 
+### ▸ `isInRecoveryMode():bool inRecoveryMode`
+
+Is colony network in recovery mode.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|inRecoveryMode|bool|Return true if recovery mode is active, false otherwise
+
 ### ▸ `lookupRegisteredENSDomain(address _addr):string _domain`
 
 Reverse lookup a username from an address.
@@ -1009,6 +1093,36 @@ Reverse lookup a username from an address.
 |Name|Type|Description|
 |---|---|---|
 |_domain|string|A string containing the colony-based ENS name corresponding to addr
+
+### ▸ `multicall(bytes[] calldata data):bytes[] results`
+
+Call multiple functions in the current contract and return the data from all of them if they all succeed
+
+*Note: The `msg.value` should not be trusted for any method callable from multicall.*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|data|bytes[]|The encoded function data for each of the calls to make to this contract
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|results|bytes[]|The results from each of the calls passed in via data
+
+### ▸ `numRecoveryRoles():uint64 numRoles`
+
+Return number of recovery roles.
+
+
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|numRoles|uint64|Number of users with the recovery role.
 
 ### ▸ `punishStakers(address[] memory _stakers, uint256 _amount)`
 
@@ -1048,6 +1162,18 @@ Register a "user.joincolony.eth" label.
 |---|---|---|
 |_username|string|The label to register
 |_orbitdb|string|The path of the orbitDB database associated with the user profile
+
+
+### ▸ `removeRecoveryRole(address _user)`
+
+Remove colony recovery role. Can only be called by root role.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User we want to remove recovery role from
 
 
 ### ▸ `reward(address _recipient, uint256 _amount)`
@@ -1126,6 +1252,18 @@ Set a token's status in the payout whitelist
 |_status|bool|The whitelist status
 
 
+### ▸ `setRecoveryRole(address _user)`
+
+Set new colony recovery role. Can be called by root.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address|User we want to give a recovery role to
+
+
 ### ▸ `setReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id, address _user, int _amount, uint256 _skillId, address _colony, uint128 _nUpdates, uint128 _nPreviousUpdates)`
 
 Set a replacement log entry if we're in recovery mode.
@@ -1186,6 +1324,20 @@ Update the reputation on a foreign chain from the mining chain
 |newHash|bytes32|The new root hash
 |newNLeaves|uint256|The new nLeaves in the root hash
 |nonce|uint256|The nonce to ensure these txs can't be replayed
+
+
+### ▸ `setStorageSlotRecovery(uint256 _slot, bytes32 _value)`
+
+Update value of arbitrary storage variable. Can only be called by user with recovery role.
+
+*Note: certain critical variables are protected from editing in this function*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_slot|uint256|Uint address of storage slot to be updated
+|_value|bytes32|word of data to be set
 
 
 ### ▸ `setTokenLocking(address _tokenLockingAddress)`

@@ -19,6 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
+import { IDSAuth } from "./../common/IDSAuth.sol";
 
 interface IColonyExtension is IBasicMetaTransaction {
   /// @notice Returns the identifier of the extension
