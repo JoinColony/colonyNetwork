@@ -115,11 +115,6 @@ contract TokenLocking is
     userLocks[_token][msgSender()].lockCount = _lockId;
   }
 
-  // Deprecated interface
-  function deposit(address _token, uint256 _amount) public {
-    deposit(_token, _amount, false);
-  }
-
   function deposit(
     address _token,
     uint256 _amount,
@@ -166,11 +161,6 @@ contract TokenLocking is
     makeConditionalDeposit(_token, _amount, _recipient);
 
     emit UserTokenTransferred(_token, msgSender(), _recipient, _amount);
-  }
-
-  // Deprecated interface
-  function withdraw(address _token, uint256 _amount) public {
-    withdraw(_token, _amount, false);
   }
 
   function withdraw(

@@ -74,23 +74,6 @@ contract ColonyExpenditure is ColonyStorage {
     emit ExpenditureTransferred(msgSender(), _id, _newOwner);
   }
 
-  // Deprecated
-  function transferExpenditureViaArbitration(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    address _newOwner
-  )
-    public
-    stoppable
-    expenditureDraftOrLocked(_id)
-    authDomain(_permissionDomainId, _childSkillIndex, expenditures[_id].domainId)
-  {
-    expenditures[_id].owner = _newOwner;
-
-    emit ExpenditureTransferred(msgSender(), _id, _newOwner);
-  }
-
   function cancelExpenditureViaArbitration(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
@@ -234,41 +217,6 @@ contract ColonyExpenditure is ColonyStorage {
 
       emit ExpenditurePayoutModifierSet(msgSender(), _id, _slots[i], _payoutModifiers[i]);
     }
-  }
-
-  // Deprecated
-  function setExpenditureRecipient(
-    uint256 _id,
-    uint256 _slot,
-    address payable _recipient
-  ) public stoppable {
-    uint256[] memory slots = new uint256[](1);
-    slots[0] = _slot;
-    address payable[] memory recipients = new address payable[](1);
-    recipients[0] = _recipient;
-    setExpenditureRecipients(_id, slots, recipients);
-  }
-
-  // Deprecated
-  function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) public stoppable {
-    uint256[] memory slots = new uint256[](1);
-    slots[0] = _slot;
-    uint256[] memory skillIds = new uint256[](1);
-    skillIds[0] = _skillId;
-    setExpenditureSkills(_id, slots, skillIds);
-  }
-
-  // Deprecated
-  function setExpenditureClaimDelay(
-    uint256 _id,
-    uint256 _slot,
-    uint256 _claimDelay
-  ) public stoppable {
-    uint256[] memory slots = new uint256[](1);
-    slots[0] = _slot;
-    uint256[] memory claimDelays = new uint256[](1);
-    claimDelays[0] = _claimDelay;
-    setExpenditureClaimDelays(_id, slots, claimDelays);
   }
 
   uint256 constant EXPENDITURES_SLOT = 25;
