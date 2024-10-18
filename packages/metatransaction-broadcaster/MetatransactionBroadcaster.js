@@ -102,6 +102,13 @@ class MetatransactionBroadcaster {
     await db.close();
   }
 
+  async resetDB() {
+    const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
+    await db.run(`DROP TABLE IF EXISTS addresses`);
+    await db.close();
+    await this.createDB();
+  }
+
   async isAddressValid(address) {
     const checksummedAddress = ethers.utils.getAddress(address);
     const db = await sqlite.open({ filename: this.dbPath, driver: sqlite3.Database });
