@@ -11,9 +11,9 @@ _This is a Colony Extension which conforms to the extension interface found [her
   
 ## Interface Methods
 
-### ▸ `authority():address colonyAuthority`
+### ▸ `authority():DSAuthority authority`
 
-Get the `ColonyAuthority` for the colony.
+Get the authority of the contract
 
 
 
@@ -21,7 +21,7 @@ Get the `ColonyAuthority` for the colony.
 
 |Name|Type|Description|
 |---|---|---|
-|colonyAuthority|address|The `ColonyAuthority` contract address
+|authority|DSAuthority|The authority of the contract
 
 ### ▸ `deprecate(bool _deprecated)`
 
@@ -164,18 +164,17 @@ Call multiple functions in the current contract and return the data from all of 
 |---|---|---|
 |results|bytes[]|The results from each of the calls passed in via data
 
-### ▸ `owner():address colonyOwner`
+### ▸ `owner():address owner`
 
-Get the colony `owner` address. This should be address(0x0) at all times.
+Get the owner of the contract
 
-*Note: Used for testing.*
 
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|colonyOwner|address|Address of the colony owner
+|owner|address|The owner of the contract
 
 ### ▸ `setExpenditurePayoutModifiers(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256[] memory _slots, int256[] memory _payoutModifiers)`
 
