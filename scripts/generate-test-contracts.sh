@@ -32,7 +32,7 @@ sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/colony/Updat
 # Modify IUpdatedColony contract
 sed -i.bak "s/interface IColony/interface IUpdatedColony/g" ./contracts/colony/IUpdatedColony.sol
 sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/colony/IUpdatedColony.sol
-sed -i.bak "s/interface IUpdatedColony is UpdatedColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {/interface IUpdatedColony is UpdatedColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {function isUpdated() external pure returns(bool);/g" ./contracts/colony/IUpdatedColony.sol
+sed -i.bak "s/interface IUpdatedColony is\(.*\){/interface IUpdatedColony is\1{function isUpdated() external pure returns(bool);/g" ./contracts/colony/IUpdatedColony.sol
 # Modify UpdatedReputationMiningCycle contract
 sed -i.bak "s/contract ReputationMiningCycle/contract UpdatedReputationMiningCycle/g" ./contracts/reputationMiningCycle/UpdatedReputationMiningCycle.sol
 sed -i.bak "s| is ReputationMiningCycleCommon {| is ReputationMiningCycleCommon {\nfunction isUpdated() public pure returns(bool) {return true;}|g" ./contracts/reputationMiningCycle/UpdatedReputationMiningCycle.sol
