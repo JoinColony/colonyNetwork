@@ -13,7 +13,7 @@
     "eslint-staged": "bash ./scripts/eslint.sh",
     "solhint": "solhint ./contracts/**/*.sol",
     "solhint-staged": "bash ./scripts/solhint.sh",
-    "build:docs": "scripts/docgen.js",
+    "build:docs": "npx hardhat compile && scripts/docgen.js",
     "prettier-contracts-staged": "bash ./scripts/prettier-contracts.sh",
     "check:auth": "./scripts/check-auth.js",
     "check:gitchanges": "./scripts/no-git-changes.sh",

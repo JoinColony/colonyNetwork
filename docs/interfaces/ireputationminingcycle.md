@@ -273,24 +273,6 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 |---|---|---|
 |nUpdates|uint256|
 
-### ▸ `getResponsePossible(DisputeStages _stage, uint256 _since):bool possible`
-
-Returns whether the caller is able to currently respond to a dispute stage.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_stage|DisputeStages|The dispute stage in question. Practically, this is a number that indexes in to the corresponding enum in ReputationMiningCycleDataTypes
-|_since|uint256|The timestamp the last response for the submission in the dispute in question was made at.
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|possible|bool|bool Whether the user can respond at the current time.
-
 ### ▸ `getSubmissionUser(bytes32 _hash, uint256 _nLeaves, bytes32 _jrh, uint256 _index):address user`
 
 Get the address that made a particular submission.

@@ -28,8 +28,16 @@ import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
+import { IColonyExtension } from "./IColonyExtension.sol";
 
-abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multicall, MultiChain {
+abstract contract ColonyExtension is
+  IColonyExtension,
+  DSAuth,
+  DSMath,
+  PatriciaTreeProofs,
+  Multicall,
+  MultiChain
+{
   uint256 constant UINT256_MAX = 2 ** 256 - 1;
 
   event ExtensionInitialised();
@@ -42,6 +50,12 @@ abstract contract ColonyExtension is DSAuth, DSMath, PatriciaTreeProofs, Multica
   modifier notDeprecated() {
     require(!deprecated, "colony-extension-deprecated");
     _;
+  }
+
+  function multicall(
+    bytes[] calldata data
+  ) public override(Multicall, IColonyExtension) returns (bytes[] memory results) {
+    results = Multicall.multicall(data);
   }
 
   function identifier() public pure virtual returns (bytes32);

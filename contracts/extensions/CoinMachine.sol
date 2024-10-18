@@ -20,7 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { ERC20 } from "./../../lib/dappsys/erc20.sol";
-import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { Whitelist } from "./Whitelist.sol";
 import { ColonyDataTypes } from "./../colony/IColony.sol";
@@ -71,7 +71,9 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _user The user's address
   /// @return nonce The nonce
-  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
