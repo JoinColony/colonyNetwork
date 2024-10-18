@@ -64,11 +64,26 @@ contract("Metatransaction broadcaster", (accounts) => {
   });
 
   afterEach(async () => {
+    await broadcaster.resetDB();
     await broadcaster.close();
   });
 
   describe("should correctly identify transactions as valid or not", function () {
     it("transactions to network, token locking are accepted", async function () {
+      let valid = await broadcaster.isAddressValid(colonyNetwork.address);
+      expect(valid).to.be.equal(true);
+
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      valid = await broadcaster.isAddressValid(tokenLockingAddress);
+      expect(valid).to.be.equal(true);
+    });
+
+    it("transactions to network, token locking are accepted even if initialised with lowercase address", async function () {
+      const networkAddress = colonyNetwork.address.toLowerCase();
+      await broadcaster.close();
+      broadcaster = new MetatransactionBroadcaster({ privateKey, loader, provider });
+      await broadcaster.initialise(networkAddress);
+
       let valid = await broadcaster.isAddressValid(colonyNetwork.address);
       expect(valid).to.be.equal(true);
 
