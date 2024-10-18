@@ -15,10 +15,11 @@ import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DSAuth, DSAuthEvents, DSAuthority } from "./../../lib/dappsys/auth.sol";
+import { IDSAuth } from "./../common/IDSAuth.sol";
 
 pragma solidity 0.8.27;
 
-abstract contract DSAuthMeta is DSAuthEvents, BasicMetaTransaction {
+abstract contract DSAuthMeta is IDSAuth, DSAuthEvents, BasicMetaTransaction {
   DSAuthority public authority;
   address public owner;
 
