@@ -23,18 +23,9 @@ import { IRecovery } from "./../common/IRecovery.sol";
 import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
 import { IMulticall } from "./../common/IMulticall.sol";
 import { ColonyDataTypes } from "./ColonyDataTypes.sol";
+import { IDSAuth } from "./../common/IDSAuth.sol";
 
-interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
-  // Implemented in DSAuth.sol
-  /// @notice Get the `ColonyAuthority` for the colony.
-  /// @return colonyAuthority The `ColonyAuthority` contract address
-  function authority() external view returns (address colonyAuthority);
-
-  /// @notice Get the colony `owner` address. This should be address(0x0) at all times.
-  /// @dev Used for testing.
-  /// @return colonyOwner Address of the colony owner
-  function owner() external view returns (address colonyOwner);
-
+interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
   // Implemented in Colony.sol
   /// @notice Get the Colony contract version.
   /// Starts from 1 and is incremented with every deployed contract change.
