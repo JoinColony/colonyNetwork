@@ -6,13 +6,12 @@ import { MetaTransactionMsgSender } from "./MetaTransactionMsgSender.sol";
 import { MultiChain } from "./MultiChain.sol";
 import { IBasicMetaTransaction } from "./IBasicMetaTransaction.sol";
 
-abstract contract BasicMetaTransaction is DSMath, MetaTransactionMsgSender, MultiChain {
-  event MetaTransactionExecuted(
-    address user,
-    address payable relayerAddress,
-    bytes functionSignature
-  );
-
+abstract contract BasicMetaTransaction is
+  IBasicMetaTransaction,
+  DSMath,
+  MetaTransactionMsgSender,
+  MultiChain
+{
   function getMetatransactionNonce(address _user) public view virtual returns (uint256 nonce);
 
   // NB if implementing this functionality in a contract with recovery mode,

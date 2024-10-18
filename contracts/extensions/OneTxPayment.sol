@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { ColonyDataTypes } from "../colony/IColony.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 
@@ -39,7 +39,9 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _user The user's address
   /// @return _nonce The nonce
-  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 _nonce) {
     return metatransactionNonces[_user];
   }
 

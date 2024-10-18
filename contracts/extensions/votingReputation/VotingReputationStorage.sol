@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IColonyNetwork } from "./../../colonyNetwork/IColonyNetwork.sol";
 import { IColony, ColonyDataTypes } from "./../../colony/IColony.sol";
-import { BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction, BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
 import { ActionSummary, GetActionSummary } from "./../../common/GetActionSummary.sol";
 import { ITokenLocking } from "./../../tokenLocking/ITokenLocking.sol";
 import { ColonyExtension } from "./../ColonyExtension.sol";
@@ -94,7 +94,9 @@ contract VotingReputationStorage is
 
   uint256 motionCountV10; // Motion count during the v9 -> v10 upgrade
 
-  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 _nonce) {
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
     // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
     // account at 1 million nonce by then.

@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
-import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 
@@ -92,7 +92,9 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _user The user's address
   /// @return _nonce The nonce
-  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 _nonce) {
     return metatransactionNonces[_user];
   }
 
