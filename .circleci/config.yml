@@ -82,7 +82,7 @@ jobs:
           command: pnpm run check:gitchanges
       - run:
           name: "Checking contract storage layout hasn't had additions made"
-          command: npx hardhat storage-layout --update && npm run normalize:storageSlots && test -z "$(git status --porcelain)"
+          command: rm -rf .storage-layouts-normalized && npx hardhat storage-layout --update && npm run normalize:storageSlots && test -z "$(git status --porcelain)"
       - <<: *step_compile_mock_spy
       - run:
           name: "Linting JavaScript"
