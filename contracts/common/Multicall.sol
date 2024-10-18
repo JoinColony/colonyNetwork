@@ -8,7 +8,7 @@ import { MetaTransactionMsgSender } from "./MetaTransactionMsgSender.sol";
 abstract contract Multicall is MetaTransactionMsgSender {
   bytes4 constant MULTICALL_SIG = bytes4(keccak256("multicall(bytes[])"));
 
-  function multicall(bytes[] calldata data) public returns (bytes[] memory results) {
+  function multicall(bytes[] calldata data) public virtual returns (bytes[] memory results) {
     // First off, is this a metatransaction?
     address sender = msgSender();
     bytes memory affix;

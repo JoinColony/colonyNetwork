@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
-import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
@@ -112,7 +112,9 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   uint256 escalationPeriod; // Length of time for escalating after a vote
   mapping(address => uint256) metatransactionNonces;
 
-  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 

@@ -20,13 +20,15 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
-import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 
-abstract contract ColonyExtensionMeta is ColonyExtension, BasicMetaTransaction {
+abstract contract ColonyExtensionMeta is BasicMetaTransaction, ColonyExtension {
   mapping(address => uint256) metatransactionNonces;
 
-  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override(BasicMetaTransaction, IBasicMetaTransaction) returns (uint256 _nonce) {
     return metatransactionNonces[_user];
   }
 
