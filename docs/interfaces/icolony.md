@@ -84,9 +84,9 @@ Allow the _approvee to obligate some amount of tokens as a stake.
 |_amount|uint256|Amount of internal token up to which we are willing to be obligated.
 
 
-### ▸ `authority():address colonyAuthority`
+### ▸ `authority():DSAuthority authority`
 
-Get the `ColonyAuthority` for the colony.
+Get the authority of the contract
 
 
 
@@ -94,7 +94,7 @@ Get the `ColonyAuthority` for the colony.
 
 |Name|Type|Description|
 |---|---|---|
-|colonyAuthority|address|The `ColonyAuthority` contract address
+|authority|DSAuthority|The authority of the contract
 
 ### ▸ `bootstrapColony(address[] memory _users, int[] memory _amount)`
 
@@ -1231,18 +1231,17 @@ Obligate the user some amount of tokens as a stake.
 |_amount|uint256|Amount of internal token we are obligating.
 
 
-### ▸ `owner():address colonyOwner`
+### ▸ `owner():address owner`
 
-Get the colony `owner` address. This should be address(0x0) at all times.
+Get the owner of the contract
 
-*Note: Used for testing.*
 
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|colonyOwner|address|Address of the colony owner
+|owner|address|The owner of the contract
 
 ### ▸ `registerColonyLabel(string memory colonyName, string memory orbitdb)`
 
@@ -1539,6 +1538,18 @@ Set new colony funding role. Can be called by root role or architecture role.
 |_user|address|User we want to give an funding role to
 |_domainId|uint256|Domain in which we are giving user the role
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
+### ▸ `setOwner(address owner_)`
+
+Set the owner of the contract
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|owner_|address|The new owner of the contract
 
 
 ### ▸ `setRecoveryRole(address _user)`

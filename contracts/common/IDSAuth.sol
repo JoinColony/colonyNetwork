@@ -23,4 +23,12 @@ interface IDSAuth {
   /// @notice Set the authority of the contract
   /// @param authority_ The new authority of the contract
   function setAuthority(DSAuthority authority_) external;
+
+  /// @notice Get the owner of the contract
+  /// @return owner The owner of the contract
+  function owner() external view returns (address owner);
+
+  /// @notice Get the authority of the contract
+  /// @return authority The authority of the contract
+  function authority() external view returns (DSAuthority authority);
 }

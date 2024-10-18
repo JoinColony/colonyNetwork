@@ -186,7 +186,6 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile, artifactFile
         ) {
           noticeLineIndex -= 1;
         }
-        // if (contract.name === "IBasicMetaTransaction" && method.name === "getMetatransactionNonce") { console.log(noticeLineIndex); process.exit(1) }
 
         // Check whether the current line is a valid notice line
         if (contractFileArray[noticeLineIndex].includes(" @notice ")) {
