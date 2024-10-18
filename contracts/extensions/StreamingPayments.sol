@@ -137,7 +137,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   /// @param _adminChildSkillIndex The index linking the adminPermissionDomainId to the domainId
   /// @param _domainId The domain out of which the streaming payment will be paid
   /// @param _startTime The time at which the payment begins paying out
-  /// @param _endTime The time at which the payment ends paying out
+  /// @param _endTimeOrDuration The time at which the payment ends paying out. If _startTime is 0, then this is
+  /// the duration of the payment from the current time
   /// @param _interval The period of time over which _amounts are paid out
   /// @param _recipient The recipient of the streaming payment
   /// @param _token The token to be paid out
@@ -149,7 +150,7 @@ contract StreamingPayments is ColonyExtensionMeta {
     uint256 _adminChildSkillIndex,
     uint256 _domainId,
     uint256 _startTime,
-    uint256 _endTime,
+    uint256 _endTimeOrDuration,
     uint256 _interval,
     address payable _recipient,
     address _token,
@@ -160,22 +161,36 @@ contract StreamingPayments is ColonyExtensionMeta {
     validateFundingPermission(_fundingPermissionDomainId, _fundingChildSkillIndex, _domainId)
     validateAdministrationPermission(_adminPermissionDomainId, _adminChildSkillIndex, _domainId)
   {
-    uint256 startTime = (_startTime == 0) ? block.timestamp : _startTime;
-
-    require(startTime <= _endTime, "streaming-payments-bad-end-time");
-    require(_interval > 0, "streaming-payments-bad-interval");
-
     numStreamingPayments++;
     streamingPayments[numStreamingPayments] = StreamingPayment(
       _recipient,
       _domainId,
-      startTime,
-      _endTime,
+      _startTime,
+      _endTimeOrDuration,
       _interval,
       _token,
       _amount,
       0
     );
+
+    StreamingPayment storage streamingPayment = streamingPayments[numStreamingPayments];
+
+    require(
+      streamingPayment.startTime <= streamingPayment.endTime,
+      "streaming-payments-bad-end-time"
+    );
+    require(streamingPayment.interval > 0, "streaming-payments-bad-interval");
+
+    if (_startTime == 0) {
+      // If _startTime was 0, then we set the startTime to now
+      streamingPayments[numStreamingPayments].startTime = block.timestamp;
+      // If _startTime was 0, then we interpret _endTime as a duration from now, not an absolute time, if possible
+      if (streamingPayments[numStreamingPayments].endTime < 2 ** 256 - 1 - block.timestamp) {
+        streamingPayments[numStreamingPayments].endTime += block.timestamp;
+      } else {
+        streamingPayments[numStreamingPayments].endTime = 2 ** 256 - 1;
+      }
+    }
 
     if (getAmountClaimableLifetime(numStreamingPayments) > 0) {
       nUnresolvedStreamingPayments += 1;

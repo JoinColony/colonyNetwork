@@ -118,6 +118,16 @@ contract("Streaming Payments", (accounts) => {
       expect(streamingPaymentCount).to.eq.BN(1);
     });
 
+    it("when creating a streaming payment, if start time is 0, endTime is treated as a duration", async () => {
+      const tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, SECONDS_PER_DAY, SECONDS_PER_DAY, USER1, token.address, WAD);
+      const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
+      const streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
+
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
+      expect(streamingPayment.startTime).to.eq.BN(blockTime);
+      expect(streamingPayment.endTime).to.eq.BN(blockTime + SECONDS_PER_DAY);
+    });
+
     it("cannot create a streaming payment without relevant permissions", async () => {
       await checkErrorRevert(
         streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, UINT256_MAX, SECONDS_PER_DAY, USER1, token.address, WAD, { from: USER1 }),
@@ -218,18 +228,19 @@ contract("Streaming Payments", (accounts) => {
     });
 
     it("can update the end time", async () => {
-      const blockTime = await getBlockTime();
+      let tx = await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, SECONDS_PER_DAY, SECONDS_PER_DAY, USER1, token.address, WAD);
+
+      const blockTime = await getBlockTime(tx.receipt.blockNumber);
       const endTime = blockTime + SECONDS_PER_DAY;
       const newEndTime = endTime + SECONDS_PER_DAY;
 
-      await streamingPayments.create(1, UINT256_MAX, 1, UINT256_MAX, 1, 0, endTime, SECONDS_PER_DAY, USER1, token.address, WAD);
       const streamingPaymentId = await streamingPayments.getNumStreamingPayments();
 
       let streamingPayment;
       streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(endTime);
 
-      const tx = await streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, newEndTime);
+      tx = await streamingPayments.setEndTime(1, UINT256_MAX, streamingPaymentId, newEndTime);
       streamingPayment = await streamingPayments.getStreamingPayment(streamingPaymentId);
       expect(streamingPayment.endTime).to.eq.BN(newEndTime);
 

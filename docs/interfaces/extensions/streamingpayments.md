@@ -53,7 +53,7 @@ Claim a streaming payment
 |_id|uint256|The id of the streaming payment
 
 
-### ▸ `create(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _adminPermissionDomainId, uint256 _adminChildSkillIndex, uint256 _domainId, uint256 _startTime, uint256 _endTime, uint256 _interval, address _recipient, address _token, uint256 _amount)`
+### ▸ `create(uint256 _fundingPermissionDomainId, uint256 _fundingChildSkillIndex, uint256 _adminPermissionDomainId, uint256 _adminChildSkillIndex, uint256 _domainId, uint256 _startTime, uint256 _endTimeOrDuration, uint256 _interval, address _recipient, address _token, uint256 _amount)`
 
 Creates a new streaming payment
 
@@ -68,7 +68,7 @@ Creates a new streaming payment
 |_adminChildSkillIndex|uint256|The index linking the adminPermissionDomainId to the domainId
 |_domainId|uint256|The domain out of which the streaming payment will be paid
 |_startTime|uint256|The time at which the payment begins paying out
-|_endTime|uint256|The time at which the payment ends paying out
+|_endTimeOrDuration|uint256|The time at which the payment ends paying out. If _startTime is 0, then this is the duration of the payment from the current time
 |_interval|uint256|The period of time over which _amounts are paid out
 |_recipient|address|The recipient of the streaming payment
 |_token|address|The token to be paid out
