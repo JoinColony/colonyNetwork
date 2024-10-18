@@ -76,9 +76,13 @@ class MetatransactionBroadcaster {
 
     const network = await this.provider.getNetwork();
     this.chainId = network.chainId;
+    if (colonyNetworkAddress !== ethers.utils.getAddress(colonyNetworkAddress)) {
+      console.warn("WARNING: Colony Network address is not checksummed");
+      console.warn("This should be fine, but ideally set to a checksummed address");
+    }
 
     const colonyNetworkDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
-    this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, colonyNetworkDef.abi, this.wallet);
+    this.colonyNetwork = new ethers.Contract(ethers.utils.getAddress(colonyNetworkAddress), colonyNetworkDef.abi, this.wallet);
 
     this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
     this.tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
