@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
@@ -46,7 +46,9 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _user The user's address
   /// @return _nonce The nonce
-  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(
+    address _user
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 _nonce) {
     return metatransactionNonces[_user];
   }
 
