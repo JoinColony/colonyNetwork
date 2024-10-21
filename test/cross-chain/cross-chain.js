@@ -112,7 +112,9 @@ contract("Cross-chain", (accounts) => {
 
   before(async () => {
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
+    homeChainId = ethers.BigNumber.from(homeChainId).toHexString();
     foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
+    foreignChainId = ethers.BigNumber.from(foreignChainId).toHexString();
 
     // We need to deploy the network to the other chain
     try {
@@ -142,7 +144,7 @@ contract("Cross-chain", (accounts) => {
     wormholeHomeChainId = evmChainIdToWormholeChainId(homeChainId);
 
     // const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
-    foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
+    // foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
     // wormholeForeignChainId = evmChainIdToWormholeChainId(foreignChainId);
 
     // Deploy shell colonyNetwork to whichever chain truffle hasn't already deployed to.
@@ -339,8 +341,18 @@ contract("Cross-chain", (accounts) => {
 
       tx = await deployedColony.createProxyColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
 
-      await tx.wait();
-      await p;
+      let receipt = await tx.wait();
+      const proxyRequestEvent = receipt.events.filter((e) => e.address === homeColonyNetwork.address)[0];
+      let parsed = homeColonyNetwork.interface.parseLog(proxyRequestEvent);
+      expect(parsed.name).to.equal("ProxyColonyRequested");
+      expect(parsed.args.destinationChainId.toHexString()).to.equal(foreignChainId);
+      expect(parsed.args.salt).to.equal(colonyCreationSalt);
+      receipt = await p;
+
+      const proxyDeployedEvent = receipt.logs.filter((e) => e.address === remoteColonyNetwork.address)[0];
+      parsed = remoteColonyNetwork.interface.parseLog(proxyDeployedEvent);
+      expect(parsed.name).to.equal("ProxyColonyDeployed");
+      expect(parsed.args.proxyColony).to.equal(deployedColony.address);
 
       // Did we deploy a shell colony on the foreign chain at the right address? Should have EtherRouter code...
       const code = await ethersForeignProvider.getCode(deployedColony.address);
@@ -353,6 +365,15 @@ contract("Cross-chain", (accounts) => {
       const expectedResolver = await remoteColonyNetwork.proxyColonyResolverAddress();
 
       expect(resolverAddress).to.equal(expectedResolver);
+    });
+
+    it("colonies can't deploy proxies that aren't for themselves", async () => {
+      const colony = await setupColony(homeColonyNetwork);
+
+      const deployedColony = new ethers.Contract(colony.address, IColony.abi, ethersHomeSigner);
+
+      const tx = await deployedColony.createProxyColony(foreignChainId, ethers.constants.HashZero, { gasLimit: 1000000 });
+      checkErrorRevertEthers(tx.wait(), "colony-network-wrong-salt");
     });
 
     it("bridge data can be queried", async () => {
