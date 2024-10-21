@@ -131,14 +131,14 @@ contract ColonyFunding is
 
     fundingPots[0].balance[_token] += feeToPay;
 
-    uint256 approvedAmount = domainReputationTokenApprovals[_domainId][_token];
+    uint256 approvedAmount = domainReputationTokenApprovals[block.chainid][_domainId][_token];
     if (!tokenEarnsReputationOnPayout(_token) || approvedAmount >= remainder) {
       // Either the token doesn't earn reputation or there is enough approval
       // Either way, the domain gets all the funds
       fundingPots[fundingPotId].balance[_token] += remainder;
       if (tokenEarnsReputationOnPayout(_token)) {
         // If it does earn reputation, deduct the approved amount
-        domainReputationTokenApprovals[_domainId][_token] -= remainder;
+        domainReputationTokenApprovals[block.chainid][_domainId][_token] -= remainder;
       }
       emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
     } else {
@@ -148,7 +148,7 @@ contract ColonyFunding is
       // And the rest goes to the root pot
       Domain storage rootDomain = domains[1];
       fundingPots[rootDomain.fundingPotId].balance[_token] += remainder - approvedAmount;
-      domainReputationTokenApprovals[_domainId][_token] = 0;
+      domainReputationTokenApprovals[block.chainid][_domainId][_token] = 0;
       emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, approvedAmount);
       emit ColonyFundsClaimed(msgSender(), _token, 0, remainder - approvedAmount);
     }
@@ -172,9 +172,9 @@ contract ColonyFunding is
     require(tokenEarnsReputationOnPayout(_token), "colony-funding-token-does-not-earn-reputation");
     require(_domainId > 1, "colony-funding-root-domain");
     if (_add) {
-      domainReputationTokenApprovals[_domainId][_token] += _amount;
+      domainReputationTokenApprovals[block.chainid][_domainId][_token] += _amount;
     } else {
-      domainReputationTokenApprovals[_domainId][_token] -= _amount;
+      domainReputationTokenApprovals[block.chainid][_domainId][_token] -= _amount;
     }
   }
 
@@ -182,7 +182,7 @@ contract ColonyFunding is
     uint256 _domainId,
     address _token
   ) public view returns (uint256) {
-    return domainReputationTokenApprovals[_domainId][_token];
+    return domainReputationTokenApprovals[block.chainid][_domainId][_token];
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {

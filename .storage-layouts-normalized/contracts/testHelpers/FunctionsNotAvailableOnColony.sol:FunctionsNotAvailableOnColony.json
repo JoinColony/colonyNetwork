@@ -1422,21 +1422,31 @@
           "label": "uint256",
           "numberOfBytes": "32"
         },
-        "label": "mapping(uint256 => mapping(address => uint256))",
+        "label": "mapping(uint256 => mapping(uint256 => mapping(address => uint256)))",
         "numberOfBytes": "32",
         "value": {
           "encoding": "mapping",
           "key": {
             "encoding": "inplace",
-            "label": "address",
-            "numberOfBytes": "20"
-          },
-          "label": "mapping(address => uint256)",
-          "numberOfBytes": "32",
-          "value": {
-            "encoding": "inplace",
             "label": "uint256",
             "numberOfBytes": "32"
+          },
+          "label": "mapping(uint256 => mapping(address => uint256))",
+          "numberOfBytes": "32",
+          "value": {
+            "encoding": "mapping",
+            "key": {
+              "encoding": "inplace",
+              "label": "address",
+              "numberOfBytes": "20"
+            },
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32",
+            "value": {
+              "encoding": "inplace",
+              "label": "uint256",
+              "numberOfBytes": "32"
+            }
           }
         }
       }
