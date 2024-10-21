@@ -60,16 +60,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @return tokenAddress Address of the token contract
   function getToken() external view returns (address tokenAddress);
 
-  /// @notice @deprecated
-  /// @notice Execute arbitrary transaction on behalf of the Colony
-  /// @param _to Contract to receive the function call (cannot be this contract, network or token locking)
-  /// @param _action Bytes array encoding the function call and arguments
-  /// @return success Boolean indicating whether the transaction succeeded
-  function makeArbitraryTransaction(
-    address _to,
-    bytes memory _action
-  ) external returns (bool success);
-
   /// @notice Execute arbitrary transactions on behalf of the Colony in series
   /// @param _targets Array of addressed to be targeted
   /// @param _actions Array of Bytes arrays encoding the function calls and arguments
@@ -466,21 +456,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _newOwner New owner of expenditure
   function transferExpenditure(uint256 _id, address _newOwner) external;
 
-  /// @notice @deprecated
-  /// @notice Updates the expenditure owner. Can only be called by Arbitration role.
-  /// @dev This is now deprecated and will be removed in a future version
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
-  /// (only used if `_permissionDomainId` is different to `_domainId`)
-  /// @param _id Expenditure identifier
-  /// @param _newOwner New owner of expenditure
-  function transferExpenditureViaArbitration(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _id,
-    address _newOwner
-  ) external;
-
   /// @notice Cancels the expenditure and prevents further editing.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`,
@@ -532,14 +507,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     string memory _metadata
   ) external;
 
-  /// @notice @deprecated
-  /// @notice Sets the recipient on an expenditure slot. Can only be called by expenditure owner.
-  /// @dev Can only be called while expenditure is in draft state.
-  /// @param _id Id of the expenditure
-  /// @param _slot Slot for the recipient address
-  /// @param _recipient Address of the recipient
-  function setExpenditureRecipient(uint256 _id, uint256 _slot, address payable _recipient) external;
-
   /// @notice Sets the recipients in given expenditure slots. Can only be called by expenditure owner.
   /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
@@ -549,20 +516,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _id,
     uint256[] memory _slots,
     address payable[] memory _recipients
-  ) external;
-
-  /// @notice @deprecated
-  /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
-  /// @dev Can only be called while expenditure is in draft state.
-  /// @param _id Id of the expenditure
-  /// @param _slot Number of the slot
-  /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @param _amount Payout amount
-  function setExpenditurePayout(
-    uint256 _id,
-    uint256 _slot,
-    address _token,
-    uint256 _amount
   ) external;
 
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
@@ -594,13 +547,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _amount
   ) external;
 
-  /// @notice @deprecated
-  /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
-  /// @param _id Expenditure identifier
-  /// @param _slot Number of the slot
-  /// @param _skillId Id of the new skill to set
-  function setExpenditureSkill(uint256 _id, uint256 _slot, uint256 _skillId) external;
-
   /// @notice Sets the skill on an expenditure slot. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
   /// @param _slots Array of slots to set skills
@@ -610,13 +556,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256[] memory _slots,
     uint256[] memory _skillIds
   ) external;
-
-  /// @notice @deprecated
-  /// @notice Sets the claim delay on an expenditure slot. Can only be called by expenditure owner.
-  /// @param _id Expenditure identifier
-  /// @param _slot Number of the slot
-  /// @param _claimDelay Duration of time (in seconds) to delay
-  function setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay) external;
 
   /// @notice Sets the claim delays in given expenditure slots. Can only be called by expenditure owner.
   /// @param _id Expenditure identifier
@@ -814,25 +753,6 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId,
-    uint256 _fromChildSkillIndex,
-    uint256 _toChildSkillIndex,
-    uint256 _fromPot,
-    uint256 _toPot,
-    uint256 _amount,
-    address _token
-  ) external;
-
-  /// @notice @deprecated
-  /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _fromChildSkillIndex The child index in `_permissionDomainId` where we can find the domain for `_fromPotId`
-  /// @param _toChildSkillIndex The child index in `_permissionDomainId` where we can find the domain for `_toPotId`
-  /// @param _fromPot Funding pot id providing the funds
-  /// @param _toPot Funding pot id receiving the funds
-  /// @param _amount Amount of funds
-  /// @param _token Address of the token, `0x0` value indicates Ether
-  function moveFundsBetweenPots(
-    uint256 _permissionDomainId,
     uint256 _fromChildSkillIndex,
     uint256 _toChildSkillIndex,
     uint256 _fromPot,

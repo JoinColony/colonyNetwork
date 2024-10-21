@@ -39,19 +39,6 @@ Deobligate the user some amount of tokens, releasing the stake. Can only be call
 |_token|address|The colony's internal token address
 
 
-### ▸ `deposit(address _token, uint256 _amount)`
-
-Deposit `_amount` of deposited tokens. Can only be called if user tokens are not locked. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token to deposit
-|_amount|uint256|Amount to deposit
-
-
 ### ▸ `deposit(address _token, uint256 _amount, bool _force)`
 
 Deposit `_amount` of colony tokens. Before calling this function user has to allow that their tokens can be transferred by token locking contract.
@@ -227,20 +214,6 @@ Obligate the user some amount of tokens as a stake. Can only be called by a colo
 |_token|address|The colony's internal token address
 
 
-### ▸ `reward(address _recipient, uint256 _amount)`
-
-This function is deprecated and only exists to aid upgrades.
-
-*Note: It's a NOOP. You don't need to call this, and if you write a contract that does it will break in the future.*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_recipient|address|The address to receive the reward
-|_amount|uint256|The amount to reward
-
-
 ### ▸ `setColonyNetwork(address _colonyNetwork)`
 
 Set the ColonyNetwork contract address.
@@ -296,19 +269,6 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 |_token|address|Address of the token we want to unlock
 |_user|address|Address of the user
 |_lockId|uint256|Id of the lock we want to increment to
-
-
-### ▸ `withdraw(address _token, uint256 _amount)`
-
-Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked.
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_token|address|Address of the token to withdraw from
-|_amount|uint256|Amount to withdraw
 
 
 ### ▸ `withdraw(address _token, uint256 _amount, bool _force)`

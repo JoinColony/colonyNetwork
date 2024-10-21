@@ -439,7 +439,8 @@ contract("Cross-chain", (accounts) => {
       // So 'just' call that on the colony...
 
       console.log("tx to home bridge address:", homeBridge.address);
-      const tx = await homeColony.makeArbitraryTransaction(homeBridge.address, txDataToBeSentToAMB);
+
+      const tx = await homeColony.makeArbitraryTransactions([homeBridge.address], [txDataToBeSentToAMB], true);
       await tx.wait();
       await p;
       // Check balances

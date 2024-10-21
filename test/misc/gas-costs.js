@@ -247,7 +247,7 @@ contract("All", function (accounts) {
 
       await fundColonyWithTokens(newColony, otherToken, 300);
 
-      await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       const tx = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.rewardPayoutId;
@@ -281,7 +281,7 @@ contract("All", function (accounts) {
       await forwardTime(5184001);
       await newColony.finalizeRewardPayout(payoutId);
 
-      await newColony.moveFundsBetweenPots(1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, otherToken.address);
 
       const tx2 = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId2 = tx2.logs[0].args.rewardPayoutId;

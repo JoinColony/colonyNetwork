@@ -148,6 +148,10 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("installing extensions", () => {
+    it("non-colonies cannot call installExtension on ColonyNetwork", async () => {
+      await checkErrorRevert(colonyNetwork.installExtension(TEST_EXTENSION, 1), "colony-caller-must-be-colony");
+    });
+
     it("allows a root user to install an extension with any version", async () => {
       await colony.installExtension(TEST_EXTENSION, 2, { from: ROOT });
 
@@ -209,6 +213,10 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("upgrading extensions", () => {
+    it("non-colonies cannot call upgradeExtension on ColonyNetwork", async () => {
+      await checkErrorRevert(colonyNetwork.upgradeExtension(TEST_EXTENSION, 1), "colony-caller-must-be-colony");
+    });
+
     it("allows root users to upgrade an extension", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
@@ -252,6 +260,10 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("deprecating extensions", () => {
+    it("non-colonies cannot call deprecateExtension on ColonyNetwork", async () => {
+      await checkErrorRevert(colonyNetwork.deprecateExtension(TEST_EXTENSION, true), "colony-caller-must-be-colony");
+    });
+
     it("allows root users to deprecate and undeprecate an extension", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 
@@ -277,6 +289,10 @@ contract("Colony Network Extensions", (accounts) => {
   });
 
   describe("uninstalling extensions", () => {
+    it("non-colonies cannot call uninstallExtension on ColonyNetwork", async () => {
+      await checkErrorRevert(colonyNetwork.uninstallExtension(TEST_EXTENSION), "colony-caller-must-be-colony");
+    });
+
     it("allows root users to uninstall an extension and send ether to the beneficiary", async () => {
       await colony.installExtension(TEST_EXTENSION, 1, { from: ROOT });
 

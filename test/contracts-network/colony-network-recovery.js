@@ -136,15 +136,14 @@ contract("Colony Network Recovery", (accounts) => {
 
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
-      await checkErrorRevert(colonyNetwork.createColony(clny.address), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.createColonyForFrontend(ADDRESS_ZERO, "", "", 18, 0, "", ""), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.createMetaColony(clny.address), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setTokenLocking(ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.initialiseRootLocalSkill(), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(ADDRESS_ZERO, 0, 0), "colony-in-recovery-mode");
-      await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, "", "", true), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, ""), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.createColony(clny.address, 4, "", ""), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColonyForFrontend(clny.address, "", "", 18, 10, "", ""), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.setupRegistrar(clny.address, HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.registerUserLabel("", ""), "colony-in-recovery-mode");
       await checkErrorRevertEstimateGas(

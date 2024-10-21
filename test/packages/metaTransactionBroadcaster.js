@@ -9,7 +9,7 @@ const axios = require("axios");
 const { TruffleLoader, RetryProvider } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
-const { web3GetTransaction, currentBlockTime } = require("../../helpers/test-helper");
+const { web3GetTransaction, currentBlockTime, encodeTxData } = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
@@ -120,7 +120,8 @@ contract("Metatransaction broadcaster", (accounts) => {
     });
 
     it("transactions that try to execute a forbidden method on a Colony are rejected", async function () {
-      let txData = await colony.contract.methods.makeArbitraryTransaction(colony.address, "0x00000000").encodeABI();
+      // let txData = await colony.contract.methods.makeArbitraryTransaction(colony.address, "0x00000000").encodeABI();
+      let txData = await encodeTxData(colony, "makeArbitraryTransaction(address,bytes)", [colony.address, "0x00000000"]);
       let valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false);
 
@@ -143,7 +144,7 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const ambCall = AMBInterface.encodeFunctionData("requireToPassMessage", ["0x75Df5AF045d91108662D8080fD1FEFAd6aA0bb59", "0x00000000", 1000000]);
 
-      let txData = await colony.contract.methods.makeArbitraryTransaction(ETHEREUM_BRIDGE_ADDRESS, ambCall).encodeABI();
+      let txData = await encodeTxData(colony, "makeArbitraryTransaction(address,bytes)", [ETHEREUM_BRIDGE_ADDRESS, ambCall]);
       let valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(true);
 
@@ -638,9 +639,14 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       // The invalid transaction is this one, which uses makeArbitraryTransaction to try and call owner() on the
       // colony itself.
-      const txData2 = await colony.contract.methods
-        .makeArbitraryTransaction(resolverAddress, web3.utils.soliditySha3("owner()").slice(0, 10))
-        .encodeABI();
+      const txData2 = await encodeTxData(colony, "makeArbitraryTransaction(address,bytes)", [
+        resolverAddress,
+        web3.utils.soliditySha3("owner()").slice(0, 10),
+      ]);
+
+      // const txData2 = await colony.contract.methods
+      //   .makeArbitraryTransaction(resolverAddress, web3.utils.soliditySha3("owner()").slice(0, 10))
+      //   .encodeABI();
       const txData = await colony.contract.methods.multicall([txData1, txData2]).encodeABI();
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
       // Send to endpoint
@@ -672,9 +678,11 @@ contract("Metatransaction broadcaster", (accounts) => {
       const colonyAsEtherRouter = await EtherRouter.at(colony.address);
       const resolverAddress = await colonyAsEtherRouter.resolver();
 
-      const txData2 = await colony.contract.methods
-        .makeArbitraryTransaction(resolverAddress, web3.utils.soliditySha3("owner()").slice(0, 10))
-        .encodeABI();
+      const txData2 = await encodeTxData(colony, "makeArbitraryTransaction(address,bytes)", [
+        resolverAddress,
+        web3.utils.soliditySha3("owner()").slice(0, 10),
+      ]);
+
       const txDataCombined = await colony.contract.methods.multicall([txData1, txData2]).encodeABI();
       const txData = await colony.contract.methods.multicall([txData1, txDataCombined]).encodeABI();
 
