@@ -364,6 +364,28 @@ contract("ColonyPermissions", (accounts) => {
       expect(lastLog.amount).to.eq.BN(INT128_MIN);
     });
 
+    it("should take token-specific and domain scaling in to account when emitting reputation", async () => {
+      await colony.setDomainReputationScaling(1, true, WAD.muln(9).divn(10));
+
+      await colony.setTokenReputationRate(ADDRESS_ZERO, token.address, WAD.divn(2));
+
+      await colony.addPayment(1, UINT256_MAX, USER1, token.address, 10000000000000, 1, 0);
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+      await fundColonyWithTokens(colony, token, 10000000000000 * 1.1);
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, payment.fundingPotId, 10000000000000, token.address);
+
+      await colony.finalizePayment(1, UINT256_MAX, paymentId);
+
+      const repCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
+      const reputationMiningCycle = await IReputationMiningCycle.at(repCycleAddress);
+      const nLogs = await reputationMiningCycle.getReputationUpdateLogLength();
+
+      const lastLog = await reputationMiningCycle.getReputationUpdateLogEntry(nLogs.subn(1));
+
+      expect(lastLog.amount).to.equal((10000000000000 * 0.45).toString());
+    });
+
     it("should allow permissions to propagate to subdomains", async () => {
       // Give User 2 funding permissions in domain 1
       await colony.setFundingRole(1, UINT256_MAX, USER2, 1, true);

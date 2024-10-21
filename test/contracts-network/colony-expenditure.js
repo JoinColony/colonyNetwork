@@ -993,6 +993,45 @@ contract("Colony Expenditure", (accounts) => {
       expect(domainEntry.amount).to.eq.BN(WAD);
     });
 
+    it("if custom reputation scaling for a token is set, reputation update should reflect scaling", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
+      await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
+      await colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN });
+      await colony.setTokenReputationRate(ADDRESS_ZERO, token.address, WAD.divn(2));
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        token.address,
+      );
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+
+      const skillEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(1));
+      expect(skillEntry.user).to.equal(RECIPIENT);
+      expect(skillEntry.skillId).to.eq.BN(localSkillId);
+      expect(skillEntry.amount).to.eq.BN(WAD.divn(2));
+
+      const domainEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(2));
+      expect(domainEntry.user).to.equal(RECIPIENT);
+      expect(domainEntry.skillId).to.equal(domain1.skillId);
+      expect(domainEntry.amount).to.eq.BN(WAD.divn(2));
+
+      // Reset scaling for future tests
+      await colony.setTokenReputationRate(ADDRESS_ZERO, token.address, WAD);
+    });
+
     it("should delay claims by claimDelay", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
