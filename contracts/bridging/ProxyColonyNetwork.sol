@@ -44,6 +44,10 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards, DomainReceiver
   /// @param bridgeAddress The address of the bridge contract that will be interacted with
   event BridgeSet(address bridgeAddress);
 
+  /// @notice Event logged when a new proxy colony is deployed.
+  /// @param proxyColony The address of the newly deployed proxy colony
+  event ProxyColonyDeployed(address proxyColony);
+
   modifier onlyColony() {
     require(msgSenderIsColony(), "colony-network-caller-must-be-proxy-colony");
     _;
@@ -111,6 +115,8 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards, DomainReceiver
     shellColonies[address(etherRouter)] = true;
 
     etherRouter.setResolver(proxyColonyResolverAddress); // ignore-swc-113
+
+    emit ProxyColonyDeployed(address(etherRouter));
   }
 
   function bridgeMessage(bytes memory _payload) public onlyColony {

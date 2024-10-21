@@ -135,12 +135,18 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
     uint256 _destinationChainId,
     bytes32 _salt
   ) public stoppable calledByColony {
-    // TODO: Check if the colony is allowed to use the salt
+    bytes32 guardedSalt = keccak256(abi.encode(bytes32(uint256(uint160(address(this)))), _salt));
+    require(
+      msgSender() == ICreateX(CREATEX_ADDRESS).computeCreate3Address(guardedSalt),
+      "colony-network-wrong-salt"
+    );
+
     bytes memory payload = abi.encodeWithSignature("createProxyColonyFromBridge(bytes32)", _salt);
     require(
       IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, address(this), payload),
       "colony-network-create-proxy-colony-failed"
     );
+    emit ProxyColonyRequested(_destinationChainId, _salt);
   }
 
   /**

@@ -161,6 +161,12 @@ interface ColonyNetworkDataTypes {
   /// @param count The number of the reputation update trying to be bridged in that colony
   event ReputationUpdateSentToBridge(address colony, uint256 count);
 
+  /// @notice Event emitted when a proxy colony deployment is requested
+  /// @param destinationChainId The chain ID of the destination chain
+  /// @param salt The salt used to generate the proxy address
+  event ProxyColonyRequested(uint256 destinationChainId, bytes32 salt);
+
+
   struct Skill {
     // total number of parent skills
     uint128 nParents;
