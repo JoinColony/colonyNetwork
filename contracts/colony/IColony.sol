@@ -35,7 +35,7 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @notice Upgrades a colony to a new Colony contract version `_newVersion`.
   /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version.
   /// @param _newVersion The target version for the upgrade
-  function upgrade(uint _newVersion) external;
+  function upgrade(uint256 _newVersion) external;
 
   /// @notice A function to be called after an upgrade has been done from v2 to v3.
   /// @dev Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to
@@ -286,7 +286,7 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @dev Only allowed to be called when `taskCount` is `0` by authorized addresses.
   /// @param _users Array of address to bootstrap with reputation
   /// @param _amount Amount of reputation/tokens for every address
-  function bootstrapColony(address[] memory _users, int[] memory _amount) external;
+  function bootstrapColony(address[] memory _users, int256[] memory _amount) external;
 
   /// @notice Mint `_wad` amount of colony tokens. Secured function to authorised members.
   /// @param _wad Amount to mint
@@ -1167,4 +1167,14 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @param _id Payment identifier
   /// @return payment The Payment data structure
   function getPayment(uint256 _id) external view returns (Payment memory payment);
+
+  /// @notice Set the reputation scaling factor for payouts in the provided token
+  /// @param _token Address of the token
+  /// @param _scaling Scaling factor for reputation payouts (as a WAD)
+  function setTokenReputationScaling(address _token, uint256 _scaling) external;
+
+  /// @notice Get the reputation scaling factor for payouts in the provided token
+  /// @param _token Address of the token
+  /// @return scalingFactor Scaling factor for reputation payouts (as a WAD)
+  function getTokenReputationScaling(address _token) external view returns (uint256 scalingFactor);
 }

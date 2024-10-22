@@ -350,6 +350,12 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
       )
     );
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
+
+    sig = bytes4(keccak256("setTokenReputationScaling(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    // Native token awards reputation 1:1 by default
+    tokenReputationScalings[block.chainid][token] = WAD;
   }
 
   function createProxyColony(uint256 _destinationChainId, bytes32 _salt) public stoppable {
@@ -438,6 +444,14 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function getTotalTokenApproval(address _token) public view returns (uint256) {
     return tokenApprovalTotals[_token];
+  }
+
+  function setTokenReputationScaling(address _token, uint256 _scaling) public auth stoppable {
+    tokenReputationScalings[block.chainid][_token] = _scaling;
+  }
+
+  function getTokenReputationScaling(address _token) public view returns (uint256) {
+    return tokenReputationScalings[block.chainid][_token];
   }
 
   // Deprecated view functions for Tasks and Payments
