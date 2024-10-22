@@ -322,6 +322,12 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     sig = bytes4(keccak256("editAllowedDomainTokenReceipt(uint256,address,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("setTokenReputationScaling(address,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    // Native token awards reputation 1:1 by default
+    tokenReputationScalings[block.chainid][token] = WAD;
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
@@ -406,6 +412,14 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function getTotalTokenApproval(address _token) public view returns (uint256) {
     return tokenApprovalTotals[_token];
+  }
+
+  function setTokenReputationScaling(address _token, uint256 _scaling) public auth stoppable {
+    tokenReputationScalings[block.chainid][_token] = _scaling;
+  }
+
+  function getTokenReputationScaling(address _token) public view returns (uint256) {
+    return tokenReputationScalings[block.chainid][_token];
   }
 
   // Deprecated view functions for Tasks and Payments

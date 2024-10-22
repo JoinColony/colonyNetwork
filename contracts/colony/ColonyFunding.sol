@@ -276,19 +276,25 @@ contract ColonyFunding is
       fundingPot.payouts[_token] -= tokenSurplus;
     }
 
-    // Process reputation updates if internal token
-    if (_token == token && !isExtension(slot.recipient)) {
+    if (tokenEarnsReputationOnPayout(token) && !isExtension(slot.recipient)) {
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+
+      int256 tokenScaledReputationAmount = scaleReputation(
+        int256(repPayout),
+        tokenReputationScalings[block.chainid][_token]
+      );
+
       colonyNetworkContract.appendReputationUpdateLog(
         slot.recipient,
-        int256(repPayout),
+        tokenScaledReputationAmount,
         domains[expenditure.domainId].skillId
       );
+
       if (slot.skills.length > 0 && slot.skills[0] > 0) {
         // Currently we support at most one skill per Expenditure, but this will likely change in the future.
         colonyNetworkContract.appendReputationUpdateLog(
           slot.recipient,
-          int256(repPayout),
+          tokenScaledReputationAmount,
           slot.skills[0]
         );
       }
@@ -303,6 +309,34 @@ contract ColonyFunding is
     );
 
     emit PayoutClaimed(msgSender(), _id, _slot, _token, payoutMinusFee);
+  }
+
+  function scaleReputation(
+    int256 reputationAmount,
+    uint256 scaleFactor
+  ) internal pure returns (int256 scaledReputation) {
+    if (reputationAmount == 0 || scaleFactor == 0) {
+      return 0;
+    }
+
+    int256 sgnAmount = (reputationAmount >= 0) ? int256(1) : -1;
+    int256 absAmount;
+
+    if (reputationAmount == type(int256).min) {
+      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
+    } else {
+      absAmount = reputationAmount >= 0 ? reputationAmount : -reputationAmount;
+    }
+
+    // Guard against overflows during calculation with wmul
+    if (type(uint256).max / scaleFactor < uint256(absAmount)) {
+      scaledReputation = (sgnAmount == 1) ? type(int128).max : type(int128).min;
+    } else {
+      scaledReputation = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
+      // Cap inside the range of int128, as we do for all reputations
+      scaledReputation = imax(type(int128).min, scaledReputation);
+      scaledReputation = imin(type(int128).max, scaledReputation);
+    }
   }
 
   // View

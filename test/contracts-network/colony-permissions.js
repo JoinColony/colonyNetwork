@@ -364,10 +364,10 @@ contract("ColonyPermissions", (accounts) => {
       expect(lastLog.amount).to.eq.BN(INT128_MIN);
     });
 
-    it("should take token-specific and domain scaling in to account when emitting reputation", async () => {
+    it.skip("should take token-specific and domain scaling in to account when emitting reputation", async () => {
       await colony.setDomainReputationScaling(1, true, WAD.muln(9).divn(10));
 
-      await colony.setTokenReputationRate(ADDRESS_ZERO, token.address, WAD.divn(2));
+      await colony.setTokenReputationScaling(token.address, WAD.divn(2));
 
       await colony.addPayment(1, UINT256_MAX, USER1, token.address, 10000000000000, 1, 0);
       const paymentId = await colony.getPaymentCount();

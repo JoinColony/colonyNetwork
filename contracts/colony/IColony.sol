@@ -1031,4 +1031,14 @@ interface IColony is ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMultica
   /// @param _id Payment identifier
   /// @return payment The Payment data structure
   function getPayment(uint256 _id) external view returns (Payment memory payment);
+
+  /// @notice Set the reputation scaling factor for payouts in the provided token
+  /// @param _token Address of the token
+  /// @param _scaling Scaling factor for reputation payouts (as a WAD)
+  function setTokenReputationScaling(address _token, uint256 _scaling) external;
+
+  /// @notice Get the reputation scaling factor for payouts in the provided token
+  /// @param _token Address of the token
+  /// @return scalingFactor Scaling factor for reputation payouts (as a WAD)
+  function getTokenReputationScaling(address _token) external view returns (uint256 scalingFactor);
 }

@@ -918,6 +918,23 @@ Get the current approval amount
 |---|---|---|
 |amount|uint256|The token approval amount
 
+### ▸ `getTokenReputationScaling(address _token):uint256 scalingFactor`
+
+Get the reputation scaling factor for payouts in the provided token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scalingFactor|uint256|Scaling factor for reputation payouts (as a WAD)
+
 ### ▸ `getTotalTokenApproval(address token):uint256 amount`
 
 Get the current total approval amount across all spenders
@@ -1524,6 +1541,19 @@ Set new colony root role. Can be called by root role only.
 |---|---|---|
 |_user|address|User we want to give an root role to
 |_setTo|bool|The state of the role permission (true assign the permission, false revokes it)
+
+
+### ▸ `setTokenReputationScaling(address _token, uint256 _scaling)`
+
+Set the reputation scaling factor for payouts in the provided token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token
+|_scaling|uint256|Scaling factor for reputation payouts (as a WAD)
 
 
 ### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`
