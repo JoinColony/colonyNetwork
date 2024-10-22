@@ -119,7 +119,7 @@ Get the authority of the contract
 |---|---|---|
 |authority|DSAuthority|The authority of the contract
 
-### ▸ `bootstrapColony(address[] memory _users, int[] memory _amount)`
+### ▸ `bootstrapColony(address[] memory _users, int256[] memory _amount)`
 
 Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to `_users`. This reputation is assigned in the colony-wide domain. Secured function to authorised members.
 
@@ -130,7 +130,7 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 |Name|Type|Description|
 |---|---|---|
 |_users|address[]|Array of address to bootstrap with reputation
-|_amount|int[]|Amount of reputation/tokens for every address
+|_amount|int256[]|Amount of reputation/tokens for every address
 
 
 ### ▸ `burnTokens(address token, uint256 amount)`
@@ -1108,6 +1108,23 @@ Get the current approval amount
 |---|---|---|
 |amount|uint256|The token approval amount
 
+### ▸ `getTokenReputationScaling(address _token):uint256 scalingFactor`
+
+Get the reputation scaling factor for payouts in the provided token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scalingFactor|uint256|Scaling factor for reputation payouts (as a WAD)
+
 ### ▸ `getTotalTokenApproval(address token):uint256 amount`
 
 Get the current total approval amount across all spenders
@@ -1919,6 +1936,19 @@ Update value of arbitrary storage variable. Can only be called by user with reco
 |_value|bytes32|word of data to be set
 
 
+### ▸ `setTokenReputationScaling(address _token, uint256 _scaling)`
+
+Set the reputation scaling factor for payouts in the provided token
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_token|address|Address of the token
+|_scaling|uint256|Scaling factor for reputation payouts (as a WAD)
+
+
 ### ▸ `setUserRoles(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bytes32 _roles)`
 
 Set several roles in one transaction. Can be called by root role or architecture role.
@@ -2056,7 +2086,7 @@ Update a colony's orbitdb address. Can only be called by a colony with a registe
 |orbitdb|string|The path of the orbitDB database to be associated with the colony
 
 
-### ▸ `upgrade(uint _newVersion)`
+### ▸ `upgrade(uint256 _newVersion)`
 
 Upgrades a colony to a new Colony contract version `_newVersion`.
 
@@ -2066,7 +2096,7 @@ Upgrades a colony to a new Colony contract version `_newVersion`.
 
 |Name|Type|Description|
 |---|---|---|
-|_newVersion|uint|The target version for the upgrade
+|_newVersion|uint256|The target version for the upgrade
 
 
 ### ▸ `upgradeExtension(bytes32 extensionId, uint256 newVersion)`

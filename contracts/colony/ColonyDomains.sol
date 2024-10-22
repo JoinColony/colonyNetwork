@@ -44,6 +44,9 @@ contract ColonyDomains is ColonyStorage {
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2 ** 256 - 1;
 
+    // Set the token weighting for the native token to 1
+    tokenReputationScalings[block.chainid][token] = WAD;
+
     emit ColonyInitialised(msgSender(), _colonyNetworkAddress, _token);
   }
 
