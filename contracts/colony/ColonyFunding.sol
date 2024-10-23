@@ -132,25 +132,21 @@ contract ColonyFunding is
     fundingPots[0].balance[_token] += feeToPay;
 
     uint256 approvedAmount = domainReputationTokenApprovals[block.chainid][_domainId][_token];
-    if (!tokenEarnsReputationOnPayout(_token) || approvedAmount >= remainder) {
-      // Either the token doesn't earn reputation or there is enough approval
-      // Either way, the domain gets all the funds
-      fundingPots[fundingPotId].balance[_token] += remainder;
-      if (tokenEarnsReputationOnPayout(_token)) {
-        // If it does earn reputation, deduct the approved amount
-        domainReputationTokenApprovals[block.chainid][_domainId][_token] -= remainder;
+
+    if (tokenEarnsReputationOnPayout(_token)) {
+      uint256 transferrableAmount = min(approvedAmount, remainder);
+      uint256 untransferrableAmount = remainder - transferrableAmount;
+
+      fundingPots[fundingPotId].balance[_token] += transferrableAmount;
+      domainReputationTokenApprovals[block.chainid][_domainId][_token] -= transferrableAmount;
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, transferrableAmount);
+      if (untransferrableAmount > 0) {
+        fundingPots[domains[1].fundingPotId].balance[_token] += untransferrableAmount;
+        emit ColonyFundsClaimed(msgSender(), _token, 0, untransferrableAmount);
       }
-      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
     } else {
-      // The token earns reputation and there is not enough approvalable
-      // The domain gets what was approved
-      fundingPots[fundingPotId].balance[_token] += approvedAmount;
-      // And the rest goes to the root pot
-      Domain storage rootDomain = domains[1];
-      fundingPots[rootDomain.fundingPotId].balance[_token] += remainder - approvedAmount;
-      domainReputationTokenApprovals[block.chainid][_domainId][_token] = 0;
-      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, approvedAmount);
-      emit ColonyFundsClaimed(msgSender(), _token, 0, remainder - approvedAmount);
+      fundingPots[fundingPotId].balance[_token] += remainder;
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
     }
 
     // Claim funds

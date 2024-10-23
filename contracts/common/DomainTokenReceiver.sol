@@ -40,11 +40,9 @@ contract DomainTokenReceiver is DSAuth {
       payable(colony).transfer(address(this).balance);
       return;
     } else {
+      uint256 balanceToTransfer = ERC20Extended(tokenAddress).balanceOf(address(this));
       require(
-        ERC20Extended(tokenAddress).transfer(
-          colony,
-          ERC20Extended(tokenAddress).balanceOf(address(this))
-        ),
+        ERC20Extended(tokenAddress).transfer(colony, balanceToTransfer),
         "domain-token-receiver-transfer-failed"
       );
     }

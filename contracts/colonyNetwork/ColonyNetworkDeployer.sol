@@ -220,14 +220,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return domainTokenReceiverAddress;
   }
 
-  function isContract(address addr) internal view returns (bool) {
-    uint256 size;
-    assembly {
-      size := extcodesize(addr)
-    }
-    return size > 0;
-  }
-
   function getDomainTokenReceiverAddress(
     address _colony,
     uint256 _domainId
@@ -331,5 +323,13 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
       )
     );
     return address(etherRouter);
+  }
+
+  function isContract(address addr) internal view returns (bool) {
+    uint256 size;
+    assembly {
+      size := extcodesize(addr)
+    }
+    return size > 0;
   }
 }
