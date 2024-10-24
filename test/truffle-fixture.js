@@ -14,6 +14,8 @@ const ColonyRoles = artifacts.require("ColonyRoles");
 const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 const IMetaColony = artifacts.require("IMetaColony");
 
+const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
+
 const ColonyNetworkAuthority = artifacts.require("ColonyNetworkAuthority");
 const ColonyNetwork = artifacts.require("ColonyNetwork");
 const ColonyNetworkDeployer = artifacts.require("ColonyNetworkDeployer");
@@ -77,9 +79,10 @@ const {
   setupReputationMiningCycleResolver,
   setupENSRegistrar,
   setupEtherRouter,
+  setupDomainTokenReceiverResolver,
 } = require("../helpers/upgradable-contracts");
 const { FORKED_XDAI_CHAINID, XDAI_CHAINID, UINT256_MAX, CREATEX_ADDRESS } = require("../helpers/constants");
-const { getChainId, hardhatRevert, hardhatSnapshot, deployCreateXIfNeeded, isXdai } = require("../helpers/test-helper");
+const { getChainId, hardhatRevert, hardhatSnapshot, idempotentDeployCreateX, isXdai } = require("../helpers/test-helper");
 
 module.exports = async () => {
   if (postFixtureSnapshotId) {
@@ -94,6 +97,7 @@ module.exports = async () => {
   await setupColony();
   await setupTokenLocking();
   await setupMiningCycle();
+  await setupDomainTokenReceiver();
   await setupEnsRegistry();
   await setupMetaColony();
   await setupExtensions();
@@ -141,7 +145,7 @@ async function deployContracts() {
   const reputationMiningCycleBinarySearch = await ReputationMiningCycleBinarySearch.new();
   ReputationMiningCycleBinarySearch.setAsDeployed(reputationMiningCycleBinarySearch);
 
-  await deployCreateXIfNeeded();
+  await idempotentDeployCreateX();
 }
 
 async function setupColonyNetwork() {
@@ -244,6 +248,15 @@ async function setupTokenLocking() {
 
   const tokenLocking = await TokenLocking.at(etherRouter.address);
   await tokenLocking.setColonyNetwork(colonyNetwork.address);
+}
+
+async function setupDomainTokenReceiver() {
+  const colonyNetworkRouter = await EtherRouter.deployed();
+  const colonyNetwork = await IColonyNetwork.at(colonyNetworkRouter.address);
+
+  const domainTokenReceiverImplementation = await DomainTokenReceiver.new();
+  const domainTokenReceiverResolver = await Resolver.new();
+  await setupDomainTokenReceiverResolver(colonyNetwork, domainTokenReceiverImplementation, domainTokenReceiverResolver);
 }
 
 async function setupMiningCycle() {

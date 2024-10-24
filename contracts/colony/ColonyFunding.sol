@@ -23,6 +23,7 @@ import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
 
 contract ColonyFunding is
   ColonyStorage // ignore-swc-123
@@ -104,6 +105,75 @@ contract ColonyFunding is
     fundingPots[0].balance[_token] += feeToPay;
 
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
+  }
+
+  function claimDomainFunds(address _token, uint256 _domainId) public stoppable {
+    require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
+    address domainTokenReceiverAddress = IColonyNetwork(colonyNetworkAddress)
+      .idempotentDeployDomainTokenReceiver(_domainId);
+    uint256 fundingPotId = domains[_domainId].fundingPotId;
+    // It's deployed, so check current balance of pot
+
+    uint256 claimAmount;
+
+    if (_token == address(0x0)) {
+      claimAmount = address(domainTokenReceiverAddress).balance;
+    } else {
+      claimAmount = ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
+    }
+
+    uint256 feeToPay = claimAmount / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
+    // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set
+    // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
+    // able to do with recovery mode.
+    uint256 remainder = claimAmount - feeToPay;
+    nonRewardPotsTotal[_token] += remainder;
+
+    fundingPots[0].balance[_token] += feeToPay;
+
+    uint256 approvedAmount = domainReputationApproval[_domainId];
+
+    if (tokenEarnsReputationOnPayout(_token)) {
+      uint256 transferrableAmount = min(approvedAmount, remainder);
+      uint256 untransferrableAmount = remainder - transferrableAmount;
+
+      fundingPots[fundingPotId].balance[_token] += transferrableAmount;
+      domainReputationApproval[_domainId] -= transferrableAmount;
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, transferrableAmount);
+      if (untransferrableAmount > 0) {
+        fundingPots[domains[1].fundingPotId].balance[_token] += untransferrableAmount;
+        emit ColonyFundsClaimed(msgSender(), _token, 0, untransferrableAmount);
+      }
+    } else {
+      fundingPots[fundingPotId].balance[_token] += remainder;
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
+    }
+
+    // Claim funds
+
+    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+  }
+
+  function tokenEarnsReputationOnPayout(address _token) internal view returns (bool) {
+    return _token == token;
+  }
+
+  function editAllowedDomainReputationReceipt(
+    uint256 _domainId,
+    uint256 _amount,
+    bool _add
+  ) public stoppable auth {
+    require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
+    require(_domainId > 1, "colony-funding-root-domain");
+    if (_add) {
+      domainReputationApproval[_domainId] += _amount;
+    } else {
+      domainReputationApproval[_domainId] -= _amount;
+    }
+  }
+
+  function getAllowedDomainReputationReceipt(uint256 _domainId) public view returns (uint256) {
+    return domainReputationApproval[_domainId];
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {

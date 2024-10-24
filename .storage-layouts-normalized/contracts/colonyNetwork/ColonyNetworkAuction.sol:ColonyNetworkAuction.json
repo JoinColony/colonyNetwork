@@ -1132,6 +1132,17 @@
           }
         }
       }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkAuction.sol:ColonyNetworkAuction",
+      "label": "domainReceiverResolverAddress",
+      "offset": 0,
+      "slot": "50",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
     }
   ]
 }
