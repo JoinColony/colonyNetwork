@@ -320,7 +320,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     bytes4 sig;
 
-    sig = bytes4(keccak256("editAllowedDomainTokenReceipt(uint256,address,uint256,bool)"));
+    sig = bytes4(keccak256("editAllowedDomainReputationReceipt(uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 

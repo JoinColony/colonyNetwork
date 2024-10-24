@@ -273,7 +273,7 @@ Deprecate a local skill for the colony. Secured function to authorised members.
 |deprecated|bool|Deprecation status to set for the skill
 
 
-### ▸ `editAllowedDomainTokenReceipt(uint256 _domainId, address _token, uint256 _amount, bool _add)`
+### ▸ `editAllowedDomainReputationReceipt(uint256 _domainId, uint256 _amount, bool _add)`
 
 Add or remove an amount from the amount of a reputation earning token that a domain can receive
 
@@ -283,7 +283,6 @@ Add or remove an amount from the amount of a reputation earning token that a dom
 |Name|Type|Description|
 |---|---|---|
 |_domainId|uint256|Id of the domain
-|_token|address|Address of the token
 |_amount|uint256|Amount to add or remove
 |_add|bool|Whether to add or remove the amount. True is add, false is remove
 
@@ -466,7 +465,7 @@ A function to be called after an upgrade has been done from v2 to v3.
 
 
 
-### ▸ `getAllowedDomainTokenReceipt(uint256 _domainId, address _token):uint256 uint256`
+### ▸ `getAllowedDomainReputationReceipt(uint256 _domainId):uint256 uint256`
 
 Get the amount of a reputation earning token that a domain can receive
 
@@ -476,7 +475,6 @@ Get the amount of a reputation earning token that a domain can receive
 |Name|Type|Description|
 |---|---|---|
 |_domainId|uint256|Id of the domain
-|_token|address|Address of the token
 
 **Return Parameters**
 
