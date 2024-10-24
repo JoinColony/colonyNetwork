@@ -200,21 +200,21 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
         deployedAddress == domainTokenReceiverAddress,
         "colony-network-domain-receiver-deploy-wrong-address"
       );
-    }
 
-    // Check it's got the right resolver
-    try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
-      if (address(resolver) != domainReceiverResolverAddress) {
-        EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
-      }
-    } catch {
-      revert("colony-network-domain-receiver-not-etherrouter");
-    }
-
-    // Check it's set up correctly
-
-    if (DomainTokenReceiver(domainTokenReceiverAddress).getColonyAddress() != msgSender()) {
+      // Set up the deployed contract
+      EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
       DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
+    } else {
+      // Contract is deployed, check it's got the right resolver
+      try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
+        if (address(resolver) != domainReceiverResolverAddress) {
+          EtherRouter(payable(domainTokenReceiverAddress)).setResolver(
+            domainReceiverResolverAddress
+          );
+        }
+      } catch {
+        revert("colony-network-domain-receiver-not-etherrouter");
+      }
     }
 
     return domainTokenReceiverAddress;
