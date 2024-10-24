@@ -688,8 +688,8 @@ contract("Colony Funding", (accounts) => {
       await token.transfer(receiverAddress, 100);
 
       // Approve 70 for the domain
-      await colony.editAllowedDomainTokenReceipt(2, token.address, 70, true);
-      let allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      await colony.editAllowedDomainReputationReceipt(2, 70, true);
+      let allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
       expect(allowedReceipt).to.eq.BN(70);
 
       // Now test what happens when we claim them
@@ -711,40 +711,36 @@ contract("Colony Funding", (accounts) => {
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
       expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(29);
 
-      allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
       expect(allowedReceipt).to.eq.BN(0);
     });
 
-    it(`root permission is required to call editAllowedDomainTokenReceipt`, async () => {
+    it(`root permission is required to call editAllowedDomainReputationReceipt`, async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
-      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(2, token.address, 70, true, { from: WORKER }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.editAllowedDomainReputationReceipt(2, 70, true, { from: WORKER }), "ds-auth-unauthorized");
       const rootRole = rolesToBytes32([ROOT_ROLE]);
 
       await colony.setUserRoles(1, UINT256_MAX, WORKER, 1, rootRole);
-      await colony.editAllowedDomainTokenReceipt(2, token.address, 70, true, { from: WORKER });
+      await colony.editAllowedDomainReputationReceipt(2, 70, true, { from: WORKER });
     });
 
-    it(`cannot editAllowedDomainTokenReceipt for a domain that does not exist`, async () => {
-      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(2, token.address, 70, true), "colony-funding-domain-does-not-exist");
-    });
-
-    it(`cannot editAllowedDomainTokenReceipt for a token that does not earn reputation`, async () => {
-      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(1, ADDRESS_ZERO, 70, true), "colony-funding-token-does-not-earn-reputation");
+    it(`cannot editAllowedDomainReputationReceipt for a domain that does not exist`, async () => {
+      await checkErrorRevert(colony.editAllowedDomainReputationReceipt(2, 70, true), "colony-funding-domain-does-not-exist");
     });
 
     it(`can add and remove allowed domain token receipts as expected`, async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
-      await colony.editAllowedDomainTokenReceipt(2, token.address, 70, true);
-      let allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      await colony.editAllowedDomainReputationReceipt(2, 70, true);
+      let allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
       expect(allowedReceipt).to.eq.BN(70);
 
-      await colony.editAllowedDomainTokenReceipt(2, token.address, 20, false);
-      allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      await colony.editAllowedDomainReputationReceipt(2, 20, false);
+      allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
       expect(allowedReceipt).to.eq.BN(50);
     });
 
-    it(`cannot editAllowedDomainTokenReceipt for the root domain`, async () => {
-      await checkErrorRevert(colony.editAllowedDomainTokenReceipt(1, token.address, 70, true), "colony-funding-root-domain");
+    it(`cannot editAllowedDomainReputationReceipt for the root domain`, async () => {
+      await checkErrorRevert(colony.editAllowedDomainReputationReceipt(1, 70, true), "colony-funding-root-domain");
     });
 
     it(`when receiving native (reputation-earning) token, if full approval present for domain,
@@ -772,8 +768,8 @@ contract("Colony Funding", (accounts) => {
       await token.transfer(receiverAddress, 100);
 
       // Approve 250 for the domain
-      await colony.editAllowedDomainTokenReceipt(2, token.address, 250, true);
-      let allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      await colony.editAllowedDomainReputationReceipt(2, 250, true);
+      let allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
       expect(allowedReceipt).to.eq.BN(250);
 
       // Now test what happens when we claim them
@@ -795,7 +791,7 @@ contract("Colony Funding", (accounts) => {
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
       expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(0);
 
-      allowedReceipt = await colony.getAllowedDomainTokenReceipt(2, token.address);
+      allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
       expect(allowedReceipt).to.eq.BN(151);
     });
 
