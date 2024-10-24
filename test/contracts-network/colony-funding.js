@@ -18,13 +18,7 @@ const {
   ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
-const {
-  fundColonyWithTokens,
-  setupRandomColony,
-  makeExpenditure,
-  setupFundedExpenditure,
-  setupClaimedExpenditure,
-} = require("../../helpers/test-data-generator");
+const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
@@ -629,19 +623,9 @@ contract("Colony Funding", (accounts) => {
       await colony.claimColonyFunds(token.address);
       const domain1 = await colony.getDomain(1);
 
-      // Pay the tokens to the domain
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony,
-        domainId: 1,
-        manager: MANAGER,
-        managerPayout: 1000,
-        evaluatorPayout: 0,
-        workerPayout: 0,
-      });
-
-      // Send 100 to the domain
-      await token.transfer(receiverAddress, 100);
+      // Send an arbitrary transaction to mint tokens for receiverAddress
+      const txData = token.contract.methods["mint(address,uint256)"](receiverAddress, 100).encodeABI();
+      await colony.makeArbitraryTransaction(token.address, txData);
 
       // Now test what happens when we claim them
 
@@ -672,20 +656,9 @@ contract("Colony Funding", (accounts) => {
       await colony.claimColonyFunds(token.address);
       const domain1 = await colony.getDomain(1);
 
-      // Pay the tokens to the domain
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony,
-        domainId: 1,
-        manager: MANAGER,
-        tokenAddress: token.address,
-        managerPayout: 1000,
-        evaluatorPayout: 0,
-        workerPayout: 0,
-      });
-
-      // Send 100 to the domain
-      await token.transfer(receiverAddress, 100);
+      // Send an arbitrary transaction to mint tokens for receiverAddress
+      const txData = token.contract.methods["mint(address,uint256)"](receiverAddress, 100).encodeABI();
+      await colony.makeArbitraryTransaction(token.address, txData);
 
       // Approve 70 for the domain
       await colony.editAllowedDomainReputationReceipt(2, 70, true);
@@ -752,20 +725,9 @@ contract("Colony Funding", (accounts) => {
       await colony.claimColonyFunds(token.address);
       const domain1 = await colony.getDomain(1);
 
-      // Pay the tokens to the domain
-      await setupClaimedExpenditure({
-        colonyNetwork,
-        colony,
-        domainId: 1,
-        manager: MANAGER,
-        tokenAddress: token.address,
-        managerPayout: 1000,
-        evaluatorPayout: 0,
-        workerPayout: 0,
-      });
-
-      // Send 100 to the domain
-      await token.transfer(receiverAddress, 100);
+      // Send an arbitrary transaction to mint tokens for receiverAddress
+      const txData = token.contract.methods["mint(address,uint256)"](receiverAddress, 100).encodeABI();
+      await colony.makeArbitraryTransaction(token.address, txData);
 
       // Approve 250 for the domain
       await colony.editAllowedDomainReputationReceipt(2, 250, true);
