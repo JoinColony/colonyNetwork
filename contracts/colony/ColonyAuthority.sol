@@ -136,7 +136,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "initialiseReputationMining(uint256,bytes32,uint256)");
 
     // Added in colony v??
-    addRoleCapability(ROOT_ROLE, "editAllowedDomainTokenReceipt(uint256,address,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "editAllowedDomainReputationReceipt(uint256,uint256,bool)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
