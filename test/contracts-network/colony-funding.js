@@ -612,6 +612,15 @@ contract("Colony Funding", (accounts) => {
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
     });
 
+    it("should not allow even the colonyNetwork to call setColonyAddress once it's set on domainTokenReceiver", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
+      const receiver = await DomainTokenReceiver.at(receiverAddress);
+
+      await checkErrorRevert(receiver.setColonyAddress(ADDRESS_ZERO, { from: colonyNetwork.address }), "domain-token-receiver-colony-already-set");
+    });
+
     it("when receiving native (reputation-earning) token, if no approval present for domain, all are received by root domain", async () => {
       // Get address for domain 2
       await colony.addDomain(1, UINT256_MAX, 1);
