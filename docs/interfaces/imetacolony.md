@@ -296,6 +296,20 @@ Deprecate a local skill for the colony. Secured function to authorised members.
 |deprecated|bool|Deprecation status to set for the skill
 
 
+### ▸ `editAllowedDomainReputationReceipt(uint256 _domainId, uint256 _amount, bool _add)`
+
+Add or remove an amount from the amount of a reputation earning token that a domain can receive
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|Id of the domain
+|_amount|uint256|Amount to add or remove
+|_add|bool|Whether to add or remove the amount. True is add, false is remove
+
+
 ### ▸ `editColony(string memory _metadata)`
 
 Called to change the metadata associated with a colony. Expected to be a IPFS hash of a JSON blob, but not enforced to any degree by the contracts
@@ -473,6 +487,23 @@ A function to be called after an upgrade has been done from v2 to v3.
 *Note: Can only be called by the colony itself, and only expected to be called as part of the `upgrade()` call. Required to be external so it can be an external call.*
 
 
+
+### ▸ `getAllowedDomainReputationReceipt(uint256 _domainId):uint256 uint256`
+
+Get the amount of a reputation earning token that a domain can receive
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_domainId|uint256|Id of the domain
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|uint256|uint256|amount Amount of the token that the domain can receive
 
 ### ▸ `getApproval(address _user, address _obligator, uint256 _domainId):uint256 approval`
 
