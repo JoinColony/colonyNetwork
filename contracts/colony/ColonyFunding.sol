@@ -131,14 +131,14 @@ contract ColonyFunding is
 
     fundingPots[0].balance[_token] += feeToPay;
 
-    uint256 approvedAmount = domainReputationTokenApprovals[block.chainid][_domainId][_token];
+    uint256 approvedAmount = domainReputationApproval[_domainId];
 
     if (tokenEarnsReputationOnPayout(_token)) {
       uint256 transferrableAmount = min(approvedAmount, remainder);
       uint256 untransferrableAmount = remainder - transferrableAmount;
 
       fundingPots[fundingPotId].balance[_token] += transferrableAmount;
-      domainReputationTokenApprovals[block.chainid][_domainId][_token] -= transferrableAmount;
+      domainReputationApproval[_domainId] -= transferrableAmount;
       emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, transferrableAmount);
       if (untransferrableAmount > 0) {
         fundingPots[domains[1].fundingPotId].balance[_token] += untransferrableAmount;
@@ -158,27 +158,22 @@ contract ColonyFunding is
     return _token == token;
   }
 
-  function editAllowedDomainTokenReceipt(
+  function editAllowedDomainReputationReceipt(
     uint256 _domainId,
-    address _token,
     uint256 _amount,
     bool _add
   ) public stoppable auth {
     require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
-    require(tokenEarnsReputationOnPayout(_token), "colony-funding-token-does-not-earn-reputation");
     require(_domainId > 1, "colony-funding-root-domain");
     if (_add) {
-      domainReputationTokenApprovals[block.chainid][_domainId][_token] += _amount;
+      domainReputationApproval[_domainId] += _amount;
     } else {
-      domainReputationTokenApprovals[block.chainid][_domainId][_token] -= _amount;
+      domainReputationApproval[_domainId] -= _amount;
     }
   }
 
-  function getAllowedDomainTokenReceipt(
-    uint256 _domainId,
-    address _token
-  ) public view returns (uint256) {
-    return domainReputationTokenApprovals[block.chainid][_domainId][_token];
+  function getAllowedDomainReputationReceipt(uint256 _domainId) public view returns (uint256) {
+    return domainReputationApproval[_domainId];
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
