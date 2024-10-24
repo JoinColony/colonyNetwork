@@ -3,7 +3,18 @@
 const BN = require("bn.js");
 const { signTypedData_v4: signTypedData } = require("eth-sig-util");
 
-const { UINT256_MAX, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, INITIAL_FUNDING, SLOT0, SLOT1, SLOT2, ADDRESS_ZERO } = require("./constants");
+const {
+  UINT256_MAX,
+  MANAGER_PAYOUT,
+  EVALUATOR_PAYOUT,
+  WORKER_PAYOUT,
+  INITIAL_FUNDING,
+  SLOT0,
+  SLOT1,
+  SLOT2,
+  ADDRESS_ZERO,
+  NETWORK_ADDRESS,
+} = require("./constants");
 
 const { getTokenArgs, web3GetAccounts, getChildSkillIndex, getChainId } = require("./test-helper");
 
@@ -226,8 +237,7 @@ exports.unlockCLNYToken = async function unlockCLNYToken(metaColony) {
 };
 
 exports.setupColonyNetwork = async function setupColonyNetwork() {
-  const cnAddress = (await EtherRouter.deployed()).address;
-  const deployedColonyNetwork = await IColonyNetwork.at(cnAddress);
+  const deployedColonyNetwork = await IColonyNetwork.at(NETWORK_ADDRESS);
 
   // Make a new ColonyNetwork
   const etherRouter = await EtherRouter.new();
@@ -303,12 +313,15 @@ exports.setupColony = async function setupColony(colonyNetwork, tokenAddress, ve
   return colony;
 };
 
-exports.getMetaTransactionParameters = async function getMetaTransactionParameters(txData, userAddress, targetAddress) {
+exports.getMetaTransactionParameters = async function getMetaTransactionParameters(txData, userAddress, targetAddress, _chainId) {
   const contract = await BasicMetaTransaction.at(targetAddress);
   const nonce = await contract.getMetatransactionNonce(userAddress);
   // We should just be able to get the chain id via a web3 call, but until ganache sort their stuff out,
   // we dance around the houses.
-  const chainId = await getChainId();
+  let chainId = _chainId;
+  if (!chainId) {
+    chainId = await getChainId();
+  }
 
   // Sign data
   const msg = web3.utils.soliditySha3(

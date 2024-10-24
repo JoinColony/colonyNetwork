@@ -19,6 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 import { EtherRouter } from "./../common/EtherRouter.sol";
+import { Resolver } from "./../common/Resolver.sol";
 import { ColonyAuthority } from "./../colony/ColonyAuthority.sol";
 import { IColony } from "./../colony/IColony.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
@@ -27,10 +28,11 @@ import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";
 import { DSAuth, DSAuthority } from "./../../lib/dappsys/auth.sol";
 import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouterCreate3 } from "./../common/EtherRouterCreate3.sol";
+import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
+import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
+import { DomainReceiverManagement } from "./../common/DomainReceiverManagement.sol";
 
-contract ColonyNetworkDeployer is ColonyNetworkStorage {
-  address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
-
+contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement {
   function createMetaColony(address _tokenAddress) public stoppable auth {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
@@ -129,6 +131,24 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
+  function createProxyColony(
+    uint256 _destinationChainId,
+    bytes32 _salt
+  ) public stoppable calledByColony {
+    bytes32 guardedSalt = keccak256(abi.encode(bytes32(uint256(uint160(address(this)))), _salt));
+    require(
+      msgSender() == ICreateX(CREATEX_ADDRESS).computeCreate3Address(guardedSalt),
+      "colony-network-wrong-salt"
+    );
+
+    bytes memory payload = abi.encodeWithSignature("createProxyColonyFromBridge(bytes32)", _salt);
+    require(
+      IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, address(this), payload),
+      "colony-network-create-proxy-colony-failed"
+    );
+    emit ProxyColonyRequested(_destinationChainId, _salt);
+  }
+
   /**
    * @dev Generates pseudo-randomly a salt value using a diverse selection of block and
    * transaction properties.
@@ -175,6 +195,58 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // This is intentional, as we want to allow the same Colony to be deployed on different chains
   }
 
+  function setDomainTokenReceiverResolver(address _resolver) public stoppable auth {
+    domainReceiverResolverAddress = _resolver;
+  }
+
+  function getDomainTokenReceiverResolver() public view override stoppable returns (address) {
+    return domainReceiverResolverAddress;
+  }
+
+  function idempotentDeployDomainTokenReceiver(
+    uint256 _domainId
+  ) public stoppable calledByColony returns (address domainTokenReceiverAddress) {
+    // Calculate the address the domain should be receiving funds at
+    domainTokenReceiverAddress = getDomainTokenReceiverAddress(msgSender(), _domainId);
+
+    if (!isContract(domainTokenReceiverAddress)) {
+      // Then deploy the contract
+      bytes32 salt = getDomainTokenReceiverDeploySalt(msgSender(), _domainId);
+      address deployedAddress = deployEtherRouterViaCreateX(salt);
+      require(
+        deployedAddress == domainTokenReceiverAddress,
+        "colony-network-domain-receiver-deploy-wrong-address"
+      );
+    }
+
+    // Check it's got the right resolver
+    try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
+      if (address(resolver) != domainReceiverResolverAddress) {
+        EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
+      }
+    } catch {
+      revert("colony-network-domain-receiver-not-etherrouter");
+    }
+
+    // Check it's set up correctly
+
+    if (DomainTokenReceiver(domainTokenReceiverAddress).getColonyAddress() != msgSender()) {
+      DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
+    }
+
+    return domainTokenReceiverAddress;
+  }
+
+  function msgSenderIsColony() internal view override returns (bool) {
+    require(_isColony[msgSender()], "colony-caller-must-be-colony");
+    assert(msgSender() == msg.sender);
+    return true;
+  }
+
+  function isStopped() internal view override returns (bool) {
+    return recoveryMode;
+  }
+
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     require(colonyVersionResolver[_version] != address(0x00), "colony-network-invalid-version");
@@ -184,20 +256,12 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // when it was created via a cross-chain call (to an as-yet unwritten function).
     bytes32 salt = getColonyCreationSalt();
     // EtherRouter etherRouter = new EtherRouter();
-    EtherRouter etherRouter = EtherRouter(
-      payable(
-        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
-          salt,
-          type(EtherRouterCreate3).creationCode,
-          abi.encodeWithSignature("setOwner(address)", (address(this))),
-          ICreateX.Values(0, 0)
-        )
-      )
-    );
+    address colonyAddress = deployEtherRouterViaCreateX(salt);
 
-    IColony colony = IColony(address(etherRouter));
+    IColony colony = IColony(colonyAddress);
 
     address resolverForColonyVersion = colonyVersionResolver[_version]; // ignore-swc-107
+    EtherRouter etherRouter = EtherRouter(payable(colonyAddress));
     etherRouter.setResolver(resolverForColonyVersion); // ignore-swc-113
 
     // Creating new instance of colony's authority
@@ -213,9 +277,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
     // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
-
-    // If we're not mining chain, then bridge the skill
-    IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
 
     colony.initialiseColony(address(this), _tokenAddress);
 
@@ -239,5 +300,19 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // Colony will not have owner
     DSAuth dsauth = DSAuth(_colonyAddress);
     dsauth.setOwner(address(0x0));
+  }
+
+  function deployEtherRouterViaCreateX(bytes32 _salt) internal returns (address) {
+    EtherRouter etherRouter = EtherRouter(
+      payable(
+        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
+          _salt,
+          type(EtherRouterCreate3).creationCode,
+          abi.encodeWithSignature("setOwner(address)", (address(this))),
+          ICreateX.Values(0, 0)
+        )
+      )
+    );
+    return address(etherRouter);
   }
 }

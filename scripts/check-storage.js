@@ -17,6 +17,8 @@ walkSync("./contracts/").forEach((contractName) => {
   if (
     [
       "contracts/bridging/WormholeBridgeForColony.sol",
+      "contracts/bridging/ProxyColony.sol",
+      "contracts/bridging/ProxyColonyNetwork.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colonyNetwork/ColonyNetworkAuthority.sol",
@@ -24,6 +26,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/CommonAuthority.sol",
       "contracts/common/CommonStorage.sol",
       "contracts/common/DomainRoles.sol",
+      "contracts/common/DomainTokenReceiver.sol",
       "contracts/common/EtherRouter.sol",
       "contracts/common/Resolver.sol",
       "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo

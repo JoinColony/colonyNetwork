@@ -23,6 +23,7 @@ import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { Multicall } from "./../common/Multicall.sol";
+import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
 
 contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall {
   function isColony(address _colony) public view returns (bool) {
@@ -109,6 +110,23 @@ contract ColonyNetwork is BasicMetaTransaction, ColonyNetworkStorage, Multicall 
     }
 
     emit ColonyNetworkInitialised(_resolver);
+  }
+
+  function bridgeMessage(uint256 _chainId, bytes memory _payload) public stoppable calledByColony {
+    require(
+      IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, msg.sender, _payload),
+      "colony-network-bridge-message-failed"
+    );
+  }
+
+  function bridgeMessageToNetwork(
+    uint256 _chainId,
+    bytes memory _payload
+  ) public stoppable calledByMetaColony {
+    require(
+      IColonyBridge(colonyBridgeAddress).sendMessage(_chainId, address(this), _payload),
+      "colony-network-bridge-message-failed"
+    );
   }
 
   function getColony(uint256 _id) public view returns (address) {

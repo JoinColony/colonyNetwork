@@ -45,8 +45,13 @@ interface IColonyBridge {
 
   /// @notice Function to send a message to the colony bridge on another chain
   /// @param evmChainId The chain id to send the message to
+  /// @param destination The address of the contract on the other chain to send the message to
   /// @param payload The message payload
   /// @return bool Whether the message was sent successfully (to the best of the contract's knowledge,
   /// in terms of the underlying bridge implementation)
-  function sendMessage(uint256 evmChainId, bytes memory payload) external returns (bool);
+  function sendMessage(
+    uint256 evmChainId,
+    address destination,
+    bytes memory payload
+  ) external returns (bool);
 }

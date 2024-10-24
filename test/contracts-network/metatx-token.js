@@ -289,6 +289,12 @@ contract("MetaTxToken", (accounts) => {
         const locked = await metaTxToken.locked();
         expect(locked).to.be.true;
       });
+
+      it("only owner can call setOwner", async () => {
+        await checkErrorRevert(metaTxToken.setOwner(USER1, { from: USER1 }), "ds-auth-unauthorized");
+        await metaTxToken.setOwner(USER1, { from: USER0 });
+        await metaTxToken.setOwner(USER0, { from: USER1 });
+      });
     });
 
     describe("when working with ether transfers", () => {

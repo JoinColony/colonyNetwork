@@ -6,7 +6,7 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
 const { giveUserCLNYTokens, giveUserCLNYTokensAndStake } = require("../../helpers/test-data-generator");
-const { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, CHALLENGE_RESPONSE_WINDOW_DURATION, ADDRESS_ZERO } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevert, getActiveRepCycle, advanceMiningCycleNoContest, getBlockTime } = require("../../helpers/test-helper");
 
 const { expect } = chai;
@@ -213,9 +213,23 @@ contract("Reputation mining - basic functionality", (accounts) => {
       await checkErrorRevert(repCycle.resetWindow(), "colony-reputation-mining-sender-not-network");
     });
 
-    it('should not allow "setReputationRootHash" to be called from an account that is not a ReputationMiningCycle', async () => {
+    it("should not allow reputation-mining functions to be called from an account that is not an active ReputationMiningCycle", async () => {
+      const inactiveRepCycleAddr = await colonyNetwork.getReputationMiningCycle(false);
+
       await checkErrorRevert(
-        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]),
+        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]], { from: inactiveRepCycleAddr }),
+        "colony-reputation-mining-sender-not-active-reputation-cycle",
+      );
+      await checkErrorRevert(
+        colonyNetwork.punishStakers([accounts[0], accounts[1]], MIN_STAKE, { from: inactiveRepCycleAddr }),
+        "colony-reputation-mining-sender-not-active-reputation-cycle",
+      );
+      await checkErrorRevert(
+        colonyNetwork.reward(accounts[0], MIN_STAKE, { from: inactiveRepCycleAddr }),
+        "colony-reputation-mining-sender-not-active-reputation-cycle",
+      );
+      await checkErrorRevert(
+        colonyNetwork.burnUnneededRewards(0, { from: inactiveRepCycleAddr }),
         "colony-reputation-mining-sender-not-active-reputation-cycle",
       );
     });
@@ -257,6 +271,38 @@ contract("Reputation mining - basic functionality", (accounts) => {
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
 
       await checkErrorRevert(inactiveRepCycle.initialise(MINER1, MINER2), "colony-reputation-mining-cycle-already-initialised");
+    });
+
+    it("functions that should only be after initialisation cannot be called before", async () => {
+      const before = await web3.eth.getStorageAt(colonyNetwork.address, 17);
+      const ethersProvider = new ethers.providers.Web3Provider(web3.currentProvider);
+      await ethersProvider.send("hardhat_setStorageAt", [
+        colonyNetwork.address,
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(17), 32),
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(0), 32),
+      ]);
+
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.setMiningDelegate(ADDRESS_ZERO, false), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.setReputationRootHash("0x00", 0, [ADDRESS_ZERO]), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.punishStakers([ADDRESS_ZERO], 0), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.reward(ADDRESS_ZERO, 0), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.claimMiningReward(ADDRESS_ZERO), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.unstakeForMining(0), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.burnUnneededRewards(0), "colony-reputation-mining-not-initialised");
+      await checkErrorRevert(colonyNetwork.setReputationMiningCycleReward(0), "colony-reputation-mining-not-initialised");
+
+      // Put in to recovery mode
+      await colonyNetwork.enterRecoveryMode();
+
+      await checkErrorRevert(
+        colonyNetwork.setReplacementReputationUpdateLogEntry(ADDRESS_ZERO, 0, ADDRESS_ZERO, 0, 0, ADDRESS_ZERO, 0, 0),
+        "colony-reputation-mining-not-initialised",
+      );
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+
+      await ethersProvider.send("hardhat_setStorageAt", [colonyNetwork.address, ethers.utils.hexZeroPad(ethers.utils.hexlify(17), 32), before]);
     });
   });
 

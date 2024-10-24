@@ -67,19 +67,6 @@ interface ColonyNetworkDataTypes {
   /// @param parentSkillId The id of the parent skill under which this new skill is added
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
-  /// @notice Event logged when bridging of a skill creation did not succeed.
-  /// @param skillId The skillId that failed to bridge
-  event SkillCreationStored(uint256 skillId);
-
-  /// @notice Event logged when a skill is received from a bridge, but can't yet be
-  /// added to the skill tree.
-  /// @param skillId The skillId of the skill that was bridged
-  event SkillStoredFromBridge(uint256 skillId);
-
-  /// @notice Event logged when a skill is successfully added from a bridge.
-  /// @param skillId The skillId of the skill that was bridged
-  event SkillAddedFromBridge(uint256 skillId);
-
   /// @notice Event logged when a new auction is created and started
   /// @dev Emitted from `IColonyNetwork.startTokenAuction` function
   /// @param auction Address of the created auction contract
@@ -174,18 +161,11 @@ interface ColonyNetworkDataTypes {
   /// @param count The number of the reputation update trying to be bridged in that colony
   event ReputationUpdateSentToBridge(address colony, uint256 count);
 
-  /// @notice Event logged when a reputation update is received from a bridge, but can't be
-  /// added to the reputation update log due to being bridged out of order or the skill not existing.
-  /// @param chainId The chainId of the chain the bridge is associated with
-  /// @param colony The address of the colony where reputation is being emitted
-  /// @param updateNumber The number of the reputation update bridged in that colony
-  event ReputationUpdateStoredFromBridge(uint256 chainId, address colony, uint256 updateNumber);
+  /// @notice Event emitted when a proxy colony deployment is requested
+  /// @param destinationChainId The chain ID of the destination chain
+  /// @param salt The salt used to generate the proxy address
+  event ProxyColonyRequested(uint256 destinationChainId, bytes32 salt);
 
-  /// @notice Event logged when a reputation update is successfully bridged.
-  /// @param chainId The chainId of the chain the bridge is associated with
-  /// @param colony The address of the colony where reputation is being emitted
-  /// @param updateNumber The number of the reputation update bridged in that colony
-  event ReputationUpdateAddedFromBridge(uint256 chainId, address colony, uint256 updateNumber);
 
   struct Skill {
     // total number of parent skills

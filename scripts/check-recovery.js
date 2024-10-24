@@ -27,6 +27,8 @@ walkSync("./contracts/").forEach((contractName) => {
     [
       "contracts/bridging/IColonyBridge.sol",
       "contracts/bridging/WormholeBridgeForColony.sol",
+      "contracts/bridging/ProxyColony.sol",
+      "contracts/bridging/ProxyColonyNetwork.sol",
       "contracts/colony/ColonyAuthority.sol",
       "contracts/colony/ColonyStorage.sol",
       "contracts/colony/IColony.sol",
@@ -38,6 +40,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/IBasicMetaTransaction.sol",
       "contracts/common/CommonAuthority.sol",
       "contracts/common/DomainRoles.sol",
+      "contracts/common/DomainTokenReceiver.sol",
       "contracts/common/ERC20Extended.sol",
       "contracts/common/EtherRouter.sol",
       "contracts/common/EtherRouterCreate3.sol",
@@ -47,6 +50,8 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/common/Multicall.sol",
       "contracts/common/Resolver.sol",
       "contracts/common/TokenAuthority.sol", // Imported from colonyToken repo
+      "contracts/common/DomainReceiverManagement.sol", // Is used, but in multiple places and has its own implementation for now
+      "contracts/common/DomainTokenReceiver.sol",
       "contracts/ens/ENS.sol",
       "contracts/ens/ENSRegistry.sol",
       "contracts/extensions/IColonyExtension.sol",
@@ -89,6 +94,7 @@ walkSync("./contracts/").forEach((contractName) => {
       "contracts/testHelpers/ERC721Mock.sol",
       "contracts/testHelpers/NoLimitSubdomains.sol",
       "contracts/testHelpers/GasGuzzler.sol",
+      "contracts/testHelpers/LiFiFacetProxyMock.sol",
       "contracts/testHelpers/TasksPayments.sol",
       "contracts/testHelpers/ToggleableToken.sol",
       "contracts/testHelpers/FunctionsNotAvailableOnColony.sol",

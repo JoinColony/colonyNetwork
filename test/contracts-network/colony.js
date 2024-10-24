@@ -13,6 +13,7 @@ const {
   expectAllEvents,
   expectEvent,
   upgradeColonyOnceThenToLatest,
+  bn2bytes32,
 } = require("../../helpers/test-helper");
 const {
   setupRandomColony,
@@ -237,6 +238,14 @@ contract("Colony", (accounts) => {
       await expectEvent(tx, "FundingPotAdded", [fundingPotCount]);
       await expectEvent(tx, "DomainMetadata", [accounts[0], domainCount, IPFS_HASH]);
     });
+
+    it("should require a valid permission proof", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+
+      // Remove permission
+      await colony.setUserRoles(1, UINT256_MAX, USER0, 1, bn2bytes32(0));
+      await checkErrorRevert(colony.addDomain(1, UINT256_MAX, 1), "ds-auth-unauthorized");
+    });
   });
 
   describe("when editing domains", () => {
@@ -249,6 +258,15 @@ contract("Colony", (accounts) => {
     it("should not log the DomainMetadata event if empty string passed", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       await expectNoEvent(colony.editDomain(1, 0, 2, ""), "DomainMetadata");
+    });
+
+    it("should require a valid permission proof", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      await colony.editDomain(1, 0, 2, IPFS_HASH);
+
+      // Remove permission
+      await colony.setUserRoles(1, UINT256_MAX, USER0, 1, bn2bytes32(0));
+      await checkErrorRevert(colony.editDomain(1, 0, 2, IPFS_HASH), "ds-auth-unauthorized");
     });
   });
 

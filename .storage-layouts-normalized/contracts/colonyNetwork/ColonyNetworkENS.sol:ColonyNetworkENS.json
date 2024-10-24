@@ -1132,6 +1132,17 @@
           }
         }
       }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkENS.sol:ColonyNetworkENS",
+      "label": "domainReceiverResolverAddress",
+      "offset": 0,
+      "slot": "50",
+      "type": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      }
     }
   ]
 }
