@@ -30,6 +30,9 @@ import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
 import { IColonyExtension } from "./IColonyExtension.sol";
 
+// This is a 'dummy' import to ensure that functions implemented from DSAuth get commented
+import { IDSAuth } from "./../common/IDSAuth.sol";
+
 abstract contract ColonyExtension is
   IColonyExtension,
   DSAuth,
