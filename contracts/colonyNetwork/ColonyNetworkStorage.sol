@@ -130,6 +130,9 @@ contract ColonyNetworkStorage is ColonyNetworkDataTypes, DSMath, CommonStorage, 
   mapping(uint256 => mapping(address => mapping(uint256 => PendingReputationUpdate))) pendingReputationUpdates; // Storage slot 49
 
   address domainReceiverResolverAddress; // Storage slot 50
+  // A mapping that stores the decay rate for each colony
+  mapping(address => ColonyDecayRate) colonyDecayRates; // Storage slot 51
+
   // Modifiers
 
   modifier calledByColony() {

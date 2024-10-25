@@ -145,7 +145,10 @@ contract ColonyAuthority is CommonAuthority {
 
     addRoleCapability(FUNDING_ROLE, "exchangeTokensViaLiFi(uint256,uint256,uint256,bytes,uint256,address,uint256)");
     addRoleCapability(FUNDING_ROLE, "exchangeProxyHeldTokensViaLiFi(uint256,uint256,uint256,bytes,uint256,uint256,address,uint256)");
+
     addRoleCapability(ROOT_ROLE, "setTokenReputationScaling(uint256,address,uint256)");
+
+    addRoleCapability(ROOT_ROLE, "setReputationDecayRate(uint256,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

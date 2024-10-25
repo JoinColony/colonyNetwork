@@ -1143,6 +1143,84 @@
         "label": "address",
         "numberOfBytes": "20"
       }
+    },
+    {
+      "contract": "contracts/colonyNetwork/ColonyNetworkENS.sol:ColonyNetworkENS",
+      "label": "colonyDecayRates",
+      "offset": 0,
+      "slot": "51",
+      "type": {
+        "encoding": "mapping",
+        "key": {
+          "encoding": "inplace",
+          "label": "address",
+          "numberOfBytes": "20"
+        },
+        "label": "mapping(address => struct ColonyNetworkDataTypes.ColonyDecayRate)",
+        "numberOfBytes": "32",
+        "value": {
+          "encoding": "inplace",
+          "label": "struct ColonyNetworkDataTypes.ColonyDecayRate",
+          "members": [
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkENS.sol:ColonyNetworkENS",
+              "label": "currentNumerator",
+              "offset": 0,
+              "slot": "0",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkENS.sol:ColonyNetworkENS",
+              "label": "currentDenominator",
+              "offset": 0,
+              "slot": "1",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkENS.sol:ColonyNetworkENS",
+              "label": "nextNumerator",
+              "offset": 0,
+              "slot": "2",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkENS.sol:ColonyNetworkENS",
+              "label": "nextDenominator",
+              "offset": 0,
+              "slot": "3",
+              "type": {
+                "encoding": "inplace",
+                "label": "uint256",
+                "numberOfBytes": "32"
+              }
+            },
+            {
+              "contract": "contracts/colonyNetwork/ColonyNetworkENS.sol:ColonyNetworkENS",
+              "label": "afterMiningCycle",
+              "offset": 0,
+              "slot": "4",
+              "type": {
+                "encoding": "inplace",
+                "label": "address",
+                "numberOfBytes": "20"
+              }
+            }
+          ],
+          "numberOfBytes": "160"
+        }
+      }
     }
   ]
 }

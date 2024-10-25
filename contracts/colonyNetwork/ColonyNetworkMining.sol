@@ -41,7 +41,58 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     _;
   }
 
-  function setMiningDelegate(address _delegate, bool _allowed) public stoppable miningInitialised {
+  function setColonyReputationDecayRate(
+    uint256 _numerator,
+    uint256 _denominator
+  ) public stoppable calledByColony {
+    require(_numerator < 10 ** 15, "colony-network-decay-numerator-too-big");
+    require(_numerator <= _denominator, "colony-network-decay-rate-over-1");
+    address colony = msgSender();
+
+    ColonyDecayRate storage decayRate = colonyDecayRates[colony];
+
+    if (activeReputationMiningCycle != decayRate.afterMiningCycle) {
+      // Move the old-next values to current, as they are in effect
+      decayRate.currentNumerator = decayRate.nextNumerator;
+      decayRate.currentDenominator = decayRate.nextDenominator;
+
+      // Update afterMiningCycle
+      decayRate.afterMiningCycle = activeReputationMiningCycle;
+    }
+
+    // Whether we've updated the current decays rates or not, we update the next values
+    decayRate.nextNumerator = _numerator;
+    decayRate.nextDenominator = _denominator;
+
+    emit ColonyReputationDecayRateToChange(
+      colony,
+      activeReputationMiningCycle,
+      _numerator,
+      _denominator
+    );
+  }
+
+  function getColonyReputationDecayRate(
+    address _colony
+  ) public view returns (uint256 numerator, uint256 denominator) {
+    if (activeReputationMiningCycle != colonyDecayRates[_colony].afterMiningCycle) {
+      // Then the values of interest is whatever's in nextNumerator/nextDenominator
+      numerator = colonyDecayRates[_colony].nextNumerator;
+      denominator = colonyDecayRates[_colony].nextDenominator;
+    } else {
+      numerator = colonyDecayRates[_colony].currentNumerator;
+      denominator = colonyDecayRates[_colony].currentDenominator;
+    }
+
+    if (denominator == 0) {
+      // Then we return the 'default' decay rate
+      (numerator, denominator) = IReputationMiningCycle(activeReputationMiningCycle)
+        .getDecayConstant();
+    }
+    return (numerator, denominator);
+  }
+
+  function setMiningDelegate(address _delegate, bool _allowed) public miningInitialised stoppable {
     if (miningDelegators[_delegate] != address(0x00)) {
       require(
         miningDelegators[_delegate] == msgSender(),

@@ -506,6 +506,24 @@ Pseudo-randomly generates a salt used for colony creation
 |---|---|---|
 |salt|bytes32|The generated salt
 
+### ▸ `getColonyReputationDecayRate(address _colony):uint256 numerator, uint256 denominator`
+
+Called to get the rate at which reputation in a colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_colony|address|The address of the colony in question
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
 ### ▸ `getColonyVersionResolver(uint256 _version):address _resolverAddress`
 
 Get the `Resolver` address for Colony contract version `_version`.
@@ -1144,6 +1162,19 @@ Called to set the address of the colony bridge contract
 |Name|Type|Description|
 |---|---|---|
 |_bridgeAddress|address|The address of the bridge
+
+
+### ▸ `setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator)`
+
+Called by a colony to set the rate at which reputation in that colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|_denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
 
 
 ### ▸ `setDomainTokenReceiverResolver(address _resolver)`
