@@ -120,7 +120,6 @@ contract("Metatransaction broadcaster", (accounts) => {
     });
 
     it("transactions that try to execute a forbidden method on a Colony are rejected", async function () {
-      // let txData = await colony.contract.methods.makeArbitraryTransaction(colony.address, "0x00000000").encodeABI();
       let txData = await encodeTxData(colony, "makeArbitraryTransaction(address,bytes)", [colony.address, "0x00000000"]);
       let valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false);
@@ -644,9 +643,6 @@ contract("Metatransaction broadcaster", (accounts) => {
         web3.utils.soliditySha3("owner()").slice(0, 10),
       ]);
 
-      // const txData2 = await colony.contract.methods
-      //   .makeArbitraryTransaction(resolverAddress, web3.utils.soliditySha3("owner()").slice(0, 10))
-      //   .encodeABI();
       const txData = await colony.contract.methods.multicall([txData1, txData2]).encodeABI();
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, colony.address);
       // Send to endpoint
