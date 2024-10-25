@@ -354,12 +354,19 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     sig = bytes4(keccak256("setTokenReputationScaling(address,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
+    sig = bytes4(keccak256("setReputationDecayRate(uint256,uint256)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
     // Native token awards reputation 1:1 by default
     tokenReputationScalings[block.chainid][token] = WAD;
   }
 
   function createProxyColony(uint256 _destinationChainId, bytes32 _salt) public stoppable {
     IColonyNetwork(colonyNetworkAddress).createProxyColony(_destinationChainId, _salt);
+  }
+
+  function setReputationDecayRate(uint256 _numerator, uint256 _denominator) public stoppable auth {
+    IColonyNetwork(colonyNetworkAddress).setColonyReputationDecayRate(_numerator, _denominator);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

@@ -1102,6 +1102,11 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @return amount The total token approval amount
   function getTotalTokenApproval(address token) external view returns (uint256 amount);
 
+  /// @notice Call to set the rate at which reputation in this colony decays
+  /// @param numerator The numerator of the fraction reputation does down by every reputation cycle
+  /// @param denominator The denominator of the fraction reputation does down by every reputation cycle
+  function setReputationDecayRate(uint256 numerator, uint256 denominator) external;
+
   // Deprecated Task and Payment getter functions
 
   /// @notice Get the number of tasks in the colony.

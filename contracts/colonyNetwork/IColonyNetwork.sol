@@ -583,4 +583,17 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
     address _colonyAddress,
     uint256 _domainId
   ) external view returns (address domainTokenReceiverAddress);
+
+  /// @notice Called by a colony to set the rate at which reputation in that colony decays
+  /// @param _numerator The numerator of the fraction reputation does down by every reputation cycle
+  /// @param _denominator The denominator of the fraction reputation does down by every reputation cycle
+  function setColonyReputationDecayRate(uint256 _numerator, uint256 _denominator) external;
+
+  /// @notice Called to get the rate at which reputation in a colony decays
+  /// @param _colony The address of the colony in question
+  /// @return numerator The numerator of the fraction reputation does down by every reputation cycle
+  /// @return denominator The denominator of the fraction reputation does down by every reputation cycle
+  function getColonyReputationDecayRate(
+    address _colony
+  ) external view returns (uint256 numerator, uint256 denominator);
 }

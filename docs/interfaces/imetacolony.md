@@ -1884,6 +1884,19 @@ Set new colony recovery role. Can be called by root.
 |_user|address|User we want to give a recovery role to
 
 
+### ▸ `setReputationDecayRate(uint256 numerator, uint256 denominator)`
+
+Call to set the rate at which reputation in this colony decays
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|numerator|uint256|The numerator of the fraction reputation does down by every reputation cycle
+|denominator|uint256|The denominator of the fraction reputation does down by every reputation cycle
+
+
 ### ▸ `setReputationMiningCycleReward(uint256 _amount)`
 
 Called to set the total per-cycle reputation reward, which will be split between all miners.
