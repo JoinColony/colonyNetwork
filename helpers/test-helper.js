@@ -852,6 +852,23 @@ exports.advanceMiningCycleNoContest = async function advanceMiningCycleNoContest
   }
 };
 
+exports.advanceMiningCycleWithContest = async function advanceMiningCycleWithContest({ colonyNetwork, goodClient, badClient, test, errors }) {
+  if (!goodClient || !badClient || !colonyNetwork || !test) {
+    throw new Error("goodClient, badClient, colonyNetwork, and test are all required");
+  }
+
+  await badClient.initialise(colonyNetwork.address);
+  await goodClient.saveCurrentState();
+  const currentHash = await goodClient.getRootHash();
+  await badClient.loadState(currentHash);
+
+  await exports.submitAndForwardTimeToDispute([goodClient, badClient], test);
+  await exports.accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, errors);
+  await exports.forwardTime(CHALLENGE_RESPONSE_WINDOW_DURATION + 1, test);
+  const repCycle = await exports.getActiveRepCycle(colonyNetwork);
+  await repCycle.confirmNewHash(1, { from: goodClient.minerAddress });
+};
+
 exports.accommodateChallengeAndInvalidateHashViaTimeout = async function accommodateChallengeAndInvalidateHashViaTimeout(
   colonyNetwork,
   _test,
