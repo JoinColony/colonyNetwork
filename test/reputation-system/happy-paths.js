@@ -21,6 +21,7 @@ const {
   checkErrorRevert,
   getChainId,
   getMultichainSkillId,
+  advanceMiningCycleWithContest,
 } = require("../../helpers/test-helper");
 
 const {
@@ -446,7 +447,7 @@ contract("Reputation Mining - happy paths", (accounts) => {
       );
     });
 
-    it("should calculate reputation decays correctly if the colony is using a custom decay rate", async () => {
+    it("contracts and client should calculate reputation decays correctly if the colony is using a custom decay rate", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await metaColony.setReputationDecayRate(1, 2);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -483,6 +484,122 @@ contract("Reputation Mining - happy paths", (accounts) => {
       expect(expectedResult.toString(16, 64), `Incorrect decay. Actual value is ${decimalValueDecay}`).to.equal(
         goodClient.reputations[decayKey].slice(2, 66),
       );
+      await metaColony.setReputationDecayRate(DECAY_RATE.NUMERATOR, DECAY_RATE.DENOMINATOR);
+    });
+
+    it("a colony's custom decay rate only takes effect at the next mining cycle", async () => {
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await metaColony.emitDomainReputationReward(1, MANAGER, 1000000000);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      // Reputation is now in the state
+
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
+
+      await advanceMiningCycleWithContest({
+        colonyNetwork,
+        test: this,
+        goodClient,
+        badClient,
+        errors: {
+          client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+        },
+      });
+
+      let reputation = new BN(1000000000).mul(DECAY_RATE.NUMERATOR).div(DECAY_RATE.DENOMINATOR);
+
+      const domain = await metaColony.getDomain(1);
+      const decayKey = ReputationMinerTestWrapper.getKey(metaColony.address, domain.skillId, MANAGER);
+      let decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
+      expect(decimalValueDecay).to.eq.BN(reputation);
+
+      // Set new reputation rate
+      await metaColony.setReputationDecayRate(1, 2);
+
+      // Decay again, should still be at old rate
+      await advanceMiningCycleWithContest({
+        colonyNetwork,
+        test: this,
+        goodClient,
+        badClient,
+        errors: {
+          client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+        },
+      });
+
+      reputation = reputation.mul(DECAY_RATE.NUMERATOR).div(DECAY_RATE.DENOMINATOR);
+      decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
+      expect(decimalValueDecay).to.eq.BN(reputation);
+
+      // And then decay again, should be at new rate
+      await advanceMiningCycleWithContest({
+        colonyNetwork,
+        test: this,
+        goodClient,
+        badClient,
+        errors: {
+          client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+        },
+      });
+
+      reputation = reputation.muln(1).divn(2);
+      decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
+      expect(decimalValueDecay).to.eq.BN(reputation);
+
+      // Set the rate back to the default
+      await metaColony.setReputationDecayRate(DECAY_RATE.NUMERATOR, DECAY_RATE.DENOMINATOR);
+    });
+
+    it("If a reputation decay rate is set repeatedly, only the latest has an effect", async () => {
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await metaColony.emitDomainReputationReward(1, MANAGER, 1000000000);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
+      // Reputation is now in the state
+
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
+      // Set new reputation rate multiple times
+
+      await metaColony.setReputationDecayRate(1, 2);
+      await metaColony.setReputationDecayRate(1, 3);
+
+      await advanceMiningCycleWithContest({
+        colonyNetwork,
+        test: this,
+        goodClient,
+        badClient,
+        errors: {
+          client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+        },
+      });
+
+      const reputation = new BN(1000000000).mul(DECAY_RATE.NUMERATOR).div(DECAY_RATE.DENOMINATOR);
+
+      const domain = await metaColony.getDomain(1);
+      const decayKey = ReputationMinerTestWrapper.getKey(metaColony.address, domain.skillId, MANAGER);
+      const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
+      expect(decimalValueDecay).to.eq.BN(reputation);
+
+      // Complete another cycle, which should decay at the 1/3 rate set
+
+      await advanceMiningCycleWithContest({
+        colonyNetwork,
+        test: this,
+        goodClient,
+        badClient,
+        errors: {
+          client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" },
+        },
+      });
+
+      const newReputation = reputation.muln(1).divn(3);
+      const newDecimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
+      expect(newDecimalValueDecay).to.eq.BN(newReputation);
+
+      // Set the rate back to the default
+      await metaColony.setReputationDecayRate(DECAY_RATE.NUMERATOR, DECAY_RATE.DENOMINATOR);
     });
 
     it("should keep reputation updates that occur during one update window for the next window", async () => {
