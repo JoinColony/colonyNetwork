@@ -1087,18 +1087,17 @@ Lock the colony's token. Can only be called by a network-managed extension.
 |---|---|---|
 |timesLocked|uint256|The amount of times the token was locked
 
-### ▸ `makeArbitraryTransactions(address[] memory _targets, bytes[] memory _actions, bool _strict):bool success`
+### ▸ `makeArbitraryTransaction(address _target, bytes memory _action):bool success`
 
-Execute arbitrary transactions on behalf of the Colony in series
+Executes an arbitrary transaction
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_targets|address[]|Array of addressed to be targeted
-|_actions|bytes[]|Array of Bytes arrays encoding the function calls and arguments
-|_strict|bool|Boolean indicating whether if one transaction fails, the whole call to this function should fail.
+|_target|address|Contract to receive the function call
+|_action|bytes|Bytes array encoding the function call and arguments
 
 **Return Parameters**
 
@@ -1124,25 +1123,6 @@ Add a new expenditure in the colony. Secured function to authorised members.
 |Name|Type|Description|
 |---|---|---|
 |expenditureId|uint256|Identifier of the newly created expenditure
-
-### ▸ `makeSingleArbitraryTransaction(address _target, bytes memory _action):bool success`
-
-Executes a single arbitrary transaction
-
-*Note: Only callable by the colony itself. If you wish to use this functionality, you should use the makeAbitraryTransactions function*
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_target|address|Contract to receive the function call
-|_action|bytes|Bytes array encoding the function call and arguments
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|success|bool|Boolean indicating whether the transactions succeeded
 
 ### ▸ `mintTokens(uint256 _wad)`
 

@@ -206,8 +206,12 @@ class MetatransactionBroadcaster {
   async isColonyFamilyTransactionAllowed(target, txData, userAddress) {
     const colonyDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
 
-    // Add the old makeArbitraryTransaction to the abi
-    const iface = new ethers.utils.Interface(["function makeArbitraryTransaction(address,bytes)"]);
+    // Add the old makeSingleArbitraryTransaction and makeArbitraryTransactions to the abi
+    const iface = new ethers.utils.Interface([
+      "function makeSingleArbitraryTransaction(address,bytes)",
+      "function makeArbitraryTransactions(address[],bytes[],bool)",
+    ]);
+
     const oldJsonAbi = JSON.parse(iface.format(ethers.utils.FormatTypes.json));
     oldJsonAbi[0].inputs = oldJsonAbi[0].inputs.map((x) => {
       return { ...x, internalType: x.type };

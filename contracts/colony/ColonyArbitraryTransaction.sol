@@ -38,44 +38,6 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     address _to,
     bytes memory _action
   ) public stoppable auth returns (bool) {
-    bool res = this.makeSingleArbitraryTransaction(_to, _action);
-
-    emit ArbitraryTransaction(msgSender(), _to, _action, res);
-    return res;
-  }
-
-  function makeArbitraryTransactions(
-    address[] memory _targets,
-    bytes[] memory _actions,
-    bool _strict
-  ) public stoppable auth returns (bool) {
-    require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
-    for (uint256 i; i < _targets.length; i += 1) {
-      bool success = true;
-      // slither-disable-next-line unused-return
-      try this.makeSingleArbitraryTransaction(_targets[i], _actions[i]) returns (bool ret) {
-        if (_strict) {
-          success = ret;
-        }
-
-        emit ArbitraryTransaction(msgSender(), _targets[i], _actions[i], ret);
-      } catch Error(string memory _err) {
-        // We failed in a require, which is only okay if we're not in strict mode
-        if (_strict) {
-          success = false;
-        }
-
-        emit ArbitraryTransaction(msgSender(), _targets[i], _actions[i], false);
-      }
-      require(success, "colony-arbitrary-transaction-failed");
-    }
-    return true;
-  }
-
-  function makeSingleArbitraryTransaction(
-    address _to,
-    bytes memory _action
-  ) external stoppable self returns (bool) {
     // Prevent transactions to network contracts
     require(_to != address(this), "colony-cannot-target-self");
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");

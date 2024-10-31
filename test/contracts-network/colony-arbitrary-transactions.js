@@ -17,7 +17,6 @@ const OneTxPayment = artifacts.require("OneTxPayment");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const ColonyArbitraryTransaction = artifacts.require("ColonyArbitraryTransaction");
 
 contract("Colony Arbitrary Transactions", (accounts) => {
   let colony;
@@ -41,7 +40,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     const action = await encodeTxData(token, "mint", [WAD]);
     const balancePre = await token.balanceOf(colony.address);
 
-    const tx = await colony.makeArbitraryTransactions([token.address], [action], true);
+    const tx = await colony.makeArbitraryTransaction(token.address, action);
 
     await expectEvent(tx, "ArbitraryTransaction(address,address,bytes,bool)", [accounts[0], token.address, action, true]);
 
@@ -54,7 +53,10 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
     const balancePre = await token.balanceOf(colony.address);
 
-    const tx = await colony.makeArbitraryTransactions([token.address, token.address], [action, action2], true);
+    const arbitraryAction = await encodeTxData(colony, "makeArbitraryTransaction", [token.address, action]);
+    const arbitraryAction2 = await encodeTxData(colony, "makeArbitraryTransaction", [token.address, action2]);
+
+    const tx = await colony.multicall([arbitraryAction, arbitraryAction2]);
 
     await expectEvent(tx, "ArbitraryTransaction(address,address,bytes,bool)", [USER0, token.address, action, true]);
     await expectEvent(tx, "ArbitraryTransaction(address,address,bytes,bool)", [USER0, token.address, action2, true]);
@@ -63,56 +65,18 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(3));
   });
 
-  it("should be able to make multiple arbitrary transactions and revert if one fails in strict mode", async () => {
-    const action = await encodeTxData(token, "mint", [WAD]);
-    const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
-    const balancePre = await token.balanceOf(colony.address);
-
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address, colony.address], [action, action2], true), "colony-cannot-target-self");
-
-    const balancePost = await token.balanceOf(colony.address);
-    expect(balancePost).to.eq.BN(balancePre);
-  });
-
-  it("should be able to make multiple arbitrary transactions and not revert if one fails not in strict mode", async () => {
-    const action = await encodeTxData(token, "mint", [WAD]);
-    const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
-    const balancePre = await token.balanceOf(colony.address);
-
-    await colony.makeArbitraryTransactions([token.address, ADDRESS_ZERO], [action, action2], false);
-
-    const balancePost = await token.balanceOf(colony.address);
-    expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
-  });
-
-  it("should be able to make multiple arbitrary transactions", async () => {
-    const action = await encodeTxData(token, "mint", [WAD]);
-    const action2 = await encodeTxData(token, "mint", [WAD.muln(2)]);
-    const balancePre = await token.balanceOf(colony.address);
-
-    await colony.makeArbitraryTransactions([token.address, token.address], [action, action2], true);
-
-    const balancePost = await token.balanceOf(colony.address);
-    expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(3));
-  });
-
   it("should not be able to make arbitrary transactions if not root", async () => {
     const action = await encodeTxData(token, "mint", [WAD]);
 
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address], [action], true, { from: USER1 }), "ds-auth-unauthorized");
+    await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action, { from: USER1 }), "ds-auth-unauthorized");
   });
 
   it("should not be able to make arbitrary transactions to a colony itself", async () => {
-    await checkErrorRevert(colony.makeArbitraryTransactions([colony.address], ["0x0"], true), "colony-cannot-target-self");
+    await checkErrorRevert(colony.makeArbitraryTransaction(colony.address, "0x0"), "colony-cannot-target-self");
   });
 
   it("should not be able to make arbitrary transactions to a user address", async () => {
-    await checkErrorRevert(colony.makeArbitraryTransactions([accounts[0]], ["0x0"], true), "colony-to-must-be-contract");
-  });
-
-  it("should not be able to make single arbitrary transactions directly", async () => {
-    const colonyArbitraryTransactions = await ColonyArbitraryTransaction.at(colony.address);
-    await checkErrorRevert(colonyArbitraryTransactions.makeSingleArbitraryTransaction(colony.address, "0x0"), "colony-not-self");
+    await checkErrorRevert(colony.makeArbitraryTransaction(accounts[0], "0x0"), "colony-to-must-be-contract");
   });
 
   it("should not be able to make arbitrary transactions to network or token locking", async () => {
@@ -122,14 +86,14 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     const action1 = await encodeTxData(colonyNetwork, "addSkill", [0]);
     const action2 = await encodeTxData(tokenLocking, "lockToken", [token.address]);
 
-    await checkErrorRevert(colony.makeArbitraryTransactions([colonyNetwork.address], [action1], true), "colony-cannot-target-network");
-    await checkErrorRevert(colony.makeArbitraryTransactions([tokenLocking.address], [action2], true), "colony-cannot-target-token-locking");
+    await checkErrorRevert(colony.makeArbitraryTransaction(colonyNetwork.address, action1), "colony-cannot-target-network");
+    await checkErrorRevert(colony.makeArbitraryTransaction(tokenLocking.address, action2), "colony-cannot-target-token-locking");
   });
 
   it("if an arbitrary transaction is made to approve tokens, then tokens needed for approval cannot be moved out of the main pot", async () => {
     await fundColonyWithTokens(colony, token, 100);
     const action1 = await encodeTxData(token, "approve", [USER0, 50]);
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
     await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address);
     await checkErrorRevert(
       colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 50, token.address),
@@ -145,7 +109,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
    tokens can only be moved from main pot that weren't part of the allowance`, async () => {
     await fundColonyWithTokens(colony, token, 100);
     const action1 = await encodeTxData(token, "approve", [USER0, 20]);
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
     // Use allowance
     await token.transferFrom(colony.address, USER0, 20, { from: USER0 });
     // Approval tracking still thinks it has to reserve 20
@@ -177,9 +141,9 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     await fundColonyWithTokens(colony, token, 100);
     const action1 = await encodeTxData(token, "approve", [USER0, 300]);
     // Not enough tokens at all
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address], [action1], true), "colony-approval-exceeds-balance");
+    await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action1), "colony-approval-exceeds-balance");
     await fundColonyWithTokens(colony, token, 1000);
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
     // They are now approved for 300.
     let approval = await colony.getTokenApproval(token.address, USER0);
     expect(approval).to.be.eq.BN(300);
@@ -188,14 +152,14 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     const action2 = await encodeTxData(token, "approve", [USER0, 900]);
     // User was approved for 300, we now approve them for 900. There are enough tokens to cover this, even though 900 + 300 > 1100, the balance of the pot
-    await colony.makeArbitraryTransactions([token.address], [action2], true);
+    await colony.makeArbitraryTransaction(token.address, action2);
     approval = await colony.getTokenApproval(token.address, USER0);
     expect(approval).to.be.eq.BN(900);
     allApprovals = await colony.getTotalTokenApproval(token.address);
     expect(allApprovals).to.be.eq.BN(900);
 
     // Set them back to 300
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
     approval = await colony.getTokenApproval(token.address, USER0);
     expect(approval).to.be.eq.BN(300);
     allApprovals = await colony.getTotalTokenApproval(token.address);
@@ -203,10 +167,10 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     // Cannot approve someone else for 900
     const action3 = await encodeTxData(token, "approve", [USER1, 900]);
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address], [action3], true), "colony-approval-exceeds-balance");
+    await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action3), "colony-approval-exceeds-balance");
     // But can for 800
     const action4 = await encodeTxData(token, "approve", [USER1, 800]);
-    await colony.makeArbitraryTransactions([token.address], [action4], true);
+    await colony.makeArbitraryTransaction(token.address, action4);
     approval = await colony.getTokenApproval(token.address, USER1);
     expect(approval).to.be.eq.BN(800);
     allApprovals = await colony.getTotalTokenApproval(token.address);
@@ -248,29 +212,29 @@ contract("Colony Arbitrary Transactions", (accounts) => {
       0,
     ]);
 
-    await checkErrorRevert(colony.makeArbitraryTransactions([oneTxPayment.address], [action], true), "colony-cannot-target-extensions");
+    await checkErrorRevert(colony.makeArbitraryTransaction(oneTxPayment.address, action), "colony-cannot-target-extensions");
 
     // But other colonies can
     const { colony: otherColony } = await setupRandomColony(colonyNetwork);
     await colony.setUserRoles(1, UINT256_MAX, otherColony.address, 1, ROLES);
 
-    await otherColony.makeArbitraryTransactions([oneTxPayment.address], [action], true);
+    await otherColony.makeArbitraryTransaction(oneTxPayment.address, action);
   });
 
   it("when burning tokens, can burn own tokens with burn(amount) up to the amount unspoken for in root pot", async () => {
     await fundColonyWithTokens(colony, token, 100);
     const action1 = await encodeTxData(token, "approve", [USER0, 60]);
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
     let potBalance = await colony.getFundingPotBalance(1, token.address);
     expect(potBalance).to.be.eq.BN(100);
 
     const action2 = await encodeTxData(token, "burn", [100]);
     // Can't  burn 100 as 60 are reserved
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address], [action2], true), "colony-not-enough-tokens");
+    await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action2), "colony-not-enough-tokens");
 
     // Can burn 40
     const action3 = await encodeTxData(token, "burn", [40]);
-    await colony.makeArbitraryTransactions([token.address], [action3], true);
+    await colony.makeArbitraryTransaction(token.address, action3);
     potBalance = await colony.getFundingPotBalance(1, token.address);
     expect(potBalance).to.be.eq.BN(60);
   });
@@ -278,17 +242,17 @@ contract("Colony Arbitrary Transactions", (accounts) => {
   it("when transferring tokens, can transfer own tokens with transfer(dst, amount) up to the amount unspoken for in root pot", async () => {
     await fundColonyWithTokens(colony, token, 100);
     const action1 = await encodeTxData(token, "approve", [USER0, 60]);
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
     let potBalance = await colony.getFundingPotBalance(1, token.address);
     expect(potBalance).to.be.eq.BN(100);
 
     const action2 = await encodeTxData(token, "transfer", [USER0, 100]);
     // Can't transfer 100 as 60 are reserved
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address], [action2], true), "colony-not-enough-tokens");
+    await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action2), "colony-not-enough-tokens");
 
     // Can transfer 40
     const action3 = await encodeTxData(token, "transfer", [USER0, 40]);
-    await colony.makeArbitraryTransactions([token.address], [action3], true);
+    await colony.makeArbitraryTransaction(token.address, action3);
     potBalance = await colony.getFundingPotBalance(1, token.address);
     expect(potBalance).to.be.eq.BN(60);
     const userBalance = await token.balanceOf(USER0);
@@ -299,7 +263,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     await token.mint(100);
     await token.approve(colony.address, 100);
     const action1 = await encodeTxData(token, "burn", [USER0, 60]);
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
 
     const userBalance = await token.balanceOf(USER0);
     expect(userBalance).to.be.eq.BN(40);
@@ -309,7 +273,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
     await token.mint(100);
     await token.approve(colony.address, 100);
     const action1 = await encodeTxData(token, "transferFrom", [USER0, colony.address, 60]);
-    await colony.makeArbitraryTransactions([token.address], [action1], true);
+    await colony.makeArbitraryTransaction(token.address, action1);
 
     const userBalance = await token.balanceOf(USER0);
     expect(userBalance).to.be.eq.BN(40);
@@ -319,11 +283,11 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
   it("cannot burn own tokens with burn(guy, amount)", async () => {
     const action = await encodeTxData(token, "burn", [colony.address, 60]);
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address], [action], true), "colony-cannot-spend-own-allowance");
+    await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action), "colony-cannot-spend-own-allowance");
   });
 
   it("cannot transfer own tokens with transferFrom(from, to, amount)", async () => {
     const action = await encodeTxData(token, "transferFrom", [colony.address, USER0, 60]);
-    await checkErrorRevert(colony.makeArbitraryTransactions([token.address], [action], true), "colony-cannot-spend-own-allowance");
+    await checkErrorRevert(colony.makeArbitraryTransaction(token.address, action), "colony-cannot-spend-own-allowance");
   });
 });

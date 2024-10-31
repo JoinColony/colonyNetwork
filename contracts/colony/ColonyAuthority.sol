@@ -98,7 +98,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "upgradeExtension(bytes32,uint256)");
     addRoleCapability(ROOT_ROLE, "deprecateExtension(bytes32,bool)");
     addRoleCapability(ROOT_ROLE, "uninstallExtension(bytes32)");
-    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes)"); // Deprecated
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes)");
     addRoleCapability(ROOT_ROLE, "emitDomainReputationReward(uint256,address,int256)");
     addRoleCapability(ROOT_ROLE, "emitSkillReputationReward(uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "transferStake(uint256,uint256,address,address,uint256,uint256,address)");
@@ -116,7 +116,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
 
     // Added in colony v8 (ebony-lwss)
-    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)");
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)"); // Deprecated
     addRoleCapability(ROOT_ROLE, "setDefaultGlobalClaimDelay(uint256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureMetadata(uint256,uint256,uint256,string)");
 

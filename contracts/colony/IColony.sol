@@ -51,24 +51,11 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @return tokenAddress Address of the token contract
   function getToken() external view returns (address tokenAddress);
 
-  /// @notice Execute arbitrary transactions on behalf of the Colony in series
-  /// @param _targets Array of addressed to be targeted
-  /// @param _actions Array of Bytes arrays encoding the function calls and arguments
-  /// @param _strict Boolean indicating whether if one transaction fails, the whole call to this function should fail.
-  /// @return success Boolean indicating whether the transactions succeeded
-  function makeArbitraryTransactions(
-    address[] memory _targets,
-    bytes[] memory _actions,
-    bool _strict
-  ) external returns (bool success);
-
-  /// @notice Executes a single arbitrary transaction
-  /// @dev Only callable by the colony itself. If you wish to use this functionality, you should
-  /// use the makeAbitraryTransactions function
+  /// @notice Executes an arbitrary transaction
   /// @param _target Contract to receive the function call
   /// @param _action Bytes array encoding the function call and arguments
   /// @return success Boolean indicating whether the transactions succeeded
-  function makeSingleArbitraryTransaction(
+  function makeArbitraryTransaction(
     address _target,
     bytes memory _action
   ) external returns (bool success);
