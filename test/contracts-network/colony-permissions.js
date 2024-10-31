@@ -287,7 +287,7 @@ contract("ColonyPermissions", (accounts) => {
       await checkErrorRevert(colony.installExtension(HASHZERO, ADDRESS_ZERO, { from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(colony.addLocalSkill({ from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(colony.deprecateLocalSkill(0, true, { from: USER2 }), "ds-auth-unauthorized");
-      await checkErrorRevert(colony.makeArbitraryTransaction(ADDRESS_ZERO, HASHZERO, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.makeArbitraryTransaction(ADDRESS_ZERO, HASHZERO, false, { from: USER1 }), "ds-auth-unauthorized");
       await checkErrorRevert(colony.startNextRewardPayout(ADDRESS_ZERO, HASHZERO, HASHZERO, 0, [HASHZERO], { from: USER1 }), "ds-auth-unauthorized");
     });
 

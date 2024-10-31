@@ -208,6 +208,7 @@ class MetatransactionBroadcaster {
 
     // Add the old makeSingleArbitraryTransaction and makeArbitraryTransactions to the abi
     const iface = new ethers.utils.Interface([
+      "function makeArbitraryTransaction(address,bytes)",
       "function makeSingleArbitraryTransaction(address,bytes)",
       "function makeArbitraryTransactions(address[],bytes[],bool)",
     ]);
@@ -227,7 +228,11 @@ class MetatransactionBroadcaster {
       }
 
       // If it's an arbitrary transaction...
-      if (tx.signature === "makeArbitraryTransaction(address,bytes)" || tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)") {
+      if (
+        tx.signature === "makeArbitraryTransaction(address,bytes)" ||
+        tx.signature === "makeArbitraryTransaction(address,bytes,bool)" ||
+        tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)"
+      ) {
         // We allow it if these transactions are going only to known bridges.
         let addresses = tx.args[0];
         let calls = tx.args[1];

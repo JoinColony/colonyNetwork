@@ -1049,7 +1049,7 @@ Lock the colony's token. Can only be called by a network-managed extension.
 |---|---|---|
 |timesLocked|uint256|The amount of times the token was locked
 
-### ▸ `makeArbitraryTransaction(address _target, bytes memory _action):bool success`
+### ▸ `makeArbitraryTransaction(address _target, bytes memory _action, bool _strict):bool success`
 
 Executes an arbitrary transaction
 
@@ -1060,6 +1060,7 @@ Executes an arbitrary transaction
 |---|---|---|
 |_target|address|Contract to receive the function call
 |_action|bytes|Bytes array encoding the function call and arguments
+|_strict|bool|Boolean indicating whether the transaction must succeed
 
 **Return Parameters**
 

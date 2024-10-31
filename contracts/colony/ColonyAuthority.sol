@@ -98,7 +98,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "upgradeExtension(bytes32,uint256)");
     addRoleCapability(ROOT_ROLE, "deprecateExtension(bytes32,bool)");
     addRoleCapability(ROOT_ROLE, "uninstallExtension(bytes32)");
-    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes)");
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes)"); // Deprecated
     addRoleCapability(ROOT_ROLE, "emitDomainReputationReward(uint256,address,int256)");
     addRoleCapability(ROOT_ROLE, "emitSkillReputationReward(uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "transferStake(uint256,uint256,address,address,uint256,uint256,address)");
@@ -134,6 +134,9 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ARBITRATION_ROLE, "finalizeExpenditureViaArbitration(uint256,uint256,uint256)");
     addRoleCapability(ROOT_ROLE, "setColonyBridgeAddress(address)");
     addRoleCapability(ROOT_ROLE, "initialiseReputationMining(uint256,bytes32,uint256)");
+
+    // Added in colony v17 (jade-lwss)
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes,bool)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

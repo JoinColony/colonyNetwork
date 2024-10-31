@@ -36,7 +36,8 @@ contract ColonyArbitraryTransaction is ColonyStorage {
 
   function makeArbitraryTransaction(
     address _to,
-    bytes memory _action
+    bytes memory _action,
+    bool _strict
   ) public stoppable auth returns (bool) {
     // Prevent transactions to network contracts
     require(_to != address(this), "colony-cannot-target-self");
@@ -71,11 +72,14 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     } catch {}
 
     bool res = executeCall(_to, 0, _action);
-    assert(res);
+
     if (sig == APPROVE_SIG) {
       approveTransactionCheck(_to, _action);
     }
 
+    emit ArbitraryTransaction(msgSender(), _to, _action, res);
+
+    require(res || !_strict, "colony-arbitrary-transaction-failed");
     return res;
   }
 

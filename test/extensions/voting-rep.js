@@ -2111,7 +2111,7 @@ contract("Voting Reputation", (accounts) => {
     });
 
     it("transactions that try to execute a forbidden method on Reputation Voting extension are rejected by the MTX broadcaster", async function () {
-      const action = await encodeTxData(colony, "makeArbitraryTransactions", [[colony.address], ["0x00"], true]);
+      const action = await encodeTxData(colony, "makeArbitraryTransactions(address[],bytes[],bool)", [[colony.address], ["0x00"], true]);
 
       await voting.createMotion(1, UINT256_MAX, ADDRESS_ZERO, action, domain1Key, domain1Value, domain1Mask, domain1Siblings);
       motionId = await voting.getMotionCount();

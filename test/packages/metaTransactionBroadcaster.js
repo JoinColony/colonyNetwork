@@ -124,11 +124,15 @@ contract("Metatransaction broadcaster", (accounts) => {
       let valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false);
 
-      txData = await colony.contract.methods.makeArbitraryTransaction(colony.address, "0x00000000").encodeABI();
+      txData = await encodeTxData(colony, "makeArbitraryTransaction(address,bytes)", [colony.address, "0x00000000"]);
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false);
 
       txData = await encodeTxData(colony, "makeSingleArbitraryTransaction(address,bytes)", [colony.address, "0x00000000"]);
+      valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(false);
+
+      txData = await colony.contract.methods.makeArbitraryTransaction(colony.address, "0x00000000", false).encodeABI();
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false);
     });
@@ -147,13 +151,17 @@ contract("Metatransaction broadcaster", (accounts) => {
       let valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(true);
 
-      txData = await colony.contract.methods.makeArbitraryTransaction(BINANCE_BRIDGE_ADDRESS, ambCall).encodeABI();
+      txData = await encodeTxData(colony, "makeArbitraryTransaction(address,bytes)", [ETHEREUM_BRIDGE_ADDRESS, ambCall]);
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(true);
 
       txData = await encodeTxData(colony, "makeSingleArbitraryTransaction(address,bytes)", [BINANCE_BRIDGE_ADDRESS, ambCall]);
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false); // Correct bridge, but makeSingleArbitraryTransaction is never allowed
+
+      txData = await colony.contract.methods.makeArbitraryTransaction(BINANCE_BRIDGE_ADDRESS, ambCall, false).encodeABI();
+      valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
+      expect(valid).to.be.equal(true);
 
       // Going to a bridge, but not the right function call
       txData = await encodeTxData(colony, "makeSingleArbitraryTransaction(address,bytes)", [BINANCE_BRIDGE_ADDRESS, "0x00000000"]);

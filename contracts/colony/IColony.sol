@@ -54,10 +54,12 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @notice Executes an arbitrary transaction
   /// @param _target Contract to receive the function call
   /// @param _action Bytes array encoding the function call and arguments
+  /// @param _strict Boolean indicating whether the transaction must succeed
   /// @return success Boolean indicating whether the transactions succeeded
   function makeArbitraryTransaction(
     address _target,
-    bytes memory _action
+    bytes memory _action,
+    bool _strict
   ) external returns (bool success);
 
   /// @notice Emit a metadata string for a transaction
