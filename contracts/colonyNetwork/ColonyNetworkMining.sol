@@ -46,7 +46,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     uint256 _denominator
   ) public stoppable calledByColony {
     require(_numerator < 10 ** 15, "colony-network-decay-numerator-too-big");
-    require(_numerator <= _denominator, "colony-network-decay-rate-over-1");
+    require(_numerator <= _denominator, "colony-network-decay-rate-too-large");
     address colony = msgSender();
 
     ColonyDecayRate storage decayRate = colonyDecayRates[colony];
