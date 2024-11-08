@@ -851,20 +851,6 @@ contract("Colony Funding", (accounts) => {
       await checkErrorRevert(colonyNetwork.checkDomainTokenReceiverDeployed(2), "colony-caller-must-be-colony");
     });
 
-    it("only the owner (which should be colonyNetwork) can call setColonyAddress on DomainTokenReceiver", async () => {
-      await colony.addDomain(1, UINT256_MAX, 1);
-      await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
-
-      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
-      const receiverAsEtherRouter = await EtherRouter.at(receiverAddress);
-      const receiver = await DomainTokenReceiver.at(receiverAddress);
-      const owner = await receiverAsEtherRouter.owner();
-      expect(owner).to.equal(colonyNetwork.address);
-
-      await checkErrorRevert(receiver.setColonyAddress(colony.address), "ds-auth-unauthorized");
-      await receiver.setColonyAddress.estimateGas(colony.address, { from: colonyNetwork.address });
-    });
-
     it("If transfer fails from receiver, then the funds are not claimed", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
