@@ -137,6 +137,14 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v??
     addRoleCapability(ROOT_ROLE, "editAllowedDomainReputationReceipt(uint256,uint256,bool)");
+
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayout(uint256,uint256,uint256,uint256,uint256,address,uint256)");
+    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
+    addRoleCapability(ROOT_ROLE, "makeProxyArbitraryTransactions(uint256,address[],bytes[])");
+    addRoleCapability(ROOT_ROLE, "callProxyNetwork(uint256,bytes[])");
+
+    addRoleCapability(FUNDING_ROLE, "exchangeTokensViaLiFi(uint256,uint256,uint256,bytes,uint256,address,uint256)");
+    addRoleCapability(FUNDING_ROLE, "exchangeProxyHeldTokensViaLiFi(uint256,uint256,uint256,bytes,uint256,uint256,address,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
