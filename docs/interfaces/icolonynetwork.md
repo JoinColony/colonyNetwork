@@ -93,6 +93,34 @@ Indicate approval to exit recovery mode. Can only be called by user with recover
 
 
 
+### ▸ `bridgeMessage(uint256 _chainId, bytes memory _payload)`
+
+Bridge a message to another chain
+
+*Note: This will bridge the message to the same address that requested the bridge on the other chain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId of the chain to bridge to
+|_payload|bytes|The message to bridge
+
+
+### ▸ `bridgeMessageToNetwork(uint256 _chainId, bytes memory _payload)`
+
+Bridge a message to the ProxyNetwork on another chain
+
+*Note: This should only be able to be called by the metacolony*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId of the chain to bridge to
+|_payload|bytes|The message to bridge
+
+
 ### ▸ `burnUnneededRewards(uint256 _amount)`
 
 Used to burn tokens that are not needed to pay out rewards (because not every possible defence was made for all submissions)
