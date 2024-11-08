@@ -412,7 +412,6 @@ Emit a positive skill reputation update. Available only to Root role holders
 |_amount|int256|The (positive) amount of reputation to gain
 
 
-<<<<<<< HEAD
 ### ▸ `enterRecoveryMode()`
 
 Put colony network mining into recovery mode. Can only be called by user with recovery role.
@@ -420,8 +419,6 @@ Put colony network mining into recovery mode. Can only be called by user with re
 
 
 
-||||||| parent of 4e12a606 (Proxy-held to proxy-held token swapping)
-=======
 ### ▸ `exchangeProxyHeldTokensViaLiFi(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _txdata, uint256 _value, uint256 _chainId, address _token, uint256 _amount)`
 
 Exchange funds between two tokens, potentially between chains The tokens being swapped are held by a proxy contract
@@ -441,7 +438,6 @@ Exchange funds between two tokens, potentially between chains The tokens being s
 |_amount|uint256|Amount of tokens to exchange
 
 
->>>>>>> 4e12a606 (Proxy-held to proxy-held token swapping)
 ### ▸ `exchangeTokensViaLiFi(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _domainId, bytes memory _txdata, uint256 _value, address _token, uint256 _amount)`
 
 Exchange funds between two tokens, potentially between chains
