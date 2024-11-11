@@ -23,6 +23,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
@@ -1351,6 +1352,89 @@ contract("Cross-chain", (accounts) => {
 
       const balanceAfter = await foreignToken.balanceOf(accounts[0]);
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(paymentAmount.toHexString());
+    });
+
+    it("Can earn reputation for cross-chain payouts if the token is a reputation-earning token", async () => {
+      const tokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersForeignSigner);
+      const foreignToken = await tokenFactory.deploy("Test Token", "TT", 18);
+      await (await foreignToken.unlock()).wait();
+
+      const tokenAmount = ethers.utils.parseEther("100");
+      await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
+
+      let p = guardianSpy.getPromiseForNextBridgedTransaction();
+
+      let tx = await proxyColony.claimTokens(foreignToken.address);
+      await tx.wait();
+
+      await p;
+
+      const paymentAmount = ethers.utils.parseEther("30");
+      const ONE_TX_PAYMENT = ethers.utils.id("OneTxPayment");
+      await homeColony.installExtension(ONE_TX_PAYMENT, version);
+
+      const oneTxPaymentAddress = await homeColonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, homeColony.address);
+      const oneTxPayment = new ethers.Contract(oneTxPaymentAddress, OneTxPayment.abi, ethersHomeSigner);
+
+      const ROLES = rolesToBytes32([ARBITRATION_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]);
+      await homeColony.setUserRoles(1, UINT256_MAX_ETHERS, oneTxPayment.address, 1, ROLES);
+
+      const inactiveReputationMiningCycleAddress = await homeColonyNetwork.getReputationMiningCycle(false);
+      const inactiveReputationMiningCycle = new ethers.Contract(inactiveReputationMiningCycleAddress, IReputationMiningCycle.abi, ethersHomeSigner);
+      const reputationLogLengthBeforeFirstPayment = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+
+      p = guardianSpy.getPromiseForNextBridgedTransaction();
+      tx = await oneTxPayment["makePayment(uint256,uint256,uint256,uint256,address[],uint256[],address[],uint256[],uint256,uint256)"](
+        1,
+        UINT256_MAX_ETHERS,
+        1,
+        UINT256_MAX_ETHERS,
+        [accounts[0]],
+        [foreignChainId],
+        [foreignToken.address],
+        [paymentAmount],
+        1,
+        0,
+      );
+      await tx.wait();
+      await p;
+
+      const reputationLogLengthAfterFirstPayment = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      assert(reputationLogLengthAfterFirstPayment.eq(reputationLogLengthBeforeFirstPayment), "Reputation log length should not have increased");
+
+      // Now make the token a reputation-earning token
+      await homeColony.setTokenReputationScaling(foreignChainId, foreignToken.address, ethers.constants.WeiPerEther.div(2));
+      // Do the payout again, should earn reputation at half the normal rate
+
+      p = guardianSpy.getPromiseForNextBridgedTransaction();
+      tx = await oneTxPayment["makePayment(uint256,uint256,uint256,uint256,address[],uint256[],address[],uint256[],uint256,uint256)"](
+        1,
+        UINT256_MAX_ETHERS,
+        1,
+        UINT256_MAX_ETHERS,
+        [accounts[0]],
+        [foreignChainId],
+        [foreignToken.address],
+        [paymentAmount],
+        1,
+        0,
+      );
+      await tx.wait();
+      await p;
+
+      const reputationLogLengthAfterSecondPayment = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      assert(
+        reputationLogLengthAfterSecondPayment.eq(reputationLogLengthAfterFirstPayment.add(1)),
+        "Reputation log length should have increased by 1",
+      );
+
+      // Check the log entry is correct
+      const logEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(reputationLogLengthAfterSecondPayment.sub(1));
+      assert(logEntry.amount.eq(paymentAmount.div(2)), "Reputation earned should be half the payment amount");
+      expect(logEntry.user).to.equal(accounts[0]);
+      expect(logEntry.colony).to.equal(homeColony.address);
+      const domain = await homeColony.getDomain(1);
+      assert(logEntry.skillId.eq(domain.skillId, "Reputation earned should be for the domain's skill id"));
     });
   });
 });
