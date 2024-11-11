@@ -443,7 +443,7 @@ contract ColonyFunding is
 
       int256 tokenScaledReputationAmount = scaleReputation(
         int256(repPayout),
-        tokenReputationScalings[block.chainid][_token]
+        tokenReputationScalings[_chainId][_token]
       );
 
       colonyNetworkContract.appendReputationUpdateLog(

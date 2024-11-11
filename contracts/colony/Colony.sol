@@ -351,7 +351,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     );
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
 
-    sig = bytes4(keccak256("setTokenReputationScaling(address,uint256)"));
+    sig = bytes4(keccak256("setTokenReputationScaling(uint256,address,uint256)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     // Native token awards reputation 1:1 by default
@@ -446,12 +446,19 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     return tokenApprovalTotals[_token];
   }
 
-  function setTokenReputationScaling(address _token, uint256 _scaling) public auth stoppable {
-    tokenReputationScalings[block.chainid][_token] = _scaling;
+  function setTokenReputationScaling(
+    uint256 _chainId,
+    address _token,
+    uint256 _scaling
+  ) public auth stoppable {
+    tokenReputationScalings[_chainId][_token] = _scaling;
   }
 
-  function getTokenReputationScaling(address _token) public view returns (uint256) {
-    return tokenReputationScalings[block.chainid][_token];
+  function getTokenReputationScaling(
+    uint256 _chainId,
+    address _token
+  ) public view returns (uint256) {
+    return tokenReputationScalings[_chainId][_token];
   }
 
   // Deprecated view functions for Tasks and Payments
