@@ -14,6 +14,7 @@ const {
   getBlockTime,
   bn2bytes32,
   upgradeColonyOnceThenToLatest,
+  getChainId,
 } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
@@ -35,6 +36,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const TestExtension0 = artifacts.require("TestExtension0");
 const Resolver = artifacts.require("Resolver");
+let chainId;
 
 contract("Colony Expenditure", (accounts) => {
   const SLOT0 = 0;
@@ -73,6 +75,8 @@ contract("Colony Expenditure", (accounts) => {
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+
+    chainId = await getChainId();
   });
 
   beforeEach(async () => {
@@ -1010,7 +1014,7 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
       await colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN });
-      await colony.setTokenReputationScaling(token.address, WAD.divn(2));
+      await colony.setTokenReputationScaling(chainId, token.address, WAD.divn(2));
 
       const expenditure = await colony.getExpenditure(expenditureId);
       await colony.moveFundsBetweenPots(
@@ -1042,7 +1046,7 @@ contract("Colony Expenditure", (accounts) => {
       expect(domainEntry.amount).to.eq.BN(WAD.divn(2));
 
       // Reset scaling for future tests
-      await colony.setTokenReputationScaling(token.address, WAD);
+      await colony.setTokenReputationScaling(chainId, token.address, WAD);
     });
 
     it("should delay claims by claimDelay", async () => {

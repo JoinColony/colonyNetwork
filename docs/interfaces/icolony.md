@@ -1072,7 +1072,7 @@ Get the current approval amount
 |---|---|---|
 |amount|uint256|The token approval amount
 
-### ▸ `getTokenReputationScaling(address _token):uint256 scalingFactor`
+### ▸ `getTokenReputationScaling(uint256 _chainId, address _token):uint256 scalingFactor`
 
 Get the reputation scaling factor for payouts in the provided token
 
@@ -1081,6 +1081,7 @@ Get the reputation scaling factor for payouts in the provided token
 
 |Name|Type|Description|
 |---|---|---|
+|_chainId|uint256|ChainId the token is on
 |_token|address|Address of the token
 
 **Return Parameters**
@@ -1834,7 +1835,7 @@ Update value of arbitrary storage variable. Can only be called by user with reco
 |_value|bytes32|word of data to be set
 
 
-### ▸ `setTokenReputationScaling(address _token, uint256 _scaling)`
+### ▸ `setTokenReputationScaling(uint256 _chainId, address _token, uint256 _scaling)`
 
 Set the reputation scaling factor for payouts in the provided token
 
@@ -1843,6 +1844,7 @@ Set the reputation scaling factor for payouts in the provided token
 
 |Name|Type|Description|
 |---|---|---|
+|_chainId|uint256|ChainId the token is on
 |_token|address|Address of the token
 |_scaling|uint256|Scaling factor for reputation payouts (as a WAD)
 
