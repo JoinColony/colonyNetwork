@@ -1105,7 +1105,7 @@ Add a new expenditure in the colony. Secured function to authorised members.
 |---|---|---|
 |expenditureId|uint256|Identifier of the newly created expenditure
 
-### ▸ `makeSingleArbitraryTransaction(address _target, bytes memory _action):bool success`
+### ▸ `makeSingleArbitraryTransaction(address _target, bytes memory _action, address _sender):bool success`
 
 Executes a single arbitrary transaction
 
@@ -1117,6 +1117,7 @@ Executes a single arbitrary transaction
 |---|---|---|
 |_target|address|Contract to receive the function call
 |_action|bytes|Bytes array encoding the function call and arguments
+|_sender|address|The address of the sender of the transaction
 
 **Return Parameters**
 

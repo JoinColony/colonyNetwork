@@ -246,7 +246,12 @@ interface ColonyDataTypes {
   /// @param amount The (maximum) amount the address is having its reputation changed by
   event ArbitraryReputationUpdate(address agent, address user, uint256 skillId, int256 amount);
 
-  event ArbitraryTransaction(address target, bytes data, bool success);
+  /// @notice Event logged when an arbitrary transaction is made
+  /// @param agent The address that is responsible for triggering this event
+  /// @param target The address of the target of the transaction
+  /// @param data The data of the transaction
+  /// @param success Whether the transaction was successful or not
+  event ArbitraryTransaction(address agent, address target, bytes data, bool success);
 
   /// @notice Event logged when an expenditure payout is claimed.
   /// @dev This is emitted in addition to the other PayoutClaimed

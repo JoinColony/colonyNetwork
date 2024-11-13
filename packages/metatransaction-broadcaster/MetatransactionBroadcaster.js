@@ -208,12 +208,14 @@ class MetatransactionBroadcaster {
     const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
     try {
       const tx = possibleColony.interface.parseTransaction({ data: txData });
+
+      // This function is only ever called by the colony on itself, so a user can't call it, so we won't pay for it
+      if (tx.signature === "makeSingleArbitraryTransaction(address,bytes,address)") {
+        return false;
+      }
+
       // If it's an arbitrary transaction...
-      if (
-        tx.signature === "makeArbitraryTransaction(address,bytes)" ||
-        tx.signature === "makeSingleArbitraryTransaction(address,bytes)" ||
-        tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)"
-      ) {
+      if (tx.signature === "makeArbitraryTransaction(address,bytes)" || tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)") {
         // We allow it if these transactions are going only to known bridges.
         let addresses = tx.args[0];
         let calls = tx.args[1];

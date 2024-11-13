@@ -43,7 +43,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     const tx = await colony.makeArbitraryTransaction(token.address, action);
 
-    await expectEvent(tx, "ArbitraryTransaction(address,bytes,bool)", [token.address, action, true]);
+    await expectEvent(tx, "ArbitraryTransaction(address,address,bytes,bool)", [accounts[0], token.address, action, true]);
 
     const balancePost = await token.balanceOf(colony.address);
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD);
@@ -56,8 +56,8 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
     const tx = await colony.makeArbitraryTransactions([token.address, token.address], [action, action2], true);
 
-    await expectEvent(tx, "ArbitraryTransaction(address,bytes,bool)", [token.address, action, true]);
-    await expectEvent(tx, "ArbitraryTransaction(address,bytes,bool)", [token.address, action2, true]);
+    await expectEvent(tx, "ArbitraryTransaction(address,address,bytes,bool)", [USER0, token.address, action, true]);
+    await expectEvent(tx, "ArbitraryTransaction(address,address,bytes,bool)", [USER0, token.address, action2, true]);
 
     const balancePost = await token.balanceOf(colony.address);
     expect(balancePost.sub(balancePre)).to.eq.BN(WAD.muln(3));
@@ -115,7 +115,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
   it("should not be able to make single arbitrary transactions directly", async () => {
     const colonyArbitraryTransactions = await ColonyArbitraryTransaction.at(colony.address);
-    await checkErrorRevert(colonyArbitraryTransactions.makeSingleArbitraryTransaction(colony.address, "0x0"), "colony-not-self");
+    await checkErrorRevert(colonyArbitraryTransactions.makeSingleArbitraryTransaction(colony.address, "0x0", ADDRESS_ZERO), "colony-not-self");
   });
 
   it("should not be able to make arbitrary transactions to network or token locking", async () => {
