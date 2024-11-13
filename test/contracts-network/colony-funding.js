@@ -19,7 +19,15 @@ const {
 } = require("../../helpers/constants");
 
 const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
+const {
+  getTokenArgs,
+  checkErrorRevert,
+  web3GetBalance,
+  removeSubdomainLimit,
+  expectEvent,
+  rolesToBytes32,
+  getChainId,
+} = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -604,6 +612,38 @@ contract("Colony Funding", (accounts) => {
 
       // Check the balance of the domain
       expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
+      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
+    });
+
+    it("tokens sent directly to domains are limited correctly based on reputation scaling", async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      await otherToken.mint(receiverAddress, 100);
+
+      // Make that token a reputation-earning token
+      const chainId = await getChainId();
+      await colony.setTokenReputationScaling(chainId, otherToken.address, WAD.divn(2));
+
+      // Set an allowance for the domain
+      await colony.editAllowedDomainReputationReceipt(2, 20, true);
+
+      // Claim the funds
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+      const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(otherToken.address);
+
+      // Claim the funds
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+      const rootPotBalanceAfter = await colony.getFundingPotBalance(1, otherToken.address);
+      const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(otherToken.address);
+
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(40);
+      expect(rootPotBalanceAfter).to.eq.BN(59);
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
     });
 

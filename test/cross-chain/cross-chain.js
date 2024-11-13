@@ -50,7 +50,7 @@ const {
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
 } = require("../../helpers/constants");
-const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId, rolesToBytes32 } = require("../../helpers/test-helper");
+const { forwardTime, checkErrorRevertEthers, snapshot, revert, evmChainIdToWormholeChainId, rolesToBytes32 } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const { TruffleLoader } = require("../../packages/package-utils");
 const { getMetaTransactionParameters } = require("../../helpers/test-data-generator");
@@ -612,6 +612,53 @@ contract("Cross-chain", (accounts) => {
 
       const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
+    });
+
+    it("Can track tokens received on the foreign chain and domain reputation allowances are respected", async () => {
+      const tokenAmount = ethers.utils.parseEther("100");
+
+      let tx = await colony["addDomain(uint256,uint256,uint256)"](1, UINT256_MAX_ETHERS, 1);
+      await tx.wait();
+      const domain2ReceiverAddress = await homeColonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      const domain2 = await colony.getDomain(2);
+      console.log("domain2", domain2);
+
+      tx = await foreignToken["mint(address,uint256)"](domain2ReceiverAddress, tokenAmount);
+      await tx.wait();
+
+      tx = await colony.editAllowedDomainReputationReceipt(2, ethers.utils.parseEther("30"), true);
+      await tx.wait();
+
+      let p = guardianSpy.getPromiseForNextBridgedTransaction();
+      tx = await proxyColony.claimTokensForDomain(foreignToken.address, 2);
+      await tx.wait();
+      await p;
+
+      // Check bookkeeping on the home chain. Token is not reputation earning, so should all be in domain 2
+
+      const balance = await colony.getFundingPotProxyBalance(domain2.fundingPotId, foreignChainId, foreignToken.address);
+      expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
+
+      // Now make token reputation earning
+      tx = await colony.setTokenReputationScaling(foreignChainId, foreignToken.address, ethers.utils.parseEther("0.5"));
+      await tx.wait();
+
+      // Send some more tokens, and claim again
+      tx = await foreignToken["mint(address,uint256)"](domain2ReceiverAddress, tokenAmount);
+      await tx.wait();
+
+      p = guardianSpy.getPromiseForNextBridgedTransaction();
+      tx = await proxyColony.claimTokensForDomain(foreignToken.address, 2);
+      await tx.wait();
+      await p;
+
+      // Check bookkeeping on the home chain. Token is reputation earning, so should be split between domain 1 and 2
+      const balance1 = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      expect(balance1.toHexString()).to.equal(ethers.utils.parseEther("40").toHexString());
+
+      const balance2 = await colony.getFundingPotProxyBalance(2, foreignChainId, foreignToken.address);
+      // 100 tokens from the first claim, 60 from the second claim
+      expect(balance2.toHexString()).to.equal(ethers.utils.parseEther("160").toHexString());
     });
 
     it("Can claim tokens received on foreign chain via cross-chain request", async () => {
@@ -1371,13 +1418,15 @@ contract("Cross-chain", (accounts) => {
 
       const paymentAmount = ethers.utils.parseEther("30");
       const ONE_TX_PAYMENT = ethers.utils.id("OneTxPayment");
-      await homeColony.installExtension(ONE_TX_PAYMENT, version);
+      tx = await homeColony.installExtension(ONE_TX_PAYMENT, version);
+      await tx.wait();
 
       const oneTxPaymentAddress = await homeColonyNetwork.getExtensionInstallation(ONE_TX_PAYMENT, homeColony.address);
       const oneTxPayment = new ethers.Contract(oneTxPaymentAddress, OneTxPayment.abi, ethersHomeSigner);
 
       const ROLES = rolesToBytes32([ARBITRATION_ROLE, FUNDING_ROLE, ADMINISTRATION_ROLE]);
-      await homeColony.setUserRoles(1, UINT256_MAX_ETHERS, oneTxPayment.address, 1, ROLES);
+      tx = await homeColony.setUserRoles(1, UINT256_MAX_ETHERS, oneTxPayment.address, 1, ROLES);
+      await tx.wait();
 
       const inactiveReputationMiningCycleAddress = await homeColonyNetwork.getReputationMiningCycle(false);
       const inactiveReputationMiningCycle = new ethers.Contract(inactiveReputationMiningCycleAddress, IReputationMiningCycle.abi, ethersHomeSigner);
@@ -1403,7 +1452,8 @@ contract("Cross-chain", (accounts) => {
       assert(reputationLogLengthAfterFirstPayment.eq(reputationLogLengthBeforeFirstPayment), "Reputation log length should not have increased");
 
       // Now make the token a reputation-earning token
-      await homeColony.setTokenReputationScaling(foreignChainId, foreignToken.address, ethers.constants.WeiPerEther.div(2));
+      tx = await homeColony.setTokenReputationScaling(foreignChainId, foreignToken.address, ethers.constants.WeiPerEther.div(2));
+      await tx.wait();
       // Do the payout again, should earn reputation at half the normal rate
 
       p = guardianSpy.getPromiseForNextBridgedTransaction();

@@ -135,11 +135,59 @@ contract ColonyFunding is
     emit ColonyFundsClaimed(msgSender(), _token, feeToPay, remainder);
   }
 
+  function claimDomainFundsCalculation(
+    uint256 _chainId,
+    address _token,
+    uint256 _domainId,
+    uint256 _claimAmount
+  ) public stoppable {
+    uint256 feeToPay = _claimAmount / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
+    // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set
+    // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
+    // able to do with recovery mode.
+    uint256 remainder = _claimAmount - feeToPay;
+    if (_chainId == block.chainid) {
+      nonRewardPotsTotal[_token] += remainder;
+    }
+
+    incrementFundingPotBalance(0, _chainId, _token, feeToPay);
+
+    uint256 approvedAmount = domainReputationApproval[_domainId];
+
+    uint256 fundingPotId = domains[_domainId].fundingPotId;
+
+    // The second condition here indicates we can't do the reputation scaling calculation, so we're
+    // just going to give it all to root in that case, so we don't make a mistake and 'lose' the funds by
+    // bookkeeping that hasn't been done correctly
+    if (tokenEarnsReputationOnPayout(_chainId, _token) || remainder > uint256(type(int256).max)) {
+      uint256 totalReputationAmount = uint256(
+        scaleReputation(int256(remainder), tokenReputationScalings[_chainId][_token])
+      );
+      uint256 allowedReputationAmount = min(approvedAmount, totalReputationAmount);
+
+      uint256 transferrableAmount = wdiv(
+        allowedReputationAmount,
+        tokenReputationScalings[_chainId][_token]
+      );
+      uint256 untransferrableAmount = remainder - transferrableAmount;
+
+      incrementFundingPotBalance(fundingPotId, _chainId, _token, transferrableAmount);
+      domainReputationApproval[_domainId] -= allowedReputationAmount;
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, transferrableAmount);
+      if (untransferrableAmount > 0) {
+        incrementFundingPotBalance(1, _chainId, _token, untransferrableAmount);
+        emit ColonyFundsClaimed(msgSender(), _token, 0, untransferrableAmount);
+      }
+    } else {
+      incrementFundingPotBalance(fundingPotId, _chainId, _token, remainder);
+      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
+    }
+  }
+
   function claimDomainFunds(address _token, uint256 _domainId) public stoppable {
     require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
     address domainTokenReceiverAddress = IColonyNetwork(colonyNetworkAddress)
       .idempotentDeployDomainTokenReceiver(_domainId);
-    uint256 fundingPotId = domains[_domainId].fundingPotId;
     // It's deployed, so check current balance of pot
 
     uint256 claimAmount;
@@ -150,41 +198,17 @@ contract ColonyFunding is
       claimAmount = ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
     }
 
-    uint256 feeToPay = claimAmount / getRewardInverse(); // ignore-swc-110 . This variable is set when the colony is
-    // initialised to MAX_UINT, and cannot be set to zero via setRewardInverse, so this is a false positive. It *can* be set
-    // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
-    // able to do with recovery mode.
-    uint256 remainder = claimAmount - feeToPay;
-    nonRewardPotsTotal[_token] += remainder;
-
-    // fundingPots[0].balance[_token] += feeToPay;
-    incrementFundingPotBalance(0, block.chainid, _token, feeToPay);
-
-    uint256 approvedAmount = domainReputationApproval[_domainId];
-
-    if (tokenEarnsReputationOnPayout(_token)) {
-      uint256 transferrableAmount = min(approvedAmount, remainder);
-      uint256 untransferrableAmount = remainder - transferrableAmount;
-
-      fundingPots[fundingPotId].balance[_token] += transferrableAmount;
-      domainReputationApproval[_domainId] -= transferrableAmount;
-      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, transferrableAmount);
-      if (untransferrableAmount > 0) {
-        fundingPots[domains[1].fundingPotId].balance[_token] += untransferrableAmount;
-        emit ColonyFundsClaimed(msgSender(), _token, 0, untransferrableAmount);
-      }
-    } else {
-      fundingPots[fundingPotId].balance[_token] += remainder;
-      emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
-    }
+    claimDomainFundsCalculation(block.chainid, _token, _domainId, claimAmount);
 
     // Claim funds
-
     DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
   }
 
-  function tokenEarnsReputationOnPayout(address _token) internal view returns (bool) {
-    return _token == token;
+  function tokenEarnsReputationOnPayout(
+    uint256 _chainId,
+    address _token
+  ) internal view returns (bool) {
+    return tokenReputationScalings[_chainId][_token] > 0;
   }
 
   function editAllowedDomainReputationReceipt(
@@ -438,7 +462,7 @@ contract ColonyFunding is
       }
     }
 
-    if (tokenEarnsReputationOnPayout(token) && !isExtension(slot.recipient)) {
+    if (tokenEarnsReputationOnPayout(_chainId, _token) && !isExtension(slot.recipient)) {
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
       int256 tokenScaledReputationAmount = scaleReputation(
@@ -526,8 +550,7 @@ contract ColonyFunding is
     uint256 _domainId,
     uint256 _amount
   ) public stoppable {
-    Domain storage d = domains[_domainId];
-    fundingPots[d.fundingPotId].chainBalances[_chainId][_token] += _amount;
+    claimDomainFundsCalculation(_chainId, _token, _domainId, _amount);
 
     emit ProxyColonyFundsClaimed(_chainId, _token, _amount);
   }
