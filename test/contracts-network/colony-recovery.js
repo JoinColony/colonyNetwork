@@ -210,7 +210,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.updateColonyOrbitDB(""), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.makeArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.makeArbitraryTransactions([], [], true), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.makeSingleArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.makeSingleArbitraryTransaction(ADDRESS_ZERO, HASHZERO, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.updateApprovalAmount(ADDRESS_ZERO, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.finalizeRewardPayout(1), "colony-in-recovery-mode");
     });
