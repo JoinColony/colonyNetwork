@@ -26,9 +26,11 @@ import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { IColony } from "./IColony.sol";
 import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
+import { ScaleReputation } from "./../common/ScaleReputation.sol";
 
 contract ColonyFunding is
-  ColonyStorage // ignore-swc-123
+  ColonyStorage,
+  ScaleReputation // ignore-swc-123
 {
   // Public
 
@@ -496,34 +498,6 @@ contract ColonyFunding is
     );
 
     emit PayoutClaimed(msgSender(), _id, _slot, _token, payoutMinusFee);
-  }
-
-  function scaleReputation(
-    int256 reputationAmount,
-    uint256 scaleFactor
-  ) internal pure returns (int256 scaledReputation) {
-    if (reputationAmount == 0 || scaleFactor == 0) {
-      return 0;
-    }
-
-    int256 sgnAmount = (reputationAmount >= 0) ? int256(1) : -1;
-    int256 absAmount;
-
-    if (reputationAmount == type(int256).min) {
-      absAmount = type(int256).max; // Off by one, but best we can do - probably gets capped anyway
-    } else {
-      absAmount = reputationAmount >= 0 ? reputationAmount : -reputationAmount;
-    }
-
-    // Guard against overflows during calculation with wmul
-    if (type(uint256).max / scaleFactor < uint256(absAmount)) {
-      scaledReputation = (sgnAmount == 1) ? type(int128).max : type(int128).min;
-    } else {
-      scaledReputation = int256(wmul(scaleFactor, uint256(absAmount))) * sgnAmount;
-      // Cap inside the range of int128, as we do for all reputations
-      scaledReputation = imax(type(int128).min, scaledReputation);
-      scaledReputation = imin(type(int128).max, scaledReputation);
-    }
   }
 
   // View
