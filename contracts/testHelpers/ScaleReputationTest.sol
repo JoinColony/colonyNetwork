@@ -22,4 +22,18 @@ contract ScaleReputationTest is ScaleReputation {
   ) public pure returns (int256) {
     return scaleReputation(reputationAmount, scaleFactor);
   }
+
+  function scaleTokensToUncappedReputationPublic(
+    uint256 tokenAmount,
+    uint256 tokenToReputationFactor
+  ) public pure returns (uint256) {
+    return scaleTokensToUncappedReputation(tokenAmount, tokenToReputationFactor);
+  }
+
+  function scaleUncappedReputationToTokensPublic(
+    uint256 reputationAmount,
+    uint256 tokenToReputationFactor
+  ) public pure returns (uint256) {
+    return scaleUncappedReputationToTokens(reputationAmount, tokenToReputationFactor);
+  }
 }

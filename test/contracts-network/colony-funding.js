@@ -4,6 +4,7 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 
+const { BN } = require("bn.js");
 const {
   UINT256_MAX,
   WAD,
@@ -51,6 +52,8 @@ contract("Colony Funding", (accounts) => {
   let colonyNetwork;
   let metaColony;
 
+  let chainId;
+
   before(async () => {
     const cnAddress = (await EtherRouter.deployed()).address;
     const etherRouter = await EtherRouter.at(cnAddress);
@@ -58,6 +61,8 @@ contract("Colony Funding", (accounts) => {
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+
+    chainId = await getChainId();
   });
 
   beforeEach(async () => {
@@ -624,7 +629,6 @@ contract("Colony Funding", (accounts) => {
       await otherToken.mint(receiverAddress, 100);
 
       // Make that token a reputation-earning token
-      const chainId = await getChainId();
       await colony.setTokenReputationScaling(chainId, otherToken.address, WAD.divn(2));
 
       // Set an allowance for the domain
@@ -727,6 +731,102 @@ contract("Colony Funding", (accounts) => {
 
       allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
       expect(allowedReceipt).to.eq.BN(0);
+    });
+
+    const domainReputationAllowanceProps = [
+      {
+        receiveAmount: WAD.muln(100),
+        scaleFactor: WAD.divn(2),
+        approveAmount: WAD.muln(70),
+        domainReceives: WAD.muln(99),
+        rootReceives: new BN(0),
+      },
+      {
+        receiveAmount: WAD.muln(100),
+        scaleFactor: WAD.muln(2),
+        approveAmount: WAD.muln(70),
+        domainReceives: WAD.muln(35),
+        rootReceives: WAD.muln(64),
+      },
+      { receiveAmount: WAD.muln(100), scaleFactor: new BN(0), approveAmount: WAD.muln(70), domainReceives: WAD.muln(99), rootReceives: new BN(0) },
+      {
+        receiveAmount: WAD.muln(100),
+        scaleFactor: UINT256_MAX,
+        approveAmount: new BN(70),
+        domainReceives: new BN(0),
+        rootReceives: WAD.muln(99),
+      },
+      {
+        receiveAmount: UINT256_MAX,
+        scaleFactor: WAD.muln(2),
+        approveAmount: WAD.muln(70),
+        domainReceives: WAD.muln(35),
+        rootReceives: UINT256_MAX.muln(99).divn(100).sub(WAD.muln(35)).addn(1),
+      },
+      {
+        receiveAmount: UINT256_MAX,
+        scaleFactor: WAD.divn(2),
+        approveAmount: WAD.muln(70),
+        domainReceives: WAD.muln(140),
+        rootReceives: UINT256_MAX.muln(99).divn(100).sub(WAD.muln(140)).addn(1),
+      },
+      {
+        receiveAmount: new BN(1),
+        scaleFactor: WAD.muln(2),
+        approveAmount: WAD.muln(70),
+        domainReceives: new BN(1),
+        rootReceives: new BN(0),
+      },
+      {
+        receiveAmount: new BN(0),
+        scaleFactor: new BN(0),
+        approveAmount: WAD.muln(70),
+        domainReceives: new BN(0),
+        rootReceives: new BN(0),
+      },
+    ];
+
+    domainReputationAllowanceProps.forEach(async (prop, idx) => {
+      it(`when receiving a non-native reputation-earning token should correctly accommodate 
+        a range of scale factors, token allowances and quantities (#${idx})`, async () => {
+        // Get address for domain 2
+        await colony.addDomain(1, UINT256_MAX, 1);
+        const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+        const domain1 = await colony.getDomain(1);
+
+        await otherToken.mint(receiverAddress, prop.receiveAmount);
+        // Set the scale factor; this means that 1 token will generate the maximum reputation
+        await colony.setTokenReputationScaling(chainId, otherToken.address, prop.scaleFactor);
+
+        // Approve the supplied amount for the domain
+        await colony.editAllowedDomainReputationReceipt(2, prop.approveAmount, true);
+        let allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
+        expect(allowedReceipt).to.eq.BN(prop.approveAmount);
+
+        // Now test what happens when we claim them
+
+        const domain = await colony.getDomain(2);
+        const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+        const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(otherToken.address);
+        const rootDomainPotBalanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, otherToken.address);
+
+        // Claim the funds
+        await colony.claimDomainFunds(otherToken.address, 2);
+
+        const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+        const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(otherToken.address);
+        const rootDomainPotBalanceAfter = await colony.getFundingPotBalance(domain1.fundingPotId, otherToken.address);
+
+        // Check the balance of the domain
+        expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(prop.domainReceives);
+        expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(prop.rootReceives);
+        expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(prop.domainReceives.add(prop.rootReceives));
+
+        allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
+        let expectedRemainingAllowance = prop.approveAmount.sub(prop.domainReceives.mul(prop.scaleFactor).div(WAD));
+        expectedRemainingAllowance = expectedRemainingAllowance.lt(new BN(0)) ? 0 : expectedRemainingAllowance;
+        expect(allowedReceipt).to.eq.BN(expectedRemainingAllowance);
+      });
     });
 
     it(`root permission is required to call editAllowedDomainReputationReceipt`, async () => {

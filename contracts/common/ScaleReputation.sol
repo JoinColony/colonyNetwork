@@ -47,4 +47,35 @@ contract ScaleReputation is DSMath {
       scaledReputation = imin(type(int128).max, scaledReputation);
     }
   }
+
+  function scaleTokensToUncappedReputation(
+    uint256 tokenAmount,
+    uint256 tokenToReputationFactor
+  ) internal pure returns (uint256 scaledReputation) {
+    // Guard against overflows during calculation with wmul
+    if (type(uint256).max / tokenToReputationFactor < tokenAmount) {
+      return type(uint256).max;
+    }
+    return wmul(tokenToReputationFactor, tokenAmount);
+  }
+
+  function scaleUncappedReputationToTokens(
+    uint256 reputationAmount,
+    uint256 tokenToReputationFactor // NB The same scale factor as used in scaleTokensToUncappedReputation, so need to divide, not mul
+  ) internal pure returns (uint256 scaledTokens) {
+    if (tokenToReputationFactor == 0) {
+      return type(uint256).max;
+    }
+
+    if (reputationAmount == 0) {
+      return 0;
+    }
+
+    // Guard against overflows during calculation with wdiv
+    if (type(uint256).max / min(WAD, tokenToReputationFactor) < reputationAmount) {
+      return type(uint256).max;
+    }
+
+    return wdiv(reputationAmount, tokenToReputationFactor);
+  }
 }

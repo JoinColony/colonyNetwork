@@ -158,23 +158,25 @@ contract ColonyFunding is
 
     uint256 fundingPotId = domains[_domainId].fundingPotId;
 
-    // The second condition here indicates we can't do the reputation scaling calculation, so we're
-    // just going to give it all to root in that case, so we don't make a mistake and 'lose' the funds by
-    // bookkeeping that hasn't been done correctly
-    if (tokenEarnsReputationOnPayout(_chainId, _token) || remainder > uint256(type(int256).max)) {
-      uint256 totalReputationAmount = uint256(
-        scaleReputation(int256(remainder), tokenReputationScalings[_chainId][_token])
+    if (tokenEarnsReputationOnPayout(_chainId, _token)) {
+      uint256 totalReputationAmount = scaleTokensToUncappedReputation(
+        remainder,
+        tokenReputationScalings[_chainId][_token]
       );
       uint256 allowedReputationAmount = min(approvedAmount, totalReputationAmount);
 
-      uint256 transferrableAmount = wdiv(
+      uint256 transferrableAmount = scaleUncappedReputationToTokens(
         allowedReputationAmount,
         tokenReputationScalings[_chainId][_token]
       );
       uint256 untransferrableAmount = remainder - transferrableAmount;
 
       incrementFundingPotBalance(fundingPotId, _chainId, _token, transferrableAmount);
-      domainReputationApproval[_domainId] -= allowedReputationAmount;
+      domainReputationApproval[_domainId] -= scaleTokensToUncappedReputation(
+        transferrableAmount,
+        tokenReputationScalings[_chainId][_token]
+      );
+
       emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, transferrableAmount);
       if (untransferrableAmount > 0) {
         incrementFundingPotBalance(1, _chainId, _token, untransferrableAmount);
