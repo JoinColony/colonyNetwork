@@ -159,19 +159,17 @@ contract ColonyFunding is
     uint256 fundingPotId = domains[_domainId].fundingPotId;
 
     if (tokenEarnsReputationOnPayout(_chainId, _token)) {
-      uint256 totalReputationAmount = scaleTokensToUncappedReputation(
-        remainder,
+      uint256 allowedTokens = scaleUncappedReputationToTokens(
+        approvedAmount,
         tokenReputationScalings[_chainId][_token]
       );
-      uint256 allowedReputationAmount = min(approvedAmount, totalReputationAmount);
 
-      uint256 transferrableAmount = scaleUncappedReputationToTokens(
-        allowedReputationAmount,
-        tokenReputationScalings[_chainId][_token]
-      );
+      uint256 transferrableAmount = min(allowedTokens, remainder);
+
       uint256 untransferrableAmount = remainder - transferrableAmount;
 
       incrementFundingPotBalance(fundingPotId, _chainId, _token, transferrableAmount);
+
       domainReputationApproval[_domainId] -= scaleTokensToUncappedReputation(
         transferrableAmount,
         tokenReputationScalings[_chainId][_token]

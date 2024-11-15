@@ -735,60 +735,81 @@ contract("Colony Funding", (accounts) => {
 
     const domainReputationAllowanceProps = [
       {
+        receiveAmount: UINT256_MAX,
+        scaleFactor: new BN(1),
+        approveAmount: UINT256_MAX,
+      },
+      {
+        receiveAmount: UINT256_MAX,
+        scaleFactor: WAD.muln(2),
+        approveAmount: UINT256_MAX,
+        capped: true,
+      },
+      {
+        receiveAmount: UINT256_MAX,
+        scaleFactor: WAD.divn(2),
+        approveAmount: UINT256_MAX,
+        capped: true,
+      },
+      {
         receiveAmount: WAD.muln(100),
         scaleFactor: WAD.divn(2),
         approveAmount: WAD.muln(70),
-        domainReceives: WAD.muln(99),
-        rootReceives: new BN(0),
       },
       {
         receiveAmount: WAD.muln(100),
         scaleFactor: WAD.muln(2),
         approveAmount: WAD.muln(70),
-        domainReceives: WAD.muln(35),
-        rootReceives: WAD.muln(64),
       },
-      { receiveAmount: WAD.muln(100), scaleFactor: new BN(0), approveAmount: WAD.muln(70), domainReceives: WAD.muln(99), rootReceives: new BN(0) },
+      { receiveAmount: WAD.muln(100), scaleFactor: new BN(0), approveAmount: WAD.muln(70) },
       {
         receiveAmount: WAD.muln(100),
         scaleFactor: UINT256_MAX,
         approveAmount: new BN(70),
-        domainReceives: new BN(0),
-        rootReceives: WAD.muln(99),
       },
       {
         receiveAmount: UINT256_MAX,
         scaleFactor: WAD.muln(2),
         approveAmount: WAD.muln(70),
-        domainReceives: WAD.muln(35),
-        rootReceives: UINT256_MAX.muln(99).divn(100).sub(WAD.muln(35)).addn(1),
       },
       {
         receiveAmount: UINT256_MAX,
         scaleFactor: WAD.divn(2),
         approveAmount: WAD.muln(70),
-        domainReceives: WAD.muln(140),
-        rootReceives: UINT256_MAX.muln(99).divn(100).sub(WAD.muln(140)).addn(1),
       },
       {
         receiveAmount: new BN(1),
         scaleFactor: WAD.muln(2),
         approveAmount: WAD.muln(70),
-        domainReceives: new BN(1),
-        rootReceives: new BN(0),
       },
       {
         receiveAmount: new BN(0),
         scaleFactor: new BN(0),
         approveAmount: WAD.muln(70),
-        domainReceives: new BN(0),
-        rootReceives: new BN(0),
       },
     ];
 
     domainReputationAllowanceProps.forEach(async (prop, idx) => {
-      it(`when receiving a non-native reputation-earning token should correctly accommodate 
+      it(`when receiving a non-native reputation-earning token should correctly accommodate
         a range of scale factors, token allowances and quantities (#${idx})`, async () => {
+        // We can do calculations exactly off-chain
+        let expectRootToReceive;
+        let expectDomainToReceive;
+        if (prop.scaleFactor.eq(new BN(0))) {
+          // If scale factor is 0, the domain can receive everything
+          expectDomainToReceive = prop.receiveAmount.muln(99).divn(100);
+          expectRootToReceive = new BN(0);
+        } else {
+          const domainCanReceive = prop.approveAmount.mul(WAD).div(prop.scaleFactor);
+          let receiveAmountPostFee = prop.receiveAmount.muln(99).divn(100);
+          if (receiveAmountPostFee.muln(100).divn(99).lt(prop.receiveAmount)) {
+            // Then the fee is rounded down
+            receiveAmountPostFee = receiveAmountPostFee.addn(1);
+          }
+          expectDomainToReceive = BN.min(domainCanReceive, receiveAmountPostFee);
+          expectRootToReceive = receiveAmountPostFee.sub(expectDomainToReceive);
+        }
+
         // Get address for domain 2
         await colony.addDomain(1, UINT256_MAX, 1);
         const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
@@ -817,15 +838,28 @@ contract("Colony Funding", (accounts) => {
         const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(otherToken.address);
         const rootDomainPotBalanceAfter = await colony.getFundingPotBalance(domain1.fundingPotId, otherToken.address);
 
-        // Check the balance of the domain
-        expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(prop.domainReceives);
-        expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(prop.rootReceives);
-        expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(prop.domainReceives.add(prop.rootReceives));
+        // The comparisons we do depend on whether the calculated values are capped or not. If they are capped, we
+        // only check that we are wrong in the 'safe' direction
 
         allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
-        let expectedRemainingAllowance = prop.approveAmount.sub(prop.domainReceives.mul(prop.scaleFactor).div(WAD));
+        let expectedRemainingAllowance = prop.approveAmount.sub(expectDomainToReceive.mul(prop.scaleFactor).div(WAD));
         expectedRemainingAllowance = expectedRemainingAllowance.lt(new BN(0)) ? 0 : expectedRemainingAllowance;
-        expect(allowedReceipt).to.eq.BN(expectedRemainingAllowance);
+
+        // Some of our calculations get capped. In those scenarios, allow the test to pass if we are wrong in the 'safe'
+        // direction i.e. the domain receives less than expected and the root receives more than expected
+        if (prop.capped) {
+          expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.lte.BN(expectDomainToReceive);
+          expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.gte.BN(expectRootToReceive);
+          // Internal bookkeeping still needs to be exactly correct
+          expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(expectDomainToReceive.add(expectRootToReceive));
+          // The domain can receive less than expected in the future, but not more
+          expect(allowedReceipt).to.lte.BN(expectedRemainingAllowance);
+        } else {
+          expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(expectDomainToReceive);
+          expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(expectRootToReceive);
+          expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(expectDomainToReceive.add(expectRootToReceive));
+          expect(allowedReceipt).to.eq.BN(expectedRemainingAllowance);
+        }
       });
     });
 

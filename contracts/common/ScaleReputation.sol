@@ -63,16 +63,21 @@ contract ScaleReputation is DSMath {
     uint256 reputationAmount,
     uint256 tokenToReputationFactor // NB The same scale factor as used in scaleTokensToUncappedReputation, so need to divide, not mul
   ) internal pure returns (uint256 scaledTokens) {
+    // Guard against overflows in wdiv. This reduces precision, if it's needed
+    if (type(uint256).max / WAD < reputationAmount) {
+      if (tokenToReputationFactor > WAD) {
+        // Slither is right to warn us doing things in this order results in a loss of precision, but
+        // the alternative is to revert with an overflow. We only do this if it's required
+        // slither-disable-next-line divide-before-multiply
+        return (reputationAmount / tokenToReputationFactor) * WAD;
+      }
+      while (type(uint256).max / WAD < reputationAmount) {
+        reputationAmount >>= 1;
+        tokenToReputationFactor >>= 1;
+      }
+    }
+
     if (tokenToReputationFactor == 0) {
-      return type(uint256).max;
-    }
-
-    if (reputationAmount == 0) {
-      return 0;
-    }
-
-    // Guard against overflows during calculation with wdiv
-    if (type(uint256).max / min(WAD, tokenToReputationFactor) < reputationAmount) {
       return type(uint256).max;
     }
 
