@@ -132,4 +132,4 @@ Or just go down the easy path! We created [Colony SDK](https://app.gitbook.com/o
 
 ### Where to go from here?
 
-If you would like to access the reputation related functionality within your development work (mainly to get a user's reputation), please see the [this guide](reputation-oracle-setup).
+If you would like to access the reputation related functionality within your development work (mainly to get a user's reputation), please see [this guide](reputation-oracle-setup).

@@ -35,4 +35,4 @@ Wait for it to say
 ⭐️ Reputation oracle running on port 3000
 ```
 
-then you're all set up and ready to interact with the Reputation Oracle.
+Then you're all set up and ready to interact with the Reputation Oracle.
