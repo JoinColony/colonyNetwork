@@ -210,7 +210,7 @@ class MetatransactionBroadcaster {
       const tx = possibleColony.interface.parseTransaction({ data: txData });
 
       // This function is only ever called by the colony on itself, so a user can't call it, so we won't pay for it
-      if (tx.signature === "makeSingleArbitraryTransaction(address,bytes,address)") {
+      if (tx.signature === "makeSingleArbitraryTransaction(address,bytes)") {
         return false;
       }
 

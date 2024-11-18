@@ -8,7 +8,7 @@ const { soliditySha3 } = require("web3-utils");
 const axios = require("axios");
 const { TruffleLoader, RetryProvider } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
-const { UINT256_MAX, CURR_VERSION, ADDRESS_ZERO } = require("../../helpers/constants");
+const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
 const { web3GetTransaction, currentBlockTime } = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
@@ -128,7 +128,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false);
 
-      txData = await colony.contract.methods.makeSingleArbitraryTransaction(colony.address, "0x00000000", ADDRESS_ZERO).encodeABI();
+      txData = await colony.contract.methods.makeSingleArbitraryTransaction(colony.address, "0x00000000").encodeABI();
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false);
     });
@@ -151,7 +151,7 @@ contract("Metatransaction broadcaster", (accounts) => {
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(true);
 
-      txData = await colony.contract.methods.makeSingleArbitraryTransaction(BINANCE_BRIDGE_ADDRESS, ambCall, ADDRESS_ZERO).encodeABI();
+      txData = await colony.contract.methods.makeSingleArbitraryTransaction(BINANCE_BRIDGE_ADDRESS, ambCall).encodeABI();
       valid = await broadcaster.isColonyFamilyTransactionAllowed(colony.address, txData);
       expect(valid).to.be.equal(false); // Correct bridge, but makeSingleArbitraryTransaction is never allowed
 

@@ -115,7 +115,7 @@ contract("Colony Arbitrary Transactions", (accounts) => {
 
   it("should not be able to make single arbitrary transactions directly", async () => {
     const colonyArbitraryTransactions = await ColonyArbitraryTransaction.at(colony.address);
-    await checkErrorRevert(colonyArbitraryTransactions.makeSingleArbitraryTransaction(colony.address, "0x0", ADDRESS_ZERO), "colony-not-self");
+    await checkErrorRevert(colonyArbitraryTransactions.makeSingleArbitraryTransaction(colony.address, "0x0"), "colony-not-self");
   });
 
   it("should not be able to make arbitrary transactions to network or token locking", async () => {
