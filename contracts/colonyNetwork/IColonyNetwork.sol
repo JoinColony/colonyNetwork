@@ -97,6 +97,11 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @return _skill The Skill struct
   function getSkill(uint256 _skillId) external view returns (Skill memory _skill);
 
+  /// @notice Called to get an array containing all parent skill ids of a skill
+  /// @param _skillId The skill id being queried
+  /// @return parents An array containing the ids of all parent skills
+  function getAllSkillParents(uint256 _skillId) external view returns (uint256[] memory parents);
+
   /// @notice DEPRECATED Set deprecation status for a skill
   /// @dev Deprecated and will revert if called
   /// @param _skillId Id of the skill

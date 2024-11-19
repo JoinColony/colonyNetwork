@@ -1102,6 +1102,19 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @return amount The total token approval amount
   function getTotalTokenApproval(address token) external view returns (uint256 amount);
 
+  /// @notice Call to set the reputation scaling applied to reputation earned in a domain
+  /// @param domainId The domain to set the value of scaling in
+  /// @param scaleFactor The scale factor to apply, as a WAD
+  function setDomainReputationScaling(uint256 domainId, uint256 scaleFactor) external;
+
+  /// @notice Get the reputation scaling applied to reputation earned in a skill in this colony.
+  /// @dev To look up the scaling in a domain, look up the skill corresponding to that domain
+  /// @param skillId The skill to get the value of scaling in
+  /// @return scaleFactor Returns the scale factor applied to reputation earned in this skill, as a WAD.
+  function getOverallSkillReputationScaling(
+    uint256 skillId
+  ) external view returns (uint256 scaleFactor);
+
   /// @notice Call to set the rate at which reputation in this colony decays
   /// @param numerator The numerator of the fraction reputation does down by every reputation cycle
   /// @param denominator The denominator of the fraction reputation does down by every reputation cycle

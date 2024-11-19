@@ -435,6 +435,23 @@ Exit recovery mode, can be called by anyone if enough whitelist approvals are gi
 
 
 
+### ▸ `getAllSkillParents(uint256 _skillId):uint256[] parents`
+
+Called to get an array containing all parent skill ids of a skill
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_skillId|uint256|The skill id being queried
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|parents|uint256[]|An array containing the ids of all parent skills
+
 ### ▸ `getChildSkillId(uint256 _skillId, uint256 _childSkillIndex):uint256 _childSkillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`.

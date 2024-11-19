@@ -145,6 +145,21 @@ exports.setupClaimedExpenditure = async function setupClaimedExpenditure({
   await colony.claimExpenditurePayout(expenditureId, SLOT2, tokenAddress);
 };
 
+exports.awardReputationViaExpenditure = async function awardReputationViaExpenditure({ colonyNetwork, colony, domainId, user, amount }) {
+  const tokenAddress = await colony.getToken();
+  const token = await Token.at(tokenAddress);
+  await exports.fundColonyWithTokens(colony, token, amount);
+  await exports.setupClaimedExpenditure({
+    colonyNetwork,
+    colony,
+    domainId,
+    worker: user,
+    workerPayout: amount,
+    managerPayout: 0,
+    evaluatorPayout: 0,
+  });
+};
+
 exports.giveUserCLNYTokens = async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);

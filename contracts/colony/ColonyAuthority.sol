@@ -149,6 +149,8 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "setTokenReputationScaling(uint256,address,uint256)");
 
     addRoleCapability(ROOT_ROLE, "setReputationDecayRate(uint256,uint256)");
+
+    addRoleCapability(ROOT_ROLE, "setDomainReputationScaling(uint256,uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

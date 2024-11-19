@@ -123,6 +123,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
   // Mapping of chain id => token address => reputation scaling
   mapping(uint256 => mapping(address => uint256)) tokenReputationScalings; // Storage slot 41
 
+  // This mapping stores the complement of the reputation scaling factor. So the scaling factor is WAD-reputationScalingFactorComplement
+  mapping(uint256 => uint256) skillReputationScalingComplements; // Storage slot 42
+
   // Constants
 
   uint256 constant MAX_PAYOUT = 2 ** 128 - 1; // 340,282,366,920,938,463,463 WADs

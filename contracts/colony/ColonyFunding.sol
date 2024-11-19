@@ -472,6 +472,11 @@ contract ColonyFunding is
         tokenReputationScalings[_chainId][_token]
       );
 
+      tokenScaledReputationAmount = scaleReputation(
+        tokenScaledReputationAmount,
+        getOverallSkillReputationScaling(domains[expenditure.domainId].skillId)
+      );
+
       colonyNetworkContract.appendReputationUpdateLog(
         slot.recipient,
         tokenScaledReputationAmount,
@@ -501,6 +506,19 @@ contract ColonyFunding is
   }
 
   // View
+
+  function getOverallSkillReputationScaling(uint256 _skillId) public view returns (uint256) {
+    uint256 factor = WAD - skillReputationScalingComplements[_skillId];
+
+    uint256[] memory allParents = IColonyNetwork(colonyNetworkAddress).getAllSkillParents(_skillId);
+    uint256 count;
+
+    while (count < allParents.length && factor > 0) {
+      factor = wmul(factor, WAD - skillReputationScalingComplements[allParents[count]]);
+      count += 1;
+    }
+    return factor;
+  }
 
   function getFundingPotCount() public view returns (uint256 count) {
     return fundingPotCount;

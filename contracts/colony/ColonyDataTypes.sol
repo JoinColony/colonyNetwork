@@ -256,6 +256,8 @@ interface ColonyDataTypes {
 
   event ArbitraryTransaction(address target, bytes data, bool success);
 
+  event DomainReputationScalingSet(uint256 domainId, uint256 factor);
+
   /// @notice Event logged when an expenditure payout is claimed.
   /// @dev This is emitted in addition to the other PayoutClaimed
   /// event. The other will be removed soon.

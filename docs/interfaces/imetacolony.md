@@ -901,6 +901,24 @@ View an obligation of tokens.
 |---|---|---|
 |obligation|uint256|The amount that is currently obligated
 
+### ▸ `getOverallSkillReputationScaling(uint256 skillId):uint256 scaleFactor`
+
+Get the reputation scaling applied to reputation earned in a skill in this colony.
+
+*Note: To look up the scaling in a domain, look up the skill corresponding to that domain*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|skillId|uint256|The skill to get the value of scaling in
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|scaleFactor|uint256|Returns the scale factor applied to reputation earned in this skill, as a WAD.
+
 ### ▸ `getPayment(uint256 _id):Payment payment`
 
 Returns an exiting payment.
@@ -1586,6 +1604,19 @@ Update the default global claim delay for expenditures
 |Name|Type|Description|
 |---|---|---|
 |_globalClaimDelay|uint256|The new default global claim delay
+
+
+### ▸ `setDomainReputationScaling(uint256 domainId, uint256 scaleFactor)`
+
+Call to set the reputation scaling applied to reputation earned in a domain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|domainId|uint256|The domain to set the value of scaling in
+|scaleFactor|uint256|The scale factor to apply, as a WAD
 
 
 ### ▸ `setExpenditureClaimDelay(uint256 _id, uint256 _slot, uint256 _claimDelay)`
