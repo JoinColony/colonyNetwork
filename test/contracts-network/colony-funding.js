@@ -649,6 +649,42 @@ contract("Colony Funding", (accounts) => {
       expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(40);
       expect(rootPotBalanceAfter).to.eq.BN(59);
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
+
+      const allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
+      expect(allowedReceipt).to.eq.BN(0);
+    });
+
+    it("a chain's native token sent directly to domains are limited correctly based on reputation scaling", async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      await web3.eth.sendTransaction({ from: accounts[0], to: receiverAddress, value: 100, gasPrice: 10 });
+
+      // Make that token a reputation-earning token
+      await colony.setTokenReputationScaling(chainId, ADDRESS_ZERO, WAD.divn(2));
+
+      // Set an allowance for the domain
+      await colony.editAllowedDomainReputationReceipt(2, 20, true);
+
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, ADDRESS_ZERO);
+      const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(ADDRESS_ZERO);
+
+      // Claim the funds
+      await colony.claimDomainFunds(ADDRESS_ZERO, 2);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, ADDRESS_ZERO);
+      const rootPotBalanceAfter = await colony.getFundingPotBalance(1, ADDRESS_ZERO);
+      const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(ADDRESS_ZERO);
+
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(40);
+      expect(rootPotBalanceAfter).to.eq.BN(59);
+      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
+
+      const allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
+      expect(allowedReceipt).to.eq.BN(0);
     });
 
     it("should not allow even the colonyNetwork to call setColonyAddress once it's set on domainTokenReceiver", async () => {
