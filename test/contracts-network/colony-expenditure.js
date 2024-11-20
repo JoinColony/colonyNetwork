@@ -1049,7 +1049,6 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setTokenReputationScaling(chainId, token.address, WAD);
     });
 
-<<<<<<< HEAD
     it("if custom reputation scaling for a chain-native token is set, reputation update should reflect scaling", async () => {
       await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
       await colony.setExpenditurePayout(expenditureId, SLOT0, ADDRESS_ZERO, WAD, { from: ADMIN });
