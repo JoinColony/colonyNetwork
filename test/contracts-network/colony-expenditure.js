@@ -1049,6 +1049,48 @@ contract("Colony Expenditure", (accounts) => {
       await colony.setTokenReputationScaling(chainId, token.address, WAD);
     });
 
+    it("if custom reputation scaling for a chain-native token is set, reputation update should reflect scaling", async () => {
+      await colony.setExpenditureRecipient(expenditureId, SLOT0, RECIPIENT, { from: ADMIN });
+      await colony.setExpenditurePayout(expenditureId, SLOT0, ADDRESS_ZERO, WAD, { from: ADMIN });
+      await colony.setExpenditureSkill(expenditureId, SLOT0, localSkillId, { from: ADMIN });
+      await colony.setTokenReputationScaling(chainId, ADDRESS_ZERO, WAD.divn(2));
+
+      await web3.eth.sendTransaction({ from: ADMIN, to: colony.address, value: WAD.muln(2), gasPrice: 10 });
+      await colony.claimColonyFunds(ADDRESS_ZERO);
+
+      const expenditure = await colony.getExpenditure(expenditureId);
+      await colony.moveFundsBetweenPots(
+        1,
+        UINT256_MAX,
+        1,
+        UINT256_MAX,
+        UINT256_MAX,
+        domain1.fundingPotId,
+        expenditure.fundingPotId,
+        WAD,
+        ADDRESS_ZERO,
+      );
+      await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
+      await colony.claimExpenditurePayout(expenditureId, SLOT0, ADDRESS_ZERO);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(false);
+      const repCycle = await IReputationMiningCycle.at(addr);
+      const numEntries = await repCycle.getReputationUpdateLogLength();
+
+      const skillEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(1));
+      expect(skillEntry.user).to.equal(RECIPIENT);
+      expect(skillEntry.skillId).to.eq.BN(localSkillId);
+      expect(skillEntry.amount).to.eq.BN(WAD.divn(2));
+
+      const domainEntry = await repCycle.getReputationUpdateLogEntry(numEntries.subn(2));
+      expect(domainEntry.user).to.equal(RECIPIENT);
+      expect(domainEntry.skillId).to.equal(domain1.skillId);
+      expect(domainEntry.amount).to.eq.BN(WAD.divn(2));
+
+      // Reset scaling for future tests
+      await colony.setTokenReputationScaling(chainId, ADDRESS_ZERO, WAD);
+    });
+
     it("should delay claims by claimDelay", async () => {
       await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
 
