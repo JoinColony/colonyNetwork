@@ -1233,7 +1233,7 @@ Add a new expenditure in the colony. Secured function to authorised members.
 |---|---|---|
 |expenditureId|uint256|Identifier of the newly created expenditure
 
-### ▸ `makeProxyArbitraryTransactions(uint256 chainId, address[] memory _destinations, bytes[] memory _actions)`
+### ▸ `makeProxyArbitraryTransaction(uint256 chainId, address _destination, bytes memory _action)`
 
 Execute arbitrary transactions on behalf of the Colony via a proxy colony on another chain
 
@@ -1244,8 +1244,8 @@ Execute arbitrary transactions on behalf of the Colony via a proxy colony on ano
 |Name|Type|Description|
 |---|---|---|
 |chainId|uint256|The chainId of the proxy colony
-|_destinations|address[]|Array of addresses to be targeted
-|_actions|bytes[]|Array of Bytes arrays encoding the function calls and arguments
+|_destination|address|Address to be targeted
+|_action|bytes|Array of Bytes arrays encoding the function call
 
 
 ### ▸ `makeSingleArbitraryTransaction(address _target, bytes memory _action):bool success`
