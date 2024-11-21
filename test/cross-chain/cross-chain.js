@@ -624,7 +624,7 @@ contract("Cross-chain", (accounts) => {
       // One bridged transaction will be the request across, one will be reporting what was claimed back
 
       const payload = proxyColony.interface.encodeFunctionData("claimTokens", [foreignToken.address]);
-      tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [proxyColony.address], [payload]);
+      tx = await colony.makeProxyArbitraryTransaction(foreignChainId, proxyColony.address, payload);
       await tx.wait();
       await p;
 
@@ -1066,7 +1066,7 @@ contract("Cross-chain", (accounts) => {
 
       const payload = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [proxyColony.address, ethers.utils.parseEther("100")]);
 
-      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], [payload]);
+      const tx = await colony.makeProxyArbitraryTransaction(foreignChainId, foreignToken.address, payload);
       await tx.wait();
       await p;
 
@@ -1074,14 +1074,14 @@ contract("Cross-chain", (accounts) => {
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
 
-    it("root permissions are required for makeProxyArbitraryTransactions", async () => {
+    it("root permissions are required for makeProxyArbitraryTransaction", async () => {
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
-      let tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000"]);
+      let tx = await colony.makeProxyArbitraryTransaction(foreignChainId, foreignToken.address, "0x00000000");
       await tx.wait();
       await p;
 
       await colony.setUserRoles(1, UINT256_MAX_ETHERS, accounts[0], 1, ethers.utils.hexZeroPad("0x00", 32));
-      tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000"], { gasLimit: 1000000 });
+      tx = await colony.makeProxyArbitraryTransaction(foreignChainId, foreignToken.address, "0x00000000", { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
     });
 
@@ -1090,7 +1090,7 @@ contract("Cross-chain", (accounts) => {
 
       const payload = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [proxyColony.address, ethers.utils.parseEther("100")]);
 
-      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [accounts[0]], [payload]);
+      const tx = await colony.makeProxyArbitraryTransaction(foreignChainId, accounts[0], payload);
       await tx.wait();
       await p;
 
@@ -1104,9 +1104,12 @@ contract("Cross-chain", (accounts) => {
       const p = guardianSpy.getPromiseForNextBridgedTransaction(2);
 
       const payload1 = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [proxyColony.address, ethers.utils.parseEther("100")]);
+      const arbitraryCallPayload1 = proxyColony.interface.encodeFunctionData("makeArbitraryTransaction", [foreignToken.address, payload1]);
       const payload2 = proxyColony.interface.encodeFunctionData("claimTokens(address)", [foreignToken.address]);
 
-      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address, proxyColony.address], [payload1, payload2]);
+      const multicallPayload = proxyColony.interface.encodeFunctionData("multicall", [[arbitraryCallPayload1, payload2]]);
+
+      const tx = await colony.makeProxyArbitraryTransaction(foreignChainId, proxyColony.address, multicallPayload);
       await tx.wait();
       await p;
 
@@ -1120,31 +1123,24 @@ contract("Cross-chain", (accounts) => {
     });
 
     it("invalid cross-chain arbitrary transactions are rejected", async () => {
-      let p = guardianSpy.getPromiseForNextBridgedTransaction();
-
-      const tx = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000", "0x00000000"]);
-      await tx.wait();
-
-      await checkErrorRevertEthers(p, "colony-targets-and-payloads-length-mismatch");
-
       // Check can't target Network
-      p = guardianSpy.getPromiseForNextBridgedTransaction();
-      const tx2 = await colony.makeProxyArbitraryTransactions(foreignChainId, [remoteColonyNetwork.address], ["0x00000000"]);
-      await tx2.wait();
+      let p = guardianSpy.getPromiseForNextBridgedTransaction();
+      const tx = await colony.makeProxyArbitraryTransaction(foreignChainId, remoteColonyNetwork.address, "0x00000000");
+      await tx.wait();
 
       await checkErrorRevertEthers(p, "colony-cannot-target-network");
 
       // Check can't target the bridge
       p = guardianSpy.getPromiseForNextBridgedTransaction();
-      const tx3 = await colony.makeProxyArbitraryTransactions(foreignChainId, [remoteColonyBridge.address], ["0x00000000"]);
-      await tx3.wait();
+      const tx2 = await colony.makeProxyArbitraryTransaction(foreignChainId, remoteColonyBridge.address, "0x00000000");
+      await tx2.wait();
 
       await checkErrorRevertEthers(p, "colony-cannot-target-bridge");
 
       // Otherwise valid transaction, it just fails
       p = guardianSpy.getPromiseForNextBridgedTransaction();
-      const tx4 = await colony.makeProxyArbitraryTransactions(foreignChainId, [foreignToken.address], ["0x00000000"]);
-      await tx4.wait();
+      const tx3 = await colony.makeProxyArbitraryTransaction(foreignChainId, foreignToken.address, "0x00000000");
+      await tx3.wait();
 
       await checkErrorRevertEthers(p, "require-execute-call-reverted-with-no-error");
     });
@@ -1195,8 +1191,8 @@ contract("Cross-chain", (accounts) => {
       await checkErrorRevertEthers(tx.wait(), "colony-only-bridge");
     });
 
-    it("a non-bridge address cannot call makeArbitraryTransactions", async () => {
-      const tx = await proxyColony.makeArbitraryTransactions([], [], { gasLimit: 1000000 });
+    it("a non-bridge address cannot call makeArbitraryTransaction", async () => {
+      const tx = await proxyColony.makeArbitraryTransaction(ADDRESS_ZERO, "0x00", { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-only-bridge");
     });
   });
@@ -1245,7 +1241,7 @@ contract("Cross-chain", (accounts) => {
 
   describe("Invalid interactions with bridging system are handled appropriately", async () => {
     it("Can't bridge to a chain that's not supported", async () => {
-      const tx = await homeColony.makeProxyArbitraryTransactions(111, [ADDRESS_ZERO], ["0x00000000"], { gasLimit: 1000000 });
+      const tx = await homeColony.makeProxyArbitraryTransaction(111, ADDRESS_ZERO, "0x00000000", { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-bridge-not-known-chain");
     });
 

@@ -64,12 +64,12 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @notice Execute arbitrary transactions on behalf of the Colony via a proxy colony on another chain
   /// @dev If proxy colony not already deployed, will do nothing
   /// @param chainId The chainId of the proxy colony
-  /// @param _destinations Array of addresses to be targeted
-  /// @param _actions Array of Bytes arrays encoding the function calls and arguments
-  function makeProxyArbitraryTransactions(
+  /// @param _destination Address to be targeted
+  /// @param _action Array of Bytes arrays encoding the function call
+  function makeProxyArbitraryTransaction(
     uint256 chainId,
-    address[] memory _destinations,
-    bytes[] memory _actions
+    address _destination,
+    bytes memory _action
   ) external;
 
   /// @notice Execute arbitrary transactions on behalf of the Colony in series

@@ -44,17 +44,21 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     return res;
   }
 
-  function makeProxyArbitraryTransactions(
+  function makeProxyArbitraryTransaction(
     uint256 _chainId,
-    address[] memory _destinations,
-    bytes[] memory _actions
+    address _destination,
+    bytes memory _action
   ) public stoppable auth returns (bool) {
-    bytes memory payload = abi.encodeWithSignature(
-      "makeArbitraryTransactions(address[],bytes[])",
-      _destinations,
-      _actions
-    );
-    IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
+    if (_destination == address(this)) {
+      IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, _action);
+    } else {
+      bytes memory payload = abi.encodeWithSignature(
+        "makeArbitraryTransaction(address,bytes)",
+        _destination,
+        _action
+      );
+      IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
+    }
   }
 
   function callProxyNetwork(

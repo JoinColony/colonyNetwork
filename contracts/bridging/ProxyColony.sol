@@ -112,24 +112,21 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
     emit TransferMade(_token, _recipient, _amount);
   }
 
-  function makeArbitraryTransactions(
-    address[] memory _targets,
-    bytes[] memory _payloads
+  function makeArbitraryTransaction(
+    address _target,
+    bytes memory _payload
   ) public onlyColonyBridge {
-    require(_targets.length == _payloads.length, "colony-targets-and-payloads-length-mismatch");
     address bridgeAddress = ProxyColonyNetwork(owner).colonyBridgeAddress();
-    for (uint256 i; i < _targets.length; i += 1) {
-      // TODO: Stop, or otherwise handle, approve / transferFrom
-      require(_targets[i] != bridgeAddress, "colony-cannot-target-bridge");
-      require(_targets[i] != owner, "colony-cannot-target-network");
-      // TODO: Allowing calling ourselves is okay for now, but as we add functionality might not be?
-      (bool success, bytes memory returndata) = callWithGuards(_targets[i], _payloads[i]);
+    // TODO: Stop, or otherwise handle, approve / transferFrom
+    require(_target != bridgeAddress, "colony-cannot-target-bridge");
+    require(_target != owner, "colony-cannot-target-network");
+    // TODO: Allowing calling ourselves is okay for now, but as we add functionality might not be?
+    (bool success, bytes memory returndata) = callWithGuards(_target, _payload);
 
-      // Note that this is not a require because returndata might not be a string, and if we try
-      // to decode it we'll get a revert.
-      if (!success) {
-        revert(abi.decode(returndata, (string)));
-      }
+    // Note that this is not a require because returndata might not be a string, and if we try
+    // to decode it we'll get a revert.
+    if (!success) {
+      revert(abi.decode(returndata, (string)));
     }
   }
 

@@ -26,6 +26,7 @@ import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { IColony } from "./IColony.sol";
 import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
+import { ProxyColony } from "./../bridging/ProxyColony.sol";
 
 contract ColonyFunding is
   ColonyStorage // ignore-swc-123
@@ -298,15 +299,17 @@ contract ColonyFunding is
     if (_token == address(0)) {
       revert("not yet implemented");
     } else {
-      address[] memory targets = new address[](2);
-      targets[0] = _token;
-      targets[1] = LIFI_ADDRESS;
+      bytes[] memory actions = new bytes[](2);
 
-      bytes[] memory payloads = new bytes[](2);
-      payloads[0] = abi.encodeCall(ERC20.approve, (LIFI_ADDRESS, _amount));
-      payloads[1] = _txdata;
+      actions[0] = abi.encodeCall(
+        ProxyColony.makeArbitraryTransaction,
+        (_token, abi.encodeCall(ERC20.approve, (LIFI_ADDRESS, _amount)))
+      );
+      actions[1] = abi.encodeCall(ProxyColony.makeArbitraryTransaction, (LIFI_ADDRESS, _txdata));
 
-      IColony(address(this)).makeProxyArbitraryTransactions(_chainId, targets, payloads);
+      bytes memory multicallData = abi.encodeWithSignature("multicall(bytes[])", actions);
+
+      IColony(address(this)).makeProxyArbitraryTransaction(_chainId, address(this), multicallData);
     }
   }
 
