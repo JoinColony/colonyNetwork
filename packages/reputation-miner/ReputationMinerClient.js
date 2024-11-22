@@ -123,6 +123,12 @@ class ReputationMinerClient {
         return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
       });
 
+      this._app.get("/rootHashes", async (req, res) => {
+        const currentRootHash = await this._miner.previousReputationTree.getRootHash();
+        const nextRootHash = await this._miner.reputationTree.getRootHash();
+        return res.status(200).send({ currentRootHash, nextRootHash });
+      });
+
       // Query users who have given reputation in colony
       this._app.get("/:rootHash/:colonyAddress/:skillId/", cache('1 hour'), async (req, res) => {
         if (
