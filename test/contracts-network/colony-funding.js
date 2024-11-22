@@ -16,6 +16,7 @@ const {
   SLOT2,
   ROOT_ROLE,
   ADDRESS_ZERO,
+  LIFI_ADDRESS,
 } = require("../../helpers/constants");
 
 const {
@@ -25,7 +26,15 @@ const {
   setupFundedExpenditure,
   setupRandomToken,
 } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
+const {
+  getTokenArgs,
+  checkErrorRevert,
+  web3GetBalance,
+  removeSubdomainLimit,
+  expectEvent,
+  rolesToBytes32,
+  getChainId,
+} = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -39,6 +48,7 @@ const Resolver = artifacts.require("Resolver");
 const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
 const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 const ToggleableToken = artifacts.require("ToggleableToken");
+const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
 
 contract("Colony Funding", (accounts) => {
   const MANAGER = accounts[0];
@@ -49,6 +59,7 @@ contract("Colony Funding", (accounts) => {
   let otherToken;
   let colonyNetwork;
   let metaColony;
+  let chainId;
 
   before(async () => {
     const cnAddress = (await EtherRouter.deployed()).address;
@@ -57,6 +68,8 @@ contract("Colony Funding", (accounts) => {
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+
+    chainId = await getChainId();
   });
 
   beforeEach(async () => {
@@ -886,6 +899,55 @@ contract("Colony Funding", (accounts) => {
       const resolverAfter = await receiverAsEtherRouter.resolver();
       expect(resolverAfter).to.not.equal(resolver);
       expect(resolverAfter).to.equal(newResolver.address);
+    });
+  });
+
+  describe("when exchanging tokens", () => {
+    it("can exchange tokens in a domain via LiFi", async () => {
+      await token.mint(colony.address, 100);
+      await colony.claimColonyFunds(token.address);
+      await colony.addDomain(1, UINT256_MAX, 1);
+
+      const domain1 = await colony.getDomain(1);
+      const domain2 = await colony.getDomain(2);
+
+      // Move 50 tokens from the colony to domain 2
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, 50, chainId, token.address);
+
+      const domain2ReceiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      const lifi = await LiFiFacetProxyMock.at(LIFI_ADDRESS);
+      const ethersProvider = new ethers.providers.Web3Provider(web3.currentProvider);
+      const lifiEthers = new ethers.Contract(LIFI_ADDRESS, LiFiFacetProxyMock.abi, ethersProvider);
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        50,
+      ).encodeABI();
+
+      const tx = await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50);
+      const swapEvent = tx.receipt.rawLogs
+        .filter((e) => e.address === LIFI_ADDRESS)
+        .map((e) => lifiEthers.interface.parseLog(e))
+        .filter((e) => e.name === "SwapTokens")[0];
+      expect(swapEvent).to.not.be.undefined;
+
+      // Okay, so we saw the SwapTokens event. Let's do vaguely what it said for the test,
+      // but in practise this would be the responsibility of whatever entity we've paid to do it
+      // through LiFi.
+      await otherToken.mint(swapEvent.args._toAddress, swapEvent.args._amount); // Implicit 1:1 exchange rate
+
+      // Now claim the tokens
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      // See if bookkeeping was tracked correctly
+      const domain = await colony.getDomain(2);
+      const balance = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+      expect(balance).to.eq.BN(50);
     });
   });
 });
