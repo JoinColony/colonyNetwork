@@ -367,8 +367,22 @@ hre.__SOLIDITY_COVERAGE_RUNNING
           const url = `http://127.0.0.1:3000/0x0000/NotAValidAddress/1/all`;
           const res = await request(url);
           expect(res.statusCode).to.equal(400);
-          expect(res.statusCode).to.equal(400);
           expect(JSON.parse(res.body).message).to.equal("One of the parameters was incorrect");
+        });
+
+        it("should correctly respond to a request for the currently known states", async () => {
+          await client.initialise(colonyNetwork.address, 1);
+          await metaColony.setReputationMiningCycleReward(100);
+
+          const url = `http://127.0.0.1:3000/rootHashes`;
+          const res = await request(url);
+          expect(res.statusCode).to.equal(200);
+          const nextRootHash = await client._miner.reputationTree.getRootHash();
+          const currentRootHash = await client._miner.previousReputationTree.getRootHash();
+          const response = JSON.parse(res.body);
+
+          expect(response.currentRootHash).to.equal(currentRootHash);
+          expect(response.nextRootHash).to.equal(nextRootHash);
         });
       });
     });
