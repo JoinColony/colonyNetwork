@@ -34,6 +34,7 @@ const {
   expectEvent,
   rolesToBytes32,
   getChainId,
+  encodeTxData,
 } = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
@@ -923,24 +924,31 @@ contract("Colony Funding", (accounts) => {
     });
   });
 
-  describe("when exchanging tokens", () => {
-    it("can exchange tokens in a domain via LiFi", async () => {
-      await token.mint(colony.address, 100);
+  describe("when exchanging tokens via LiFi", () => {
+    let domain1;
+    let domain2;
+    let domain2ReceiverAddress;
+    let lifi;
+    let lifiEthers;
+    beforeEach(async () => {
+      await token.mint(colony.address, 200);
       await colony.claimColonyFunds(token.address);
       await colony.addDomain(1, UINT256_MAX, 1);
 
-      const domain1 = await colony.getDomain(1);
-      const domain2 = await colony.getDomain(2);
+      domain1 = await colony.getDomain(1);
+      domain2 = await colony.getDomain(2);
 
       // Move 50 tokens from the colony to domain 2
       await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, 50, chainId, token.address);
 
-      const domain2ReceiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      domain2ReceiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
 
-      const lifi = await LiFiFacetProxyMock.at(LIFI_ADDRESS);
+      lifi = await LiFiFacetProxyMock.at(LIFI_ADDRESS);
       const ethersProvider = new ethers.providers.Web3Provider(web3.currentProvider);
-      const lifiEthers = new ethers.Contract(LIFI_ADDRESS, LiFiFacetProxyMock.abi, ethersProvider);
+      lifiEthers = new ethers.Contract(LIFI_ADDRESS, LiFiFacetProxyMock.abi, ethersProvider);
+    });
 
+    it("can exchange tokens in a domain via LiFi", async () => {
       const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
         chainId,
         token.address,
@@ -969,6 +977,79 @@ contract("Colony Funding", (accounts) => {
       const domain = await colony.getDomain(2);
       const balance = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
       expect(balance).to.eq.BN(50);
+    });
+
+    it("should not mess up approval bookkeeping when exchanging tokens via LiFi", async () => {
+      const action1 = await encodeTxData(token, "approve", [LIFI_ADDRESS, 80]);
+      await colony.makeArbitraryTransaction(token.address, action1);
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        40,
+      ).encodeABI();
+
+      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50);
+      await otherToken.mint(domain2ReceiverAddress, 50); // Better than 1:1 exchange rate
+
+      const approval = await colony.getTokenApproval(token.address, LIFI_ADDRESS);
+      expect(approval).to.be.eq.BN(80);
+      const allApprovals = await colony.getTotalTokenApproval(token.address);
+      expect(allApprovals).to.be.eq.BN(80);
+      const tokenApproval = await token.allowance(colony.address, LIFI_ADDRESS);
+      expect(tokenApproval).to.be.eq.BN(80);
+    });
+
+    it("'lying' calls of exchangeTokensViaLiFi trying to spend other tokens are caught", async () => {
+      await fundColonyWithTokens(colony, otherToken, 100);
+      await colony.claimColonyFunds(otherToken.address);
+
+      const action1 = await encodeTxData(otherToken, "approve", [LIFI_ADDRESS, 80]);
+      await colony.makeArbitraryTransaction(otherToken.address, action1);
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        otherToken.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        40,
+      ).encodeABI();
+      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50), "colony-unexpected-exchange");
+    });
+
+    it("'lying' calls of exchangeTokensViaLiFi trying to spend already-approved tokens are caught", async () => {
+      const action1 = await encodeTxData(token, "approve", [LIFI_ADDRESS, 80]);
+      await colony.makeArbitraryTransaction(token.address, action1);
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        60,
+      ).encodeABI();
+      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50), "colony-more-than-intended-allowance-used");
+    });
+
+    it("If LiFi transaction was cheaper than expected, shouldn't leave extra allowance behind", async () => {
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        40,
+      ).encodeABI();
+
+      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50);
+
+      const approval = await token.allowance(colony.address, LIFI_ADDRESS);
+      expect(approval).to.be.eq.BN(0);
     });
   });
 });
