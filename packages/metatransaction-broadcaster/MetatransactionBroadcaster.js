@@ -205,7 +205,20 @@ class MetatransactionBroadcaster {
 
   async isColonyFamilyTransactionAllowed(target, txData, userAddress) {
     const colonyDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
-    const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
+
+    // Add the old makeSingleArbitraryTransaction and makeArbitraryTransactions to the abi
+    const iface = new ethers.utils.Interface([
+      "function makeArbitraryTransaction(address,bytes)",
+      "function makeSingleArbitraryTransaction(address,bytes)",
+      "function makeArbitraryTransactions(address[],bytes[],bool)",
+    ]);
+
+    const oldJsonAbi = JSON.parse(iface.format(ethers.utils.FormatTypes.json));
+    oldJsonAbi[0].inputs = oldJsonAbi[0].inputs.map((x) => {
+      return { ...x, internalType: x.type };
+    });
+
+    const possibleColony = new ethers.Contract(target, [...colonyDef.abi, ...oldJsonAbi], this.wallet);
     try {
       const tx = possibleColony.interface.parseTransaction({ data: txData });
 
@@ -215,7 +228,11 @@ class MetatransactionBroadcaster {
       }
 
       // If it's an arbitrary transaction...
-      if (tx.signature === "makeArbitraryTransaction(address,bytes)" || tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)") {
+      if (
+        tx.signature === "makeArbitraryTransaction(address,bytes)" ||
+        tx.signature === "makeArbitraryTransaction(address,bytes,bool)" ||
+        tx.signature === "makeArbitraryTransactions(address[],bytes[],bool)"
+      ) {
         // We allow it if these transactions are going only to known bridges.
         let addresses = tx.args[0];
         let calls = tx.args[1];

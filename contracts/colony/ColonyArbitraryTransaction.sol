@@ -36,46 +36,9 @@ contract ColonyArbitraryTransaction is ColonyStorage {
 
   function makeArbitraryTransaction(
     address _to,
-    bytes memory _action
-  ) public stoppable auth returns (bool) {
-    bool res = this.makeSingleArbitraryTransaction(_to, _action);
-
-    emit ArbitraryTransaction(msgSender(), _to, _action, res);
-    return res;
-  }
-
-  function makeArbitraryTransactions(
-    address[] memory _targets,
-    bytes[] memory _actions,
+    bytes memory _action,
     bool _strict
   ) public stoppable auth returns (bool) {
-    require(_targets.length == _actions.length, "colony-targets-and-actions-length-mismatch");
-    for (uint256 i; i < _targets.length; i += 1) {
-      bool success = true;
-      // slither-disable-next-line unused-return
-      try this.makeSingleArbitraryTransaction(_targets[i], _actions[i]) returns (bool ret) {
-        if (_strict) {
-          success = ret;
-        }
-
-        emit ArbitraryTransaction(msgSender(), _targets[i], _actions[i], ret);
-      } catch {
-        // We failed in a require, which is only okay if we're not in strict mode
-        if (_strict) {
-          success = false;
-        }
-
-        emit ArbitraryTransaction(msgSender(), _targets[i], _actions[i], false);
-      }
-      require(success, "colony-arbitrary-transaction-failed");
-    }
-    return true;
-  }
-
-  function makeSingleArbitraryTransaction(
-    address _to,
-    bytes memory _action
-  ) external stoppable self returns (bool) {
     // Prevent transactions to network contracts
     require(_to != address(this), "colony-cannot-target-self");
     require(_to != colonyNetworkAddress, "colony-cannot-target-network");
@@ -111,26 +74,47 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     bool res = executeCall(_to, 0, _action);
 
     if (sig == APPROVE_SIG) {
-      approveTransactionCleanup(_to, _action);
+      approveTransactionCheck(_to, _action);
     }
 
+    emit ArbitraryTransaction(msgSender(), _to, _action, res);
+
+    require(res || !_strict, "colony-arbitrary-transaction-failed");
     return res;
   }
 
-  function approveTransactionPreparation(address _to, bytes memory _action) internal {
+  function approveTransactionPreparation(address _token, bytes memory _action) internal {
     address spender;
+    uint256 amount;
     assembly {
       spender := mload(add(_action, 0x24))
+      amount := mload(add(_action, 0x44))
     }
-    updateApprovalAmountInternal(_to, spender, false);
+    updateApprovalAmountInternal(_token, spender);
+
+    // Calculate and set the approval we expect to have after the approve is made
+    tokenApprovalTotals[_token] =
+      (tokenApprovalTotals[_token] - tokenApprovals[_token][spender]) +
+      amount;
+    require(
+      fundingPots[1].balance[_token] >= tokenApprovalTotals[_token],
+      "colony-approval-exceeds-balance"
+    );
+
+    tokenApprovals[_token][spender] = amount;
   }
 
-  function approveTransactionCleanup(address _to, bytes memory _action) internal {
+  function approveTransactionCheck(address _token, bytes memory _action) internal view {
     address spender;
+    uint256 amount;
     assembly {
       spender := mload(add(_action, 0x24))
+      amount := mload(add(_action, 0x44))
     }
-    updateApprovalAmountInternal(_to, spender, true);
+
+    uint256 recordedApproval = tokenApprovals[_token][spender];
+    uint256 actualApproval = ERC20Extended(_token).allowance(address(this), spender);
+    require(recordedApproval == actualApproval, "colony-approval-amount-mismatch");
   }
 
   function burnTransactionPreparation(address _to, bytes memory _action) internal {
@@ -160,21 +144,17 @@ contract ColonyArbitraryTransaction is ColonyStorage {
   }
 
   function updateApprovalAmount(address _token, address _spender) public stoppable {
-    updateApprovalAmountInternal(_token, _spender, false);
+    updateApprovalAmountInternal(_token, _spender);
   }
 
-  function updateApprovalAmountInternal(
-    address _token,
-    address _spender,
-    bool _postApproval
-  ) internal {
+  function updateApprovalAmountInternal(address _token, address _spender) internal {
     uint256 recordedApproval = tokenApprovals[_token][_spender];
     uint256 actualApproval = ERC20Extended(_token).allowance(address(this), _spender);
     if (recordedApproval == actualApproval) {
       return;
     }
 
-    if (recordedApproval > actualApproval && !_postApproval) {
+    if (recordedApproval > actualApproval) {
       // They've spend some tokens out of root. Adjust balances accordingly
       // If we are post approval, then they have not spent tokens
       fundingPots[1].balance[_token] =

@@ -47,7 +47,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)"); // Only for versions < 14
 
     // Add permissions for the Funding role
-    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
+    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"); // Deprecated
 
     // Add permissions for the Architecture role
     addRoleCapability(ARCHITECTURE_ROLE, "addDomain(uint256,uint256,uint256)");
@@ -84,9 +84,9 @@ contract ColonyAuthority is CommonAuthority {
 
     // Added in colony v4 (burgundy-glider)
     addRoleCapability(ADMINISTRATION_ROLE, "makeExpenditure(uint256,uint256,uint256)");
-    addRoleCapability(ARBITRATION_ROLE, "transferExpenditureViaArbitration(uint256,uint256,uint256,address)");
-    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)");
-    addRoleCapability(ARBITRATION_ROLE, "setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)");
+    addRoleCapability(ARBITRATION_ROLE, "transferExpenditureViaArbitration(uint256,uint256,uint256,address)"); // Deprecated
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditurePayoutModifier(uint256,uint256,uint256,uint256,int256)"); // Deprecated
+    addRoleCapability(ARBITRATION_ROLE, "setExpenditureClaimDelay(uint256,uint256,uint256,uint256,uint256)"); // Deprecated
 
     // Added in colony v5 (cerulean-lwss)
     addRoleCapability(ROOT_ROLE, "setPayoutWhitelist(address,bool)");
@@ -98,7 +98,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "upgradeExtension(bytes32,uint256)");
     addRoleCapability(ROOT_ROLE, "deprecateExtension(bytes32,bool)");
     addRoleCapability(ROOT_ROLE, "uninstallExtension(bytes32)");
-    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes)");
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes)"); // Deprecated
     addRoleCapability(ROOT_ROLE, "emitDomainReputationReward(uint256,address,int256)");
     addRoleCapability(ROOT_ROLE, "emitSkillReputationReward(uint256,address,int256)");
     addRoleCapability(ARBITRATION_ROLE, "transferStake(uint256,uint256,address,address,uint256,uint256,address)");
@@ -116,7 +116,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)");
 
     // Added in colony v8 (ebony-lwss)
-    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)");
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransactions(address[],bytes[],bool)"); // Deprecated
     addRoleCapability(ROOT_ROLE, "setDefaultGlobalClaimDelay(uint256)");
     addRoleCapability(ARBITRATION_ROLE, "setExpenditureMetadata(uint256,uint256,uint256,string)");
 
@@ -134,6 +134,9 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ARBITRATION_ROLE, "finalizeExpenditureViaArbitration(uint256,uint256,uint256)");
     addRoleCapability(ROOT_ROLE, "setColonyBridgeAddress(address)");
     addRoleCapability(ROOT_ROLE, "initialiseReputationMining(uint256,bytes32,uint256)");
+
+    // Added in colony v17 (jade-lwss)
+    addRoleCapability(ROOT_ROLE, "makeArbitraryTransaction(address,bytes,bool)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {
