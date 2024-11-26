@@ -250,6 +250,14 @@ contract ColonyFunding is
       );
     }
 
+    if (_domainId == 1) {
+      // Check that we have enough not-already-approved tokens
+      require(
+        getFundingPotBalance(domain.fundingPotId, _token) >= tokenApprovalTotals[_token] + _amount,
+        "colony-insufficient-funds"
+      );
+    }
+
     // Deduct the amount from the domain
     decrementFundingPotBalance(domain.fundingPotId, block.chainid, _token, _amount);
     decrementFundingPotBalance(domain.fundingPotId, block.chainid, address(0x0), _value);
@@ -270,7 +278,10 @@ contract ColonyFunding is
 
     // If the LiFi transaction didn't use all the tokens, reduce the allowance back to what it was before
     if (postApproval > priorApproval) {
-      require(ERC20Extended(_token).approve(LIFI_ADDRESS, priorApproval), "colony-post-exchange-approve-failed");
+      require(
+        ERC20Extended(_token).approve(LIFI_ADDRESS, priorApproval),
+        "colony-post-exchange-approve-failed"
+      );
     }
   }
 
