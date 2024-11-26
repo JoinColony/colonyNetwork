@@ -1030,5 +1030,23 @@ contract("Colony Funding", (accounts) => {
       const approval = await token.allowance(colony.address, LIFI_ADDRESS);
       expect(approval).to.be.eq.BN(0);
     });
+
+    it("shouldn't use tokens that are already approved if swapping in root", async () => {
+      const action1 = await encodeTxData(token, "approve", [ADDRESS_ZERO, 140]);
+      await colony.makeArbitraryTransaction(token.address, action1);
+
+      // 10 remain unapproved in the root domain
+      // Try to spend 50 with LiFi
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        50,
+      ).encodeABI();
+      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, UINT256_MAX, 1, txdata, 0, token.address, 50), "colony-insufficient-funds");
+    });
   });
 });
