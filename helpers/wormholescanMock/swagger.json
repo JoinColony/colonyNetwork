@@ -1,0 +1,4484 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Wormhole Guardian API\nThis is the API for the Wormhole Guardian and Explorer.\nThe API has two namespaces: wormholescan and guardian.\nwormholescan is the namespace for the explorer and the new endpoints. The prefix is /api/v1.\nguardian is the legacy namespace backguard compatible with guardian node API. The prefix is /v1.\nThis API is public and does not require authentication although some endpoints are rate limited.\nCheck each endpoint documentation for more information.",
+        "title": "Wormholescan API",
+        "termsOfService": "https://wormhole.com/",
+        "contact": {
+            "name": "API Support",
+            "url": "https://discord.com/invite/wormholecrypto",
+            "email": "info@wormhole.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/api/v1/address/:address": {
+            "get": {
+                "description": "Lookup an address",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-address-by-id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number. Starts at 0.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-address_AddressOverview"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/application-activity": {
+            "get": {
+                "description": "Search for a specific period of time the number of transactions and the volume per application.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "application-activity",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time span, supported values: 1d, 1mo and 1y",
+                        "name": "timespan",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "From date, supported format 2006-01-02T15:04:05Z07:00",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date, supported format 2006-01-02T15:04:05Z07:00",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by appId",
+                        "name": "appIds",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/transactions.ChainActivityTopResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/global-tx/:chain_id/:emitter/:seq": {
+            "get": {
+                "description": "Find a global transaction by VAA ID\nGlobal transactions is a logical association of two transactions that are related to each other by a unique VAA ID.\nThe first transaction is created on the origin chain when the VAA is emitted.\nThe second transaction is created on the destination chain when the VAA is redeemed.\nIf the response only contains an origin tx the VAA was not redeemed.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-global-transaction-by-id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the VAA",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.Tx"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/config": {
+            "get": {
+                "description": "Returns governor configuration for all guardians.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-config",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-governor_GovConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/config/:guardian_address": {
+            "get": {
+                "description": "Returns governor configuration for a given guardian.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-config-by-guardian-address",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-governor_GovConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/enqueued_vaas/": {
+            "get": {
+                "description": "Returns enqueued VAAs for each blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-enqueued-vaas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_EnqueuedVaas"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/enqueued_vaas/:chain": {
+            "get": {
+                "description": "Returns all enqueued VAAs for a given blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "guardians-enqueued-vaas-by-chain",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_EnqueuedVaaDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/limit": {
+            "get": {
+                "description": "Returns the governor limit for all blockchains.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-notional-limit",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_GovernorLimit"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/notional/available": {
+            "get": {
+                "description": "Returns the amount of notional value available for each blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-notional-available",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_NotionalAvailable"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/notional/available/:chain": {
+            "get": {
+                "description": "Returns the amount of notional value available for a given blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-notional-available-by-chain",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_NotionalAvailableDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/notional/limit": {
+            "get": {
+                "description": "Returns the detailed notional limit for all blockchains.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-notional-limit-detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_NotionalLimitDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/notional/limit/:chain": {
+            "get": {
+                "description": "Returns the detailed notional limit available for a given blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-notional-limit-detail-by-chain",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_NotionalLimitDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/notional/max_available/:chain": {
+            "get": {
+                "description": "Returns the maximum amount of notional value available for a given blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-max-notional-available-by-chain",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-governor_MaxNotionalAvailableRecord"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/status": {
+            "get": {
+                "description": "Returns the governor status for all guardians.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_GovStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/status/:guardian_address": {
+            "get": {
+                "description": "Returns the governor status for a given guardian.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-status-by-guardian-address",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-governor_GovStatus"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/governor/vaas": {
+            "get": {
+                "description": "Returns all vaas in Governor.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "governor-vaas",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_governor_GovernorVaasResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/health": {
+            "get": {
+                "description": "Health check",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "health-check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/last-txs": {
+            "get": {
+                "description": "Returns the number of transactions by a defined time span and sample rate.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-last-transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time Span, default: 1d, supported values: [1d, 1w, 1mo]. 1mo ​​is 30 days.",
+                        "name": "timeSpan",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sample Rate, default: 1h, supported values: [1h, 1d]. Valid configurations with timeSpan: 1d/1h, 1w/1d, 1mo/1d",
+                        "name": "sampleRate",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/transactions.TransactionCountResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/native-token-transfer/activity": {
+            "get": {
+                "description": "Returns a list of values (tx count or notional) of the Native Token Transfer for a emitter and destination chains.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "/api/v1/native-token-transfer/activity",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Symbol of the native-token-transfer token.",
+                        "name": "symbol",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Renders the results using notional or tx count (default is notional).",
+                        "name": "by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/stats.NativeTokenTransferActivity"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/native-token-transfer/summary": {
+            "get": {
+                "description": "Returns a summary of the Native Token Transfer.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "/api/v1/native-token-transfer/summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "coingecko_id of the desired token.",
+                        "name": "coingecko_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.NativeTokenTransferSummary"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/native-token-transfer/token-list": {
+            "get": {
+                "description": "Returns the list of supported Native Token Transfer tokens.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "/api/v1/native-token-transfer/token-list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Specify true/false if the response includes links.",
+                        "name": "withLinks",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/stats.Token"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/native-token-transfer/top-address": {
+            "get": {
+                "description": "Returns a list of values (tx count or notional) of the Native Token Transfer for address.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "/api/v1/native-token-transfer/top-address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Symbol of the native-token-transfer token.",
+                        "name": "symbol",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Renders the results using notional or tx count (default is notional).",
+                        "name": "by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/stats.NativeTokenTransferTopAddress"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/native-token-transfer/top-holder": {
+            "get": {
+                "description": "Returns a list of volume and chain of the Native Token Transfer for top holders.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "/api/v1/native-token-transfer/top-holder",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Coingecko_id of the native-token-transfer token.",
+                        "name": "coingecko_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/stats.NativeTokenTransferTopHolder"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/native-token-transfer/transfer-by-time": {
+            "get": {
+                "description": "Returns a list of values (tx count or notional) of the Native Token Transfer for a emitter and destination chains.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "/api/v1/native-token-transfer/transfer-by-time",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "From date, supported format 2006-01-02T15:04:05Z07:00",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date, supported format 2006-01-02T15:04:05Z07:00",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Symbol of the native-token-transfer token.",
+                        "name": "symbol",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Renders the results using notional or tx count (default is notional).",
+                        "name": "by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Time Span, supported values: [1h, 1d, 1mo, 1y].",
+                        "name": "timeSpan",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/stats.NativeTokenTransferByTime"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/observations": {
+            "get": {
+                "description": "Returns all observations, sorted in descending timestamp order.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-observations",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Transaction hash of the Observations",
+                        "name": "txHash",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/observations.ObservationDoc"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/observations/:chain": {
+            "get": {
+                "description": "Returns all observations for a given blockchain, sorted in descending timestamp order.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-observations-by-chain",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/observations.ObservationDoc"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/observations/:chain/:emitter": {
+            "get": {
+                "description": "Returns all observations for a specific emitter address, sorted in descending timestamp order.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-observations-by-emitter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/observations.ObservationDoc"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/observations/:chain/:emitter/:sequence": {
+            "get": {
+                "description": "Find observations identified by emitter chain, emitter address and sequence.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-observations-by-sequence",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/observations.ObservationDoc"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/observations/:chain/:emitter/:sequence/:signer/:hash": {
+            "get": {
+                "description": "Find a specific observation.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-observations-by-id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/observations.ObservationDoc"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/operations": {
+            "get": {
+                "description": "Find all operations.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-operations",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "hash of the transaction",
+                        "name": "txHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "pageSize",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "source chains of the operation, separated by comma",
+                        "name": "sourceChain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "target chains of the operation, separated by comma",
+                        "name": "targetChain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "appID of the operation",
+                        "name": "appId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "single appId of the operation",
+                        "name": "exclusiveAppId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "beginning of period",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "end of period",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/operations.OperationResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/operations/{chain_id}/{emitter}/{seq}": {
+            "get": {
+                "description": "Find operations by ID (chainID/emitter/sequence).",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-operation-by-id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the VAA",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/operations.OperationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/protocols/stats": {
+            "get": {
+                "description": "Returns the representative stats for the top protocols",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-top-protocols-stats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/protocols.ProtocolTotalValuesDTO"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/protocols.ProtocolTotalValuesDTO"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/ready": {
+            "get": {
+                "description": "Ready check",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "ready-check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "ready": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/relays/:chain/:emitter/:sequence": {
+            "get": {
+                "description": "Get a specific relay information by chainID, emitter address and sequence.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-relay-by-vaa-id",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/relays.RelayResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/scorecards": {
+            "get": {
+                "description": "Returns a list of KPIs for Wormhole.\nTVL is total value locked by token bridge contracts in USD.\nVolume is the all-time total volume transferred through the token bridge in USD.\n24h volume is the volume transferred through the token bridge in the last 24 hours, in USD.\nTotal Tx count is the number of transaction bridging assets since the creation of the network (does not include Pyth or other messages).\n24h tx count is the number of transaction bridging assets in the last 24 hours (does not include Pyth or other messages).\nTotal messages is the number of VAAs emitted since the creation of the network (includes Pyth messages).",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-scorecards",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.ScorecardsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/supply": {
+            "get": {
+                "description": "Get W token supply data (circulation and total supply).",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "supply-info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/supply.SupplyInfoResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/supply/circulating": {
+            "get": {
+                "description": "Get W token circulation supply.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "circulating-supply",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/supply/total": {
+            "get": {
+                "description": "Get W token total supply.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "total-supply",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/token/:chain_id/:token_address": {
+            "get": {
+                "description": "Returns a token symbol, coingecko id and address by chain and token address.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-token-by-chain-and-address",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "token address",
+                        "name": "token_address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.Token"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                }
+            }
+        },
+        "/api/v1/top-100-corridors": {
+            "get": {
+                "description": "Returns a list of the top 100 tokens, sorted in descending order by the number of transactions.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "/api/v1/top-100-corridors",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time span, supported values: 2d and 7d (default is 2d).",
+                        "name": "timeSpan",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.TopCorridorsResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/top-assets-by-volume": {
+            "get": {
+                "description": "Returns a list of emitter_chain and asset pairs with ordered by volume.\nThe volume is calculated using the notional price of the symbol at the day the VAA was emitted.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-top-assets-by-volume",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time span, supported values: 7d, 15d, 30d.",
+                        "name": "timeSpan",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.TopAssetsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/top-chain-pairs-by-num-transfers": {
+            "get": {
+                "description": "Returns a list of the emitter_chain and destination_chain pair ordered by transfer count.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-top-chain-pairs-by-num-transfers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time span, supported values: 7d, 15d, 30d.",
+                        "name": "timeSpan",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.TopChainPairsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/top-symbols-by-volume": {
+            "get": {
+                "description": "Returns a list of symbols by origin chain and tokens.\nThe volume is calculated using the notional price of the symbol at the day the VAA was emitted.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "top-symbols-by-volume",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time span, supported values: 7d, 15d and 30d (default is 7d).",
+                        "name": "timeSpan",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/stats.TopSymbolByVolumeResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/transactions/": {
+            "get": {
+                "description": "Returns transactions. Output is paginated.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "list-transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number. Starts at 0.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter transactions by Address.",
+                        "name": "address",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.ListTransactionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/transactions/:chain_id/:emitter/:seq": {
+            "get": {
+                "description": "Find VAA metadata by ID.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-transaction-by-id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the VAA",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.TransactionDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/vaas/": {
+            "get": {
+                "description": "Returns all VAAs. Output is paginated and can also be be sorted.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-all-vaas",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Transaction hash of the VAA",
+                        "name": "txHash",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "include the parsed contents of the VAA, if available",
+                        "name": "parsedPayload",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_vaa_VaaDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/vaas/:chain_id": {
+            "get": {
+                "description": "Returns all the VAAs generated in specific blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-vaas-by-chain",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_vaa_VaaDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/vaas/:chain_id/:emitter": {
+            "get": {
+                "description": "Returns all all the VAAs generated by a specific emitter address.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-vaas-by-emitter",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "destination chain (deprecated param)",
+                        "name": "toChain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of elements per page.",
+                        "name": "pageSize",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "ASC",
+                            "DESC"
+                        ],
+                        "type": "string",
+                        "description": "Sort results in ascending or descending order.",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_vaa_VaaDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/vaas/:chain_id/:emitter/:seq": {
+            "get": {
+                "description": "Find a VAA by ID.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-vaa-by-id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the VAA",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "include the parsed contents of the VAA, if available",
+                        "name": "parsedPayload",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_vaa_VaaDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/vaas/:chain_id/:emitter/:seq/duplicated": {
+            "get": {
+                "description": "Find duplicated VAA by ID.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "find-duplicated-vaa-by-id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the VAA",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_vaa_VaaDoc"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/vaas/parse": {
+            "post": {
+                "description": "Parse a VAA.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "parse-vaa",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/parser.ParseVaaWithStandarizedPropertiesdResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/vaas/vaa-counts": {
+            "get": {
+                "description": "Returns the total number of VAAs emitted for each blockchain.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-vaa-counts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.Response-array_vaa_VaaStats"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/version": {
+            "get": {
+                "description": "Get version/release information.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "get-version",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/infrastructure.VersionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/x-chain-activity": {
+            "get": {
+                "description": "Returns a list of chain pairs by origin chain and destination chain.\nThe list could be rendered by notional or transaction count.\nThe volume is calculated using the notional price of the symbol at the day the VAA was emitted.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "x-chain-activity",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time span, supported values: 7d, 30d, 90d, 1y and all-time (default is 7d).",
+                        "name": "timeSpan",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Renders the results using notional or tx count (default is notional).",
+                        "name": "by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "List of apps separated by comma (default is all apps).",
+                        "name": "apps",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/transactions.ChainActivity"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/x-chain-activity/tops": {
+            "get": {
+                "description": "Search for a specific period of time the number of transactions and the volume.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "x-chain-activity-tops",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Time span, supported values: 1d, 1mo and 1y",
+                        "name": "timespan",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "From date, supported format 2006-01-02T15:04:05Z07:00",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "To date, supported format 2006-01-02T15:04:05Z07:00",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by appId",
+                        "name": "appId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by sourceChain",
+                        "name": "sourceChain",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search by targetChain",
+                        "name": "targetChain",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/transactions.ChainActivityTopResult"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/swagger.json": {
+            "get": {
+                "description": "Returns the swagger specification for this API.",
+                "tags": [
+                    "wormholescan"
+                ],
+                "operationId": "swagger",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/governor/available_notional_by_chain": {
+            "get": {
+                "description": "Get available notional by chainID\nSince from the wormhole-explorer point of view it is not a node, but has the information of all nodes,\nin order to build the endpoints it was assumed:\nThere are N number of remainingAvailableNotional values in the GovernorConfig collection. N = number of guardians\nfor a chainID. The smallest remainingAvailableNotional value for a chainID is used for the endpoint response.",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "governor-available-notional-by-chain",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/governor.AvailableNotionalResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/governor/enqueued_vaas": {
+            "get": {
+                "description": "Get enqueued VAAs",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "guardians-enqueued-vaas",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/governor.EnqueuedVaaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/governor/is_vaa_enqueued/:chain_id/:emitter/:seq": {
+            "get": {
+                "description": "Check if vaa is enqueued",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "guardians-is-vaa-enqueued",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the vaa",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/governor.EnqueuedVaaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/governor/token_list": {
+            "get": {
+                "description": "Get token list\nSince from the wormhole-explorer point of view it is not a node, but has the information of all nodes,\nin order to build the endpoints it was assumed:\nFor tokens with the same originChainId and originAddress and different price values for each node,\nthe price that has most occurrences in all the nodes for an originChainId and originAddress is returned.",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "guardians-token-list",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/governor.TokenList"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/guardianset/current": {
+            "get": {
+                "description": "Get current guardian set.",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "guardian-set",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/guardian.GuardianSetResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/heartbeats": {
+            "get": {
+                "description": "Get heartbeats for guardians",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "guardians-hearbeats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/heartbeats.HeartbeatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/signed_batch_vaa/:chain_id/:emitter/sequence/:seq": {
+            "get": {
+                "description": "get a batch of VAA []byte from a chainID, emitter address and sequence.",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "guardians-find-signed-batch-vaa",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the VAA",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "vaaBytes": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/v1/signed_vaa/:chain_id/:emitter/:seq": {
+            "get": {
+                "description": "get a VAA []byte from a chainID, emitter address and sequence.",
+                "tags": [
+                    "Guardian"
+                ],
+                "operationId": "guardians-find-signed-vaa",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of the blockchain",
+                        "name": "chain_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "address of the emitter",
+                        "name": "emitter",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "sequence of the VAA",
+                        "name": "seq",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "vaaBytes": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "address.AddressOverview": {
+            "type": "object",
+            "properties": {
+                "vaas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/vaa.VaaDoc"
+                    }
+                }
+            }
+        },
+        "github_com_wormhole-foundation_wormhole-explorer_api_routes_guardian_guardian.GuardianSet": {
+            "type": "object",
+            "properties": {
+                "addresses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "index": {
+                    "type": "integer"
+                }
+            }
+        },
+        "governor.AvailableNotionalItemResponse": {
+            "type": "object",
+            "properties": {
+                "bigTransactionSize": {
+                    "type": "string"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "notionalLimit": {
+                    "type": "string"
+                },
+                "remainingAvailableNotional": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.AvailableNotionalResponse": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.AvailableNotionalItemResponse"
+                    }
+                }
+            }
+        },
+        "governor.Emitter": {
+            "type": "object",
+            "properties": {
+                "emitterAddress": {
+                    "type": "string"
+                },
+                "enqueuedVaas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.EnqueuedVAA"
+                    }
+                },
+                "totalEnqueuedVaas": {
+                    "type": "integer"
+                }
+            }
+        },
+        "governor.EnqueuedVAA": {
+            "type": "object",
+            "properties": {
+                "notionalValue": {
+                    "type": "integer"
+                },
+                "releaseTime": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.EnqueuedVaa": {
+            "type": "object",
+            "properties": {
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitterAddress": {
+                    "type": "string"
+                },
+                "notionalValue": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.EnqueuedVaaDetail": {
+            "type": "object",
+            "properties": {
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitterAddress": {
+                    "type": "string"
+                },
+                "notionalValue": {
+                    "type": "integer"
+                },
+                "releaseTime": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.EnqueuedVaaItemResponse": {
+            "type": "object",
+            "properties": {
+                "emitterAddress": {
+                    "type": "string"
+                },
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "notionalValue": {
+                    "type": "string"
+                },
+                "releaseTime": {
+                    "type": "integer"
+                },
+                "sequence": {
+                    "type": "integer"
+                },
+                "txHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.EnqueuedVaaResponse": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.EnqueuedVaaItemResponse"
+                    }
+                }
+            }
+        },
+        "governor.EnqueuedVaas": {
+            "type": "object",
+            "properties": {
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "enqueuedVaas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.EnqueuedVaa"
+                    }
+                }
+            }
+        },
+        "governor.GovConfig": {
+            "type": "object",
+            "properties": {
+                "chains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.GovConfigChains"
+                    }
+                },
+                "counter": {
+                    "type": "integer"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nodeName": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.GovConfigfTokens"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.GovConfigChains": {
+            "type": "object",
+            "properties": {
+                "bigTransactionSize": {
+                    "type": "integer"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "notionalLimit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "governor.GovConfigfTokens": {
+            "type": "object",
+            "properties": {
+                "originAddress": {
+                    "type": "string"
+                },
+                "originChainId": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "number"
+                }
+            }
+        },
+        "governor.GovStatus": {
+            "type": "object",
+            "properties": {
+                "chains": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.GovStatusChains"
+                    }
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nodeName": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.GovStatusChainEmitter": {
+            "type": "object",
+            "properties": {
+                "emitterAddress": {
+                    "type": "string"
+                },
+                "enqueuedVaas": {},
+                "totalEnqueuedVaas": {
+                    "type": "integer"
+                }
+            }
+        },
+        "governor.GovStatusChains": {
+            "type": "object",
+            "properties": {
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.GovStatusChainEmitter"
+                    }
+                },
+                "remainingAvailableNotional": {
+                    "type": "integer"
+                }
+            }
+        },
+        "governor.GovernorLimit": {
+            "type": "object",
+            "properties": {
+                "availableNotional": {
+                    "type": "integer"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "maxTransactionSize": {
+                    "type": "integer"
+                },
+                "notionalLimit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "governor.GovernorVaasResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitterAddress": {
+                    "type": "string"
+                },
+                "releaseTime": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                },
+                "vaaId": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.MaxNotionalAvailableRecord": {
+            "type": "object",
+            "properties": {
+                "availableNotional": {
+                    "type": "integer"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "emitters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.Emitter"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nodeName": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.NotionalAvailable": {
+            "type": "object",
+            "properties": {
+                "availableNotional": {
+                    "type": "integer"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                }
+            }
+        },
+        "governor.NotionalAvailableDetail": {
+            "type": "object",
+            "properties": {
+                "availableNotional": {
+                    "type": "integer"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nodeName": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.NotionalLimitDetail": {
+            "type": "object",
+            "properties": {
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "maxTransactionSize": {
+                    "type": "integer"
+                },
+                "nodeName": {
+                    "type": "string"
+                },
+                "notionalLimit": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "governor.TokenList": {
+            "type": "object",
+            "properties": {
+                "originAddress": {
+                    "type": "string"
+                },
+                "originChainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "price": {
+                    "type": "number"
+                }
+            }
+        },
+        "guardian.GuardianSetResponse": {
+            "type": "object",
+            "properties": {
+                "guardianSet": {
+                    "$ref": "#/definitions/github_com_wormhole-foundation_wormhole-explorer_api_routes_guardian_guardian.GuardianSet"
+                }
+            }
+        },
+        "heartbeats.HeartbeatNetworkResponse": {
+            "type": "object",
+            "properties": {
+                "contractAddress": {
+                    "type": "string"
+                },
+                "errorCount": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "heartbeats.HeartbeatResponse": {
+            "type": "object",
+            "properties": {
+                "p2pNodeAddr": {
+                    "type": "string"
+                },
+                "rawHeartbeat": {
+                    "$ref": "#/definitions/heartbeats.RawHeartbeat"
+                },
+                "verifiedGuardianAddr": {
+                    "type": "string"
+                }
+            }
+        },
+        "heartbeats.HeartbeatsResponse": {
+            "type": "object",
+            "properties": {
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/heartbeats.HeartbeatResponse"
+                    }
+                }
+            }
+        },
+        "heartbeats.RawHeartbeat": {
+            "type": "object",
+            "properties": {
+                "bootTimestamp": {
+                    "type": "string"
+                },
+                "counter": {
+                    "type": "string"
+                },
+                "features": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "guardianAddr": {
+                    "type": "string"
+                },
+                "networks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/heartbeats.HeartbeatNetworkResponse"
+                    }
+                },
+                "nodeName": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "infrastructure.VersionResponse": {
+            "type": "object",
+            "properties": {
+                "branch": {
+                    "type": "string"
+                },
+                "build": {
+                    "type": "string"
+                },
+                "build_date": {
+                    "type": "string"
+                },
+                "machine": {
+                    "type": "string"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "observations.ObservationDoc": {
+            "type": "object",
+            "properties": {
+                "emitterAddr": {
+                    "type": "string"
+                },
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "guardianAddr": {
+                    "type": "string"
+                },
+                "hash": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "indexedAt": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "txHash": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "operations.Content": {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "standarizedProperties": {
+                    "$ref": "#/definitions/operations.StandardizedProperties"
+                }
+            }
+        },
+        "operations.Data": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "object",
+                    "additionalProperties": {}
+                }
+            }
+        },
+        "operations.EmitterAddress": {
+            "type": "object",
+            "properties": {
+                "hex": {
+                    "type": "string"
+                },
+                "native": {
+                    "type": "string"
+                }
+            }
+        },
+        "operations.OperationResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "$ref": "#/definitions/operations.Content"
+                },
+                "data": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "emitterAddress": {
+                    "$ref": "#/definitions/operations.EmitterAddress"
+                },
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "sequence": {
+                    "type": "string"
+                },
+                "sourceChain": {
+                    "$ref": "#/definitions/operations.SourceChain"
+                },
+                "targetChain": {
+                    "$ref": "#/definitions/operations.TargetChain"
+                },
+                "vaa": {
+                    "$ref": "#/definitions/operations.Vaa"
+                }
+            }
+        },
+        "operations.SourceChain": {
+            "type": "object",
+            "properties": {
+                "attribute": {
+                    "$ref": "#/definitions/operations.Data"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "fee": {
+                    "type": "string"
+                },
+                "feeUSD": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "gasTokenNotional": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "transaction": {
+                    "$ref": "#/definitions/operations.Transaction"
+                }
+            }
+        },
+        "operations.StandardizedProperties": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "appIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fee": {
+                    "type": "string"
+                },
+                "feeAddress": {
+                    "type": "string"
+                },
+                "feeChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "fromAddress": {
+                    "type": "string"
+                },
+                "fromChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "toAddress": {
+                    "type": "string"
+                },
+                "toChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                }
+            }
+        },
+        "operations.TargetChain": {
+            "type": "object",
+            "properties": {
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "fee": {
+                    "type": "string"
+                },
+                "feeUSD": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "gasTokenNotional": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "transaction": {
+                    "$ref": "#/definitions/operations.Transaction"
+                }
+            }
+        },
+        "operations.Transaction": {
+            "type": "object",
+            "properties": {
+                "secondTxHash": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "operations.Vaa": {
+            "type": "object",
+            "properties": {
+                "guardianSetIndex": {
+                    "type": "integer"
+                },
+                "isDuplicated": {
+                    "type": "boolean"
+                },
+                "raw": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "parser.ParseVaaWithStandarizedPropertiesdResponse": {
+            "type": "object",
+            "properties": {
+                "parsedPayload": {},
+                "standardizedProperties": {
+                    "$ref": "#/definitions/parser.StandardizedProperties"
+                }
+            }
+        },
+        "parser.StandardizedProperties": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string"
+                },
+                "appIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "fee": {
+                    "type": "string"
+                },
+                "feeAddress": {
+                    "type": "string"
+                },
+                "feeChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "fromAddress": {
+                    "type": "string"
+                },
+                "fromChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "normalizedDecimals": {
+                    "type": "integer"
+                },
+                "toAddress": {
+                    "type": "string"
+                },
+                "toChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                }
+            }
+        },
+        "protocols.ProtocolTotalValuesDTO": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "last_24_hour_volume": {
+                    "type": "number"
+                },
+                "last_day_diff_percentage": {
+                    "type": "string"
+                },
+                "last_day_diff_volume_percentage": {
+                    "type": "string"
+                },
+                "last_day_messages": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "total_messages": {
+                    "type": "integer"
+                },
+                "total_value_locked": {
+                    "type": "number"
+                },
+                "total_value_secured": {
+                    "type": "number"
+                },
+                "total_value_transferred": {
+                    "type": "number"
+                }
+            }
+        },
+        "relays.DeliveryReponse": {
+            "type": "object",
+            "properties": {
+                "budget": {
+                    "type": "string"
+                },
+                "execution": {
+                    "$ref": "#/definitions/relays.ResultExecutionResponse"
+                },
+                "maxRefund": {
+                    "type": "string"
+                },
+                "relayGasUsed": {
+                    "type": "integer"
+                },
+                "targetChainDecimals": {
+                    "type": "integer"
+                }
+            }
+        },
+        "relays.InstructionsResponse": {
+            "type": "object",
+            "properties": {
+                "encodedExecutionInfo": {
+                    "type": "string"
+                },
+                "extraReceiverValue": {
+                    "type": "object",
+                    "properties": {
+                        "_hex": {
+                            "type": "string"
+                        },
+                        "_isBigNumber": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "refundAddress": {
+                    "type": "string"
+                },
+                "refundChainId": {
+                    "type": "integer"
+                },
+                "refundDeliveryProvider": {
+                    "type": "string"
+                },
+                "requestedReceiverValue": {
+                    "type": "object",
+                    "properties": {
+                        "_hex": {
+                            "type": "string"
+                        },
+                        "_isBigNumber": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "senderAddress": {
+                    "type": "string"
+                },
+                "sourceDeliveryProvider": {
+                    "type": "string"
+                },
+                "targetAddress": {
+                    "type": "string"
+                },
+                "targetChainId": {
+                    "type": "integer"
+                },
+                "vaaKeys": {
+                    "type": "array",
+                    "items": {}
+                }
+            }
+        },
+        "relays.RelayDataResponse": {
+            "type": "object",
+            "properties": {
+                "delivery": {
+                    "$ref": "#/definitions/relays.DeliveryReponse"
+                },
+                "fromTxHash": {
+                    "type": "string"
+                },
+                "instructions": {
+                    "$ref": "#/definitions/relays.InstructionsResponse"
+                },
+                "maxAttempts": {
+                    "type": "integer"
+                },
+                "toTxHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "relays.RelayResponse": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "string"
+                },
+                "data": {
+                    "$ref": "#/definitions/relays.RelayDataResponse"
+                },
+                "failedAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "receivedAt": {
+                    "type": "string"
+                },
+                "relayer": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "relays.ResultExecutionResponse": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "string"
+                },
+                "gasUsed": {
+                    "type": "string"
+                },
+                "refundStatus": {
+                    "type": "string"
+                },
+                "revertString": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "transactionHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.Response-address_AddressOverview": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/address.AddressOverview"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_EnqueuedVaaDetail": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.EnqueuedVaaDetail"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_EnqueuedVaas": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.EnqueuedVaas"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_GovStatus": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.GovStatus"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_GovernorLimit": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.GovernorLimit"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_GovernorVaasResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.GovernorVaasResponse"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_NotionalAvailable": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.NotionalAvailable"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_NotionalAvailableDetail": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.NotionalAvailableDetail"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_governor_NotionalLimitDetail": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/governor.NotionalLimitDetail"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_vaa_VaaDoc": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/vaa.VaaDoc"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-array_vaa_VaaStats": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/vaa.VaaStats"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-governor_GovConfig": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/governor.GovConfig"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-governor_GovStatus": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/governor.GovStatus"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.Response-governor_MaxNotionalAvailableRecord": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/governor.MaxNotionalAvailableRecord"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/response.ResponsePagination"
+                }
+            }
+        },
+        "response.ResponsePagination": {
+            "type": "object",
+            "properties": {
+                "next": {
+                    "type": "string"
+                }
+            }
+        },
+        "stats.NativeTokenTransferActivity": {
+            "type": "object",
+            "properties": {
+                "destinationChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.NativeTokenTransferByTime": {
+            "type": "object",
+            "properties": {
+                "symbol": {
+                    "type": "string"
+                },
+                "time": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.NativeTokenTransferSummary": {
+            "type": "object",
+            "properties": {
+                "circulatingSupply": {
+                    "type": "number"
+                },
+                "fullyDilutedValuation": {
+                    "type": "number"
+                },
+                "image": {
+                    "$ref": "#/definitions/stats.image"
+                },
+                "links": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "marketCap": {
+                    "type": "number"
+                },
+                "platforms": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "price": {
+                    "type": "number"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "totalSupply": {
+                    "type": "number"
+                },
+                "totalTokenTransferred": {
+                    "type": "number"
+                },
+                "totalValueTokenTransferred": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.NativeTokenTransferTopAddress": {
+            "type": "object",
+            "properties": {
+                "fromAddress": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.NativeTokenTransferTopHolder": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.Token": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chain_id": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "circulating_supply": {
+                    "type": "number"
+                },
+                "coingecko_id": {
+                    "type": "string"
+                },
+                "fully_diluted_valuation": {
+                    "type": "number"
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "large": {
+                            "type": "string"
+                        },
+                        "small": {
+                            "type": "string"
+                        },
+                        "thumb": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "links": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "market_cap": {
+                    "type": "number"
+                },
+                "platforms": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "price": {
+                    "type": "number"
+                },
+                "price_change_percentage_24h": {
+                    "type": "number"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "total_value_locked": {
+                    "type": "number"
+                },
+                "volume_24h": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.TokenResult": {
+            "type": "object",
+            "properties": {
+                "emitter_chain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "token_address": {
+                    "type": "string"
+                },
+                "token_chain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "txs": {
+                    "type": "number"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.TopCorridor": {
+            "type": "object",
+            "properties": {
+                "emitter_chain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "target_chain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "token_address": {
+                    "type": "string"
+                },
+                "token_chain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "txs": {
+                    "type": "integer"
+                }
+            }
+        },
+        "stats.TopCorridorsResult": {
+            "type": "object",
+            "properties": {
+                "corridors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stats.TopCorridor"
+                    }
+                }
+            }
+        },
+        "stats.TopSymbolByVolumeResult": {
+            "type": "object",
+            "properties": {
+                "symbols": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stats.TopSymbolResult"
+                    }
+                }
+            }
+        },
+        "stats.TopSymbolResult": {
+            "type": "object",
+            "properties": {
+                "symbol": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/stats.TokenResult"
+                    }
+                },
+                "txs": {
+                    "type": "number"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "stats.image": {
+            "type": "object",
+            "properties": {
+                "large": {
+                    "type": "string"
+                },
+                "small": {
+                    "type": "string"
+                },
+                "thumb": {
+                    "type": "string"
+                }
+            }
+        },
+        "supply.SupplyInfoResponse": {
+            "type": "object",
+            "properties": {
+                "circulating_supply": {
+                    "type": "string"
+                },
+                "total_supply": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.AssetWithVolume": {
+            "type": "object",
+            "properties": {
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "tokenAddress": {
+                    "type": "string"
+                },
+                "tokenChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "volume": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.AttributeDoc": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "object",
+                    "additionalProperties": {}
+                }
+            }
+        },
+        "transactions.ChainActivity": {
+            "type": "object",
+            "properties": {
+                "txs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transactions.Tx"
+                    }
+                }
+            }
+        },
+        "transactions.ChainActivityTopResult": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "destination_chain": {
+                    "type": "string"
+                },
+                "emitter_chain": {
+                    "type": "string"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "integer"
+                }
+            }
+        },
+        "transactions.ChainPair": {
+            "type": "object",
+            "properties": {
+                "destinationChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "numberOfTransfers": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.Destination": {
+            "type": "object",
+            "properties": {
+                "chain": {
+                    "type": "integer"
+                },
+                "percentage": {
+                    "type": "number"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "transactions.DestinationTx": {
+            "type": "object",
+            "properties": {
+                "blockNumber": {
+                    "type": "string"
+                },
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "to": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.GlobalTransactionDoc": {
+            "type": "object",
+            "properties": {
+                "destinationTx": {
+                    "$ref": "#/definitions/transactions.DestinationTx"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "originTx": {
+                    "$ref": "#/definitions/transactions.OriginTx"
+                }
+            }
+        },
+        "transactions.ListTransactionsResponse": {
+            "type": "object",
+            "properties": {
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transactions.TransactionDetail"
+                    }
+                }
+            }
+        },
+        "transactions.OriginTx": {
+            "type": "object",
+            "properties": {
+                "attribute": {
+                    "$ref": "#/definitions/transactions.AttributeDoc"
+                },
+                "from": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.ScorecardsResponse": {
+            "type": "object",
+            "properties": {
+                "24h_messages": {
+                    "description": "Number of VAAs emitted in the last 24 hours (includes Pyth messages).",
+                    "type": "string"
+                },
+                "24h_volume": {
+                    "description": "Volume transferred through the token bridge in the last 24 hours, in USD.",
+                    "type": "string"
+                },
+                "30d_volume": {
+                    "description": "Volume transferred through the token bridge in the last 24 hours, in USD.",
+                    "type": "string"
+                },
+                "7d_volume": {
+                    "description": "Volume transferred through the token bridge in the last 24 hours, in USD.",
+                    "type": "string"
+                },
+                "total_messages": {
+                    "description": "Number of VAAs emitted since the creation of the network (includes Pyth messages).",
+                    "type": "string"
+                },
+                "total_tx_count": {
+                    "description": "Number of VAAs emitted since the creation of the network (does not include Pyth messages)",
+                    "type": "string"
+                },
+                "total_volume": {
+                    "type": "string"
+                },
+                "tvl": {
+                    "description": "Total value locked in USD.",
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.Token": {
+            "type": "object",
+            "properties": {
+                "coingeckoId": {
+                    "type": "string"
+                },
+                "decimals": {
+                    "type": "integer"
+                },
+                "symbol": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.TopAssetsResponse": {
+            "type": "object",
+            "properties": {
+                "assets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transactions.AssetWithVolume"
+                    }
+                }
+            }
+        },
+        "transactions.TopChainPairsResponse": {
+            "type": "object",
+            "properties": {
+                "chainPairs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transactions.ChainPair"
+                    }
+                }
+            }
+        },
+        "transactions.TransactionCountResult": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "time": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.TransactionDetail": {
+            "type": "object",
+            "properties": {
+                "emitterAddress": {
+                    "description": "EmitterAddress contains the VAA's emitter address, encoded in hex.",
+                    "type": "string"
+                },
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitterNativeAddress": {
+                    "description": "EmitterNativeAddress contains the VAA's emitter address, encoded in the emitter chain's native format.",
+                    "type": "string"
+                },
+                "globalTx": {
+                    "$ref": "#/definitions/transactions.GlobalTransactionDoc"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "payload": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "standardizedProperties": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "symbol": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "tokenAmount": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "type": "string"
+                },
+                "usdAmount": {
+                    "type": "string"
+                }
+            }
+        },
+        "transactions.Tx": {
+            "type": "object",
+            "properties": {
+                "chain": {
+                    "type": "integer"
+                },
+                "destinations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transactions.Destination"
+                    }
+                },
+                "percentage": {
+                    "type": "number"
+                },
+                "volume": {
+                    "type": "number"
+                }
+            }
+        },
+        "vaa.ChainID": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                28,
+                29,
+                30,
+                32,
+                33,
+                34,
+                35,
+                36,
+                37,
+                38,
+                39,
+                40,
+                43,
+                44,
+                3104,
+                4000,
+                4001,
+                4002,
+                4003,
+                4004,
+                4005,
+                4006,
+                4007,
+                4008,
+                10002,
+                10003,
+                10004,
+                10005,
+                10006,
+                10007
+            ],
+            "x-enum-varnames": [
+                "ChainIDUnset",
+                "ChainIDSolana",
+                "ChainIDEthereum",
+                "ChainIDTerra",
+                "ChainIDBSC",
+                "ChainIDPolygon",
+                "ChainIDAvalanche",
+                "ChainIDOasis",
+                "ChainIDAlgorand",
+                "ChainIDAurora",
+                "ChainIDFantom",
+                "ChainIDKarura",
+                "ChainIDAcala",
+                "ChainIDKlaytn",
+                "ChainIDCelo",
+                "ChainIDNear",
+                "ChainIDMoonbeam",
+                "ChainIDTerra2",
+                "ChainIDInjective",
+                "ChainIDOsmosis",
+                "ChainIDSui",
+                "ChainIDAptos",
+                "ChainIDArbitrum",
+                "ChainIDOptimism",
+                "ChainIDGnosis",
+                "ChainIDPythNet",
+                "ChainIDXpla",
+                "ChainIDBtc",
+                "ChainIDBase",
+                "ChainIDSei",
+                "ChainIDRootstock",
+                "ChainIDScroll",
+                "ChainIDMantle",
+                "ChainIDBlast",
+                "ChainIDXLayer",
+                "ChainIDLinea",
+                "ChainIDBerachain",
+                "ChainIDSeiEVM",
+                "ChainIDSnaxchain",
+                "ChainIDUnichain",
+                "ChainIDWormchain",
+                "ChainIDCosmoshub",
+                "ChainIDEvmos",
+                "ChainIDKujira",
+                "ChainIDNeutron",
+                "ChainIDCelestia",
+                "ChainIDStargaze",
+                "ChainIDSeda",
+                "ChainIDDymension",
+                "ChainIDProvenance",
+                "ChainIDSepolia",
+                "ChainIDArbitrumSepolia",
+                "ChainIDBaseSepolia",
+                "ChainIDOptimismSepolia",
+                "ChainIDHolesky",
+                "ChainIDPolygonSepolia"
+            ]
+        },
+        "vaa.VaaDoc": {
+            "type": "object",
+            "properties": {
+                "digest": {
+                    "type": "string"
+                },
+                "emitterAddr": {
+                    "type": "string"
+                },
+                "emitterChain": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "emitterNativeAddr": {
+                    "type": "string"
+                },
+                "guardianSetIndex": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "indexedAt": {
+                    "type": "string"
+                },
+                "isDuplicated": {
+                    "type": "boolean"
+                },
+                "payload": {
+                    "description": "Payload is an extension field - it is not present in the guardian API.",
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "txHash": {
+                    "description": "TxHash is an extension field - it is not present in the guardian API.",
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "vaa": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
+        "vaa.VaaStats": {
+            "type": "object",
+            "properties": {
+                "chainId": {
+                    "$ref": "#/definitions/vaa.ChainID"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}

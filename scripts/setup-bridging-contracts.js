@@ -206,8 +206,19 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
     stdio: "inherit",
   });
 
+  const wormholeScanMockProcess = spawn("pnpm", ["exec", "tsx", "./src/index.ts"], {
+    cwd: path.resolve(__dirname, "..", "helpers", "wormholescanMock"),
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      PORT: "3001",
+      PROVIDER_URLS: `${homeRpcUrl},${foreignRpcUrls.join(",")}`,
+    },
+  });
+
   process.on("exit", () => {
     relayerProcess.kill();
+    wormholeScanMockProcess.kill();
   });
 
   // Wait until the bridge monitor has connected to the spy

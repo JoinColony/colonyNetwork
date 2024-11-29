@@ -25,6 +25,8 @@ import { CallWithGuards } from "../common/CallWithGuards.sol";
 import { DSAuth } from "../../lib/dappsys/auth.sol";
 
 contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
+  event WormholeMessageReceived(uint16 emitterChainId, bytes32 emitterAddress, uint64 sequence);
+
   address public colonyNetwork;
   IWormhole public wormhole;
 
@@ -125,6 +127,12 @@ contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
     if (!success) {
       revert(abi.decode(returndata, (string)));
     }
+
+    emit WormholeMessageReceived(
+      wormholeMessage.emitterChainId,
+      wormholeMessage.emitterAddress,
+      wormholeMessage.sequence
+    );
   }
 
   function sendMessage(

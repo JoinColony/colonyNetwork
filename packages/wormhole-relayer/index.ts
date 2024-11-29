@@ -110,7 +110,7 @@ const loader = new TruffleLoader({
     }
     const hash = ctx.sourceTxHash;
 
-    console.log(`Got a VAA with sequence: ${vaa.sequence} from with txhash: ${hash}`);
+    console.log(`Got a VAA with id: ${vaa.id.emitterChain}/${vaa.id.emitterAddress}/${vaa.id.sequence} from txhash: ${hash}`);
 
     const [
       destinationEvmChainId,

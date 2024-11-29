@@ -61,6 +61,10 @@ step_compile_mock_spy: &step_compile_mock_spy
         cd ./../.. && npx hardhat compile
         cp ./packages/wormhole-relayer/config.example.js ./packages/wormhole-relayer/config.js
         npx tsc
+step_generate_wormhole_types: &step_generate_wormhole_types
+    run:
+      name: "Generate wormhole API types for mock endpoint"
+      command: sudo apt install default-jre && cd ./helpers/wormholescanMock && pnpm i && npm run generate-types
 
 jobs:
   build-checks:
@@ -348,6 +352,7 @@ jobs:
       - <<: *step_setup_global_packages
       - <<: *step_install_lsof
       - <<: *step_compile_mock_spy
+      - <<: *step_generate_wormhole_types
       - run:
           name: "Installing the safe-contracts dependencies"
           command: cd ./lib/safe-contracts && pnpm i --ignore-scripts
