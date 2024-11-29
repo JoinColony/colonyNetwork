@@ -164,7 +164,8 @@
     "packages/kyc-oracle",
     "packages/metatransaction-broadcaster",
     "packages/package-utils",
-    "packages/reputation-miner"
+    "packages/reputation-miner",
+    "helpers/wormholescanMock"
   ],
   "dependencies": {
     "@certusone/wormhole-sdk": "^0.10.15",

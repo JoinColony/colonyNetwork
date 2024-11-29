@@ -73,7 +73,7 @@ contract WormholeMock is IWormhole {
     require(bridgeEnabled, "bridge-disabled");
     cumulativeSequence += 1;
 
-    emit LogMessagePublished(msg.sender, sequence, nonce, payload, consistencyLevel);
+    emit LogMessagePublished(msg.sender, cumulativeSequence, nonce, payload, consistencyLevel);
     return cumulativeSequence;
   }
 

@@ -32,6 +32,7 @@ const ProxyColony = artifacts.require("ProxyColony");
 const MetaTxToken = artifacts.require("MetaTxToken");
 const OneTxPayment = artifacts.require("OneTxPayment");
 const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
+const IWormhole = artifacts.require("IWormhole");
 // const { assert } = require("console");
 
 const { setupBridging, setForeignBridgeData, setHomeBridgeData } = require("../../scripts/setup-bridging-contracts");
@@ -1347,6 +1348,43 @@ contract("Cross-chain", (accounts) => {
 
       const balanceAfter = await foreignToken.balanceOf(accounts[0]);
       expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(paymentAmount.toHexString());
+    });
+  });
+
+  describe("Wormholescan API mock should work as expected", async () => {
+    it("the operations endpoint should return the right joined-up transactions ", async () => {
+      const colony = await setupColony(homeColonyNetwork);
+
+      // const homeWormholeAddress = await homeBridge.wormhole();
+      // const foreignWormholeAddress = await remoteColonyNetwork.wormhole();
+
+      const events = await homeColonyNetwork.queryFilter(homeColonyNetwork.filters.ColonyAdded());
+      // Deploy a proxy colony on the foreign network
+
+      const colonyCreationSalt = await homeColonyNetwork.getColonyCreationSalt({ blockTag: events[events.length - 1].blockNumber });
+
+      const p = guardianSpy.getPromiseForNextBridgedTransaction();
+
+      const tx = await colony.createProxyColony(foreignChainId, colonyCreationSalt, { gasLimit: 1000000 });
+      const requestReceipt = await tx.wait();
+
+      const homeWormhole = new ethers.Contract(homeBridge, IWormhole.abi, ethersHomeSigner);
+      const wormholeEvent = homeWormhole.interface.parseLog(requestReceipt.logs.filter((l) => l.address === homeBridge.address)[0]);
+      const senderWormholeAddress = ethers.utils.hexZeroPad(wormholeEvent.args.sender, 32);
+      const executionReceipt = await p;
+      let apiResponse;
+
+      try {
+        apiResponse = await fetch(
+          `http://localhost:3001/api/v1/operations/${wormholeHomeChainId}/${senderWormholeAddress}/${wormholeEvent.args.sequence.toString()}`,
+        );
+      } catch (err) {
+        console.log(err);
+      }
+      const res = await apiResponse.json();
+
+      expect(res.sourceChain.transaction.txHash).to.equal(requestReceipt.transactionHash);
+      expect(res.targetChain.transaction.txHash).to.equal(executionReceipt.transactionHash);
     });
   });
 });
