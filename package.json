@@ -85,6 +85,7 @@
     "@grpc/proto-loader": "^0.7.13",
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.12",
+    "@nomicfoundation/hardhat-verify": "^2.0.12",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-truffle5": "^2.0.7",
     "@openzeppelin/contracts": "^4.9.6",

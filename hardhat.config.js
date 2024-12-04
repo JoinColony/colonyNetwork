@@ -13,6 +13,7 @@ const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
 
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-truffle5");
+require("@nomicfoundation/hardhat-verify");
 require("@solidstate/hardhat-4byte-uploader");
 require("hardhat-contract-sizer");
 require("hardhat-storage-layout-changes");
@@ -134,6 +135,24 @@ module.exports = {
   },
   storageLayoutChanges: {
     contracts: [],
+  },
+  sourcify: {
+    enabled: false,
+  },
+  etherscan: {
+    apiKey: {
+      development: "any-string-can-go-here",
+    },
+    customChains: [
+      {
+        network: "development",
+        chainId: Number(process.env.CHAIN_ID) || FORKED_XDAI_CHAINID,
+        urls: {
+          apiURL: "http://localhost:80/api",
+          browserURL: "http://localhost:80",
+        },
+      },
+    ],
   },
   networks: {
     arbitrum: {
