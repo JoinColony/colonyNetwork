@@ -55,9 +55,11 @@ task("test", "Run tests").setAction(async () => {
     }
   });
 
-  app.listen(port, function () {
-    console.log(`Exposing the provider on port ${port}!`);
-  });
+  if (!process.env.NO_EXPOSED_HARDHAT_NETWORK) {
+    app.listen(port, function () {
+      console.log(`Exposing the provider on port ${port}!`);
+    });
+  }
 
   const ganacheAccounts = { addresses: {}, private_keys: {} };
   // eslint-disable-next-line no-restricted-syntax
@@ -92,26 +94,6 @@ task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(asyn
   const deployNetwork = require("./test/truffle-fixture"); // eslint-disable-line global-require
 
   await deployNetwork();
-});
-
-task("coverage", "Run coverage with an open port").setAction(async () => {
-  const app = express();
-  const port = 8545;
-
-  app.use(bodyParser.json());
-  app.post("/", async function (req, res) {
-    try {
-      const response = await hre.network.provider.request(req.body);
-      res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
-    } catch (error) {
-      res.send({ jsonrpc: "2.0", error, id: req.body.id });
-    }
-  });
-  app.listen(port, function () {
-    console.log(`Exposing the provider on port ${port}!`);
-  });
-
-  await runSuper();
 });
 
 module.exports = {
