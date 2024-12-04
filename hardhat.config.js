@@ -35,6 +35,44 @@ task("compile", "Compile Colony contracts with pinned Token").setAction(async ()
   }
 });
 
+task("test", "Run tests").setAction(async () => {
+  const app = express();
+  const port = 8545;
+
+  app.use(bodyParser.json());
+  app.post("/", async function (req, res) {
+    try {
+      const response = await hre.network.provider.request(req.body);
+      res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
+    } catch (error) {
+      const abiCoder = new ethers.utils.AbiCoder();
+      const decoded = abiCoder.decode(["string"], `0x${error.data.slice(10)}`);
+      res.send({
+        jsonrpc: "2.0",
+        error: { message: `Error: VM Exception while processing transaction: reverted with reason string '${decoded[0]}'` },
+        id: req.body.id,
+      });
+    }
+  });
+
+  app.listen(port, function () {
+    console.log(`Exposing the provider on port ${port}!`);
+  });
+
+  const ganacheAccounts = { addresses: {}, private_keys: {} };
+  // eslint-disable-next-line no-restricted-syntax
+  for (const account of config.networks.hardhat.accounts) {
+    const { privateKey } = account;
+    const publicAddress = ethers.utils.computeAddress(privateKey);
+    ganacheAccounts.addresses[publicAddress] = publicAddress;
+    ganacheAccounts.private_keys[publicAddress] = privateKey;
+  }
+
+  fs.writeFileSync("ganache-accounts.json", JSON.stringify(ganacheAccounts, null, 2));
+
+  await runSuper();
+});
+
 task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
   const ganacheAccounts = { addresses: {}, private_keys: {} };
   // eslint-disable-next-line no-restricted-syntax
