@@ -25,6 +25,11 @@ contract DomainTokenReceiver is DSAuth {
 
   address colony;
 
+  modifier onlyColony() {
+    require(msg.sender == colony, "domain-token-receiver-unauthorized");
+    _;
+  }
+
   function getColonyAddress() public view returns (address) {
     return colony;
   }
@@ -34,7 +39,7 @@ contract DomainTokenReceiver is DSAuth {
     colony = _colony;
   }
 
-  function transferToColony(address tokenAddress) public {
+  function transferToColony(address tokenAddress) public onlyColony {
     // Transfer the token to the colony.
     if (tokenAddress == address(0)) {
       // slither-disable-next-line arbitrary-send-eth
