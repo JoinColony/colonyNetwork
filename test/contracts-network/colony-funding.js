@@ -606,6 +606,22 @@ contract("Colony Funding", (accounts) => {
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
     });
 
+    it("should not allow someone to call transferToColonyDirectly, which would mess up bookkeeping", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      await otherToken.mint(receiverAddress, 100);
+
+      // Claim the funds
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      await otherToken.mint(receiverAddress, 100);
+
+      const receiver = await DomainTokenReceiver.at(receiverAddress);
+      await checkErrorRevert(receiver.transferToColony(otherToken.address), "domain-token-receiver-unauthorized");
+    });
+
     it("should not allow even the colonyNetwork to call setColonyAddress once it's set on domainTokenReceiver", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
