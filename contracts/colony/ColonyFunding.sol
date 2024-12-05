@@ -150,8 +150,16 @@ contract ColonyFunding is
     }
 
     // Claim funds
-
-    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+    if (_token == address(0x0)) {
+      DomainTokenReceiver(domainTokenReceiverAddress).transferNativeToColony();
+    } else {
+      DomainTokenReceiver(domainTokenReceiverAddress).approveTokenToColony(_token);
+      // slither-disable-next-line arbitrary-send-erc20
+      require(
+        ERC20Extended(_token).transferFrom(domainTokenReceiverAddress, address(this), claimAmount),
+        "colony-funding-transfer-failed"
+      );
+    }
   }
 
   function tokenEarnsReputationOnPayout(address _token) internal view returns (bool) {

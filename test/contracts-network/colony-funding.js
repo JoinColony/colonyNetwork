@@ -18,7 +18,13 @@ const {
   ADDRESS_ZERO,
 } = require("../../helpers/constants");
 
-const { fundColonyWithTokens, setupRandomColony, makeExpenditure, setupFundedExpenditure } = require("../../helpers/test-data-generator");
+const {
+  fundColonyWithTokens,
+  setupRandomColony,
+  makeExpenditure,
+  setupFundedExpenditure,
+  setupRandomToken,
+} = require("../../helpers/test-data-generator");
 const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
@@ -31,6 +37,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const Resolver = artifacts.require("Resolver");
 const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
+const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
 
 contract("Colony Funding", (accounts) => {
   const MANAGER = accounts[0];
@@ -606,7 +613,36 @@ contract("Colony Funding", (accounts) => {
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
     });
 
-    it("should not allow someone to call transferToColonyDirectly, which would mess up bookkeeping", async () => {
+    it("should allow a locked token to be directly sent to a domain", async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      // Send 100 wei
+      const otherToken2 = await setupRandomToken(true);
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+      const tokenAuthority = await TokenAuthority.new(otherToken2.address, colony.address, [tokenLockingAddress]);
+      await otherToken2.setAuthority(tokenAuthority.address);
+
+      await otherToken2.mint(receiverAddress, 100);
+
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, otherToken2.address);
+      const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(otherToken2.address);
+
+      // Claim the funds
+      const tx = await colony.claimDomainFunds(otherToken2.address, 2);
+      await expectEvent(tx, "DomainFundsClaimed", [MANAGER, otherToken2.address, 2, 1, 99]);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, otherToken2.address);
+      const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(otherToken2.address);
+
+      // Check the balance of the domain
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
+      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
+    });
+
+    it("should not allow someone to call functions on domain receiver directly, which would mess up bookkeeping", async () => {
       await colony.addDomain(1, UINT256_MAX, 1);
       const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
 
@@ -619,7 +655,8 @@ contract("Colony Funding", (accounts) => {
       await otherToken.mint(receiverAddress, 100);
 
       const receiver = await DomainTokenReceiver.at(receiverAddress);
-      await checkErrorRevert(receiver.transferToColony(otherToken.address), "domain-token-receiver-unauthorized");
+      await checkErrorRevert(receiver.approveTokenToColony(otherToken.address), "domain-token-receiver-unauthorized");
+      await checkErrorRevert(receiver.transferNativeToColony(), "domain-token-receiver-unauthorized");
     });
 
     it("should not allow even the colonyNetwork to call setColonyAddress once it's set on domainTokenReceiver", async () => {
