@@ -39,18 +39,15 @@ contract DomainTokenReceiver is DSAuth {
     colony = _colony;
   }
 
-  function transferToColony(address tokenAddress) public onlyColony {
-    // Transfer the token to the colony.
-    if (tokenAddress == address(0)) {
-      // slither-disable-next-line arbitrary-send-eth
-      payable(colony).transfer(address(this).balance);
-      return;
-    } else {
-      uint256 balanceToTransfer = ERC20Extended(tokenAddress).balanceOf(address(this));
-      require(
-        ERC20Extended(tokenAddress).transfer(colony, balanceToTransfer),
-        "domain-token-receiver-transfer-failed"
-      );
-    }
+  function transferNativeToColony() public onlyColony {
+    payable(colony).transfer(address(this).balance);
+  }
+
+  function approveTokenToColony(address tokenAddress) public onlyColony {
+    uint256 balanceToTransfer = ERC20Extended(tokenAddress).balanceOf(address(this));
+    require(
+      ERC20Extended(tokenAddress).approve(colony, balanceToTransfer),
+      "domain-token-receiver-approve-failed"
+    );
   }
 }
