@@ -28,7 +28,7 @@ Mandatory arguments:
 Optional arguments:
 
 ```
-[--network <(goerli|mainnet)>]  
+[--network <(goerli|mainnet)>]
 [--localPort <number>]
 [--dbPath <$PATH>]
 [--auto <(true|false)>]
