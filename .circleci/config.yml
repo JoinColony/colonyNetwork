@@ -520,6 +520,8 @@ workflows:
           context: dockerhub-credentials
       - coverage-test-bridging:
           context: dockerhub-credentials
+      - end-to-end-tests:
+          context: dockerhub-credentials
       - check-coverage:
           context: dockerhub-credentials
           requires:
