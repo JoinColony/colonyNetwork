@@ -80,7 +80,16 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
       ? address(domainTokenReceiverAddress).balance
       : ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
 
-    DomainTokenReceiver(domainTokenReceiverAddress).transferToColony(_token);
+    if (_token == address(0x0)) {
+      DomainTokenReceiver(domainTokenReceiverAddress).transferNativeToColony();
+    } else {
+      DomainTokenReceiver(domainTokenReceiverAddress).approveTokenToColony(_token);
+      // slither-disable-next-line arbitrary-send-erc20
+      require(
+        ERC20Extended(_token).transferFrom(domainTokenReceiverAddress, address(this), balance),
+        "colony-funding-transfer-failed"
+      );
+    }
 
     bytes memory payload = abi.encodeWithSignature(
       "recordClaimedFundsFromBridge(uint256,address,uint256,uint256)",
