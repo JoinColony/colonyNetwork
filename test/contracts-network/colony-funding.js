@@ -875,7 +875,7 @@ contract("Colony Funding", (accounts) => {
       await toggleableToken.toggleLock();
 
       // Try to claim the funds
-      await checkErrorRevert(colony.claimDomainFunds(toggleableToken.address, 2), "domain-token-receiver-transfer-failed");
+      await checkErrorRevert(colony.claimDomainFunds(toggleableToken.address, 2), "colony-funding-transfer-failed");
     });
 
     it("If the receiver resolver is updated, then the resolver is updated at the next claim", async () => {
