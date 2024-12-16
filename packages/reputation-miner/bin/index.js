@@ -11,7 +11,8 @@ const {RetryProvider} = require("../../package-utils");
 
 const { ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../package-utils");
 
-const supportedInfuraNetworks = ["rinkeby", "ropsten", "kovan", "mainnet"];
+const supportedInfuraNetworks = ["arbitrum-sepolia", "arbitrum"];
+
 const {
   minerAddress,
   privateKey,

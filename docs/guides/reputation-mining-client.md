@@ -7,7 +7,7 @@ sidebar_position: 3
 
 ## Running the Mining Client
 
-The reputation mining client can be run locally to sync with a local hardhat instance, the `rinkeby`, `ropsten`, or `kovan`  testnets, or with `mainnet`.
+The reputation mining client can be run locally to sync with a local hardhat instance, the `arbitrum-sepolia` testnet, or with `arbitrum` itself.
 
 To participate in the reputation mining process you need to have staked at least the [minimum amount of CLNY Tokens](../interfaces/ireputationminingcycle#getminstake-uint256-minstake), for at least [one full mining cycle duration](../interfaces/ireputationminingcycle#getminingwindowduration-uint256-miningwindowduration) before you can submit a new reputation root hash.
 
@@ -22,13 +22,13 @@ Mandatory arguments:
 ```
 (--minerAddress <address>) | (--privateKey <key>)
 (--colonyNetworkAddress <address>)
-(--syncFrom <number>)   // [mainnet:'7913100']
+(--syncFrom <number>)   // [arbitrum-sepolia: '28290396', arbitrum:'199165580']
 ```
 
 Optional arguments:
 
 ```
-[--network <(rinkeby|ropsten|kovan|mainnet)>]
+[--network <(arbitrum-sepolia|arbitrum)>]
 [--localPort <number>]
 [--dbPath <$PATH>]
 [--auto <(true|false)>]
@@ -43,7 +43,7 @@ Private key of the miner account which the client will sign reputation mining co
 
 #### `--colonyNetworkAddress`
 
-The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](../concepts/upgrades) for more information about the EtherRouter design pattern. This address is static on all networks, with the `mainnet` address of `0x5346d0f80e2816fad329f2c140c870ffc3c3e2ef`
+The address of the Colony Network's `EtherRouter`. See [Upgrades to the Colony Network](../concepts/upgrades) for more information about the EtherRouter design pattern. This address is static on all networks, with the `arbitrum-sepolia` address of `0x7777494e3d8cce0D3570E21FEf820F9Fee077777` and the `arbitrum` address of `0xCCcccdCC0CcF6C708D860e19353c5f9a49ACccCc`
 
 #### `--dbPath`
 
@@ -51,7 +51,7 @@ Path for the sqlite database storing reputation state. Default is `./reputationS
 
 #### `--network`
 
-Used for connecting to a supported Infura node (instead of a local client). Valid options are `rinkeby` `ropsten` `kovan` and `mainnet`.
+Used for connecting to a supported Infura node (instead of a local client). Valid options are `arbitrum-sepolia` and `arbitrum`.
 
 #### `--localPort`
 
@@ -61,7 +61,8 @@ Used to connect to a local client running on the specified port. Default is `854
 
 Block number to start reputation state sync from. This is the block at which the reputation mining process was initialised. This number is static on all networks
 
-* `mainnet: 7913100`
+* `arbitrum-sepolia: 28290396`
+* `arbitrum: 199165580`
 
 Note that beginning the sync with a too-early block will result in an error. If you get this exception, try syncing from a more recent block. Note that the sync process can take long. Latest tests syncing a client from scratch to 28 reputation cycles took \~2 hours.
 
@@ -118,7 +119,7 @@ The oracle should be able to provide responses to any valid reputation score in 
 For example, you can get the reputation score of the miner in a reputation state `0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc`) using the address of the Meta Colony (`0x14946533cefe742399e9734a123f0c02d0405a51`), the mining skill id (`2`), and address of a miner (`0x0A1d439C7d0b9244035d4F934BBF8A418B35d064`).
 
 ```
-https://xdai.colony.io/reputation/mainnet/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/2/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
+https://xdai.colony.io/reputation/arbitrum/0xc7eb2cf60aa4848ce0feed5d713c07fd26e404dd50ca3b9e4f2fabef196ca3bc/0x14946533cefe742399e9734a123f0c02d0405a51/2/0x0A1d439C7d0b9244035d4F934BBF8A418B35d064
 ```
 
 The oracle returns
