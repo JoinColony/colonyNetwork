@@ -39,7 +39,7 @@ contract DomainTokenReceiver is DSAuth {
     colony = _colony;
   }
 
-  function transferNativeToColony() public onlyColony {
+  function transferChainNativeToColony() public onlyColony {
     payable(colony).transfer(address(this).balance);
   }
 
