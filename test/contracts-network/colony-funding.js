@@ -656,7 +656,7 @@ contract("Colony Funding", (accounts) => {
 
       const receiver = await DomainTokenReceiver.at(receiverAddress);
       await checkErrorRevert(receiver.approveTokenToColony(otherToken.address), "domain-token-receiver-unauthorized");
-      await checkErrorRevert(receiver.transferNativeToColony(), "domain-token-receiver-unauthorized");
+      await checkErrorRevert(receiver.transferChainNativeToColony(), "domain-token-receiver-unauthorized");
     });
 
     it("should not allow even the colonyNetwork to call setColonyAddress once it's set on domainTokenReceiver", async () => {
@@ -698,6 +698,47 @@ contract("Colony Funding", (accounts) => {
       expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(0);
       expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
       expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(99);
+    });
+
+    it(`when receiving native (reputation-earning) token, if full approval present for domain,
+      tokens are received by domain`, async () => {
+      // Get address for domain 2
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      await colony.mintTokens(WAD.muln(100));
+      await colony.claimColonyFunds(token.address);
+      const domain1 = await colony.getDomain(1);
+
+      // Send an arbitrary transaction to mint tokens for receiverAddress
+      const txData = token.contract.methods["mint(address,uint256)"](receiverAddress, 100).encodeABI();
+      await colony.makeArbitraryTransaction(token.address, txData);
+
+      // Approve 250 for the domain
+      await colony.editAllowedDomainReputationReceipt(2, 250, true);
+      let allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
+      expect(allowedReceipt).to.eq.BN(250);
+
+      // Now test what happens when we claim them
+
+      const domain = await colony.getDomain(2);
+      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, token.address);
+      const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(token.address);
+      const rootDomainPotBalanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
+
+      // Claim the funds
+      await colony.claimDomainFunds(token.address, 2);
+
+      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, token.address);
+      const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(token.address);
+      const rootDomainPotBalanceAfter = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
+
+      // Check the balance of the domain
+      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
+      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
+      expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(0);
+
+      allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
+      expect(allowedReceipt).to.eq.BN(151);
     });
 
     it(`when receiving native (reputation-earning) token, if partial approval present for domain,
@@ -767,47 +808,6 @@ contract("Colony Funding", (accounts) => {
 
     it(`cannot editAllowedDomainReputationReceipt for the root domain`, async () => {
       await checkErrorRevert(colony.editAllowedDomainReputationReceipt(1, 70, true), "colony-funding-root-domain");
-    });
-
-    it(`when receiving native (reputation-earning) token, if full approval present for domain,
-      tokens are received by domain`, async () => {
-      // Get address for domain 2
-      await colony.addDomain(1, UINT256_MAX, 1);
-      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
-      await colony.mintTokens(WAD.muln(100));
-      await colony.claimColonyFunds(token.address);
-      const domain1 = await colony.getDomain(1);
-
-      // Send an arbitrary transaction to mint tokens for receiverAddress
-      const txData = token.contract.methods["mint(address,uint256)"](receiverAddress, 100).encodeABI();
-      await colony.makeArbitraryTransaction(token.address, txData);
-
-      // Approve 250 for the domain
-      await colony.editAllowedDomainReputationReceipt(2, 250, true);
-      let allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
-      expect(allowedReceipt).to.eq.BN(250);
-
-      // Now test what happens when we claim them
-
-      const domain = await colony.getDomain(2);
-      const domainPotBalanceBefore = await colony.getFundingPotBalance(domain.fundingPotId, token.address);
-      const nonRewardPotsTotalBefore = await colony.getNonRewardPotsTotal(token.address);
-      const rootDomainPotBalanceBefore = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
-
-      // Claim the funds
-      await colony.claimDomainFunds(token.address, 2);
-
-      const domainPotBalanceAfter = await colony.getFundingPotBalance(domain.fundingPotId, token.address);
-      const nonRewardPotsTotalAfter = await colony.getNonRewardPotsTotal(token.address);
-      const rootDomainPotBalanceAfter = await colony.getFundingPotBalance(domain1.fundingPotId, token.address);
-
-      // Check the balance of the domain
-      expect(domainPotBalanceAfter.sub(domainPotBalanceBefore)).to.eq.BN(99);
-      expect(nonRewardPotsTotalAfter.sub(nonRewardPotsTotalBefore)).to.eq.BN(99);
-      expect(rootDomainPotBalanceAfter.sub(rootDomainPotBalanceBefore)).to.eq.BN(0);
-
-      allowedReceipt = await colony.getAllowedDomainReputationReceipt(2);
-      expect(allowedReceipt).to.eq.BN(151);
     });
 
     it("should not be able to claim funds for a domain that does not exist", async () => {

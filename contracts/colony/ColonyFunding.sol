@@ -111,8 +111,6 @@ contract ColonyFunding is
     require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
     address domainTokenReceiverAddress = IColonyNetwork(colonyNetworkAddress)
       .idempotentDeployDomainTokenReceiver(_domainId);
-    uint256 fundingPotId = domains[_domainId].fundingPotId;
-    // It's deployed, so check current balance of pot
 
     uint256 claimAmount;
 
@@ -131,6 +129,7 @@ contract ColonyFunding is
 
     fundingPots[0].balance[_token] += feeToPay;
 
+    uint256 fundingPotId = domains[_domainId].fundingPotId;
     uint256 approvedAmount = domainReputationApproval[_domainId];
 
     if (tokenEarnsReputationOnPayout(_token)) {
@@ -139,19 +138,22 @@ contract ColonyFunding is
 
       fundingPots[fundingPotId].balance[_token] += transferrableAmount;
       domainReputationApproval[_domainId] -= transferrableAmount;
+
       emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, transferrableAmount);
       if (untransferrableAmount > 0) {
         fundingPots[domains[1].fundingPotId].balance[_token] += untransferrableAmount;
+
         emit ColonyFundsClaimed(msgSender(), _token, 0, untransferrableAmount);
       }
     } else {
       fundingPots[fundingPotId].balance[_token] += remainder;
+
       emit DomainFundsClaimed(msgSender(), _token, _domainId, feeToPay, remainder);
     }
 
     // Claim funds
     if (_token == address(0x0)) {
-      DomainTokenReceiver(domainTokenReceiverAddress).transferNativeToColony();
+      DomainTokenReceiver(domainTokenReceiverAddress).transferChainNativeToColony();
     } else {
       DomainTokenReceiver(domainTokenReceiverAddress).approveTokenToColony(_token);
       // slither-disable-next-line arbitrary-send-erc20
@@ -163,6 +165,7 @@ contract ColonyFunding is
   }
 
   function tokenEarnsReputationOnPayout(address _token) internal view returns (bool) {
+    // This function is in anticipation of multiple tokens being able to earn reputation on payout.
     return _token == token;
   }
 
@@ -174,6 +177,8 @@ contract ColonyFunding is
     require(domainExists(_domainId), "colony-funding-domain-does-not-exist");
     require(_domainId > 1, "colony-funding-root-domain");
     if (_add) {
+      // Rather than setting the approval to the amount, we add the amount to the approval, so that if there
+      // are multiple calls to this function via motions etc, the approval will be the sum of all the amounts.
       domainReputationApproval[_domainId] += _amount;
     } else {
       domainReputationApproval[_domainId] -= _amount;
