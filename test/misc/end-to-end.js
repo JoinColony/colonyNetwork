@@ -29,7 +29,7 @@ const {
   setupClaimedExpenditure,
 } = require("../../helpers/test-data-generator");
 
-const { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
+const { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX, CHALLENGE_RESPONSE_WINDOW_DURATION, MINING_CYCLE_DURATION } = require("../../helpers/constants");
 
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
@@ -420,7 +420,6 @@ contract("End to end Colony network and Reputation mining testing", function (ac
     let snapshotId;
     let nDecays;
     beforeEach(async function () {
-      console.log("Snapshotting");
       const p = new web3.eth.providers.HttpProvider("http://localhost:8545");
 
       snapshotId = await snapshot(p);
@@ -428,13 +427,13 @@ contract("End to end Colony network and Reputation mining testing", function (ac
 
     afterEach(async function () {
       const p = new web3.eth.providers.HttpProvider("http://localhost:8545");
-      console.log("Reverting");
       await revert(p, snapshotId);
     });
     const N_TRANSITIONS = 198;
     const updates = Array.from(Array(N_TRANSITIONS).keys());
 
     const errors = [];
+    let correctStateToSubmit;
 
     before(async function () {
       nDecays = Object.keys(goodClient.previousReputations).length;
@@ -466,19 +465,26 @@ contract("End to end Colony network and Reputation mining testing", function (ac
 
     updates.forEach(async (badIndex) => {
       it(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
-        // await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-        // await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-
         const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, badIndex, 0xfffffffff);
         await badClient.initialise(colonyNetwork.address);
 
         const currentHash = await colonyNetwork.getReputationRootHash();
 
-        // const savedHash = await goodClient.reputationTree.getRootHash();
         await badClient.loadState(currentHash);
-        await goodClient.loadState(currentHash);
 
-        await submitAndForwardTimeToDispute([goodClient, badClient], this);
+        if (!correctStateToSubmit) {
+          await goodClient.loadState(currentHash);
+          await submitAndForwardTimeToDispute([goodClient, badClient], this);
+          await goodClient.saveCurrentState();
+          correctStateToSubmit = await goodClient.reputationTree.getRootHash();
+        } else {
+          goodClient.loadState(correctStateToSubmit);
+          await badClient.addLogContentsToReputationTree();
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+          await goodClient.submitRootHash();
+          await badClient.submitRootHash();
+          await forwardTime(MINING_CYCLE_DURATION / 2, this);
+        }
 
         const righthash = await goodClient.getRootHash();
         const wronghash = await badClient.getRootHash();
