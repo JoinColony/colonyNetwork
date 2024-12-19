@@ -55,7 +55,7 @@ task("test", "Run tests").setAction(async () => {
     }
   });
 
-  if (!process.env.NO_EXPOSED_HARDHAT_NETWORK) {
+  if (hre.network.name === "hardhat") {
     app.listen(port, function () {
       console.log(`Exposing the provider on port ${port}!`);
     });
@@ -73,7 +73,7 @@ task("test", "Run tests").setAction(async () => {
   fs.writeFileSync("ganache-accounts.json", JSON.stringify(ganacheAccounts, null, 2));
 
   const nFails = await runSuper();
-  if (nFails > 0 && !process.env.CI && !process.env.NO_EXPOSED_HARDHAT_NETWORK) {
+  if (nFails > 0 && !process.env.CI && hre.network.name === "hardhat") {
     console.error("A test failed, not exiting so on-chain state can be inspected");
     await new Promise(() => {});
   }
