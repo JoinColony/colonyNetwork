@@ -72,7 +72,11 @@ task("test", "Run tests").setAction(async () => {
 
   fs.writeFileSync("ganache-accounts.json", JSON.stringify(ganacheAccounts, null, 2));
 
-  await runSuper();
+  const nFails = await runSuper();
+  if (nFails > 0 && !process.env.CI && !process.env.NO_EXPOSED_HARDHAT_NETWORK) {
+    console.error("A test failed, not exiting so on-chain state can be inspected");
+    await new Promise(() => {});
+  }
 });
 
 task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
