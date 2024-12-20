@@ -41,7 +41,7 @@
     "test:contracts:upgrade:parity": "pnpm run clean:test:contracts | pnpm run start:blockchain:client parity & pnpm run generate:test:contracts && npx hardhat test ./test/upgrade/* --network integration",
     "test:contracts:upgrade:ganache": "pnpm run clean:test:contracts | pnpm run start:blockchain:client ganache & pnpm run generate:test:contracts && npx hardhat test ./test/upgrade/* --network integration",
     "test:contracts:gas": "npx hardhat test test/misc/gas-costs.js",
-    "test:contracts:patricia": "pnpm run start:blockchain:client ganache && hardhat test packages/reputation-miner/patricia-test.js --network integration",
+    "test:contracts:patricia": "pnpm run start:blockchain:client ganache && npx hardhat test packages/reputation-miner/patricia-test.js --network integration",
     "test:contracts:bridging:1": "CHAIN_ID=265669101 pnpm run start:blockchain:client:2 && HARDHAT_FOREIGN=false MINING_CHAIN_ID=265669100 CHAIN_ID=265669100 npx hardhat test ./test/cross-chain/*",
     "test:contracts:bridging:2": "CHAIN_ID=265669100 pnpm run start:blockchain:client:2 && HARDHAT_FOREIGN=true MINING_CHAIN_ID=265669100 CHAIN_ID=265669101 npx hardhat test ./test/cross-chain/*",
     "test:contracts:chainid": "npx hardhat test ./test/misc/chainid.js",
