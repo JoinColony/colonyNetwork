@@ -162,9 +162,10 @@ interface ColonyNetworkDataTypes {
   event ReputationUpdateSentToBridge(address colony, uint256 count);
 
   /// @notice Event emitted when a proxy colony deployment is requested
+  /// @param colony The address of the colony that has requested the proxy deployment
   /// @param destinationChainId The chain ID of the destination chain
   /// @param salt The salt used to generate the proxy address
-  event ProxyColonyRequested(uint256 destinationChainId, bytes32 salt);
+  event ProxyColonyRequested(address colony, uint256 destinationChainId, bytes32 salt);
 
 
   struct Skill {

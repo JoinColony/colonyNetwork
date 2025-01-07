@@ -348,6 +348,14 @@ contract("Cross-chain", (accounts) => {
       expect(parsed.name).to.equal("ProxyColonyRequested");
       expect(parsed.args.destinationChainId.toHexString()).to.equal(foreignChainId);
       expect(parsed.args.salt).to.equal(colonyCreationSalt);
+      expect(parsed.args.colony).to.equal(colonyAddress);
+
+      const colonyProxyRequestEvent = receipt.events.filter((e) => e.address === colonyAddress)[0];
+      parsed = homeColony.interface.parseLog(colonyProxyRequestEvent);
+      expect(parsed.name).to.equal("ProxyColonyRequested");
+      expect(parsed.args.destinationChainId.toHexString()).to.equal(foreignChainId);
+      expect(parsed.args.salt).to.equal(colonyCreationSalt);
+
       receipt = await p;
 
       const proxyDeployedEvent = receipt.logs.filter((e) => e.address === remoteColonyNetwork.address)[0];

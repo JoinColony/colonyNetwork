@@ -271,6 +271,12 @@ interface ColonyDataTypes {
   /// @param tokenPayout Amount of the payout claimed, after network fee was deducted
   event PayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
 
+  /// @notice Event logged when a colony requests a proxy colony deployment
+  /// @param destinationChainId The chain id of the destination chain
+  /// @param salt The salt used to generate the proxy address
+  /// @dev The address corresponding to the salt must be this colony's address
+  event ProxyColonyRequested(uint256 destinationChainId, bytes32 salt);
+
   // Structs
 
   struct RewardPayoutCycle {
