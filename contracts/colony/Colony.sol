@@ -354,6 +354,8 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
   function createProxyColony(uint256 _destinationChainId, bytes32 _salt) public stoppable {
     IColonyNetwork(colonyNetworkAddress).createProxyColony(_destinationChainId, _salt);
+
+    emit ProxyColonyRequested(_destinationChainId, _salt);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

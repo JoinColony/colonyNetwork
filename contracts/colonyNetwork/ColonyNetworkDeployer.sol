@@ -146,7 +146,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
       IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, address(this), payload),
       "colony-network-create-proxy-colony-failed"
     );
-    emit ProxyColonyRequested(_destinationChainId, _salt);
+    emit ProxyColonyRequested(msgSender(), _destinationChainId, _salt);
   }
 
   /**
