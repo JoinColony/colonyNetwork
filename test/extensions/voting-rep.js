@@ -41,7 +41,7 @@ const {
 const { setupRandomColony, getMetaTransactionParameters, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
-const PatriciaTree = require("../../packages/reputation-miner/patricia");
+const PatriciaTree = require("../../packages/reputation-miner/built/reputation-miner/src/patricia");
 
 const { deployOldExtensionVersion } = require("../../scripts/deployOldUpgradeableVersion");
 

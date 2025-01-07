@@ -11,7 +11,7 @@ const { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX } = require("../../helpers/c
 const { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter } = require("../../helpers/test-helper");
 const { giveUserCLNYTokensAndStake, setupClaimedExpenditure, fundColonyWithTokens } = require("../../helpers/test-data-generator");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
-const ReputationMinerClient = require("../../packages/reputation-miner/ReputationMinerClient");
+const ReputationMinerClient = require("../../packages/reputation-miner/built/reputation-miner/src/ReputationMinerClient");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

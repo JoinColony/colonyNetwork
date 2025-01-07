@@ -4,7 +4,7 @@
 const path = require("path");
 const { fromAscii } = require("web3-utils");
 
-const { TruffleLoader } = require("../package-utils");
+const { TruffleLoader } = require("../../package-utils");
 const ReputationMiner = require("./ReputationMiner");
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -12,7 +12,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const PatriciaTree = artifacts.require("PatriciaTree");
 
 const contractLoader = new TruffleLoader({
-  contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
+  contractRoot: path.resolve(__dirname, "..", "..", "..", "artifacts", "contracts"),
 });
 
 contract("Javascript Patricia Tree", accounts => {

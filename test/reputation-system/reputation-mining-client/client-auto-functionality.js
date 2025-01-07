@@ -35,7 +35,7 @@ const {
   setupClaimedExpenditure,
   fundColonyWithTokens,
 } = require("../../../helpers/test-data-generator");
-const ReputationMinerClient = require("../../../packages/reputation-miner/ReputationMinerClient");
+const ReputationMinerClient = require("../../../packages/reputation-miner/built/reputation-miner/src/ReputationMinerClient");
 const ReputationMinerTestWrapper = require("../../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const MaliciousReputationMinerExtraRep = require("../../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 const ReputationMinerLongTransactionMined = require("../../../packages/reputation-miner/test/ReputationMinerLongTransactionMined");

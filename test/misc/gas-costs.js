@@ -32,7 +32,7 @@ const {
 const { giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const PatriciaTree = require("../../packages/reputation-miner/patricia");
+const PatriciaTree = require("../../packages/reputation-miner/built/reputation-miner/src/patricia");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 

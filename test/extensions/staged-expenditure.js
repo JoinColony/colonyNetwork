@@ -27,7 +27,7 @@ const {
   forwardTime,
 } = require("../../helpers/test-helper");
 
-const PatriciaTree = require("../../packages/reputation-miner/patricia");
+const PatriciaTree = require("../../packages/reputation-miner/built/reputation-miner/src/patricia");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

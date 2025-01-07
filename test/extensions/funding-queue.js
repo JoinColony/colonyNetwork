@@ -28,7 +28,7 @@ const {
 
 const { setupRandomColony, getMetaTransactionParameters } = require("../../helpers/test-data-generator");
 
-const PatriciaTree = require("../../packages/reputation-miner/patricia");
+const PatriciaTree = require("../../packages/reputation-miner/built/reputation-miner/src/patricia");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

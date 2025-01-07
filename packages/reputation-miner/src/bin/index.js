@@ -7,9 +7,8 @@ const { argv } = require("yargs")
 const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
-const {RetryProvider} = require("../../package-utils");
 
-const { ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../package-utils");
+const { RetryProvider, ConsoleAdapter, SlackAdapter, DiscordAdapter, TruffleLoader } = require("../../../package-utils");
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
 const {

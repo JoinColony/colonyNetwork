@@ -40,6 +40,7 @@ step_setup_global_packages: &step_setup_global_packages
       pnpm config set store-dir .pnpm-store
       pnpm install --frozen-lockfile
       git submodule update --init
+      cd packages/reputation-miner && npx tsc
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
