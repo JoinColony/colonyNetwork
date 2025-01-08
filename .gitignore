@@ -36,3 +36,5 @@ coverage-extensions/
 .pnpm-store
 .storage-layouts
 scripts/mockGuardianSpy.js
+*.d.ts
+tsconfig.tsbuildinfo

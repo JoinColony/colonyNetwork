@@ -17,7 +17,7 @@ const loader = new TruffleLoader({
 });
 
 const ADDRESS_ZERO = ethers.constants.AddressZero;
-const MockGuardianSpy = require("./mockGuardianSpy").default;
+const MockGuardianSpy = require("./mockGuardianSpy/build/scripts/mockGuardianSpy/mockGuardianSpy.js").default;
 
 async function setupBridging(homeRpcUrl, foreignRpcUrl) {
   console.log("setup-bridging-contracts: Not to be used in production");

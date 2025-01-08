@@ -1,6 +1,11 @@
-const BN = require("bn.js");
-const ethers = require("ethers");
-const { soliditySha3 } = require("web3-utils");
+import BN from "bn.js";
+import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
+import { Label, Edge } from "./types";
+
+type Node = {
+  children: [Edge, Edge];
+}
 
 // //////
 // Patricia Tree
@@ -9,10 +14,17 @@ class PatriciaTreeBase {
   // Label: { data, length } (data is the path, length says how many bits are used)
   // Edge: { nodeHash, label }
   // Node: [leftEdge, rightEdge] (no actual node)
+
+  tree: {
+    root: BN;
+    rootEdge: Edge;
+    nodes: Map<string, Node>;
+  }
+
   constructor() {
     this.tree = {
       root: new BN(0, 16),
-      rootEdge: {},
+      rootEdge: {} as Edge,
       nodes: new Map()
     };
   }
@@ -24,15 +36,15 @@ class PatriciaTreeBase {
   // Unused _ arg to conform to interace which accepts gas execution options
 
   // eslint-disable-next-line no-unused-vars
-  getRootHash(_ = undefined) {
+  getRootHash() {
     return PatriciaTreeBase.bn2hex64(this.tree.root);
   }
 
-  // eslint-disable-next-line no-unused-vars
-  insert(key, value, _ = undefined) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  insert(key: string, value: string, _: unknown): void {
     const label = PatriciaTreeBase.makeLabel(key, 256);
     const valueHash = PatriciaTreeBase.sha3(value);
-    let edge = {};
+    let edge = {} as Edge;
     if (this.tree.root.toString(16) === "0") {
       edge.label = label;
       edge.nodeHash = valueHash;
@@ -43,8 +55,8 @@ class PatriciaTreeBase {
     this.tree.rootEdge = edge;
   }
 
-  // eslint-disable-next-line no-unused-vars
-  getProof(key, _ = undefined) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getProof(key: string, _: unknown): [BN, string[]] {
     if (!(this.tree.root.toString(16) !== "0")) throw "AssertFail"; // eslint-disable-line no-throw-literal
     const siblings = [];
 
@@ -57,7 +69,6 @@ class PatriciaTreeBase {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const [prefix, suffix] = PatriciaTreeBase.splitCommonPrefix(label, edge.label);
-
       // I.e. never an unseen branch
       if (!(prefix.length === edge.label.length)) throw "AssertFail"; // eslint-disable-line no-throw-literal
       if (suffix.length === 0) {
@@ -85,11 +96,11 @@ class PatriciaTreeBase {
   // This function could be static, but I am deliberately making it not so that the ganache-based patricia trees in
   // the mining client can continue to be a drop-in replacement for the javascript ones.
   // eslint-disable-next-line class-methods-use-this
-  getImpliedRoot(key, value, _branchMask, siblings) {
+  getImpliedRoot(key: string, value: string, _branchMask: BN, siblings: string[]): string {
     let branchMask = new BN(_branchMask.toString());
     let k = PatriciaTreeBase.makeLabel(key, 256);
     const valueHash = PatriciaTreeBase.sha3(value);
-    const e = {};
+    const e = new Edge();
     e.nodeHash = valueHash;
     const edgeHashes = [];
 
@@ -119,7 +130,7 @@ class PatriciaTreeBase {
   // ////////////
   // Private functions
   // /////////////////////
-  insertAtEdge(edge, label, valueHash) {
+  insertAtEdge(edge: Edge, label: Label, valueHash: string) {
     if (!(label.length >= edge.label.length)) throw "AssertFail"; // eslint-disable-line no-throw-literal
     const [prefix, suffix] = PatriciaTreeBase.splitCommonPrefix(label, edge.label);
     let newNodeHash;
@@ -146,7 +157,7 @@ class PatriciaTreeBase {
     return PatriciaTreeBase.makeEdge(newNodeHash, prefix);
   }
 
-  insertNode(node) {
+  insertNode(node: Node) {
     const nodeHash = PatriciaTreeBase.nodeEncodingHash(node);
     this.tree.nodes[nodeHash.toString(16)] = node;
     return nodeHash;
@@ -155,39 +166,39 @@ class PatriciaTreeBase {
   // //////////////
   // Static utilities
   // ////////////////////////
-  static makeLabel(data, length) {
+  static makeLabel(data: string, length: number): Label {
     return {
       data, // 256-bit path as BigNumber
       length // Number of bits in use
     };
   }
 
-  static makeEdge(nodeHash, label) {
+  static makeEdge(nodeHash: string, label: Label): Edge {
     return {
       nodeHash, // Hash of node value (this is confusing), used as key in tree.nodes
       label // Label object containing path to node
     };
   }
 
-  static makeNode(left = {}, right = {}) {
+  static makeNode(left = new Edge(), right = new Edge()): Node {
     return { children: [left, right] }; // Left and right Edges
   }
 
-  static sha2bn(hash) {
+  static sha2bn(hash: string ) {
     return new BN(hash.slice(2), 16);
   }
 
-  static bn2hex64(bn) {
+  static bn2hex64(bn: BN) : string {
     const bnStr = bn.toString(16);
     return `0x${"0".repeat(64 - bnStr.length)}${bnStr}`;
   }
 
-  static sha3(value) {
+  static sha3(value: string): BN {
     const hash = PatriciaTreeBase.sha2bn(soliditySha3(value));
     return hash;
   }
 
-  static edgeEncodingHash(edge) {
+  static edgeEncodingHash(edge: Edge): string {
     const hash = PatriciaTreeBase.sha2bn(
       soliditySha3(
         PatriciaTreeBase.bn2hex64(edge.nodeHash),
@@ -198,17 +209,17 @@ class PatriciaTreeBase {
     return hash;
   }
 
-  static nodeEncodingHash(node) {
+  static nodeEncodingHash(node: Node): BN {
     const hash = PatriciaTreeBase.sha2bn(
       soliditySha3(PatriciaTreeBase.edgeEncodingHash(node.children[0]), PatriciaTreeBase.edgeEncodingHash(node.children[1]))
     );
     return hash;
   }
 
-  static splitAt(label, pos) {
+  static splitAt(label: Label, pos: number) : [Label, Label] {
     if (!(pos <= label.length && pos <= 256)) throw "AssertFail"; // eslint-disable-line no-throw-literal
-    const prefix = {};
-    const suffix = {};
+    const prefix = new Label("", 0);
+    const suffix = new Label("", 0);
     prefix.length = pos;
     if (pos === 0) {
       prefix.data = new BN(0, 16);
@@ -221,7 +232,7 @@ class PatriciaTreeBase {
     return [prefix, suffix];
   }
 
-  static commonPrefix(a, b) {
+  static commonPrefix(a: Label, b: Label): number {
     const length = a.length < b.length ? a.length : b.length;
     if (length === 0) {
       return 0;
@@ -232,7 +243,7 @@ class PatriciaTreeBase {
       return length;
     }
     // Find highest bit set
-    let ret;
+    let ret: number;
     for (let i = 255; i >= 0; i -= 1) {
       if (diff.testn(i)) {
         ret = 255 - i;
@@ -242,21 +253,22 @@ class PatriciaTreeBase {
     return Math.min(length, ret);
   }
 
-  static splitCommonPrefix(a, b) {
+  static splitCommonPrefix(a: Label, b: Label) : [Label, Label] {
     return PatriciaTreeBase.splitAt(a, PatriciaTreeBase.commonPrefix(a, b));
   }
 
-  static chopFirstBit(label) {
+  static chopFirstBit(label: Label) {
     if (!(label.length > 0)) throw "AssertFail"; // eslint-disable-line no-throw-literal
     const head = label.data.shrn(255).toNumber();
     const tail = PatriciaTreeBase.makeLabel(label.data.shln(1).maskn(256), label.length - 1);
     return [head, tail];
   }
 
-  static removePrefix(label, prefix) {
+  static removePrefix(label: Label, prefix: number) {
+
     if (!(prefix <= label.length)) throw "AssertFail"; // eslint-disable-line no-throw-literal
     return PatriciaTreeBase.makeLabel(label.data.shln(prefix).maskn(256), label.length - prefix);
   }
 }
 
-module.exports = PatriciaTreeBase;
+export default PatriciaTreeBase;

@@ -165,5 +165,9 @@
     "packages/metatransaction-broadcaster",
     "packages/package-utils",
     "packages/reputation-miner"
-  ]
+  ],
+  "imports": {
+    "#reputation-miner/*": "./packages/reputation-miner/build/*",
+    "#package-utils": "./packages/package-utils/build/index.js"
+  }
 }

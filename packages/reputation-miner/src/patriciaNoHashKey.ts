@@ -1,4 +1,4 @@
-const PatriciaTreeBase = require("./patricia-base");
+import PatriciaTreeBase from "./patricia-base";
 
 class PatriciaTreeNoHash extends PatriciaTreeBase {
   insert(key, value, _ = undefined) {
@@ -14,4 +14,4 @@ class PatriciaTreeNoHash extends PatriciaTreeBase {
   }
 }
 
-module.exports = PatriciaTreeNoHash;
+export = PatriciaTreeNoHash;

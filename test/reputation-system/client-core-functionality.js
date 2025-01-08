@@ -6,6 +6,8 @@ const chai = require("chai");
 const bnChai = require("bn-chai");
 const ethers = require("ethers");
 
+const ReputationMinerClient = require("#reputation-miner/ReputationMinerClient.js");
+
 const { TruffleLoader } = require("../../packages/package-utils");
 const { DEFAULT_STAKE, INITIAL_FUNDING } = require("../../helpers/constants");
 const { makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle, TestAdapter, getChainId } = require("../../helpers/test-helper");
@@ -17,7 +19,6 @@ const {
   setupClaimedExpenditure,
 } = require("../../helpers/test-data-generator");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
-const ReputationMinerClient = require("../../packages/reputation-miner/built/reputation-miner/src/ReputationMinerClient");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

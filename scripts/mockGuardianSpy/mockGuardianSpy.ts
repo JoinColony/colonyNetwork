@@ -2,22 +2,21 @@
 
 import { Server, ServerCredentials } from "@grpc/grpc-js";
 import { ServerWritableStreamImpl } from "@grpc/grpc-js/build/src/server-call";
-
 import { ethers } from "ethers";
-import { RetryProvider } from "../packages/package-utils";
+import { RetryProvider } from "#package-utils";
 
 import {
   FilterEntry,
   SpyRPCServiceService,
   SubscribeSignedVAARequest,
   SubscribeSignedVAAResponse,
-} from "../lib/wormhole/sdk/js-proto-node/src/spy/v1/spy";
-import { evmChainIdToWormholeChainId } from "../helpers/test-helper";
+} from "../../lib/wormhole/sdk/js-proto-node/src/spy/v1/spy.js";
+import { evmChainIdToWormholeChainId } from "../../helpers/test-helper";
 
 // Random key
 
-import { abi as bridgeAbi } from "../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json";
-import { abi as wormholeBridgeForColonyAbi } from "../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json";
+import { abi as bridgeAbi } from "../../artifacts/contracts/testHelpers/WormholeMock.sol/WormholeMock.json";
+import { abi as wormholeBridgeForColonyAbi } from "../../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json";
 
 function ethereumAddressToWormholeAddress(address: string) {
   return ethers.utils.hexZeroPad(ethers.utils.hexStripZeros(ethers.utils.hexlify(address)), 32);
@@ -185,8 +184,8 @@ class MockGuardianSpy {
       this.foreignBridge.removeAllListeners("LogMessagePublished");
     }
 
-    this.signerHome = new RetryProvider(this.homeRpc).getSigner();
-    this.signerForeign = new RetryProvider(this.foreignRpc).getSigner();
+    this.signerHome = new RetryProvider(this.homeRpc, {}).getSigner();
+    this.signerForeign = new RetryProvider(this.foreignRpc, {}).getSigner();
 
     this.homeBridge = new ethers.Contract(this.homeBridgeAddress, bridgeAbi, this.signerHome);
     this.foreignBridge = new ethers.Contract(this.foreignBridgeAddress, bridgeAbi, this.signerForeign);

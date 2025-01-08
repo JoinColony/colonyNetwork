@@ -40,7 +40,7 @@ step_setup_global_packages: &step_setup_global_packages
       pnpm config set store-dir .pnpm-store
       pnpm install --frozen-lockfile
       git submodule update --init
-      cd packages/reputation-miner && npx tsc
+      npx hardhat compile
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
@@ -51,9 +51,9 @@ step_install_lsof: &step_install_lsof
       command: |
         sudo apt-get update
         sudo apt-get install lsof
-step_compile_mock_spy: &step_compile_mock_spy
+step_compile_typescript: &step_compile_typescript
     run:
-      name: "Compile mock spy"
+      name: "Compile typescript"
       # The config copying is a hack for TS to be able to find the config file, I'd really like to get
       # rid of that but don't know how.
       command: |
@@ -61,8 +61,7 @@ step_compile_mock_spy: &step_compile_mock_spy
         cd ./../.. && DOCKER_BUILDKIT=1 docker build --target node-export -f Dockerfile.proto -o type=local,dest=. .
         cd ./../.. && npx hardhat compile
         cp ./packages/wormhole-relayer/config.example.js ./packages/wormhole-relayer/config.js
-        npx tsc
-
+        npx tsc -b
 jobs:
   build-checks:
     <<: *job_common
@@ -73,7 +72,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
-      # Do this before compile_mock_spy as that step makes ./lib/wormhole dirty, causing git
+      # Do this before compile_typescript as that step makes ./lib/wormhole dirty, causing git
       # checks to fail
       - run:
           name: "Building Docs"
@@ -84,13 +83,13 @@ jobs:
       - run:
           name: "Checking contract storage layout hasn't had additions made"
           command: rm -rf .storage-layouts-normalized && npx hardhat storage-layout --update && npm run normalize:storageSlots && test -z "$(git status --porcelain)"
-      - <<: *step_compile_mock_spy
       - run:
           name: "Linting JavaScript"
           command: pnpm run eslint
       - run:
           name: "Linting Solidity"
           command: pnpm run solhint
+      - <<: *step_compile_typescript
       - run:
           name: "Checking contract storage variables"
           command: pnpm run check:storagevars
@@ -117,6 +116,7 @@ jobs:
       - setup_remote_docker:
           version: docker23
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - run:
           name: "Build contract artifacts"
           command: npx hardhat compile
@@ -135,6 +135,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
       - run:
           name: "Running network contracts unit tests"
@@ -157,6 +158,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
       - run:
           name: "Running extension contracts unit tests"
@@ -179,6 +181,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
       - run:
           name: "Download parity"
@@ -238,6 +241,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - run:
           name: "Running core contract unit tests with coverage"
           command: pnpm run test:contracts:coverage
@@ -256,6 +260,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - run:
           name: "Running upgrade tests with coverage"
           command: pnpm run test:contracts:upgrade:coverage
@@ -274,6 +279,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - run:
           name: "Running extension contract unit tests with coverage"
           command: pnpm run test:contracts:extensions:coverage
@@ -292,6 +298,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - run:
           name: "Running reputation tests with coverage"
           command: pnpm run test:reputation:coverage
@@ -310,6 +317,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - run:
           name: "Running chainid tests with coverage for mainnet"
           command: CHAIN_ID=1 pnpm run test:contracts:chainid:coverage
@@ -347,8 +355,8 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
-      - <<: *step_compile_mock_spy
       - run:
           name: "Installing the safe-contracts dependencies"
           command: cd ./lib/safe-contracts && pnpm i --ignore-scripts
@@ -380,6 +388,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
@@ -395,6 +404,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
@@ -410,6 +420,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
@@ -425,6 +436,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_install_lsof
       - run:
           name: "Running reputation system unit tests"
@@ -453,6 +465,7 @@ jobs:
     steps:
       - checkout
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - <<: *step_restore_cache
       - setup_remote_docker:
           version: docker23
@@ -479,6 +492,7 @@ jobs:
           version: docker23
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
+      - <<: *step_compile_typescript
       - run:
           name: "Running end-to-end tests"
           command: pnpm run test:contracts:e2e

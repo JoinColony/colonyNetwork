@@ -1,7 +1,7 @@
 const ethers = require("ethers");
 
 const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
-const PatriciaTreeNoHash = require("../built/reputation-miner/src/patriciaNoHashKey");
+const PatriciaTreeNoHash = require("#patriciaNoHashKey.js");
 
 class MaliciousReputationMinerWrongJRHRightNLeaves extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH

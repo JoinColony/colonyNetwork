@@ -5,6 +5,8 @@ const bnChai = require("bn-chai");
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
+const PatriciaTree = require("#reputation-miner/patricia.js");
+
 const {
   UINT256_MAX,
   UINT128_MAX,
@@ -26,8 +28,6 @@ const {
   getActiveRepCycle,
   forwardTime,
 } = require("../../helpers/test-helper");
-
-const PatriciaTree = require("../../packages/reputation-miner/built/reputation-miner/src/patricia");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

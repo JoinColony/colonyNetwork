@@ -3,6 +3,7 @@
 const path = require("path");
 const { soliditySha3 } = require("web3-utils");
 const { ethers } = require("ethers");
+const PatriciaTree = require("#reputation-miner/patricia.js");
 
 const {
   UINT256_MAX,
@@ -32,7 +33,6 @@ const {
 const { giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const PatriciaTree = require("../../packages/reputation-miner/built/reputation-miner/src/patricia");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 

@@ -3,8 +3,30 @@
     "baseUrl": ".",
     "esModuleInterop": true,
     "resolveJsonModule": true,
+    "moduleResolution": "nodenext",
     "downlevelIteration": true,
+    "module": "nodenext",
     "types": ["node"],
+    "paths": {
+      "#package-utils": ["./packages/package-utils/"],
+    },
+    "skipLibCheck": true,
+    "target": "ES6",
+    "rootDir": ".",
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["scripts/*.ts", "./packages/**/*.tsx"]
+  "include": ["scripts/mockGuardianSpy/*.ts"],
+  "ignore": ["**/node_modules", "**/built"],
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/reputation-miner"
+    },
+    {
+      "path": "./packages/package-utils"
+    },
+    {
+      "path": "./scripts/mockGuardianSpy"
+    }
+  ]
 }

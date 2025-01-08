@@ -1,10 +1,16 @@
 {
-    "compilerOptions": {
-      "outDir": "./built",
-      "allowJs": true,
-      "target": "es6",
-      "moduleResolution": "nodenext",
-      "module": "nodenext"
-    },
-    "include": ["./src/**/*"],
-  }
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./build",
+    "allowJs": true,
+    "composite": true,
+    "rootDir": "./src",
+  },
+  "references": [
+    {
+      "path": "../package-utils",
+    }
+  ],
+  "include": ["./src/**/*"],
+  "exclude": ["./build"]
+}

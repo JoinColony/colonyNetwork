@@ -1,4 +1,4 @@
-const ReputationMiner = require("../built/reputation-miner/src/ReputationMiner");
+const ReputationMiner = require("#ReputationMiner.js");
 
 class ReputationMinerTestWrapper extends ReputationMiner {
   async submitRootHash(entryIndex) {

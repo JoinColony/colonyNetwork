@@ -9,6 +9,8 @@ const { ethers } = require("ethers");
 const { BigNumber } = require("bignumber.js");
 const helpers = require("@nomicfoundation/hardhat-network-helpers");
 
+const { RetryProvider } = require("#package-utils");
+
 const {
   UINT256_MAX,
   MIN_STAKE,
@@ -22,7 +24,6 @@ const {
   CREATEX_ADDRESS,
   CURR_VERSION,
 } = require("./constants");
-const { RetryProvider } = require("../packages/package-utils");
 
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");

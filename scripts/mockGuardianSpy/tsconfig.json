@@ -1,0 +1,15 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+      "outDir": "./build",
+      "allowJs": true,
+      "composite": true,
+    },
+    "references": [
+        {
+          "path": "../../packages/package-utils",
+        },
+      ],
+    "include": ["../../packages/*", "./*.ts", "../../helpers/*.js", "../../lib/wormhole/sdk/js-proto-node", "../../artifacts/contracts/**/*.json"],
+    "exclude": ["./build"]
+  }

@@ -24,7 +24,7 @@ const {
   expectNoEvent,
 } = require("../../helpers/test-helper");
 
-const PatriciaTree = require("../../packages/reputation-miner/built/reputation-miner/src/patricia");
+const PatriciaTree = require("#reputation-miner/patricia.js");
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

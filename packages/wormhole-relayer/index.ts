@@ -7,7 +7,7 @@ import { ethers } from "ethers";
 
 import { RetryProvider, TruffleLoader, ExtendedNonceManager as NonceManager } from "package-utils";
 
-import config from "./config";
+import config from "./config.js";
 
 const loader = new TruffleLoader({
   contractRoot: path.resolve(__dirname, "..", "..", "artifacts", "contracts"),
@@ -83,7 +83,7 @@ const loader = new TruffleLoader({
   for (const chainId of Object.keys(config.chains)) {
     const { colonyBridgeAddress } = config.chains[chainId];
     const providerAddress = config.chains[chainId].endpoints[0];
-    const wallet = new ethers.Wallet(privateKey, new RetryProvider(providerAddress));
+    const wallet = new ethers.Wallet(privateKey, new RetryProvider(providerAddress, {}));
 
     // I think this type conversion is required because we are inheriting from a js file...
     // The noncemanager inherits Signer, so this is fine, practically
