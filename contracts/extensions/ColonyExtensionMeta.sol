@@ -27,7 +27,7 @@ abstract contract ColonyExtensionMeta is BasicMetaTransaction, ColonyExtension {
 
   function getMetatransactionNonce(
     address _user
-  ) public view override(BasicMetaTransaction, IBasicMetaTransaction) returns (uint256 _nonce) {
+  ) public view override(BasicMetaTransaction, IBasicMetaTransaction) returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 

@@ -45,10 +45,10 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
 
   /// @notice Gets the next nonce for a meta-transaction
   /// @param _user The user's address
-  /// @return _nonce The nonce
+  /// @return nonce The nonce
   function getMetatransactionNonce(
     address _user
-  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 _nonce) {
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 

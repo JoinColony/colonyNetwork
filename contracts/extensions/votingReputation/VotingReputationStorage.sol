@@ -96,7 +96,7 @@ contract VotingReputationStorage is
 
   function getMetatransactionNonce(
     address _user
-  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 _nonce) {
+  ) public view override(IBasicMetaTransaction, BasicMetaTransaction) returns (uint256 nonce) {
     // This offset is a result of fixing the storage layout, and having to prevent metatransactions being able to be replayed as a result
     // of the nonce resetting. The broadcaster has made ~3000 transactions in total at time of commit, so we definitely won't have a single
     // account at 1 million nonce by then.
