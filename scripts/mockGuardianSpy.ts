@@ -18,6 +18,8 @@ import { abi as bridgeAbi } from "../artifacts/contracts/testHelpers/WormholeMoc
 // eslint-disable-next-line import/no-unresolved
 import { abi as wormholeBridgeForColonyAbi } from "../artifacts/contracts/bridging/WormholeBridgeForColony.sol/WormholeBridgeForColony.json";
 
+import encodeMockVAA from "../helpers/wormholescanMock/src/encodeMockVAA";
+
 function ethereumAddressToWormholeAddress(address: string) {
   return ethers.utils.hexZeroPad(ethers.utils.hexStripZeros(ethers.utils.hexlify(address)), 32);
 }
@@ -141,40 +143,7 @@ class MockGuardianSpy {
   // Note that the documentation sometimes also calls them VMs (as does IWormhole)
   // I believe VM stands for 'Verified Message'
   async encodeMockVAA(sender: string, sequence: number, nonce: number, payload: string, consistencyLevel: number, chainId: number) {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const emitterChainId = chainId;
-    const emitterAddress = ethereumAddressToWormholeAddress(sender);
-    // let signatures: any[] = [];
-
-    // const vaa = await this.homeBridge.buildVM(
-    //   version,
-    //   timestamp,
-    //   nonce,
-    //   emitterChainId,
-    //   emitterAddress,
-    //   sequence.toString(),
-    //   consistencyLevel,
-    //   payload,
-    //   guardianSetIndex,
-    //   signatures,
-    //   hash,
-    // );
-
-    // Build the VAA body
-    const vaaBody = await this.homeBridge.buildVAABody(timestamp, nonce, emitterChainId, emitterAddress, sequence, consistencyLevel, payload);
-
-    // const signatures = guardians.addSignatures(vaaBody, [0]);
-    // Build the VAA header
-
-    const vaaHeader =
-      "0x01" + // version
-      "00000000" + // guardianSetIndex
-      "01" + // signature count
-      "01" + // signature index
-      "7777000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007777";
-
-    return vaaHeader + vaaBody.toString("hex").slice(2);
-    // return signatures.toString('hex').slice(2);
+    return encodeMockVAA(sender, sequence, nonce, payload, consistencyLevel, chainId, this.homeBridge.address, this.homeBridge.provider);
   }
 
   setupForeignBridges(foreignRpc, foreignBridgeAddress, foreignColonyBridgeAddress) {
