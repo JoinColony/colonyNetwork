@@ -141,7 +141,7 @@ contract DutchAuction is DSMath, MultiChain, BasicMetaTransaction {
     token = ERC20Extended(_token);
   }
 
-  function getMetatransactionNonce(address _user) public view override returns (uint256 _nonce) {
+  function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {
     return metatransactionNonces[_user];
   }
 
