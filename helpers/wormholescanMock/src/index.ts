@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from "express";
 import { LogDescription } from "ethers/lib/utils";
 import { ethers } from "ethers";
 import { OperationsOperationResponse, VaaChainID } from "../openapi-generated-types/models";
+import encodeMockVAA from "./encodeMockVAA";
 
 const app: Express = express();
 const port = process.env.PORT || 3000;
@@ -140,9 +141,11 @@ app.get("/api/v1/operations/:chain/:emitter/:sequence", async (req: Request, res
   }
 
   let requestingEventAndLog;
+  let relevantProvider;
   for (const provider of providers) {
     requestingEventAndLog = await getLogMessagePublishedForVAA(provider, parseInt(req.params.chain, 10), emitterAddress, req.params.sequence);
     if (requestingEventAndLog) {
+      relevantProvider = provider;
       break;
     }
   }
@@ -173,6 +176,21 @@ app.get("/api/v1/operations/:chain/:emitter/:sequence", async (req: Request, res
       status: "confirmed",
     },
   };
+
+  const signed = true;
+  if (signed) {
+    const rawVAA = await encodeMockVAA(
+      emitterAddress,
+      parseInt(req.params.sequence, 10),
+      0,
+      requestingEventAndLog.event.args.payload,
+      0,
+      parseInt(req.params.chain, 10),
+      requestingEventAndLog.log.address,
+      relevantProvider,
+    );
+    body.vaa = { raw: rawVAA };
+  }
 
   if (receivingEventAndLog) {
     body.targetChain = {

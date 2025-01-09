@@ -1360,7 +1360,7 @@ contract("Cross-chain", (accounts) => {
   });
 
   describe("Wormholescan API mock should work as expected", async () => {
-    it("the operations endpoint should return the right joined-up transactions ", async () => {
+    it("the operations endpoint should return the values ", async () => {
       const colony = await setupColony(homeColonyNetwork);
 
       // const homeWormholeAddress = await homeBridge.wormhole();
@@ -1393,6 +1393,16 @@ contract("Cross-chain", (accounts) => {
 
       expect(res.sourceChain.transaction.txHash).to.equal(requestReceipt.transactionHash);
       expect(res.targetChain.transaction.txHash).to.equal(executionReceipt.transactionHash);
+      const expectedVaa = await guardianSpy.encodeMockVAA(
+        homeColonyBridge.address,
+        wormholeEvent.args.sequence,
+        0,
+        wormholeEvent.args.payload,
+        0,
+        wormholeHomeChainId,
+      );
+      // Check VAA
+      expect(res.vaa.raw).to.equal(expectedVaa);
     });
   });
 });
