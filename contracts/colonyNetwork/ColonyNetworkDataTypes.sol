@@ -18,8 +18,10 @@
 
 pragma solidity 0.8.27;
 
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+
 // prettier-ignore
-interface ColonyNetworkDataTypes {
+interface ColonyNetworkDataTypes is CommonDataTypes{
   /// @notice Event logged when the colony network is intialised. This is only ever emitted once in a network's lifetime
   /// @param resolver The Resolver contract address used by the Colony version 1
   event ColonyNetworkInitialised(address resolver);
@@ -166,22 +168,6 @@ interface ColonyNetworkDataTypes {
   /// @param destinationChainId The chain ID of the destination chain
   /// @param salt The salt used to generate the proxy address
   event ProxyColonyRequested(address colony, uint256 destinationChainId, bytes32 salt);
-
-
-  struct Skill {
-    // total number of parent skills
-    uint128 nParents;
-    // total number of child skills
-    uint128 nChildren;
-    // array of `skill_id`s of parent skills starting from the 1st to `n`th, where `n` is an integer power of two larger than or equal to 1
-    uint256[] parents;
-    // array of `skill_id`s of all child skills
-    uint256[] children;
-    // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
-    bool DEPRECATED_globalSkill;
-    // `true` for a skill that is deprecated NB: deprecation is now stored locally on colonies
-    bool DEPRECATED_deprecated;
-  }
 
   struct ENSRecord {
     address addr;
