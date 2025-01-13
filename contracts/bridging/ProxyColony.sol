@@ -81,7 +81,7 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
       : ERC20Extended(_token).balanceOf(address(domainTokenReceiverAddress));
 
     if (_token == address(0x0)) {
-      DomainTokenReceiver(domainTokenReceiverAddress).transferNativeToColony();
+      DomainTokenReceiver(domainTokenReceiverAddress).transferChainNativeToColony();
     } else {
       DomainTokenReceiver(domainTokenReceiverAddress).approveTokenToColony(_token);
       // slither-disable-next-line arbitrary-send-erc20
