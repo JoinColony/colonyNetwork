@@ -18,8 +18,10 @@
 
 pragma solidity 0.8.28;
 
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+
 // prettier-ignore
-interface ColonyDataTypes {
+interface ColonyDataTypes is CommonDataTypes {
   // Events
 
   /// @notice Event logged when Colony is initialised
@@ -272,10 +274,11 @@ interface ColonyDataTypes {
   event PayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
 
   /// @notice Event logged when a colony requests a proxy colony deployment
+  /// @param agent The address that is responsible for triggering this event
   /// @param destinationChainId The chain id of the destination chain
   /// @param salt The salt used to generate the proxy address
   /// @dev The address corresponding to the salt must be this colony's address
-  event ProxyColonyRequested(uint256 destinationChainId, bytes32 salt);
+  event ProxyColonyRequested(address agent, uint256 destinationChainId, bytes32 salt);
 
   // Structs
 

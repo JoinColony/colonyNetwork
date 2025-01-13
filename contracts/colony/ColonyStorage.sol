@@ -24,7 +24,6 @@ import { CommonStorage } from "./../common/CommonStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DomainRoles } from "./../common/DomainRoles.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
-import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
@@ -33,7 +32,7 @@ import { ColonyDataTypes } from "./ColonyDataTypes.sol";
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyStorage is ColonyDataTypes, DSMath, CommonStorage {
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
