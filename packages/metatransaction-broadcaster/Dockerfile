@@ -2,6 +2,8 @@ FROM node:20.11.0-buster
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN mkdir /app
+WORKDIR /app
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./pnpm-lock.yaml ./

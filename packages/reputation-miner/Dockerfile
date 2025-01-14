@@ -3,6 +3,8 @@ RUN apt-get update || : && apt-get install python -y
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN mkdir /app
+WORKDIR /app
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./pnpm-lock.yaml ./
