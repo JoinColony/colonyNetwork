@@ -219,73 +219,8 @@ contract ColonyFunding is
   }
 
   address constant LIFI_ADDRESS = 0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE;
+
   function exchangeTokensViaLiFi(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId,
-    bytes memory _txdata,
-    uint256 _value,
-    address _token,
-    uint256 _amount
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId) {
-    // TODO: Colony Network fee
-    Domain storage domain = domains[_domainId];
-
-    uint256 priorApproval = ERC20Extended(_token).allowance(address(this), LIFI_ADDRESS);
-
-    // Check the domain has enough for what is
-    if (_token == address(0x0)) {
-      require(
-        _value + _amount <= getFundingPotBalance(domain.fundingPotId, _token),
-        "colony-insufficient-funds"
-      );
-    } else {
-      require(
-        _amount <= getFundingPotBalance(domain.fundingPotId, _token),
-        "colony-insufficient-funds"
-      );
-      require(
-        _value <= getFundingPotBalance(domain.fundingPotId, address(0x0)),
-        "colony-insufficient-funds"
-      );
-    }
-
-    if (_domainId == 1) {
-      // Check that we have enough not-already-approved tokens
-      require(
-        getFundingPotBalance(domain.fundingPotId, _token) >= tokenApprovalTotals[_token] + _amount,
-        "colony-insufficient-funds"
-      );
-    }
-
-    // Deduct the amount from the domain
-    decrementFundingPotBalance(domain.fundingPotId, block.chainid, _token, _amount);
-    decrementFundingPotBalance(domain.fundingPotId, block.chainid, address(0x0), _value);
-
-    require(
-      ERC20Extended(_token).approve(LIFI_ADDRESS, _amount + priorApproval),
-      "colony-approve-failed"
-    );
-    (bool success, ) = LIFI_ADDRESS.call{ value: _value }(_txdata);
-
-    require(success, "colony-exchange-tokens-failed");
-
-    // Check the allowances afterwards, ensuring that at least some of the tokens we approved were spent by
-    // the LiFi transaction - if not, a different token might have been spent, so revert.
-    uint256 postApproval = ERC20Extended(_token).allowance(address(this), LIFI_ADDRESS);
-    require(_amount + priorApproval > postApproval, "colony-unexpected-exchange");
-    require(postApproval >= priorApproval, "colony-more-than-intended-allowance-used");
-
-    // If the LiFi transaction didn't use all the tokens, reduce the allowance back to what it was before
-    if (postApproval > priorApproval) {
-      require(
-        ERC20Extended(_token).approve(LIFI_ADDRESS, priorApproval),
-        "colony-post-exchange-approve-failed"
-      );
-    }
-  }
-
-  function exchangeProxyHeldTokensViaLiFi(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId,
@@ -326,17 +261,56 @@ contract ColonyFunding is
     if (_token == address(0)) {
       revert("not yet implemented");
     } else {
-      bytes[] memory actions = new bytes[](2);
+      if (block.chainid == _chainId) {
+        if (_domainId == 1) {
+          // Check that we have enough not-already-approved tokens
+          require(
+            getFundingPotBalance(d.fundingPotId, _token) >= tokenApprovalTotals[_token] + _amount,
+            "colony-insufficient-funds"
+          );
+        }
 
-      actions[0] = abi.encodeCall(
-        ProxyColony.makeArbitraryTransaction,
-        (_token, abi.encodeCall(ERC20.approve, (LIFI_ADDRESS, _amount)))
-      );
-      actions[1] = abi.encodeCall(ProxyColony.makeArbitraryTransaction, (LIFI_ADDRESS, _txdata));
+        uint256 priorApproval = ERC20Extended(_token).allowance(address(this), LIFI_ADDRESS);
 
-      bytes memory multicallData = abi.encodeWithSignature("multicall(bytes[])", actions);
+        require(
+          ERC20Extended(_token).approve(LIFI_ADDRESS, _amount + priorApproval),
+          "colony-approve-failed"
+        );
+        (bool success, ) = LIFI_ADDRESS.call{ value: _value }(_txdata);
 
-      IColony(address(this)).makeProxyArbitraryTransaction(_chainId, address(this), multicallData);
+        require(success, "colony-exchange-tokens-failed");
+
+        // Check the allowances afterwards, ensuring that at least some of the tokens we approved were spent by
+        // the LiFi transaction - if not, a different token might have been spent, so revert.
+        uint256 postApproval = ERC20Extended(_token).allowance(address(this), LIFI_ADDRESS);
+        require(_amount + priorApproval > postApproval, "colony-unexpected-exchange");
+        require(postApproval >= priorApproval, "colony-more-than-intended-allowance-used");
+
+        // If the LiFi transaction didn't use all the tokens, reduce the allowance back to what it was before
+        if (postApproval > priorApproval) {
+          require(
+            ERC20Extended(_token).approve(LIFI_ADDRESS, priorApproval),
+            "colony-post-exchange-approve-failed"
+          );
+        }
+      } else {
+        // Exchange is to happen on another chain
+        bytes[] memory actions = new bytes[](2);
+
+        actions[0] = abi.encodeCall(
+          ProxyColony.makeArbitraryTransaction,
+          (_token, abi.encodeCall(ERC20.approve, (LIFI_ADDRESS, _amount)))
+        );
+        actions[1] = abi.encodeCall(ProxyColony.makeArbitraryTransaction, (LIFI_ADDRESS, _txdata));
+
+        bytes memory multicallData = abi.encodeWithSignature("multicall(bytes[])", actions);
+
+        IColony(address(this)).makeProxyArbitraryTransaction(
+          _chainId,
+          address(this),
+          multicallData
+        );
+      }
     }
   }
 

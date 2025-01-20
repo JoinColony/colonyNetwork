@@ -958,7 +958,7 @@ contract("Colony Funding", (accounts) => {
         50,
       ).encodeABI();
 
-      const tx = await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50);
+      const tx = await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50);
       const swapEvent = tx.receipt.rawLogs
         .filter((e) => e.address === LIFI_ADDRESS)
         .map((e) => lifiEthers.interface.parseLog(e))
@@ -992,7 +992,7 @@ contract("Colony Funding", (accounts) => {
         40,
       ).encodeABI();
 
-      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50);
+      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50);
       await otherToken.mint(domain2ReceiverAddress, 50); // Better than 1:1 exchange rate
 
       const approval = await colony.getTokenApproval(token.address, LIFI_ADDRESS);
@@ -1018,7 +1018,7 @@ contract("Colony Funding", (accounts) => {
         domain2ReceiverAddress,
         40,
       ).encodeABI();
-      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50), "colony-unexpected-exchange");
+      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50), "colony-unexpected-exchange");
     });
 
     it("'lying' calls of exchangeTokensViaLiFi trying to spend already-approved tokens are caught", async () => {
@@ -1033,7 +1033,10 @@ contract("Colony Funding", (accounts) => {
         domain2ReceiverAddress,
         60,
       ).encodeABI();
-      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50), "colony-more-than-intended-allowance-used");
+      await checkErrorRevert(
+        colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50),
+        "colony-more-than-intended-allowance-used",
+      );
     });
 
     it("If LiFi transaction was cheaper than expected, shouldn't leave extra allowance behind", async () => {
@@ -1046,7 +1049,7 @@ contract("Colony Funding", (accounts) => {
         40,
       ).encodeABI();
 
-      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, token.address, 50);
+      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50);
 
       const approval = await token.allowance(colony.address, LIFI_ADDRESS);
       expect(approval).to.be.eq.BN(0);
@@ -1067,7 +1070,7 @@ contract("Colony Funding", (accounts) => {
         domain2ReceiverAddress,
         50,
       ).encodeABI();
-      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, UINT256_MAX, 1, txdata, 0, token.address, 50), "colony-insufficient-funds");
+      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, UINT256_MAX, 1, txdata, 0, chainId, token.address, 50), "colony-insufficient-funds");
     });
   });
 });

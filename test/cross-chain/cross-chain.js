@@ -867,7 +867,7 @@ contract("Cross-chain", (accounts) => {
         ethers.utils.parseEther("50"),
       ]);
 
-      tx = await homeColony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, homeToken.address, ethers.utils.parseEther("50"));
+      tx = await homeColony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, homeChainId, homeToken.address, ethers.utils.parseEther("50"));
 
       const receipt = await tx.wait();
       const swapEvent = receipt.events
@@ -951,7 +951,7 @@ contract("Cross-chain", (accounts) => {
       ]);
 
       p = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await colony.exchangeProxyHeldTokensViaLiFi(1, 0, 2, txdata, 0, foreignChainId, foreignToken.address, ethers.utils.parseEther("70"));
+      tx = await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, foreignChainId, foreignToken.address, ethers.utils.parseEther("70"));
       await tx.wait();
 
       const receipt = await p;

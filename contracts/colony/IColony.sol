@@ -942,24 +942,6 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   function getAllowedDomainReputationReceipt(uint256 _domainId) external view returns (uint256);
 
   /// @notice Exchange funds between two tokens, potentially between chains
-  /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`
-  /// @param _domainId Id of the domain
-  /// @param _txdata Transaction data for the exchange
-  /// @param _value Value of the transaction
-  /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @param _amount Amount of tokens to exchange
-  function exchangeTokensViaLiFi(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    uint256 _domainId,
-    bytes memory _txdata,
-    uint256 _value,
-    address _token,
-    uint256 _amount
-  ) external;
-
-  /// @notice Exchange funds between two tokens, potentially between chains
   /// The tokens being swapped are held by a proxy contract
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`
@@ -969,7 +951,7 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @param _chainId The chainId of the token
   /// @param _token Address of the token. If the native token is being swapped, can be anything and _amount should be 0.
   /// @param _amount Amount of tokens to exchange
-  function exchangeProxyHeldTokensViaLiFi(
+  function exchangeTokensViaLiFi(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
     uint256 _domainId,
