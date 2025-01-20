@@ -144,62 +144,6 @@ contract("Cross-chain", (accounts) => {
     homeChainId = await ethersHomeSigner.provider.send("eth_chainId", []);
     wormholeHomeChainId = evmChainIdToWormholeChainId(homeChainId);
 
-    // const foreignNetworkId = await ethersForeignSigner.provider.send("net_version", []);
-    // foreignChainId = await ethersForeignSigner.provider.send("eth_chainId", []);
-    // wormholeForeignChainId = evmChainIdToWormholeChainId(foreignChainId);
-
-    // Deploy shell colonyNetwork to whichever chain truffle hasn't already deployed to.
-    // try {
-    //   if (process.env.HARDHAT_FOREIGN === "true") {
-    //     await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development`);
-    //   } else {
-    //     await exec(`CHAIN_ID=${parseInt(foreignChainId, 16)} npx hardhat ensureCreateXDeployed --network development2`);
-    //   }
-
-    //   const createX = await new ethers.Contract(CREATEX_ADDRESS, ICreateX.abi, ethersForeignSigner);
-
-    //   // This is a fake instance of an etherRouter, just so we can call encodeABs
-    //   const fakeEtherRouter = await EtherRouterCreate3.at(CREATEX_ADDRESS);
-    //   const setOwnerData = fakeEtherRouter.contract.methods.setOwner(accounts[0]).encodeABI();
-
-    //   const tx = await createX["deployCreate3AndInit(bytes32,bytes,bytes,(uint256,uint256))"](
-    //     `0xb77d57f4959eafa0339424b83fcfaf9c15407461005e95d52076387600e2c1e9`,
-    //     EtherRouterCreate3.bytecode,
-    //     setOwnerData,
-    //     [0, 0],
-    //     { from: accounts[0] },
-    //   );
-
-    //   const receipt = await tx.wait();
-
-    //   const etherRouter = await new ethers.Contract(
-    //     receipt.events.filter((log) => log.event === "ContractCreation")[0].args.newContract,
-    //     EtherRouter.abi,
-    //     ethersForeignSigner,
-    //   );
-    //   let resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
-    //   const proxyColonyNetworkImplementation = await new ethers.ContractFactory(
-    //     ProxyColonyNetwork.abi,
-    //     ProxyColonyNetwork.bytecode,
-    //     ethersForeignSigner,
-    //   ).deploy();
-
-    //   await setupProxyColonyNetwork(etherRouter, proxyColonyNetworkImplementation, resolver);
-    //   console.log("**** shell colony network set up");
-
-    //   // Set up the resolver for shell colonies
-    //   resolver = await new ethers.ContractFactory(Resolver.abi, Resolver.bytecode, ethersForeignSigner).deploy();
-    //   const proxyColonyImplementation = await new ethers.ContractFactory(ProxyColony.abi, ProxyColony.bytecode, ethersForeignSigner).deploy();
-
-    //   await setupEtherRouter("bridging", "ProxyColony", { ProxyColony: proxyColonyImplementation.address }, resolver);
-    //   const proxyColonyNetwork = new ethers.Contract(etherRouter.address, ProxyColonyNetwork.abi, ethersForeignSigner);
-
-    //   await proxyColonyNetwork.setProxyColonyResolverAddress(resolver.address);
-    // } catch (err) {
-    //   console.log(err);
-    //   process.exit(1);
-    // }
-
     // 0x539 is the chain id used by truffle by default (regardless of networkid), and if
     // we see it in our tests that's the coverage chain, which builds the contract artifacts
     // in to a different location. If we see another chain id, we assume it's non-coverage
@@ -414,7 +358,7 @@ contract("Cross-chain", (accounts) => {
       await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
     });
 
-    it("callProxyNetwork can only be called through the metacolony", async () => {
+    it("multicallProxyNetwork can only be called through the metacolony", async () => {
       const payload = homeColonyNetwork.interface.encodeFunctionData("setColonyBridgeAddress", [ADDRESS_ZERO]);
       let tx = await homeColonyNetwork.createColonyForFrontend(ADDRESS_ZERO, "A", "A", 18, CURR_VERSION, "", "");
       await tx.wait();
@@ -423,14 +367,14 @@ contract("Cross-chain", (accounts) => {
       const colonyAddress = await homeColonyNetwork.getColony(colonyCount);
       const fakeMetaColony = new ethers.Contract(colonyAddress, IMetaColony.abi, ethersHomeSigner);
 
-      tx = await fakeMetaColony.callProxyNetwork(foreignChainId, [payload], { gasLimit: 1000000 });
+      tx = await fakeMetaColony.multicallProxyNetwork(foreignChainId, [payload], { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-caller-must-be-meta-colony");
     });
 
-    it("callProxyNetwork can only be called by root permissions on the metacolony", async () => {
+    it("multicallProxyNetwork can only be called by root permissions on the metacolony", async () => {
       const payload = remoteColonyNetwork.interface.encodeFunctionData("setColonyBridgeAddress", [ADDRESS_ZERO]);
       const homeMetacolony2 = new ethers.Contract(homeMetacolony.address, IMetaColony.abi, ethersHomeSigner2);
-      let tx = await homeMetacolony2.callProxyNetwork(foreignChainId, [payload], { gasLimit: 1000000 });
+      let tx = await homeMetacolony2.multicallProxyNetwork(foreignChainId, [payload], { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "ds-auth-unauthorized");
 
       // Add root permissions
@@ -446,7 +390,7 @@ contract("Cross-chain", (accounts) => {
 
       // Can now call
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
-      const tx3 = await homeMetacolony2.callProxyNetwork(foreignChainId, [payload]);
+      const tx3 = await homeMetacolony2.multicallProxyNetwork(foreignChainId, [payload]);
       await tx3.wait();
       await p;
 
@@ -463,7 +407,7 @@ contract("Cross-chain", (accounts) => {
       const bridgeAddress = await remoteColonyNetwork.colonyBridgeAddress();
       const payload = remoteColonyNetwork.interface.encodeFunctionData("setColonyBridgeAddress", [ADDRESS_ZERO]);
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
-      const tx = await homeMetacolony.callProxyNetwork(foreignChainId, [payload]);
+      const tx = await homeMetacolony.multicallProxyNetwork(foreignChainId, [payload]);
       await tx.wait();
       await p;
       const bridgeAddressAfter = await remoteColonyNetwork.colonyBridgeAddress();

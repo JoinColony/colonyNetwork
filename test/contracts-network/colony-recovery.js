@@ -214,7 +214,7 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.makeArbitraryTransactions([], [], true), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.makeSingleArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.makeProxyArbitraryTransaction(1, ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
-      await checkErrorRevert(metaColony.callProxyNetwork(1, []), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.multicallProxyNetwork(1, []), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.updateApprovalAmount(ADDRESS_ZERO, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.finalizeRewardPayout(1), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.claimDomainFunds(ADDRESS_ZERO, 1), "colony-in-recovery-mode");

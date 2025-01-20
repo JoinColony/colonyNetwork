@@ -245,7 +245,7 @@ contract ColonyFunding is
         "colony-insufficient-funds"
       );
       require(
-        _value <= getFundingPotBalance(domain.fundingPotId, _token),
+        _value <= getFundingPotBalance(domain.fundingPotId, address(0x0)),
         "colony-insufficient-funds"
       );
     }
@@ -311,7 +311,7 @@ contract ColonyFunding is
         "colony-insufficient-funds"
       );
       require(
-        _value <= getFundingPotBalance(d.fundingPotId, _chainId, _token),
+        _value <= getFundingPotBalance(d.fundingPotId, _chainId, address(0x0)),
         "colony-insufficient-funds"
       );
     }
@@ -601,7 +601,7 @@ contract ColonyFunding is
       // If we're moving from the root pot, then check we haven't dropped below what we need
       // to cover any approvals that we've made.
       require(
-        getFundingPotBalance(_fromPot, _chainId, _token) >= tokenApprovalTotals[_token],
+        getFundingPotBalance(_fromPot, block.chainid, _token) >= tokenApprovalTotals[_token],
         "colony-funding-too-many-approvals"
       );
     }
@@ -708,9 +708,7 @@ contract ColonyFunding is
     for (uint256 i; i < _slots.length; i++) {
       require(_amounts[i] <= MAX_PAYOUT, "colony-payout-too-large");
       uint256 currentPayout = getExpenditureSlotPayout(_id, _slots[i], _chainId, _token);
-      // uint256 currentPayout = expenditureSlotPayouts[_id][_slots[i]][_token];
       setExpenditureSlotPayout(_id, _slots[i], _chainId, _token, _amounts[i]);
-      // expenditureSlotPayouts[_id][_slots[i]][_token] = _amounts[i];
       runningTotal = (runningTotal - currentPayout) + _amounts[i];
 
       emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);

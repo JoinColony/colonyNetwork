@@ -336,7 +336,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
     sig = bytes4(keccak256("makeProxyArbitraryTransaction(uint256,address,bytes)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
-    sig = bytes4(keccak256("callProxyNetwork(uint256,bytes[])"));
+    sig = bytes4(keccak256("multicallProxyNetwork(uint256,bytes[])"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
 
     sig = bytes4(
