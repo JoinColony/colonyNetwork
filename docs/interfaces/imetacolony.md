@@ -146,19 +146,6 @@ Burn tokens held by the colony. Can only burn tokens held in the root funding po
 |amount|uint256|The amount of tokens to burn
 
 
-### ▸ `callProxyNetwork(uint256 _chainId, bytes[] memory _actions)`
-
-Call (a) function(s) on the proxyColonyNetwork on a different chain
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_chainId|uint256|The chainId of the chain the function is being called on
-|_actions|bytes[]|The actions to be called
-
-
 ### ▸ `cancelExpenditure(uint256 _id)`
 
 Cancels the expenditure and prevents further editing. Can only be called by expenditure owner.
@@ -1419,6 +1406,19 @@ Call multiple functions in the current contract and return the data from all of 
 |Name|Type|Description|
 |---|---|---|
 |results|bytes[]|The results from each of the calls passed in via data
+
+### ▸ `multicallProxyNetwork(uint256 _chainId, bytes[] memory _actions)`
+
+Call (a) function(s) on the proxyColonyNetwork on a different chain
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|The chainId of the chain the function is being called on
+|_actions|bytes[]|The actions to be called
+
 
 ### ▸ `numRecoveryRoles():uint64 numRoles`
 

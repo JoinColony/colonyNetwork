@@ -567,7 +567,6 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     uint256 _amount
   ) external;
 
-  /// @notice @deprecated
   /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
   /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure

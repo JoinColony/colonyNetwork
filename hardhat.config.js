@@ -79,7 +79,7 @@ task("test", "Run tests").setAction(async () => {
   }
 });
 
-task("ensureCreateXDeployed", "Ensure CreateX is deployed").setAction(async () => {
+task("ensure-createx-deployed", "Ensure CreateX is deployed").setAction(async () => {
   const { idempotentDeployCreateX } = require("./helpers/test-helper"); // eslint-disable-line global-require
 
   await idempotentDeployCreateX();

@@ -239,8 +239,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
 
   function msgSenderIsColony() internal view override returns (bool) {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
-    assert(msgSender() == msg.sender);
-    return true;
+    return msgSender() == msg.sender;
   }
 
   function isStopped() internal view override returns (bool) {

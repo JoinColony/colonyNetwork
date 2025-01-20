@@ -61,7 +61,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     }
   }
 
-  function callProxyNetwork(
+  function multicallProxyNetwork(
     uint256 _chainId,
     bytes[] memory _actions
   ) public stoppable auth returns (bool) {

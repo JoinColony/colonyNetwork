@@ -37,7 +37,7 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards, DomainReceiver
   address public colonyBridgeAddress;
   uint256 public homeChainId;
   address public proxyColonyResolverAddress;
-  mapping(address => bool) public shellColonies;
+  mapping(address => bool) public proxyColonies;
   address public domainTokenReceiverResolver;
 
   /// @notice Event logged when the colony network has data about a bridge contract set.
@@ -89,7 +89,7 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards, DomainReceiver
   }
 
   function msgSenderIsColony() internal view override returns (bool) {
-    return shellColonies[msgSender()];
+    return proxyColonies[msgSender()];
   }
 
   function setDomainTokenReceiverResolver(address _resolver) public auth {
@@ -112,7 +112,7 @@ contract ProxyColonyNetwork is DSAuth, Multicall, CallWithGuards, DomainReceiver
       )
     );
 
-    shellColonies[address(etherRouter)] = true;
+    proxyColonies[address(etherRouter)] = true;
 
     etherRouter.setResolver(proxyColonyResolverAddress); // ignore-swc-113
 

@@ -44,7 +44,7 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
     _;
   }
 
-  event DomainFundsClaimed(address token, uint256 _domainId, uint256 balance);
+  event DomainFundsClaimed(address token, uint256 domainId, uint256 balance);
   event TransferMade(address token, address user, uint256 amount);
 
   // Public functions
@@ -115,7 +115,7 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
     if (_token == address(0x0)) {
       payable(_recipient).transfer(_amount);
     } else {
-      require(ERC20Extended(_token).transfer(_recipient, _amount), "colony-shell-transfer-failed");
+      require(ERC20Extended(_token).transfer(_recipient, _amount), "colony-proxy-transfer-failed");
     }
 
     emit TransferMade(_token, _recipient, _amount);

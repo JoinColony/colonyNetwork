@@ -21,7 +21,7 @@ const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
 module.exports = async () => {
   const accounts = await web3.eth.getAccounts();
 
-  await hre.run("ensureCreateXDeployed");
+  await hre.run("ensure-createx-deployed");
   const CreateX = truffleContract({ abi: createXABI.abi });
   CreateX.setProvider(web3.currentProvider);
   const createX = await CreateX.at(CREATEX_ADDRESS);
