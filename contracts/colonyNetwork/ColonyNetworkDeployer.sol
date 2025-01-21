@@ -203,40 +203,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
     return domainReceiverResolverAddress;
   }
 
-  function idempotentDeployDomainTokenReceiver(
-    uint256 _domainId
-  ) public stoppable calledByColony returns (address domainTokenReceiverAddress) {
-    // Calculate the address the domain should be receiving funds at
-    domainTokenReceiverAddress = getDomainTokenReceiverAddress(msgSender(), _domainId);
-
-    if (!isContract(domainTokenReceiverAddress)) {
-      // Then deploy the contract
-      bytes32 salt = getDomainTokenReceiverDeploySalt(msgSender(), _domainId);
-      address deployedAddress = deployEtherRouterViaCreateX(salt);
-      require(
-        deployedAddress == domainTokenReceiverAddress,
-        "colony-network-domain-receiver-deploy-wrong-address"
-      );
-
-      // Set up the deployed contract
-      EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
-      DomainTokenReceiver(domainTokenReceiverAddress).setColony(msgSender());
-    } else {
-      // Contract is deployed, check it's got the right resolver
-      try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
-        if (address(resolver) != domainReceiverResolverAddress) {
-          EtherRouter(payable(domainTokenReceiverAddress)).setResolver(
-            domainReceiverResolverAddress
-          );
-        }
-      } catch {
-        revert("colony-network-domain-receiver-not-etherrouter");
-      }
-    }
-
-    return domainTokenReceiverAddress;
-  }
-
   function msgSenderIsColony() internal view override returns (bool) {
     require(_isColony[msgSender()], "colony-caller-must-be-colony");
     return msgSender() == msg.sender;
@@ -299,19 +265,5 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement
     // Colony will not have owner
     DSAuth dsauth = DSAuth(_colonyAddress);
     dsauth.setOwner(address(0x0));
-  }
-
-  function deployEtherRouterViaCreateX(bytes32 _salt) internal returns (address) {
-    EtherRouter etherRouter = EtherRouter(
-      payable(
-        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
-          _salt,
-          type(EtherRouterCreate3).creationCode,
-          abi.encodeWithSignature("setOwner(address)", (address(this))),
-          ICreateX.Values(0, 0)
-        )
-      )
-    );
-    return address(etherRouter);
   }
 }
