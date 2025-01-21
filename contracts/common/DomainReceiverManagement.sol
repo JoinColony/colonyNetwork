@@ -25,7 +25,7 @@ import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouterCreate3 } from "./EtherRouterCreate3.sol";
 import { EtherRouter } from "./EtherRouter.sol";
 import { Resolver } from "./Resolver.sol";
-import { IsContract } from "./IsContract.sol";
+import { IsContract } from "./mixins/IsContract.sol";
 
 abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContract {
   address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;

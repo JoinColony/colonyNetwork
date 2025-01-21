@@ -24,7 +24,7 @@ import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
-import { Bytes4Includes } from "./../common/Bytes4Includes.sol";
+import { Bytes4Includes } from "./../common/mixins/Bytes4Includes.sol";
 
 // ignore-file-swc-108
 

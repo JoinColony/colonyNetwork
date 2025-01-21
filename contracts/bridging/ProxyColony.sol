@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { CallWithGuards } from "../common/CallWithGuards.sol";
+import { CallWithGuards } from "../common/mixins/CallWithGuards.sol";
 import { DSAuth } from "./../../lib/dappsys/auth.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { Multicall } from "./../common/Multicall.sol";
