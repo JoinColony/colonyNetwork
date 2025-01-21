@@ -72,9 +72,8 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
   }
 
   function claimTokensForDomain(address _token, uint256 _domainId) public {
-    address domainTokenReceiverAddress = ProxyColonyNetwork(owner).checkDomainTokenReceiverDeployed(
-      _domainId
-    );
+    address domainTokenReceiverAddress = ProxyColonyNetwork(owner)
+      .idempotentDeployDomainTokenReceiver(_domainId);
 
     uint256 balance = (_token == address(0x0))
       ? address(domainTokenReceiverAddress).balance

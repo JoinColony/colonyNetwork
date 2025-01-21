@@ -541,15 +541,6 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @dev This should only be able to be called by the metacolony
   function bridgeMessageToNetwork(uint256 _chainId, bytes memory _payload) external;
 
-  /// @notice Function called by a colony to ensure that a DomainTokenReceiver has been deployed and set up correctly
-  /// for a particular domain.
-  /// @dev Should only be called by a colony.
-  /// @param _domainId The domainId of the domain to check the deployment for
-  /// @return domainTokenReceiverAddress The address of the DomainTokenReceiver
-  function idempotentDeployDomainTokenReceiver(
-    uint256 _domainId
-  ) external returns (address domainTokenReceiverAddress);
-
   /// @notice Handles calls to create a new colony on another chain
   /// @dev Should only be called by a colony, if you're trying to call this directly you're doing something wrong
   /// @param _destinationChainId The chainId of the chain to create the colony on
@@ -561,7 +552,7 @@ interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransac
   /// @dev Should only be called by a colony.
   /// @param _domainId The domainId of the domain to check the deployment for
   /// @return domainTokenReceiverAddress The address of the DomainTokenReceiver
-  function checkDomainTokenReceiverDeployed(
+  function idempotentDeployDomainTokenReceiver(
     uint256 _domainId
   ) external returns (address domainTokenReceiverAddress);
 

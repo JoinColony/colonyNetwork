@@ -34,11 +34,13 @@ abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContra
   function msgSenderIsColony() internal view virtual returns (bool);
   function isStopped() internal view virtual returns (bool);
 
-  function checkDomainTokenReceiverDeployed(
+  function idempotentDeployDomainTokenReceiver(
     uint256 _domainId
   ) public returns (address domainTokenReceiverAddress) {
     require(!isStopped(), "colony-domain-receiver-management-stopped");
     require(msgSenderIsColony(), "colony-domain-receiver-management-not-colony");
+
+    address domainReceiverResolverAddress = getDomainTokenReceiverResolver();
 
     // Calculate the address the domain should be receiving funds at
     domainTokenReceiverAddress = getDomainTokenReceiverAddress(msgSender(), _domainId);
@@ -46,32 +48,26 @@ abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContra
     if (!isContract(domainTokenReceiverAddress)) {
       // Then deploy the contract
       bytes32 salt = getDomainTokenReceiverDeploySalt(msgSender(), _domainId);
-      address newContract = ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
-        salt,
-        type(EtherRouterCreate3).creationCode,
-        abi.encodeWithSignature("setOwner(address)", (address(this))),
-        ICreateX.Values(0, 0)
-      );
+      address deployedAddress = deployEtherRouterViaCreateX(salt);
       require(
-        newContract == domainTokenReceiverAddress,
+        deployedAddress == domainTokenReceiverAddress,
         "colony-network-domain-receiver-deploy-wrong-address"
       );
-    }
 
-    // Check it's got the right resolver
-    try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
-      if (address(resolver) != getDomainTokenReceiverResolver()) {
-        EtherRouter(payable(domainTokenReceiverAddress)).setResolver(
-          getDomainTokenReceiverResolver()
-        );
-      }
-    } catch {
-      revert("colony-network-domain-receiver-not-etherrouter");
-    }
-
-    // Check it's set up correctly
-    if (DomainTokenReceiver(domainTokenReceiverAddress).getColonyAddress() != msgSender()) {
+      // Set up the deployed contract
+      EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
       DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
+    } else {
+      // Contract is deployed, check it's got the right resolver
+      try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
+        if (address(resolver) != domainReceiverResolverAddress) {
+          EtherRouter(payable(domainTokenReceiverAddress)).setResolver(
+            domainReceiverResolverAddress
+          );
+        }
+      } catch {
+        revert("colony-network-domain-receiver-not-etherrouter");
+      }
     }
 
     return domainTokenReceiverAddress;
@@ -108,5 +104,19 @@ abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContra
     // redeployment protection in createX.
     // This is intentional, as we want to allow the same receiver to be deployed on different chains
     return salt;
+  }
+
+  function deployEtherRouterViaCreateX(bytes32 _salt) internal returns (address) {
+    EtherRouter etherRouter = EtherRouter(
+      payable(
+        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
+          _salt,
+          type(EtherRouterCreate3).creationCode,
+          abi.encodeWithSignature("setOwner(address)", (address(this))),
+          ICreateX.Values(0, 0)
+        )
+      )
+    );
+    return address(etherRouter);
   }
 }

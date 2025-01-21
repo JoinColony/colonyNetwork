@@ -861,8 +861,8 @@ contract("Colony Funding", (accounts) => {
       await checkErrorRevert(colony.claimDomainFunds(ethers.constants.AddressZero, 2), "colony-funding-domain-does-not-exist");
     });
 
-    it("only a colony can call checkDomainTokenReceiverDeployed on Network", async () => {
-      await checkErrorRevert(colonyNetwork.checkDomainTokenReceiverDeployed(2), "colony-caller-must-be-colony");
+    it("only a colony can call idempotentDeployDomainTokenReceiver on Network", async () => {
+      await checkErrorRevert(colonyNetwork.idempotentDeployDomainTokenReceiver(2), "colony-caller-must-be-colony");
     });
 
     it("If transfer fails from receiver, then the funds are not claimed", async () => {
