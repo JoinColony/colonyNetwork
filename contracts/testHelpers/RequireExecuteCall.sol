@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { CallWithGuards } from "./../common/CallWithGuards.sol";
+import { CallWithGuards } from "./../common/mixins/CallWithGuards.sol";
 
 contract RequireExecuteCall is CallWithGuards {
   function executeCall(address target, bytes memory action) public {

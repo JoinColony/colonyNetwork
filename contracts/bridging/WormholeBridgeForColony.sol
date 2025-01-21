@@ -21,7 +21,7 @@ pragma solidity 0.8.27;
 import { IWormhole } from "../../lib/wormhole/ethereum/contracts/interfaces/IWormhole.sol";
 import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";
 import { IColonyBridge } from "./IColonyBridge.sol";
-import { CallWithGuards } from "../common/CallWithGuards.sol";
+import { CallWithGuards } from "../common/mixins/CallWithGuards.sol";
 import { DSAuth } from "../../lib/dappsys/auth.sol";
 
 contract WormholeBridgeForColony is DSAuth, IColonyBridge, CallWithGuards {
