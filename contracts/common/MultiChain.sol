@@ -31,9 +31,4 @@ contract MultiChain {
     uint256 chainId = block.chainid;
     return (chainId == 1 || chainId == 2656691);
   }
-
-  function isGoerli() internal view returns (bool) {
-    uint256 chainId = block.chainid;
-    return (chainId == 5 || chainId == 2656695);
-  }
 }

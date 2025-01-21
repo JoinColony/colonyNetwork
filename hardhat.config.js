@@ -1,5 +1,7 @@
 /* global hre, config, task, runSuper */
 
+require("dotenv").config();
+
 const fs = require("fs");
 const path = require("path");
 
@@ -134,6 +136,11 @@ module.exports = {
     contracts: [],
   },
   networks: {
+    arbitrum: {
+      chainId: 42161,
+      url: "https://arb1.arbitrum.io/rpc",
+      accounts: [process.env.PRIVATE_KEY || "0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae"],
+    },
     development: {
       url: "http://localhost:8545",
       chainId: Number(process.env.CHAIN_ID) || FORKED_XDAI_CHAINID,

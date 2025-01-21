@@ -34,9 +34,6 @@ const Token = artifacts.require("Token");
 
 chai.use(bnChai(web3.utils.BN));
 
-const GOERLI = 5;
-const FORKED_GOERLI = 2656695;
-
 contract("Contract Storage", (accounts) => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
@@ -74,9 +71,6 @@ contract("Contract Storage", (accounts) => {
       if (await isMainnet()) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.eth");
-      } else if (chainId === GOERLI || chainId === FORKED_GOERLI) {
-        const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
-        expect(name).to.equal("meta.colony.joincolony.test");
       } else if (await isXdai()) {
         const name = await colonyNetwork.lookupRegisteredENSDomain(metaColony.address);
         expect(name).to.equal("meta.colony.joincolony.colonyxdai");

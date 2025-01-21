@@ -140,8 +140,6 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
   function getGlobalENSDomain() internal view returns (string memory) {
     if (isMainnet()) {
       return "joincolony.eth";
-    } else if (isGoerli()) {
-      return "joincolony.test";
     } else if (isXdai()) {
       return "joincolony.colonyxdai";
     }

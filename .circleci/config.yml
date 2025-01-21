@@ -315,11 +315,6 @@ jobs:
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
-          name: "Running chainid tests with coverage for goerli"
-          command: CHAIN_ID=5 pnpm run test:contracts:chainid:coverage
-          environment:
-            NODE_OPTIONS: --max-old-space-size=6144
-      - run:
           name: "Running chainid tests with coverage for xDai"
           command: CHAIN_ID=100 pnpm run test:contracts:chainid:coverage
           environment:
