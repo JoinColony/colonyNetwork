@@ -39,6 +39,8 @@ class MockGuardianSpy {
 
   foreignColonyBridgeAddresses: string[];
 
+  spyWaitsForBridgedTransaction: boolean;
+
   homeBridge: Contract;
 
   foreignBridges: Contract[];
@@ -80,6 +82,7 @@ class MockGuardianSpy {
    * @param {string} foreignBridgeAddress The address of the foreign bridge contract
    * @param {string} homeColonyBridgeAddress The address of the home colony bridge contract
    * @param {string} foreignColonyBridgeAddress The address of the foreign colony bridge contract
+   * @param {string} spyWaitsForBridgedTransaction Whether the spy waits for the bridging transaction to be mined
    */
   constructor(
     homeRpc: string,
@@ -88,6 +91,7 @@ class MockGuardianSpy {
     foreignBridgeAddresses: string[],
     homeColonyBridgeAddress: string,
     foreignColonyBridgeAddresses: string[],
+    spyWaitsForBridgedTransaction: boolean,
   ) {
     this.homeRpc = homeRpc;
     this.foreignRpcs = foreignRpcs;
@@ -95,6 +99,7 @@ class MockGuardianSpy {
     this.foreignBridgeAddresses = foreignBridgeAddresses;
     this.homeColonyBridgeAddress = homeColonyBridgeAddress;
     this.foreignColonyBridgeAddresses = foreignColonyBridgeAddresses;
+    this.spyWaitsForBridgedTransaction = spyWaitsForBridgedTransaction;
 
     this.setupListeners();
 
@@ -287,13 +292,14 @@ class MockGuardianSpy {
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
 
       this.subscription.write({ vaaBytes: Buffer.from(vaa.slice(2), "hex") });
+      if (this.spyWaitsForBridgedTransaction) {
+        let newRelayerNonce = -1;
+        while (newRelayerNonce <= relayerNonce) {
+          newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
+        }
 
-      let newRelayerNonce = -1;
-      while (newRelayerNonce <= relayerNonce) {
-        newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
+        tx = await MockGuardianSpy.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
       }
-
-      tx = await MockGuardianSpy.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
     } else {
       console.log("not sending, didnt pass filter");
     }
@@ -328,12 +334,14 @@ class MockGuardianSpy {
       const relayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
 
       this.subscription.write({ vaaBytes: Buffer.from(vaa.slice(2), "hex") });
-      let newRelayerNonce = -1;
-      while (newRelayerNonce <= relayerNonce) {
-        newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
-      }
+      if (this.spyWaitsForBridgedTransaction) {
+        let newRelayerNonce = -1;
+        while (newRelayerNonce <= relayerNonce) {
+          newRelayerNonce = await bridge.provider.getTransactionCount(this.relayerAddress, "pending");
+        }
 
-      tx = await MockGuardianSpy.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
+        tx = await MockGuardianSpy.getTransactionFromAddressWithNonce(bridge.provider, this.relayerAddress, relayerNonce);
+      }
     }
 
     this.bridgingPromiseCount -= 1;
