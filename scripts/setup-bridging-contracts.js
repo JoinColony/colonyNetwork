@@ -19,7 +19,7 @@ const loader = new TruffleLoader({
 const ADDRESS_ZERO = ethers.constants.AddressZero;
 const MockGuardianSpy = require("./mockGuardianSpy").default;
 
-async function setupBridging(homeRpcUrl, foreignRpcUrls) {
+async function setupBridging(homeRpcUrl, foreignRpcUrls, spyWaitsForBridgedTransaction) {
   console.log("setup-bridging-contracts: Not to be used in production");
   if (process.env.NODE_ENV === "production") {
     process.exit(1);
@@ -167,6 +167,7 @@ async function setupBridging(homeRpcUrl, foreignRpcUrls) {
     foreignBridgeAddresses,
     homeColonyBridge.address,
     remoteColonyBridgeAddresses,
+    spyWaitsForBridgedTransaction,
   ); // eslint-disable-line no-unused-vars
 
   // TODO: Start the bridge monitor
@@ -369,7 +370,7 @@ async function deployBridge(signer) {
 }
 
 if (process.argv.includes("start-bridging-environment")) {
-  setupBridging("http://127.0.0.1:8545", "http://127.0.0.1:8546");
+  setupBridging("http://127.0.0.1:8545", "http://127.0.0.1:8546", true);
 }
 
 module.exports = { setupBridging, deployBridge, setHomeBridgeData, setForeignBridgeData };

@@ -133,6 +133,7 @@ contract("Cross-chain", (accounts) => {
     ({ guardianSpy, resetRelayer, gnosisSafe, zodiacBridge, homeBridge, foreignBridge, remoteColonyBridge, homeColonyBridge } = await setupBridging(
       homeRpcUrl,
       [foreignRpcUrl],
+      true,
     ));
 
     // Add bridge to the foreign colony network
