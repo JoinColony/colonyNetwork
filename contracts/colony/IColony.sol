@@ -832,6 +832,18 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
 
   /// @notice Get the `_token` balance of pot with id `_potId`.
   /// @param _potId Id of the funding pot
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @return balance Funding pot supply balance
+  function getFundingPotBalance(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token
+  ) external view returns (uint256 balance);
+
+  /// @notice Get the `_token` balance of pot with id `_potId`.
+  /// @notice Deprecated - use version with explicit chainId
+  /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return balance Funding pot supply balance
   function getFundingPotBalance(
@@ -974,26 +986,26 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     uint256 _amount
   ) external;
 
-  /// @notice Get the balance of a funding pot for a specific token on a specific chain
-  /// @param _potId Id of the funding pot
-  /// @param _chainId Chain id of the token
-  /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return balance Balance of the funding pot
-  function getFundingPotProxyBalance(
-    uint256 _potId,
-    uint256 _chainId,
-    address _token
-  ) external view returns (uint256 balance);
-
   /// @notice Create a proxy colony on another chain
   /// @param _destinationChainId Chain id of the destination chain
   /// @param _salt The colony creation salt that was used on creation of the colony
   function createProxyColony(uint256 _destinationChainId, bytes32 _salt) external;
 
+  /// @notice Deprecated. Use the version with explicit _chainId
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) external view returns (uint256 amount);
+
+  /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
+  /// @param _chainId Chain id to query the total for
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
+  /// @dev NB This only returns totals that the colony knows about - unclaimed funds will not be included
+  function getNonRewardPotsTotal(
+    uint256 _chainId,
+    address _token
+  ) external view returns (uint256 amount);
 
   /// @notice Allow the _approvee to obligate some amount of tokens as a stake.
   /// @param _approvee Address of the account we are willing to let obligate us.

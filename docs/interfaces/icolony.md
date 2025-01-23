@@ -712,6 +712,24 @@ Get the non-mapping properties of a pot by id.
 
 ### ▸ `getFundingPotBalance(uint256 _potId, address _token):uint256 balance`
 
+Deprecated - use version with explicit chainId
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_potId|uint256|Id of the funding pot
+|_token|address|Address of the token, `0x0` value indicates Ether
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|balance|uint256|Funding pot supply balance
+
+### ▸ `getFundingPotBalance(uint256 _potId, uint256 _chainId, address _token):uint256 balance`
+
 Get the `_token` balance of pot with id `_potId`.
 
 
@@ -720,6 +738,7 @@ Get the `_token` balance of pot with id `_potId`.
 |Name|Type|Description|
 |---|---|---|
 |_potId|uint256|Id of the funding pot
+|_chainId|uint256|The chainId of the token
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 **Return Parameters**
@@ -757,25 +776,6 @@ Get the assigned `_token` payouts of pot with id `_potId`.
 |Name|Type|Description|
 |---|---|---|
 |payout|uint256|Funding pot payout amount
-
-### ▸ `getFundingPotProxyBalance(uint256 _potId, uint256 _chainId, address _token):uint256 balance`
-
-Get the balance of a funding pot for a specific token on a specific chain
-
-
-**Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|_potId|uint256|Id of the funding pot
-|_chainId|uint256|Chain id of the token
-|_token|address|Address of the token, `0x0` value indicates Ether
-
-**Return Parameters**
-
-|Name|Type|Description|
-|---|---|---|
-|balance|uint256|Balance of the funding pot
 
 ### ▸ `getLocalSkill(uint256 localSkillId):LocalSkill localSkill`
 
@@ -820,6 +820,25 @@ Get the total amount of tokens `_token` minus amount reserved to be paid to the 
 
 |Name|Type|Description|
 |---|---|---|
+|_token|address|Address of the token, `0x0` value indicates Ether
+
+**Return Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|amount|uint256|Total amount of tokens in funding pots other than the rewards pot (id 0)
+
+### ▸ `getNonRewardPotsTotal(uint256 _chainId, address _token):uint256 amount`
+
+Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
+
+*Note: NB This only returns totals that the colony knows about - unclaimed funds will not be included*
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|Chain id to query the total for
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 **Return Parameters**

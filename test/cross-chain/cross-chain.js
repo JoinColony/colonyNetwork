@@ -49,6 +49,7 @@ const {
   ARBITRATION_ROLE,
   FUNDING_ROLE,
   ADMINISTRATION_ROLE,
+  PANIC,
 } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId, rolesToBytes32 } = require("../../helpers/test-helper");
 const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
@@ -564,8 +565,62 @@ contract("Cross-chain", (accounts) => {
 
       // Check bookkeeping on the home chain
 
-      const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      const balance = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
+
+      const nonRewardPotTotal = await colony["getNonRewardPotsTotal(uint256,address)"](foreignChainId, foreignToken.address);
+      expect(nonRewardPotTotal.toHexString()).to.equal(tokenAmount.toHexString());
+    });
+
+    it("Reward payout pot is respected even cross-chain", async () => {
+      const tokenAmount = ethers.utils.parseEther("100");
+
+      // Mint tokens to proxy colony on foreign chain
+      let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
+      await tx.wait();
+
+      // Claim tokens on foreign chain
+      const p = guardianSpy.getPromiseForNextBridgedTransaction();
+      tx = await proxyColony.claimTokens(foreignToken.address);
+      await tx.wait();
+      await p;
+
+      // Move 30 tokens in to the reward pot 0
+      await (
+        await colony["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+          1,
+          UINT256_MAX_ETHERS,
+          1,
+          UINT256_MAX_ETHERS,
+          UINT256_MAX_ETHERS,
+          1,
+          0,
+          ethers.utils.parseEther("30"),
+          foreignChainId,
+          foreignToken.address,
+        )
+      ).wait();
+
+      await colony["addDomain(uint256,uint256,uint256)"](1, UINT256_MAX_ETHERS, 1);
+
+      // Try and move tokens from root domain that are in the reward pot
+      const domain1 = await colony.getDomain(1);
+      const domain2 = await colony.getDomain(2);
+
+      tx = await colony["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
+        1,
+        UINT256_MAX_ETHERS,
+        1,
+        UINT256_MAX_ETHERS,
+        0,
+        domain1.fundingPotId,
+        domain2.fundingPotId,
+        ethers.utils.parseEther("80"),
+        foreignChainId,
+        foreignToken.address,
+        { gasLimit: 1000000 },
+      );
+      await checkErrorRevertEthers(tx.wait(), PANIC.ARITHMETHIC_OVERFLOW);
     });
 
     it("Can claim tokens received on foreign chain via cross-chain request", async () => {
@@ -585,7 +640,7 @@ contract("Cross-chain", (accounts) => {
 
       // Check bookkeeping on the home chain
 
-      const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      const balance = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
     });
 
@@ -609,7 +664,7 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Check bookkeeping on the home chain
-      const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      const balance = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
 
       // Check nonce incremented
@@ -636,7 +691,7 @@ contract("Cross-chain", (accounts) => {
 
       // Check bookkeeping on the home chain
 
-      const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, ADDRESS_ZERO);
+      const balance = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, ADDRESS_ZERO);
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
     });
 
@@ -698,7 +753,7 @@ contract("Cross-chain", (accounts) => {
       await p;
       // Check bookkeeping on the home chain
 
-      const balance1 = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      const balance1 = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
       expect(balance1.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
 
       // Check actually paid on foreign chain
@@ -772,7 +827,7 @@ contract("Cross-chain", (accounts) => {
       await p;
       // Check bookkeeping on the home chain
 
-      const balance1 = await colony.getFundingPotProxyBalance(1, foreignChainId, ADDRESS_ZERO);
+      const balance1 = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, ADDRESS_ZERO);
       expect(balance1.toHexString()).to.equal(ethers.utils.parseEther("0.7").toHexString());
 
       // Check actually paid on foreign chain
@@ -890,7 +945,7 @@ contract("Cross-chain", (accounts) => {
 
       // See if bookkeeping was tracked correctly
       const domain = await colony.getDomain(2);
-      const balance = await colony.getFundingPotProxyBalance(domain.fundingPotId, foreignChainId, foreignToken.address);
+      const balance = await colony["getFundingPotBalance(uint256,uint256,address)"](domain.fundingPotId, foreignChainId, foreignToken.address);
       expect(balance.toHexString()).to.equal(ethers.utils.parseEther("50").toHexString());
     });
 
@@ -909,7 +964,7 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Check bookkeeping on the home chain
-      const balance = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      const balance = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
       expect(balance.toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
 
       // Move tokens from domain 1 to domain 2
@@ -976,8 +1031,8 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       // Check bookkeeping on the home chain
-      const balance1 = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
-      const balance2 = await colony.getFundingPotProxyBalance(2, foreignChainId, foreignToken2.address);
+      const balance1 = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
+      const balance2 = await colony["getFundingPotBalance(uint256,uint256,address)"](2, foreignChainId, foreignToken2.address);
       expect(balance1.toHexString()).to.equal(ethers.utils.parseEther("30").toHexString());
       expect(balance2.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
 
@@ -1054,7 +1109,7 @@ contract("Cross-chain", (accounts) => {
 
     it("can make multiple arbitrary transactions on the foreign chain in one go", async () => {
       const shellBalanceBefore = await foreignToken.balanceOf(proxyColony.address);
-      const colonyBalanceBefore = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      const colonyBalanceBefore = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
 
       const p = guardianSpy.getPromiseForNextBridgedTransaction(2);
 
@@ -1073,7 +1128,7 @@ contract("Cross-chain", (accounts) => {
 
       // Check that the second transaction was successful
 
-      const colonyBalanceAfter = await colony.getFundingPotProxyBalance(1, foreignChainId, foreignToken.address);
+      const colonyBalanceAfter = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
       expect(colonyBalanceAfter.sub(colonyBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("100").toHexString());
     });
 

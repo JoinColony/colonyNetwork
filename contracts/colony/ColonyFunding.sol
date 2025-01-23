@@ -129,7 +129,8 @@ contract ColonyFunding is
     // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
     // able to do with recovery mode.
     remainder = toClaim - feeToPay;
-    nonRewardPotsTotal[_token] += remainder;
+    incrementNonRewardPotsTotal(block.chainid, _token, remainder);
+    // nonRewardPotsTotal[_token] += remainder;
     incrementFundingPotBalance(0, block.chainid, _token, feeToPay);
     incrementFundingPotBalance(1, block.chainid, _token, remainder);
 
@@ -154,7 +155,8 @@ contract ColonyFunding is
     // to 0 via recovery mode, but a) That's not why MythX is balking here and b) There's only so much we can stop people being
     // able to do with recovery mode.
     uint256 remainder = claimAmount - feeToPay;
-    nonRewardPotsTotal[_token] += remainder;
+    incrementNonRewardPotsTotal(block.chainid, _token, remainder);
+    // nonRewardPotsTotal[_token] += remainder;
 
     // fundingPots[0].balance[_token] += feeToPay;
     incrementFundingPotBalance(0, block.chainid, _token, feeToPay);
@@ -315,7 +317,39 @@ contract ColonyFunding is
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
-    return nonRewardPotsTotal[_token];
+    return getNonRewardPotsTotal(block.chainid, _token);
+  }
+
+  function getNonRewardPotsTotal(uint256 _chainId, address _token) public view returns (uint256) {
+    if (_chainId == block.chainid) {
+      return nonRewardPotsTotal[_token];
+    } else {
+      return chainNonRewardPotsTotals[_chainId][_token];
+    }
+  }
+
+  function incrementNonRewardPotsTotal(
+    uint256 _chainId,
+    address _token,
+    uint256 _increment
+  ) internal {
+    if (_chainId == block.chainid) {
+      nonRewardPotsTotal[_token] += _increment;
+    } else {
+      chainNonRewardPotsTotals[_chainId][_token] += _increment;
+    }
+  }
+
+  function decrementNonRewardPotsTotal(
+    uint256 _chainId,
+    address _token,
+    uint256 _decrement
+  ) internal {
+    if (_chainId == block.chainid) {
+      nonRewardPotsTotal[_token] -= _decrement;
+    } else {
+      chainNonRewardPotsTotals[_chainId][_token] -= _decrement;
+    }
   }
 
   /// @notice For owners to update payouts with one token and many slots
@@ -494,11 +528,14 @@ contract ColonyFunding is
     return getFundingPotBalance(_potId, block.chainid, _token);
   }
 
-  function getFundingPotProxyBalance(
+  function getFundingPotBalance(
     uint256 _potId,
     uint256 _chainId,
     address _token
   ) public view returns (uint256) {
+    if (_chainId == block.chainid) {
+      return fundingPots[_potId].balance[_token];
+    }
     return fundingPots[_potId].chainBalances[_chainId][_token];
   }
 
@@ -510,6 +547,9 @@ contract ColonyFunding is
   ) public stoppable {
     Domain storage d = domains[_domainId];
     fundingPots[d.fundingPotId].chainBalances[_chainId][_token] += _amount;
+    // TODO: Reward pot?
+
+    incrementNonRewardPotsTotal(_chainId, _token, _amount);
 
     emit ProxyColonyFundsClaimed(_chainId, _token, _amount);
   }
@@ -600,7 +640,7 @@ contract ColonyFunding is
     }
 
     if (_toPot == 0) {
-      nonRewardPotsTotal[_token] -= _amount;
+      decrementNonRewardPotsTotal(_chainId, _token, _amount);
     }
 
     emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
@@ -720,10 +760,9 @@ contract ColonyFunding is
     );
 
     uint256 payoutToUser;
+    decrementNonRewardPotsTotal(_chainId, _token, _payout);
 
     if (_chainId == block.chainid) {
-      nonRewardPotsTotal[_token] -= _payout;
-
       uint256 fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
       payoutToUser = _payout - fee;
 
@@ -745,7 +784,7 @@ contract ColonyFunding is
         }
       }
     } else {
-      // TODO: Shell colony payout
+      // TODO: Network fee
       bytes memory payload = abi.encodeWithSignature(
         "transferFromBridge(address,address,uint256)",
         _token,
@@ -753,6 +792,7 @@ contract ColonyFunding is
         _payout
       );
       IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
+      payoutToUser = _payout;
     }
 
     // slither-disable-next-line reentrancy-unlimited-gas
@@ -778,17 +818,6 @@ contract ColonyFunding is
         _token
       );
     }
-  }
-
-  function getFundingPotBalance(
-    uint256 _potId,
-    uint256 _chainId,
-    address _token
-  ) internal view returns (uint256) {
-    if (_chainId == block.chainid) {
-      return fundingPots[_potId].balance[_token];
-    }
-    return fundingPots[_potId].chainBalances[_chainId][_token];
   }
 
   function incrementFundingPotBalance(
