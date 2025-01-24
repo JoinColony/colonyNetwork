@@ -20,7 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
-import { ColonyDataTypes } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 
 // ignore-file-swc-108
 
@@ -47,8 +47,8 @@ contract StreamingPayments is ColonyExtensionMeta {
   // Constants
 
   uint256 constant SLOT = 0;
-  ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
-  ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
+  CommonDataTypes.ColonyRole constant ADMINISTRATION = CommonDataTypes.ColonyRole.Administration;
+  CommonDataTypes.ColonyRole constant FUNDING = CommonDataTypes.ColonyRole.Funding;
 
   // Storage
 

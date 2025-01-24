@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
@@ -335,7 +335,7 @@ contract FundingQueue is ColonyExtension, BasicMetaTransaction {
 
     // Check if the extension has the permissions to do this
     // If not, cancel the proposal so others aren't blocked
-    if (!colony.hasUserRole(address(this), proposal.domainId, ColonyDataTypes.ColonyRole.Funding)) {
+    if (!colony.hasUserRole(address(this), proposal.domainId, CommonDataTypes.ColonyRole.Funding)) {
       emit ProposalPinged(_id, 0);
       cancelProposal(_id, HEAD);
       return;

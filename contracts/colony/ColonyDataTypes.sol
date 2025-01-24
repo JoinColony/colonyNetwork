@@ -18,8 +18,10 @@
 
 pragma solidity 0.8.27;
 
+import { CommonDataTypes } from "../common/CommonDataTypes.sol";
+
 // prettier-ignore
-interface ColonyDataTypes {
+interface ColonyDataTypes is CommonDataTypes {
   // Events
 
   /// @notice Event logged when Colony is initialised
@@ -301,9 +303,6 @@ interface ColonyDataTypes {
   }
 
   enum ExpenditureStatus { Draft, Cancelled, Finalized, Locked }
-
-  // Any new roles added should be added before NUMBER_OF_ROLES, which should always be the last entry in this enum
-  enum ColonyRole { Recovery, Root, Arbitration, Architecture, ArchitectureSubdomain_DEPRECATED, Funding, Administration, NUMBER_OF_ROLES }
 
   // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
   // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.

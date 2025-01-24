@@ -23,7 +23,7 @@ import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
-import { ColonyDataTypes } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 
 // ignore-file-swc-108
 
@@ -61,7 +61,7 @@ contract ReputationBootstrapper is ColonyExtensionMeta {
 
   modifier onlyRoot() {
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root),
       "reputation-bootstrapper-caller-not-root"
     );
     _;

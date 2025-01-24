@@ -19,7 +19,8 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { ColonyDataTypes } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 
@@ -51,7 +52,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
 
   modifier onlyRoot() {
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root),
       "staked-expenditure-caller-not-root"
     );
     _;
@@ -208,7 +209,7 @@ contract StakedExpenditure is ColonyExtensionMeta {
       colony.hasInheritedUserRole(
         msgSender(),
         _callerPermissionDomainId,
-        ColonyDataTypes.ColonyRole.Arbitration,
+        CommonDataTypes.ColonyRole.Arbitration,
         _callerChildSkillIndex,
         expenditure.domainId
       ),

@@ -18,12 +18,13 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { ColonyDataTypes, IColony } from "./../colony/IColony.sol";
+import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 import { Bytes4Includes } from "./../common/Bytes4Includes.sol";
 
 // ignore-file-swc-108
@@ -139,7 +140,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
 
   modifier onlyCoreRoot() {
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root),
       "multisig-permissions-not-core-root"
     );
     _;
@@ -369,12 +370,12 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
     // Allow this function to be called if the caller:
     require(
       // Has core root permissions OR
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root) ||
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root) ||
         // Has core architecture, if we're using that permission in a child domain
         (colony.hasUserRole(
           msgSender(),
           _permissionDomainId,
-          ColonyDataTypes.ColonyRole.Architecture
+          CommonDataTypes.ColonyRole.Architecture
         ) && (_permissionDomainId != _domainId)),
       "multisig-caller-not-correct-permissions"
     );

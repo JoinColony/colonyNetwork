@@ -25,8 +25,8 @@ import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMe
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
-
+import { IColony } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);
@@ -64,8 +64,8 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   uint256 constant REVEAL_END = 2;
 
   bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
-    uint8(ColonyDataTypes.ColonyRole.Recovery)) |
-    (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
+    uint8(CommonDataTypes.ColonyRole.Recovery)) |
+    (bytes32(uint256(1)) << uint8(CommonDataTypes.ColonyRole.Root)));
 
   bytes4 constant CHANGE_FUNCTION_SIG =
     bytes4(
@@ -126,7 +126,7 @@ contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
 
   modifier onlyRoot() {
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root),
       "voting-rep-caller-not-root"
     );
     _;

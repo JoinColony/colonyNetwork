@@ -20,6 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
@@ -118,7 +119,7 @@ contract StagedExpenditure is ColonyExtensionMeta, ColonyDataTypes {
       colony.hasInheritedUserRole(
         msgSender(),
         _permissionDomainId,
-        ColonyDataTypes.ColonyRole.Arbitration,
+        CommonDataTypes.ColonyRole.Arbitration,
         _childSkillIndex,
         e.domainId
       ),

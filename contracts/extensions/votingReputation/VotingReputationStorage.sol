@@ -20,7 +20,8 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { IColonyNetwork } from "./../../colonyNetwork/IColonyNetwork.sol";
-import { IColony, ColonyDataTypes } from "./../../colony/IColony.sol";
+import { IColony } from "./../../colony/IColony.sol";
+import { CommonDataTypes } from "./../../common/CommonDataTypes.sol";
 import { IBasicMetaTransaction, BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
 import { ActionSummary, GetActionSummary } from "./../../common/GetActionSummary.sol";
 import { ITokenLocking } from "./../../tokenLocking/ITokenLocking.sol";
@@ -111,7 +112,7 @@ contract VotingReputationStorage is
 
   modifier onlyRoot() {
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root),
       "voting-rep-caller-not-root"
     );
     _;

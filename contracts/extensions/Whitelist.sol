@@ -21,7 +21,8 @@ pragma experimental ABIEncoderV2;
 
 import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { IColony } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 
 // ignore-file-swc-108
@@ -82,7 +83,7 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   /// @param _agreementHash An agreement hash (such as an IPFS URI)
   function initialise(bool _useApprovals, string memory _agreementHash) public {
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root),
       "whitelist-unauthorised"
     );
     require(!useApprovals && bytes(agreementHash).length == 0, "whitelist-already-initialised");
@@ -100,7 +101,7 @@ contract Whitelist is ColonyExtension, BasicMetaTransaction {
   function approveUsers(address[] memory _users, bool _status) public initialised notDeprecated {
     require(useApprovals, "whitelist-no-approvals");
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Administration),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Administration),
       "whitelist-unauthorised"
     );
 

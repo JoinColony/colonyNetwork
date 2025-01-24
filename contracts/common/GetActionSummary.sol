@@ -18,7 +18,7 @@
 import { IColony } from "./../colony/IColony.sol";
 import { ExtractCallData } from "./ExtractCallData.sol";
 import { GetActionDomainSkillId } from "./GetActionDomainSkillId.sol";
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { CommonDataTypes } from "./CommonDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { Bytes4Includes } from "./Bytes4Includes.sol";
 
@@ -44,17 +44,17 @@ contract GetActionSummary is ExtractCallData, GetActionDomainSkillId {
     bytes4(keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,address,uint256)"));
 
   bytes32 constant ROOT_ROLES = ((bytes32(uint256(1)) <<
-    uint8(ColonyDataTypes.ColonyRole.Recovery)) |
-    (bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root)));
+    uint8(CommonDataTypes.ColonyRole.Recovery)) |
+    (bytes32(uint256(1)) << uint8(CommonDataTypes.ColonyRole.Root)));
 
   bytes32 constant ONLY_ROOT_ROLE_MASK =
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Root);
+    bytes32(uint256(1)) << uint8(CommonDataTypes.ColonyRole.Root);
 
   bytes4 constant SET_USER_ROLES =
     bytes4(keccak256("setUserRoles(uint256,uint256,address,uint256,bytes32)"));
 
   bytes32 constant ONLY_ARCHITECTURE_ROLE_MASK =
-    bytes32(uint256(1)) << uint8(ColonyDataTypes.ColonyRole.Architecture);
+    bytes32(uint256(1)) << uint8(CommonDataTypes.ColonyRole.Architecture);
 
   function getExpenditureId(bytes memory action) internal pure returns (uint256 expenditureId) {
     bytes4 sig = getSig(action);

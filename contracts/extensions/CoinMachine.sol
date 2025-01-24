@@ -23,7 +23,7 @@ import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { Whitelist } from "./Whitelist.sol";
-import { ColonyDataTypes } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 
 // ignore-file-swc-108
 
@@ -85,7 +85,7 @@ contract CoinMachine is ColonyExtension, BasicMetaTransaction {
 
   modifier onlyRoot() {
     require(
-      colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root),
+      colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root),
       "coin-machine-caller-not-root"
     );
     _;

@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.27;
 
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { CommonDataTypes } from "./CommonDataTypes.sol";
 import { ContractRecoveryDataTypes } from "./ContractRecoveryDataTypes.sol";
 import { CommonAuthority } from "./CommonAuthority.sol";
 import { CommonStorage } from "./CommonStorage.sol";
@@ -28,7 +28,7 @@ contract ContractRecovery is
   ContractRecoveryDataTypes,
   CommonStorage // ignore-swc-123
 {
-  uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
+  uint8 constant RECOVERY_ROLE = uint8(CommonDataTypes.ColonyRole.Recovery);
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
     require(_slot != AUTHORITY_SLOT, "colony-common-protected-variable");

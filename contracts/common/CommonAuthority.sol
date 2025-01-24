@@ -18,11 +18,11 @@
 
 pragma solidity 0.8.27;
 
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { CommonDataTypes } from "./CommonDataTypes.sol";
 import { DomainRoles } from "./DomainRoles.sol";
 
 contract CommonAuthority is DomainRoles {
-  uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
+  uint8 constant RECOVERY_ROLE = uint8(CommonDataTypes.ColonyRole.Recovery);
 
   constructor(address contractAddress) {
     setRecoveryRoleCapability(contractAddress, "enterRecoveryMode()");

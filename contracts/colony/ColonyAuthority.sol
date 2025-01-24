@@ -19,15 +19,15 @@
 pragma solidity 0.8.27;
 
 import { CommonAuthority } from "./../common/CommonAuthority.sol";
-import { ColonyDataTypes } from "./ColonyDataTypes.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 
 // prettier-ignore
 contract ColonyAuthority is CommonAuthority {
-  uint8 constant FUNDING_ROLE = uint8(ColonyDataTypes.ColonyRole.Funding);
-  uint8 constant ADMINISTRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Administration);
-  uint8 constant ARBITRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Arbitration);
-  uint8 constant ARCHITECTURE_ROLE = uint8(ColonyDataTypes.ColonyRole.Architecture);
-  uint8 constant ROOT_ROLE = uint8(ColonyDataTypes.ColonyRole.Root);
+  uint8 constant FUNDING_ROLE = uint8(CommonDataTypes.ColonyRole.Funding);
+  uint8 constant ADMINISTRATION_ROLE = uint8(CommonDataTypes.ColonyRole.Administration);
+  uint8 constant ARBITRATION_ROLE = uint8(CommonDataTypes.ColonyRole.Arbitration);
+  uint8 constant ARCHITECTURE_ROLE = uint8(CommonDataTypes.ColonyRole.Architecture);
+  uint8 constant ROOT_ROLE = uint8(CommonDataTypes.ColonyRole.Root);
 
   // colony is used in the constructor by calls to addRoleCapability, despite what slither thinks
   // slither-disable-next-line immutable-states

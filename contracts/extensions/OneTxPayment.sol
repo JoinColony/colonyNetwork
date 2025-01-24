@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { ColonyDataTypes } from "../colony/IColony.sol";
+import { CommonDataTypes } from "../common/CommonDataTypes.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
@@ -28,9 +28,9 @@ import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMe
 contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
   event OneTxPaymentMade(address agent, uint256 fundamentalId, uint256 nPayouts);
 
-  ColonyDataTypes.ColonyRole constant ADMINISTRATION = ColonyDataTypes.ColonyRole.Administration;
-  ColonyDataTypes.ColonyRole constant FUNDING = ColonyDataTypes.ColonyRole.Funding;
-  ColonyDataTypes.ColonyRole constant ARBITRATION = ColonyDataTypes.ColonyRole.Arbitration;
+  CommonDataTypes.ColonyRole constant ADMINISTRATION = CommonDataTypes.ColonyRole.Administration;
+  CommonDataTypes.ColonyRole constant FUNDING = CommonDataTypes.ColonyRole.Funding;
+  CommonDataTypes.ColonyRole constant ARBITRATION = CommonDataTypes.ColonyRole.Arbitration;
 
   mapping(address => uint256) metatransactionNonces;
 

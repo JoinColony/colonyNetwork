@@ -22,8 +22,8 @@ pragma experimental ABIEncoderV2;
 import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
-
+import { IColony } from "./../colony/IColony.sol";
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   uint256 constant ISSUANCE_PERIOD = 1 days;
 
@@ -188,10 +188,10 @@ contract TokenSupplier is ColonyExtension, BasicMetaTransaction {
   // Internal functions
 
   function isRoot() internal view returns (bool) {
-    return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Root);
+    return colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Root);
   }
 
   function isRootFunding() internal view returns (bool) {
-    return colony.hasUserRole(msgSender(), 1, ColonyDataTypes.ColonyRole.Funding);
+    return colony.hasUserRole(msgSender(), 1, CommonDataTypes.ColonyRole.Funding);
   }
 }
