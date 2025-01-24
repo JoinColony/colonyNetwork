@@ -557,7 +557,7 @@ contract("Cross-chain", (accounts) => {
 
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
 
-      tx = await proxyColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
 
       const receipt = await p;
@@ -581,7 +581,7 @@ contract("Cross-chain", (accounts) => {
 
       // Claim tokens on foreign chain
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await proxyColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
       await p;
 
@@ -623,7 +623,7 @@ contract("Cross-chain", (accounts) => {
       await checkErrorRevertEthers(tx.wait(), PANIC.ARITHMETHIC_OVERFLOW);
     });
 
-    it("Can claim tokens received on foreign chain via cross-chain request", async () => {
+    it("Can claim tokens received on foreign chain via cross-chain request (manually)", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
       let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
@@ -633,8 +633,28 @@ contract("Cross-chain", (accounts) => {
       const p = guardianSpy.getPromiseForNextBridgedTransaction(2);
       // One bridged transaction will be the request across, one will be reporting what was claimed back
 
-      const payload = proxyColony.interface.encodeFunctionData("claimTokens", [foreignToken.address]);
+      const payload = proxyColony.interface.encodeFunctionData("claimColonyFunds", [foreignToken.address]);
       tx = await colony.makeProxyArbitraryTransaction(foreignChainId, proxyColony.address, payload);
+      await tx.wait();
+      await p;
+
+      // Check bookkeeping on the home chain
+
+      const balance = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
+      expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
+    });
+
+    it("Can claim tokens received on foreign chain via cross-chain request (via claimColonyFunds)", async () => {
+      const tokenAmount = ethers.utils.parseEther("100");
+
+      let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
+      await tx.wait();
+
+      // Claim on the foreign chain
+      const p = guardianSpy.getPromiseForNextBridgedTransaction(2);
+      // One bridged transaction will be the request across, one will be reporting what was claimed back
+
+      tx = await colony["claimColonyFunds(uint256,address)"](foreignChainId, foreignToken.address);
       await tx.wait();
       await p;
 
@@ -655,7 +675,7 @@ contract("Cross-chain", (accounts) => {
       // Claim on the foreign chain via metatransaction
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
 
-      const payload = proxyColony.interface.encodeFunctionData("claimTokens", [foreignToken.address]);
+      const payload = proxyColony.interface.encodeFunctionData("claimColonyFunds", [foreignToken.address]);
 
       const { r, s, v } = await getMetaTransactionParameters(payload, accounts[1], proxyColony.address, foreignChainId);
 
@@ -683,7 +703,7 @@ contract("Cross-chain", (accounts) => {
       // Claim on foreign chain
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
 
-      const tx = await proxyColony.claimTokens(ADDRESS_ZERO);
+      const tx = await proxyColony.claimColonyFunds(ADDRESS_ZERO);
       await tx.wait();
 
       const receipt = await p;
@@ -703,7 +723,7 @@ contract("Cross-chain", (accounts) => {
 
       // Claim on the foreign chain
       let p = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await proxyColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
       await p;
 
@@ -775,7 +795,7 @@ contract("Cross-chain", (accounts) => {
 
       // Claim on the foreign chain
       let p = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await proxyColony.claimTokens(ADDRESS_ZERO);
+      tx = await proxyColony.claimColonyFunds(ADDRESS_ZERO);
       await tx.wait();
       await p;
 
@@ -846,7 +866,7 @@ contract("Cross-chain", (accounts) => {
 
       // Claim on the foreign chain
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await proxyColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
       await p;
 
@@ -861,7 +881,7 @@ contract("Cross-chain", (accounts) => {
         ethers.utils.hexZeroPad(ethers.utils.parseEther("30").toHexString(), 32),
       ]);
 
-      tx = await proxyColony.claimTokens(foreignToken.address, { gasLimit: 1000000 });
+      tx = await proxyColony.claimColonyFunds(foreignToken.address, { gasLimit: 1000000 });
       await checkErrorRevertEthers(tx.wait(), "colony-shell-token-bookkeeping-error");
 
       // Now return the tokens
@@ -877,7 +897,7 @@ contract("Cross-chain", (accounts) => {
 
       // Can now claim
       const p2 = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await proxyColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
       await p2;
     });
@@ -891,7 +911,7 @@ contract("Cross-chain", (accounts) => {
       await (await foreignToken.unlock()).wait();
 
       await homeToken["mint(address,uint256)"](homeColony.address, ethers.utils.parseEther("100"));
-      await homeColony.claimColonyFunds(homeToken.address);
+      await homeColony["claimColonyFunds(address)"](homeToken.address);
       await homeColony["addDomain(uint256,uint256,uint256)"](1, UINT256_MAX_ETHERS, 1);
       const domain1 = await homeColony.getDomain(1);
       const domain2 = await homeColony.getDomain(2);
@@ -939,7 +959,7 @@ contract("Cross-chain", (accounts) => {
 
       // Now claim the tokens on the foreign chain
       const p = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await proxyColony.claimTokensForDomain(foreignToken.address, 2, { gasLimit: 1000000 });
+      tx = await proxyColony.claimDomainFunds(foreignToken.address, 2, { gasLimit: 1000000 });
       await tx.wait();
       await p;
 
@@ -959,7 +979,7 @@ contract("Cross-chain", (accounts) => {
       await tx.wait();
       let p = guardianSpy.getPromiseForNextBridgedTransaction();
 
-      tx = await proxyColony.claimTokens(foreignToken.address);
+      tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
       await p;
 
@@ -1024,7 +1044,7 @@ contract("Cross-chain", (accounts) => {
 
       // Sweep token in to the proxy
       p = guardianSpy.getPromiseForNextBridgedTransaction();
-      tx = await proxyColony.claimTokensForDomain(foreignToken2.address, 2, { gasLimit: 1000000 });
+      tx = await proxyColony.claimDomainFunds(foreignToken2.address, 2, { gasLimit: 1000000 });
       await tx.wait();
 
       // Wait for the sweep to be bridged
@@ -1115,7 +1135,7 @@ contract("Cross-chain", (accounts) => {
 
       const payload1 = foreignToken.interface.encodeFunctionData("mint(address,uint256)", [proxyColony.address, ethers.utils.parseEther("100")]);
       const arbitraryCallPayload1 = proxyColony.interface.encodeFunctionData("makeArbitraryTransaction", [foreignToken.address, payload1]);
-      const payload2 = proxyColony.interface.encodeFunctionData("claimTokens(address)", [foreignToken.address]);
+      const payload2 = proxyColony.interface.encodeFunctionData("claimColonyFunds(address)", [foreignToken.address]);
 
       const multicallPayload = proxyColony.interface.encodeFunctionData("multicall", [[arbitraryCallPayload1, payload2]]);
 
@@ -1321,7 +1341,7 @@ contract("Cross-chain", (accounts) => {
 
       let p = guardianSpy.getPromiseForNextBridgedTransaction();
 
-      let tx = await proxyColony.claimTokens(foreignToken.address);
+      let tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
 
       await p;

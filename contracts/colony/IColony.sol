@@ -929,6 +929,13 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
 
   /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
   /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
+  /// @param _chainId Chain id of the chain where the funds need to be claimed
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  function claimColonyFunds(uint256 _chainId, address _token) external;
+
+  /// @notice Deprecated
+  /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
+  /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimColonyFunds(address _token) external;
 

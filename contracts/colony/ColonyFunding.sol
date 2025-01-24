@@ -107,6 +107,15 @@ contract ColonyFunding is
     moveFundsBetweenPotsFunctionality(_fromPot, _toPot, _amount, block.chainid, _token);
   }
 
+  function claimColonyFunds(uint256 _chainId, address _token) public stoppable {
+    if (_chainId == block.chainid) {
+      claimColonyFunds(_token);
+    } else {
+      bytes memory payload = abi.encodeWithSignature("claimColonyFunds(address)", _token);
+      IColony(address(this)).makeProxyArbitraryTransaction(_chainId, address(this), payload);
+    }
+  }
+
   function claimColonyFunds(address _token) public stoppable {
     uint256 toClaim;
     uint256 feeToPay;

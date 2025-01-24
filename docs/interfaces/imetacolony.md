@@ -197,6 +197,19 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 |_token|address|Address of the token, `0x0` value indicates Ether
 
 
+### ▸ `claimColonyFunds(uint256 _chainId, address _token)`
+
+Move any funds received by the colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
+
+
+**Parameters**
+
+|Name|Type|Description|
+|---|---|---|
+|_chainId|uint256|Chain id of the chain where the funds need to be claimed
+|_token|address|Address of the token, `0x0` value indicates Ether
+
+
 ### ▸ `claimDomainFunds(address _token, uint256 _domainId)`
 
 Move any funds received by the colony for a specific domain to that domain's pot Currently no fees are taken

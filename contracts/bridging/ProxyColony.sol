@@ -49,7 +49,7 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
 
   // Public functions
 
-  function claimTokens(address _token) public {
+  function claimColonyFunds(address _token) public {
     uint256 balance = (_token == address(0x0))
       ? address(this).balance
       : ERC20Extended(_token).balanceOf(address(this));
@@ -71,7 +71,7 @@ contract ProxyColony is DSAuth, Multicall, CallWithGuards, BasicMetaTransaction 
     emit DomainFundsClaimed(_token, 1, balance);
   }
 
-  function claimTokensForDomain(address _token, uint256 _domainId) public {
+  function claimDomainFunds(address _token, uint256 _domainId) public {
     address domainTokenReceiverAddress = ProxyColonyNetwork(owner)
       .idempotentDeployDomainTokenReceiver(_domainId);
 
