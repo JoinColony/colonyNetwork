@@ -18,7 +18,7 @@
 
 // Modified to inherit BasicMetaTransaction and use msgSender() where appropriate
 
-pragma solidity 0.8.27;
+pragma solidity 0.8.28;
 
 import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { DSMath } from "./../../lib/dappsys/math.sol";

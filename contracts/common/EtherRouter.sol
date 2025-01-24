@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.27;
+pragma solidity 0.8.28;
 
 import { DSAuth } from "./../../lib/dappsys/auth.sol";
 import { Resolver } from "./Resolver.sol";
