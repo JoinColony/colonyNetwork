@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-2-Clause
-pragma solidity 0.8.27;
+pragma solidity 0.8.28;
 
 import { ENS } from "./ENS.sol";
 
