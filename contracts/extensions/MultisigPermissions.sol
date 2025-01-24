@@ -103,7 +103,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension
