@@ -203,7 +203,7 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
 
       // Set up the deployed contract
       EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
-      DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
+      DomainTokenReceiver(domainTokenReceiverAddress).setColony(msgSender());
     } else {
       // Contract is deployed, check it's got the right resolver
       try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {

@@ -665,7 +665,28 @@ contract("Colony Funding", (accounts) => {
       await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
       const receiver = await DomainTokenReceiver.at(receiverAddress);
 
-      await checkErrorRevert(receiver.setColonyAddress(ADDRESS_ZERO, { from: colonyNetwork.address }), "domain-token-receiver-colony-already-set");
+      await checkErrorRevert(receiver.setColony(ADDRESS_ZERO, { from: colonyNetwork.address }), "domain-token-receiver-colony-already-set");
+    });
+
+    it("can get the colony a domainTokenReceiver is associated with", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      await colony.claimDomainFunds(ethers.constants.AddressZero, 2);
+      const receiver = await DomainTokenReceiver.at(receiverAddress);
+
+      const associatedColony = await receiver.getColony();
+      expect(associatedColony).to.equal(colony.address);
+    });
+
+    it("when receiving native (reputation-earning) token, if being received by root domain, only DomainFundsClaimed event is emitted", async () => {
+      // Get address for domain 1
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 1);
+      const txData = token.contract.methods["mint(address,uint256)"](receiverAddress, 100).encodeABI();
+      await colony.makeArbitraryTransaction(token.address, txData);
+
+      const tx = await colony.claimDomainFunds(token.address, 1);
+      expect(tx.logs.filter((l) => l.event === "DomainFundsClaimed").length).to.equal(1);
+      expect(tx.logs.filter((l) => l.event === "ColonyFundsClaimed").length).to.equal(0);
     });
 
     it("when receiving native (reputation-earning) token, if no approval present for domain, all are received by root domain", async () => {

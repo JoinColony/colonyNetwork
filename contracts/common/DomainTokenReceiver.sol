@@ -30,11 +30,11 @@ contract DomainTokenReceiver is DSAuth {
     _;
   }
 
-  function getColonyAddress() public view returns (address) {
+  function getColony() public view returns (address) {
     return colony;
   }
 
-  function setColonyAddress(address _colony) public auth {
+  function setColony(address _colony) public {
     require(colony == address(0), "domain-token-receiver-colony-already-set");
     colony = _colony;
   }

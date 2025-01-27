@@ -131,8 +131,7 @@ contract ColonyFunding is
 
     uint256 fundingPotId = domains[_domainId].fundingPotId;
     uint256 approvedAmount = domainReputationApproval[_domainId];
-
-    if (tokenEarnsReputationOnPayout(_token)) {
+    if (tokenEarnsReputationOnPayout(_token) && _domainId > 1) {
       uint256 transferrableAmount = min(approvedAmount, remainder);
       uint256 untransferrableAmount = remainder - transferrableAmount;
 
