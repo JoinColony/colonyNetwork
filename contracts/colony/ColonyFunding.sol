@@ -19,10 +19,10 @@
 pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 
 contract ColonyFunding is
   ColonyStorage // ignore-swc-123

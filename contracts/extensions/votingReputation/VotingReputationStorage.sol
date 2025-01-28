@@ -19,12 +19,13 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { IColonyNetwork } from "./../../colonyNetwork/IColonyNetwork.sol";
-import { IColony } from "./../../colony/IColony.sol";
+import { IColonyNetwork } from "./../../interfaces/IColonyNetwork.sol";
+import { IColony } from "./../../interfaces/IColony.sol";
 import { CommonDataTypes } from "./../../common/CommonDataTypes.sol";
-import { IBasicMetaTransaction, BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction } from "./../../interfaces/IBasicMetaTransaction.sol";
+import { BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
 import { ActionSummary, GetActionSummary } from "./../../common/GetActionSummary.sol";
-import { ITokenLocking } from "./../../tokenLocking/ITokenLocking.sol";
+import { ITokenLocking } from "./../../interfaces/ITokenLocking.sol";
 import { ColonyExtension } from "./../ColonyExtension.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
 

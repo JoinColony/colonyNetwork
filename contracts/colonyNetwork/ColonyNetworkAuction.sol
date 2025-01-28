@@ -22,7 +22,7 @@ import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
-import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { IMetaColony } from "./../interfaces/IMetaColony.sol";
 import { DSMath } from "./../../lib/dappsys/math.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage {

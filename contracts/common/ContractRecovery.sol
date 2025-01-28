@@ -22,7 +22,7 @@ import { CommonDataTypes } from "./CommonDataTypes.sol";
 import { ContractRecoveryDataTypes } from "./ContractRecoveryDataTypes.sol";
 import { CommonAuthority } from "./CommonAuthority.sol";
 import { CommonStorage } from "./CommonStorage.sol";
-import { IRecovery } from "./IRecovery.sol";
+import { IRecovery } from "./../interfaces/IRecovery.sol";
 
 contract ContractRecovery is
   ContractRecoveryDataTypes,

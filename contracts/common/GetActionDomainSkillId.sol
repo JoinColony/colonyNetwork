@@ -15,8 +15,8 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { IColony } from "./../colony/IColony.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColony } from "./../interfaces/IColony.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;

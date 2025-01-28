@@ -19,9 +19,9 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { IColonyExtension } from "./../IColonyExtension.sol";
-import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
-import { ActionSummary } from "./../../common/GetActionSummary.sol";
+import { IColonyExtension } from "./IColonyExtension.sol";
+import { VotingReputationDataTypes } from "./../extensions/votingReputation/VotingReputationDataTypes.sol";
+import { ActionSummary } from "./../common/GetActionSummary.sol";
 
 interface IVotingReputation is IColonyExtension, VotingReputationDataTypes {
   /// @notice Initialise the extension

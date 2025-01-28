@@ -20,7 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { ColonyDataTypes } from "../colony/ColonyDataTypes.sol";
-import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "../interfaces/IColonyNetwork.sol";
 import { ColonyExtension } from "../extensions/ColonyExtension.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";

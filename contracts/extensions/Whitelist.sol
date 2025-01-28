@@ -19,11 +19,12 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { IColony } from "./../colony/IColony.sol";
+import { IColony } from "./../interfaces/IColony.sol";
 import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 
 // ignore-file-swc-108
 

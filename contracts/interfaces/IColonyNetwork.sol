@@ -19,11 +19,10 @@
 pragma solidity >=0.8.27; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import { IRecovery } from "./../common/IRecovery.sol";
-import { IBasicMetaTransaction } from "./../common/IBasicMetaTransaction.sol";
-import { IMulticall } from "./../common/IMulticall.sol";
-
-import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
+import { IRecovery } from "./IRecovery.sol";
+import { IBasicMetaTransaction } from "./IBasicMetaTransaction.sol";
+import { IMulticall } from "./IMulticall.sol";
+import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 
 interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
   /// @notice Query if a contract implements an interface

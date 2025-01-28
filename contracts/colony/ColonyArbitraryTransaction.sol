@@ -20,11 +20,11 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
-import { IEtherRouter } from "./../common/IEtherRouter.sol";
+import { IEtherRouter } from "./../interfaces/IEtherRouter.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 
 contract ColonyArbitraryTransaction is ColonyStorage {

@@ -20,8 +20,8 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { ERC20 } from "./../../lib/dappsys/erc20.sol";
-import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IReputationMiningCycle } from "./../interfaces/IReputationMiningCycle.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 

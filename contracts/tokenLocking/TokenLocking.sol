@@ -20,11 +20,11 @@ pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
 import { DSMath } from "./../../lib/dappsys/math.sol";
-import { IMetaColony } from "./../colony/IMetaColony.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IMetaColony } from "./../interfaces/IMetaColony.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
-import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import { IReputationMiningCycle } from "./../interfaces/IReputationMiningCycle.sol";
 import { TokenLockingStorage } from "./../tokenLocking/TokenLockingStorage.sol";
 
 contract TokenLocking is

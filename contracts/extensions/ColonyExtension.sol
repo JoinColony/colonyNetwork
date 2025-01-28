@@ -23,15 +23,15 @@ import { DSMath } from "./../../lib/dappsys/math.sol";
 import { DSAuth } from "./../../lib/dappsys/auth.sol";
 import { EtherRouter } from "./../common/EtherRouter.sol";
 import { Multicall } from "./../common/Multicall.sol";
-import { IColony } from "./../colony/IColony.sol";
+import { IColony } from "./../interfaces/IColony.sol";
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
-import { IColonyExtension } from "./IColonyExtension.sol";
+import { IColonyExtension } from "./../interfaces/IColonyExtension.sol";
 
 // This is a 'dummy' import to ensure that functions implemented from DSAuth get commented
-import { IDSAuth } from "./../common/IDSAuth.sol";
+import { IDSAuth } from "./../interfaces/IDSAuth.sol";
 
 abstract contract ColonyExtension is
   IColonyExtension,

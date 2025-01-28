@@ -20,7 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { ColonyStorage } from "./../colony/ColonyStorage.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 
 contract NoLimitSubdomains is ColonyStorage {
   function addDomain(

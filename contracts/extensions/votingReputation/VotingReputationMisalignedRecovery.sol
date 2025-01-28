@@ -19,9 +19,9 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { IColonyNetwork } from "./../../colonyNetwork/IColonyNetwork.sol";
-import { IColony } from "./../../colony/IColony.sol";
-import { ITokenLocking } from "./../../tokenLocking/ITokenLocking.sol";
+import { IColonyNetwork } from "./../../interfaces/IColonyNetwork.sol";
+import { IColony } from "./../../interfaces/IColony.sol";
+import { ITokenLocking } from "./../../interfaces/ITokenLocking.sol";
 import { DSMath } from "./../../../lib/dappsys/math.sol";
 import { DSAuth } from "./../../../lib/dappsys/auth.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";

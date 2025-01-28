@@ -15,7 +15,7 @@ import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DSAuth, DSAuthEvents, DSAuthority } from "./../../lib/dappsys/auth.sol";
-import { IDSAuth } from "./../common/IDSAuth.sol";
+import { IDSAuth } from "./../interfaces/IDSAuth.sol";
 
 pragma solidity 0.8.27;
 

@@ -20,9 +20,10 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
-import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
+import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
 
 contract FundingQueue is ColonyExtension, BasicMetaTransaction {

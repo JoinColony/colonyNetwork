@@ -23,7 +23,7 @@ import { DSMath } from "./../../lib/dappsys/math.sol";
 import { CommonStorage } from "./../common/CommonStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DomainRoles } from "./../common/DomainRoles.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";

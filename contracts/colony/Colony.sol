@@ -21,10 +21,10 @@ pragma experimental ABIEncoderV2;
 
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { Multicall } from "./../common/Multicall.sol";
-import { IEtherRouter } from "./../common/IEtherRouter.sol";
+import { IEtherRouter } from "./../interfaces/IEtherRouter.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";

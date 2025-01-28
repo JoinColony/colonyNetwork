@@ -18,9 +18,10 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { IColony, ColonyDataTypes } from "./../colony/IColony.sol";
+import { IColony } from "./../interfaces/IColony.sol";
+import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";

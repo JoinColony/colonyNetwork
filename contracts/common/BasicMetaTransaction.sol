@@ -4,7 +4,7 @@ pragma solidity 0.8.27;
 import { DSMath } from "../../lib/dappsys/math.sol";
 import { MetaTransactionMsgSender } from "./MetaTransactionMsgSender.sol";
 import { MultiChain } from "./MultiChain.sol";
-import { IBasicMetaTransaction } from "./IBasicMetaTransaction.sol";
+import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
 
 abstract contract BasicMetaTransaction is
   IBasicMetaTransaction,

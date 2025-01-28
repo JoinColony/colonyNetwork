@@ -19,8 +19,7 @@
 pragma solidity 0.8.27;
 
 import { IWormhole } from "../../lib/wormhole/ethereum/contracts/interfaces/IWormhole.sol";
-import { IColonyNetwork } from "../colonyNetwork/IColonyNetwork.sol";
-import { IColonyBridge } from "./IColonyBridge.sol";
+import { IColonyBridge } from "../interfaces/IColonyBridge.sol";
 import { CallWithGuards } from "../common/CallWithGuards.sol";
 import { DSAuth } from "../../lib/dappsys/auth.sol";
 

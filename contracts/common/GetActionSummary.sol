@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-import { IColony } from "./../colony/IColony.sol";
+import { IColony } from "./../interfaces/IColony.sol";
 import { ExtractCallData } from "./ExtractCallData.sol";
 import { GetActionDomainSkillId } from "./GetActionDomainSkillId.sol";
 import { CommonDataTypes } from "./CommonDataTypes.sol";

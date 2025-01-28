@@ -20,7 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
-import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
+import { IReputationMiningCycle } from "./../interfaces/IReputationMiningCycle.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { Multicall } from "./../common/Multicall.sol";
 

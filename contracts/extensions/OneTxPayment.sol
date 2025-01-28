@@ -21,7 +21,8 @@ pragma experimental ABIEncoderV2;
 
 import { CommonDataTypes } from "../common/CommonDataTypes.sol";
 import { ColonyExtension } from "./ColonyExtension.sol";
-import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 
 // ignore-file-swc-108
 

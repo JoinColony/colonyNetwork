@@ -81,13 +81,13 @@ class MetatransactionBroadcaster {
       console.warn("This should be fine, but ideally set to a checksummed address");
     }
 
-    const colonyNetworkDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
+    const colonyNetworkDef = await this.loader.load({ contractDir: "interfaces", contractName: "IColonyNetwork" });
     this.colonyNetwork = new ethers.Contract(ethers.utils.getAddress(colonyNetworkAddress), colonyNetworkDef.abi, this.wallet);
 
     this.feeData = await getFeeData("safeLow", this.chainId, this.adapter, this.provider);
     this.tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
 
-    this.metaTxDef = await this.loader.load({ contractDir: "common", contractName: "IBasicMetaTransaction" });
+    this.metaTxDef = await this.loader.load({ contractDir: "interfaces", contractName: "IBasicMetaTransaction" });
     this.metaTxTokenDef = await this.loader.load({ contractDir: "metaTxToken", contractName: "MetaTxToken" });
   }
 
@@ -204,7 +204,7 @@ class MetatransactionBroadcaster {
   }
 
   async isColonyFamilyTransactionAllowed(target, txData, userAddress) {
-    const colonyDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
+    const colonyDef = await this.loader.load({ contractDir: "interfaces", contractName: "IColony" });
     const possibleColony = new ethers.Contract(target, colonyDef.abi, this.wallet);
     try {
       const tx = possibleColony.interface.parseTransaction({ data: txData });

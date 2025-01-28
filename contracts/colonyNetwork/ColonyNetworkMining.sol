@@ -22,12 +22,12 @@ pragma experimental "ABIEncoderV2";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { EtherRouter } from "./../common/EtherRouter.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
-import { IReputationMiningCycle } from "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { IReputationMiningCycle } from "./../interfaces/IReputationMiningCycle.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
-import { IMetaColony } from "./../colony/IMetaColony.sol";
-import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
-import { IColonyNetwork } from "./IColonyNetwork.sol";
+import { IMetaColony } from "./../interfaces/IMetaColony.sol";
+import { IColonyBridge } from "./../interfaces/IColonyBridge.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 
 contract ColonyNetworkMining is ColonyNetworkStorage {

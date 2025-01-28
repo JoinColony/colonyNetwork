@@ -19,13 +19,14 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
-import { IBasicMetaTransaction, BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
+import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
-import { IColony } from "./../colony/IColony.sol";
+import { IColony } from "./../interfaces/IColony.sol";
 import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
 contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   // Events

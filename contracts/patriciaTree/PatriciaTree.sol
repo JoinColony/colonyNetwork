@@ -3,8 +3,8 @@ pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
 import { PatriciaTreeBase } from "./PatriciaTreeBase.sol";
-import { IPatriciaTreeBase } from "./IPatriciaTreeBase.sol";
-import { IPatriciaTree } from "./IPatriciaTree.sol";
+import { IPatriciaTreeBase } from "./../interfaces/IPatriciaTreeBase.sol";
+import { IPatriciaTree } from "./../interfaces/IPatriciaTree.sol";
 import { Data } from "./Data.sol";
 import { Bits } from "./Bits.sol";
 

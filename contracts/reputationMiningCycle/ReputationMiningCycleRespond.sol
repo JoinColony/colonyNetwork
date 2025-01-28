@@ -19,9 +19,9 @@
 pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { Bits } from "./../patriciaTree/Bits.sol";
 import { ReputationMiningCycleCommon } from "./ReputationMiningCycleCommon.sol";
 

@@ -57,7 +57,8 @@ exports.setupEtherRouter = async function setupEtherRouter(contractDir, interfac
   const functionsToResolve = {};
 
   // Load ABI of the interface of the contract we're trying to stich together
-  const iAbi = readArtifact(contractDir, interfaceName).abi;
+  const interfaceDir = interfaceName[0] === "I" ? "interfaces" : contractDir;
+  const iAbi = readArtifact(interfaceDir, interfaceName).abi;
   iAbi.map((value) => {
     const fName = value.name;
     const fType = value.type;

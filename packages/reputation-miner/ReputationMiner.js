@@ -74,10 +74,10 @@ class ReputationMiner {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
-    this.colonyNetworkContractDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
-    this.repCycleContractDef = await this.loader.load({ contractDir: "reputationMiningCycle", contractName: "IReputationMiningCycle" });
-    this.tokenLockingContractDef = await this.loader.load({ contractDir: "tokenLocking", contractName: "ITokenLocking" });
-    this.colonyContractDef = await this.loader.load({ contractDir: "colony", contractName: "IColony" });
+    this.colonyNetworkContractDef = await this.loader.load({ contractDir: "interfaces", contractName: "IColonyNetwork" });
+    this.repCycleContractDef = await this.loader.load({ contractDir: "interfaces", contractName: "IReputationMiningCycle" });
+    this.tokenLockingContractDef = await this.loader.load({ contractDir: "interfaces", contractName: "ITokenLocking" });
+    this.colonyContractDef = await this.loader.load({ contractDir: "interfaces", contractName: "IColony" });
 
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
     const tokenLockingAddress = await this.colonyNetwork.getTokenLocking();

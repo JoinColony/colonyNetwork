@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 
 import { DSMath } from "./../../lib/dappsys/math.sol";
-import { IMetaColony } from "./../colony/IMetaColony.sol";
+import { IMetaColony } from "./../interfaces/IMetaColony.sol";
 import { CommonStorage } from "./../common/CommonStorage.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";

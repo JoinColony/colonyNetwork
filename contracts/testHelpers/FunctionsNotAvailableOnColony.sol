@@ -20,7 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { Colony } from "./../colony/Colony.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 
 contract FunctionsNotAvailableOnColony is Colony {
   function registerUserLabel(string memory username, string memory orbitdb) public {

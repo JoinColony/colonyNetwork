@@ -21,8 +21,8 @@ pragma experimental "ABIEncoderV2";
 
 import { DSMath } from "./../../lib/dappsys/math.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
-import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
-import { ITokenLocking } from "./../tokenLocking/ITokenLocking.sol";
+import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
+import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ReputationMiningCycleStorage } from "./ReputationMiningCycleStorage.sol";
 
 contract ReputationMiningCycleCommon is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {

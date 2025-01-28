@@ -18,10 +18,10 @@
 pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
-import "./../reputationMiningCycle/IReputationMiningCycle.sol";
-import "./../common/Multicall.sol";
-import "./ColonyNetworkStorage.sol";
-import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
+import { IReputationMiningCycle } from "./../interfaces/IReputationMiningCycle.sol";
+import { Multicall } from "./../common/Multicall.sol";
+import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
+import { IColonyBridge } from "./../interfaces/IColonyBridge.sol";
 import { CallWithGuards } from "../common/CallWithGuards.sol";
 
 contract ColonyNetworkSkills is ColonyNetworkStorage, Multicall, CallWithGuards {
