@@ -1,4 +1,5 @@
 const { NonceManager } = require("@ethersproject/experimental");
+const { parseTransaction } = require("ethers/lib/utils");
 
 class ExtendedNonceManager extends NonceManager {
   constructor(signer) {
@@ -24,7 +25,7 @@ class ExtendedNonceManager extends NonceManager {
   async sendTransaction(transactionRequest) {
     // What nonce are we going to attach to this?
     // Definitely not any we've sent and are pending
-    const pendingNonces = Object.keys(this.signedTransactions).map((txhash) => this.signedTransactions[txhash].nonce);
+    const pendingNonces = Object.keys(this.signedTransactions).map((txhash) => parseTransaction(this.signedTransactions[txhash]).nonce);
 
     // At least whatever the endpoint says, or whatever we've already sent if higher
     let nonce = await this.signer.getTransactionCount();
@@ -37,9 +38,11 @@ class ExtendedNonceManager extends NonceManager {
     }
     transactionRequest.nonce = nonce; // eslint-disable-line no-param-reassign
     this.nonce = nonce + 1;
+    const populatedTransaction = await this.populateTransaction(transactionRequest);
+    const signedTransaction = await this.signTransaction(populatedTransaction);
     const response = super.sendTransaction(transactionRequest);
     const tx = await response;
-    this.signedTransactions[tx.hash] = transactionRequest;
+    this.signedTransactions[tx.hash] = signedTransaction;
     return response;
   }
 }
