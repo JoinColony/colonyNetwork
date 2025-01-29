@@ -664,6 +664,32 @@ contract("Cross-chain", (accounts) => {
       expect(balance.toHexString()).to.equal(tokenAmount.toHexString());
     });
 
+    it("Can multicall claimColonyFunds and receive both tokens", async () => {
+      const tokenFactory = new ethers.ContractFactory(Token.abi, Token.bytecode, ethersForeignSigner);
+      const foreignToken2 = await tokenFactory.deploy("Test Token", "TT", 18);
+      await (await foreignToken2.unlock()).wait();
+      const tokenAmount = ethers.utils.parseEther("100");
+      let tx = await foreignToken["mint(address,uint256)"](proxyColony.address, tokenAmount);
+      await tx.wait();
+      tx = await foreignToken2["mint(address,uint256)"](proxyColony.address, tokenAmount);
+      await tx.wait();
+
+      const p = guardianSpy.getPromiseForNextBridgedTransaction(4);
+
+      const call1 = colony.interface.encodeFunctionData("claimColonyFunds(uint256,address)", [foreignChainId, foreignToken.address]);
+      const call2 = colony.interface.encodeFunctionData("claimColonyFunds(uint256,address)", [foreignChainId, foreignToken2.address]);
+      tx = await colony.multicall([call1, call2]);
+
+      await tx.wait();
+      await p;
+
+      const balance1 = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken.address);
+      expect(balance1.toHexString()).to.equal(tokenAmount.toHexString());
+
+      const balance2 = await colony["getFundingPotBalance(uint256,uint256,address)"](1, foreignChainId, foreignToken2.address);
+      expect(balance2.toHexString()).to.equal(tokenAmount.toHexString());
+    });
+
     it("Can claim tokens received on foreign chain via metatransaction", async () => {
       const tokenAmount = ethers.utils.parseEther("100");
 
