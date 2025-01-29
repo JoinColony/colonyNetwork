@@ -579,6 +579,25 @@ exports.revert = async function revert(provider, snapshotId) {
   });
 };
 
+exports.hardhatDropTransaction = async function hardhatDropTransaction(provider, txHash) {
+  return new Promise((resolve, reject) => {
+    provider.send(
+      {
+        jsonrpc: "2.0",
+        method: "hardhat_dropTransaction",
+        params: [txHash],
+        id: new Date().getTime(),
+      },
+      (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      },
+    );
+  });
+};
+
 exports.hardhatSnapshot = async function hardhatSnapshot(provider) {
   const res = await provider.request({
     method: "evm_snapshot",
