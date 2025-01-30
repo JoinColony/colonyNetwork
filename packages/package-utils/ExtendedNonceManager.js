@@ -1,4 +1,5 @@
 const { NonceManager } = require("@ethersproject/experimental");
+const { parseTransaction } = require("ethers/lib/utils");
 
 class ExtendedNonceManager extends NonceManager {
   constructor(signer) {
@@ -9,8 +10,23 @@ class ExtendedNonceManager extends NonceManager {
       Object.keys(this.signedTransactions).map(async (txHash) => {
         const nodeTx = await this.signer.provider.getTransaction(txHash);
         if (!nodeTx) {
-          this.signer.provider.sendTransaction(this.signedTransactions[txHash]);
-          return;
+          const txCount = await this.signer.getTransactionCount("pending");
+          const parsedTransaction = parseTransaction(this.signedTransactions[txHash]);
+          if (parsedTransaction.nonce < txCount) {
+            // It's not been mined, but it's been replaced by another tx.
+            // Resend, with a new nonce
+            delete this.signedTransactions[txHash];
+            this.sendTransaction({
+              from: parsedTransaction.from,
+              to: parsedTransaction.to,
+              value: parsedTransaction.value,
+              data: parsedTransaction.data,
+            });
+          } else {
+            // No reason to think it's been replaced, so rebroadcast.
+            this.signer.provider.sendTransaction(this.signedTransactions[txHash]);
+            return;
+          }
         }
         if (nodeTx.blockNumber) {
           // It's been mined, so forget it.
@@ -22,29 +38,18 @@ class ExtendedNonceManager extends NonceManager {
   }
 
   async sendTransaction(transactionRequest) {
-    // What nonce are we going to attach to this?
-    // Definitely not any we've sent and are pending
-    // const pendingNonces = Object.keys(this.signedTransactions).map((txhash) => this.signedTransactions[txhash].nonce);
-
-    // At least whatever the endpoint says, or whatever we've already sent if higher
-    let nonce = await this.signer.getTransactionCount();
-
-    // Note the order we did the above two lines in - if a tx is mined between these two lines,
-    // and got removed by the `on block` handler above, by doing it in this order we won't be tripped up
-    // And we'll skip any nonces we've already used
-    while (
-      Object.keys(this.signedTransactions)
-        .map((txhash) => this.signedTransactions[txhash].nonce)
-        .includes(nonce)
-    ) {
-      nonce += 1;
+    try {
+      const populatedTransaction = await this.populateTransaction(transactionRequest);
+      const signedTransaction = await this.signTransaction(populatedTransaction);
+      const response = super.sendTransaction(transactionRequest);
+      const tx = await response;
+      this.signedTransactions[tx.hash] = signedTransaction;
+      return response;
+    } catch (e) {
+      const txCount = await this.signer.getTransactionCount("pending");
+      this.setTransactionCount(txCount);
+      return this.sendTransaction(transactionRequest);
     }
-    transactionRequest.nonce = nonce; // eslint-disable-line no-param-reassign
-    this.nonce = nonce + 1;
-    const response = super.sendTransaction(transactionRequest);
-    const tx = await response;
-    this.signedTransactions[tx.hash] = transactionRequest;
-    return response;
   }
 }
 
