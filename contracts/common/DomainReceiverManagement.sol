@@ -16,7 +16,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.8.27;
+pragma solidity 0.8.28;
 pragma experimental "ABIEncoderV2";
 
 import { MetaTransactionMsgSender } from "./MetaTransactionMsgSender.sol";
@@ -56,7 +56,7 @@ abstract contract DomainReceiverManagement is MetaTransactionMsgSender, IsContra
 
       // Set up the deployed contract
       EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
-      DomainTokenReceiver(domainTokenReceiverAddress).setColonyAddress(msgSender());
+      DomainTokenReceiver(domainTokenReceiverAddress).setColony(msgSender());
     } else {
       // Contract is deployed, check it's got the right resolver
       try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {

@@ -15,7 +15,7 @@
   You should have received a copy of the GNU General Public License
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
-pragma solidity 0.8.27;
+pragma solidity 0.8.28;
 
 contract IsContract {
   function isContract(address addr) internal view returns (bool) {
