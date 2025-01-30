@@ -46,9 +46,14 @@ class ExtendedNonceManager extends NonceManager {
       this.signedTransactions[tx.hash] = signedTransaction;
       return response;
     } catch (e) {
-      const txCount = await this.signer.getTransactionCount("pending");
-      this.setTransactionCount(txCount);
-      return this.sendTransaction(transactionRequest);
+      if (e.code === "NONCE_EXPIRED") {
+        // The nonce has expired, so we need to update it.
+        const txCount = await this.signer.getTransactionCount("pending");
+        this.setTransactionCount(txCount);
+        return this.sendTransaction(transactionRequest);
+      }
+      console.log(e);
+      throw e;
     }
   }
 }
