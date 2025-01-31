@@ -162,6 +162,12 @@ contract("Cross-chain", (accounts) => {
     web3HomeProvider = new web3.eth.providers.HttpProvider(ethersHomeSigner.provider.connection.url);
     web3ForeignProvider = new web3.eth.providers.HttpProvider(ethersForeignSigner.provider.connection.url);
 
+    if (homeSnapshotId) {
+      await revert(web3HomeProvider, homeSnapshotId);
+      await revert(web3ForeignProvider, foreignSnapshotId);
+      await resetRelayer();
+    }
+
     homeSnapshotId = await snapshot(web3HomeProvider);
     foreignSnapshotId = await snapshot(web3ForeignProvider);
     guardianSpy.reset();
@@ -189,7 +195,6 @@ contract("Cross-chain", (accounts) => {
     //   await tx.wait();
     //   await p;
     // }
-    console.log("setting up mining client ");
     // Set up mining client
     client = new ReputationMinerTestWrapper({
       loader: contractLoader,
@@ -199,8 +204,6 @@ contract("Cross-chain", (accounts) => {
     });
 
     await client.initialise(homeColonyNetwork.address);
-
-    console.log("initialised");
 
     await forwardTime(MINING_CYCLE_DURATION + CHALLENGE_RESPONSE_WINDOW_DURATION, undefined, web3HomeProvider);
     await client.addLogContentsToReputationTree();
@@ -235,12 +238,6 @@ contract("Cross-chain", (accounts) => {
     const colony = await new ethers.Contract(colonyAddress, IColony.abi, colonyNetworkEthers.signer);
     return colony;
   }
-
-  afterEach(async () => {
-    await revert(web3HomeProvider, homeSnapshotId);
-    await revert(web3ForeignProvider, foreignSnapshotId);
-    await resetRelayer();
-  });
 
   after(async () => {
     await guardianSpy.close();
@@ -506,7 +503,6 @@ contract("Cross-chain", (accounts) => {
 
       // So 'just' call that on the colony...
 
-      console.log("tx to home bridge address:", homeBridge.address);
       const tx = await homeColony.makeArbitraryTransaction(homeBridge.address, txDataToBeSentToAMB);
       await tx.wait();
       await p;
@@ -807,7 +803,7 @@ contract("Cross-chain", (accounts) => {
       const recipientBalance = await foreignToken.balanceOf(accounts[0]);
 
       expect(colonyBalance.toHexString()).to.equal(ethers.utils.parseEther("70").toHexString());
-      expect(recipientBalance.toHexString()).to.equal(ethers.utils.parseEther("30").toHexString());
+      expect(recipientBalance.toHexString()).to.equal(ethers.utils.parseEther("30").sub(ethers.utils.parseEther("0.3").add(1)).toHexString());
     });
 
     it("Can track native tokens sent on the foreign chain", async () => {
@@ -881,7 +877,9 @@ contract("Cross-chain", (accounts) => {
       const recipientBalanceAfter = await ethersForeignProvider.getBalance(accounts[0]);
 
       expect(colonyBalance.toHexString()).to.equal(ethers.utils.parseEther("0.7").toHexString());
-      expect(recipientBalanceAfter.sub(receipientBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("0.3").toHexString());
+      expect(recipientBalanceAfter.sub(receipientBalanceBefore).toHexString()).to.equal(
+        ethers.utils.parseEther("0.3").sub(ethers.utils.parseEther("0.003").add(1)).toHexString(),
+      );
     });
 
     it("a bookkeeping error will mean that tokens can no longer be claimed until tokens are returned", async () => {
@@ -1019,9 +1017,6 @@ contract("Cross-chain", (accounts) => {
 
       const domain1 = await colony.getDomain(1);
       const domain2 = await colony.getDomain(2);
-      console.log(domain2);
-      const fundingPot = await colony.getFundingPot(domain2.fundingPotId);
-      console.log(fundingPot);
 
       tx = await colony["moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"](
         1,
@@ -1036,7 +1031,7 @@ contract("Cross-chain", (accounts) => {
         foreignToken.address,
       );
       await tx.wait();
-      console.log("moved");
+
       // Exchange tokens
       const domain2ReceiverAddress = await homeColonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
 
@@ -1357,7 +1352,11 @@ contract("Cross-chain", (accounts) => {
       // Deploy a token on the foreign network
     });
 
-    it("Can make a OneTxPayment cross-chain", async () => {
+    it("Can make a OneTxPayment cross-chain, including the fee", async () => {
+      // Set fee on the home chain
+      let tx = await homeMetacolony.setNetworkFeeInverse(100);
+      await tx.wait();
+
       const tokenFactory = new ethers.ContractFactory(MetaTxToken.abi, MetaTxToken.bytecode, ethersForeignSigner);
       const foreignToken = await tokenFactory.deploy("Test Token", "TT", 18);
       await (await foreignToken.unlock()).wait();
@@ -1367,7 +1366,7 @@ contract("Cross-chain", (accounts) => {
 
       let p = guardianSpy.getPromiseForNextBridgedTransaction();
 
-      let tx = await proxyColony.claimColonyFunds(foreignToken.address);
+      tx = await proxyColony.claimColonyFunds(foreignToken.address);
       await tx.wait();
 
       await p;
@@ -1383,9 +1382,10 @@ contract("Cross-chain", (accounts) => {
       await homeColony.setUserRoles(1, UINT256_MAX_ETHERS, oneTxPayment.address, 1, ROLES);
 
       const balanceBefore = await foreignToken.balanceOf(accounts[0]);
+      const networkBalanceBefore = await foreignToken.balanceOf(remoteColonyNetwork.address);
 
       p = guardianSpy.getPromiseForNextBridgedTransaction();
-      console.log("amkepayment");
+
       tx = await oneTxPayment["makePayment(uint256,uint256,uint256,uint256,address[],uint256[],address[],uint256[],uint256,uint256)"](
         1,
         UINT256_MAX_ETHERS,
@@ -1402,7 +1402,13 @@ contract("Cross-chain", (accounts) => {
       await p;
 
       const balanceAfter = await foreignToken.balanceOf(accounts[0]);
-      expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(paymentAmount.toHexString());
+      expect(balanceAfter.sub(balanceBefore).toHexString()).to.equal(paymentAmount.sub(ethers.utils.parseEther("0.3").add(1)).toHexString());
+
+      const networkBalanceAfter = await foreignToken.balanceOf(remoteColonyNetwork.address);
+      expect(networkBalanceAfter.sub(networkBalanceBefore).toHexString()).to.equal(ethers.utils.parseEther("0.3").add(1).toHexString());
+
+      tx = await homeMetacolony.setNetworkFeeInverse(UINT256_MAX_ETHERS);
+      await tx.wait();
     });
   });
 

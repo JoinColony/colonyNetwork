@@ -768,13 +768,15 @@ contract ColonyFunding is
       getFundingPotPayout(_fundingPotId, _chainId, _token) - _payout
     );
 
-    uint256 payoutToUser;
     decrementNonRewardPotsTotal(_chainId, _token, _payout);
+    uint256 fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
+    uint256 payoutToUser = _payout - fee;
+
+    address feeReceiver = colonyNetworkContract.getPayoutWhitelist(_token)
+      ? metaColonyAddress
+      : colonyNetworkAddress;
 
     if (_chainId == block.chainid) {
-      uint256 fee = isOwnExtension(_user) ? 0 : calculateNetworkFeeForPayout(_payout);
-      payoutToUser = _payout - fee;
-
       if (_token == address(0x0)) {
         // Payout ether
         // Fee goes directly to Meta Colony
@@ -786,22 +788,27 @@ contract ColonyFunding is
         // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
         ERC20Extended payoutToken = ERC20Extended(_token);
         assert(payoutToken.transfer(_user, payoutToUser));
-        if (colonyNetworkContract.getPayoutWhitelist(_token)) {
-          assert(payoutToken.transfer(metaColonyAddress, fee));
-        } else {
-          assert(payoutToken.transfer(colonyNetworkAddress, fee));
-        }
+        assert(payoutToken.transfer(feeReceiver, fee));
       }
     } else {
-      // TODO: Network fee
-      bytes memory payload = abi.encodeWithSignature(
+      bytes[] memory multicallArgs = new bytes[](2);
+
+      multicallArgs[0] = abi.encodeWithSignature(
         "transferFromBridge(address,address,uint256)",
         _token,
         _user,
-        _payout
+        payoutToUser
       );
-      IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, payload);
-      payoutToUser = _payout;
+
+      multicallArgs[1] = abi.encodeWithSignature(
+        "transferFromBridge(address,address,uint256)",
+        _token,
+        feeReceiver,
+        fee
+      );
+
+      bytes memory multicallData = abi.encodeWithSignature("multicall(bytes[])", multicallArgs);
+      IColonyNetwork(colonyNetworkAddress).bridgeMessage(_chainId, multicallData);
     }
 
     // slither-disable-next-line reentrancy-unlimited-gas
