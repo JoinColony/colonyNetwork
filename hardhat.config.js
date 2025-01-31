@@ -53,11 +53,8 @@ task("test", "Run tests").setAction(async () => {
       try {
         const abiCoder = new ethers.utils.AbiCoder();
         const decoded = abiCoder.decode(["string"], `0x${error.data.slice(10)}`);
-        res.send({
-          jsonrpc: "2.0",
-          error: { message: `Error: VM Exception while processing transaction: reverted with reason string '${decoded[0]}'` },
-          id: req.body.id,
-        });
+        const message = `Error: VM Exception while processing transaction: reverted with reason string '${decoded[0]}'`;
+        res.send({ jsonrpc: "2.0", error: { message }, id: req.body.id });
       } catch (e) {
         res.send({ jsonrpc: "2.0", error: { message: error.message }, id: req.body.id });
       }

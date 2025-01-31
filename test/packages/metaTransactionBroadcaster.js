@@ -9,7 +9,15 @@ const axios = require("axios");
 const { TruffleLoader, RetryProvider } = require("../../packages/package-utils");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const { UINT256_MAX, CURR_VERSION } = require("../../helpers/constants");
-const { web3GetTransaction, currentBlockTime, stopMining, startMining, sleep, hardhatDropTransaction } = require("../../helpers/test-helper");
+const {
+  web3GetTransaction,
+  currentBlockTime,
+  stopMining,
+  startMining,
+  sleep,
+  hardhatDropTransaction,
+  mineBlock,
+} = require("../../helpers/test-helper");
 
 const MetatransactionBroadcaster = require("../../packages/metatransaction-broadcaster/MetatransactionBroadcaster");
 const { getMetaTransactionParameters, getPermitParameters, setupColony } = require("../../helpers/test-data-generator");
@@ -379,6 +387,12 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount2).to.eq.BN(1200000);
       const balanceColony = await metaTxToken.balanceOf(colony.address);
       expect(balanceColony).to.eq.BN(600000);
+
+      // Check the transactions happened with the hashes returned
+      const tx1 = await web3GetTransaction(txHash);
+      expect(tx1.gas).to.be.lt.BN(500000);
+      const tx2 = await web3GetTransaction(txHash2);
+      expect(tx2.gas).to.be.lt.BN(500000);
     });
 
     it("a nonce collision is resolved correctly", async function () {
@@ -403,17 +417,27 @@ contract("Metatransaction broadcaster", (accounts) => {
       await stopMining();
       const p = new web3.eth.providers.HttpProvider("http://localhost:8545");
 
-      const res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+      const postRequest = axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
         headers: {
           "Content-Type": "application/json",
         },
       });
 
-      await hardhatDropTransaction(p, res.data.data.txHash);
+      let firstTxHash = null;
+      while (!firstTxHash) {
+        const block = await provider.send("eth_getBlockByNumber", ["pending", true]);
+        if (block.transactions.length > 0) {
+          const [firstTx] = block.transactions;
+          firstTxHash = firstTx.hash;
+        }
+        await sleep(1000);
+      }
 
-      await startMining();
+      await hardhatDropTransaction(p, firstTxHash);
 
       const currentNonce = await provider.getTransactionCount(USER0);
+
+      await startMining();
 
       // This will have the nonce of the dropped transaction, which the broadcaster will try to
       // rebroadcast when it sees a block, but it will fail because the nonce is too low
@@ -423,11 +447,12 @@ contract("Metatransaction broadcaster", (accounts) => {
       let newNonce = 0;
       while (newNonce < currentNonce + 2) {
         newNonce = await provider.getTransactionCount(USER0);
+        await mineBlock();
         await sleep(1000);
       }
+      const res = await postRequest;
 
       const { txHash } = res.data.data;
-
       expect(txHash.length).to.be.equal(66);
 
       expect(res.data).to.be.deep.equal({
@@ -442,6 +467,16 @@ contract("Metatransaction broadcaster", (accounts) => {
       expect(balanceAccount1).to.eq.BN(1200000);
       const balanceColony = await metaTxToken.balanceOf(colony.address);
       expect(balanceColony).to.eq.BN(300000);
+
+      // Check the transactions happened with the hashes returned
+      const tx1 = await web3GetTransaction(txHash);
+      if (!tx1) {
+        throw new Error("Transaction not found");
+      }
+      expect(tx1.gas).to.be.lt.BN(500000);
+
+      const originalTx = await web3GetTransaction(firstTxHash);
+      expect(originalTx).to.be.null;
     });
 
     it("a valid transaction is broadcast and mined, even if the broadcaster's nonce manager fell behind", async function () {
@@ -452,7 +487,12 @@ contract("Metatransaction broadcaster", (accounts) => {
       const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
 
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
-      const { r: r2, s: s2, v: v2 } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
+
+      const txCount = await provider.getTransactionCount(accounts[0]);
+      await broadcaster.nonceManager.setTransactionCount(txCount);
+
+      // Make an unexpected transaction
+      await metaTxToken.mint(USER2, 1500000, { from: USER0 });
 
       // Send to endpoint
 
@@ -471,21 +511,6 @@ contract("Metatransaction broadcaster", (accounts) => {
         },
       });
 
-      // Make an unexpected transaction
-      await metaTxToken.mint(USER2, 1500000, { from: USER0 });
-
-      jsonData.r = r2;
-      jsonData.s = s2;
-      jsonData.v = v2;
-      jsonData.userAddress = USER1;
-      console.log("before");
-      await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      console.log("after");
-
       const { txHash } = res.data.data;
 
       expect(txHash.length).to.be.equal(66);
@@ -501,7 +526,11 @@ contract("Metatransaction broadcaster", (accounts) => {
       const balanceAccount1 = await metaTxToken.balanceOf(USER0);
       expect(balanceAccount1).to.eq.BN(1200000);
       const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
-      expect(balanceAccount2).to.eq.BN(600000);
+      expect(balanceAccount2).to.eq.BN(300000);
+
+      // Check the transactions happened with the hashes returned
+      const tx1 = await web3GetTransaction(txHash);
+      expect(tx1.gas).to.be.lt.BN(500000);
     });
 
     it("a valid transaction is broadcast and mined, even if the broadcaster's nonce manager got ahead", async function () {
@@ -512,7 +541,6 @@ contract("Metatransaction broadcaster", (accounts) => {
       const txData = await metaTxToken.contract.methods.transfer(colony.address, 300000).encodeABI();
 
       const { r, s, v } = await getMetaTransactionParameters(txData, USER0, metaTxToken.address);
-      const { r: r2, s: s2, v: v2 } = await getMetaTransactionParameters(txData, USER1, metaTxToken.address);
 
       // Send to endpoint
 
@@ -525,22 +553,11 @@ contract("Metatransaction broadcaster", (accounts) => {
         v,
       };
 
-      let res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
       // Set the nonce
       const txCount = await provider.getTransactionCount(accounts[0]);
       await broadcaster.nonceManager.setTransactionCount(txCount + 1);
 
-      jsonData.r = r2;
-      jsonData.s = s2;
-      jsonData.v = v2;
-      jsonData.userAddress = USER1;
-
-      res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+      const res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -561,7 +578,11 @@ contract("Metatransaction broadcaster", (accounts) => {
       const balanceAccount1 = await metaTxToken.balanceOf(USER0);
       expect(balanceAccount1).to.eq.BN(1200000);
       const balanceAccount2 = await metaTxToken.balanceOf(colony.address);
-      expect(balanceAccount2).to.eq.BN(600000);
+      expect(balanceAccount2).to.eq.BN(300000);
+
+      // Check the transaction happened with the hash returned
+      const tx = await web3GetTransaction(txHash);
+      expect(tx.gas).to.be.lt.BN(500000);
     });
 
     it("a valid EIP712 transaction is broadcast and mined", async function () {
@@ -603,6 +624,10 @@ contract("Metatransaction broadcaster", (accounts) => {
       // Check the transaction happened
       const allowed = await metaTxToken.allowance(USER0, colony.address);
       expect(allowed).to.eq.BN(1);
+
+      // With the expected hash
+      const tx = await web3GetTransaction(txHash);
+      expect(tx.gas).to.be.lt.BN(500000);
     });
 
     it("an EIP712 transaction with an invalid spender is not broadcast and mined", async function () {
@@ -664,26 +689,22 @@ contract("Metatransaction broadcaster", (accounts) => {
         s,
         v,
       };
-      try {
-        const res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
+      const res = await axios.post("http://127.0.0.1:3000/broadcast", jsonData, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
-        const { txHash } = res.data.data;
+      const { txHash } = res.data.data;
 
-        expect(txHash.length).to.be.equal(66);
+      expect(txHash.length).to.be.equal(66);
 
-        expect(res.data).to.be.deep.equal({
-          status: "success",
-          data: {
-            txHash,
-          },
-        });
-      } catch (err) {
-        console.log(err.response.data);
-      }
+      expect(res.data).to.be.deep.equal({
+        status: "success",
+        data: {
+          txHash,
+        },
+      });
 
       // Check the transaction happened
       const roles = await colony.getUserRoles(USER1, 1);
@@ -692,6 +713,10 @@ contract("Metatransaction broadcaster", (accounts) => {
 
       const expectedRoles = roleArchitecture | roleFunding; // eslint-disable-line no-bitwise
       expect(roles).to.equal(ethers.utils.hexZeroPad(ethers.BigNumber.from(expectedRoles).toHexString(), 32));
+
+      // With the expected hash
+      const tx = await web3GetTransaction(txHash);
+      expect(tx.gas).to.be.lt.BN(500000);
     });
 
     it("a multicall transaction that calls something invalid is rejected", async function () {
