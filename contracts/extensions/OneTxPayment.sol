@@ -289,7 +289,7 @@ contract OneTxPayment is ColonyExtension, BasicMetaTransaction {
         require(_tokens[idx] > _tokens[idx - 1], "one-tx-payment-bad-token-order");
       }
 
-      colony.setExpenditurePayout(expenditureId, slot, _tokens[idx], _amounts[idx]);
+      colony.setExpenditurePayout(expenditureId, slot, _chainIds[idx], _tokens[idx], _amounts[idx]);
     }
 
     finalizeAndClaim(
