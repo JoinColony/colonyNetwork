@@ -27,7 +27,7 @@ import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 import { IColony } from "./../interfaces/IColony.sol";
-import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 contract VotingReputationMisaligned is ColonyExtension, BasicMetaTransaction {
   // Events
   event MotionCreated(uint256 indexed motionId, address creator, uint256 indexed domainId);

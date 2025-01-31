@@ -24,11 +24,11 @@ import { CommonStorage } from "./../common/CommonStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DomainRoles } from "./../common/DomainRoles.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
-import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
+import { ColonyNetworkDataTypes } from "./../dataTypes/ColonyNetworkDataTypes.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
-import { ColonyDataTypes } from "./ColonyDataTypes.sol";
+import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108

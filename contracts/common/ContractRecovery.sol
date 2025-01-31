@@ -18,8 +18,8 @@
 
 pragma solidity 0.8.27;
 
-import { CommonDataTypes } from "./CommonDataTypes.sol";
-import { ContractRecoveryDataTypes } from "./ContractRecoveryDataTypes.sol";
+import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
+import { ContractRecoveryDataTypes } from "./../dataTypes/ContractRecoveryDataTypes.sol";
 import { CommonAuthority } from "./CommonAuthority.sol";
 import { CommonStorage } from "./CommonStorage.sol";
 import { IRecovery } from "./../interfaces/IRecovery.sol";

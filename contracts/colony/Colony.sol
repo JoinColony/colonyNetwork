@@ -28,7 +28,6 @@ import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
-import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 
 contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeProofs {
   // This function, exactly as defined, is used in build scripts. Take care when updating.

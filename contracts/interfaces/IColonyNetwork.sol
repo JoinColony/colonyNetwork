@@ -22,7 +22,7 @@ pragma experimental "ABIEncoderV2";
 import { IRecovery } from "./IRecovery.sol";
 import { IBasicMetaTransaction } from "./IBasicMetaTransaction.sol";
 import { IMulticall } from "./IMulticall.sol";
-import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
+import { ColonyNetworkDataTypes } from "./../dataTypes/ColonyNetworkDataTypes.sol";
 
 interface IColonyNetwork is ColonyNetworkDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {
   /// @notice Query if a contract implements an interface

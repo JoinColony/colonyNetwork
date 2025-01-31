@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.27;
 
-import { CommonDataTypes } from "../common/CommonDataTypes.sol";
+import { CommonDataTypes } from "./CommonDataTypes.sol";
 
 // prettier-ignore
 interface ColonyDataTypes is CommonDataTypes {

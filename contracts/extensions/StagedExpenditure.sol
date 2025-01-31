@@ -20,8 +20,8 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { IColony } from "./../interfaces/IColony.sol";
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
-import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
+import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108

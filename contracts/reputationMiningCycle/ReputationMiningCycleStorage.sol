@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 
 import { DSAuth } from "./../../lib/dappsys/auth.sol";
-import { ReputationMiningCycleDataTypes } from "./../reputationMiningCycle/ReputationMiningCycleDataTypes.sol";
+import { ReputationMiningCycleDataTypes } from "./../dataTypes/ReputationMiningCycleDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108

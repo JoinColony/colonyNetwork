@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 
 import { CommonAuthority } from "./../common/CommonAuthority.sol";
-import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 
 // prettier-ignore
 contract ColonyAuthority is CommonAuthority {

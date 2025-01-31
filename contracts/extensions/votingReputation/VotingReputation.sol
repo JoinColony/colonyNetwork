@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { VotingReputationStorage } from "./VotingReputationStorage.sol";
 import { IColony } from "./../../interfaces/IColony.sol";
-import { ColonyDataTypes } from "./../../colony/ColonyDataTypes.sol";
+import { ColonyDataTypes } from "./../../dataTypes/ColonyDataTypes.sol";
 import { ActionSummary } from "./../../common/GetActionSummary.sol";
 
 contract VotingReputation is VotingReputationStorage {

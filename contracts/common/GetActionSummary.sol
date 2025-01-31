@@ -18,7 +18,7 @@
 import { IColony } from "./../interfaces/IColony.sol";
 import { ExtractCallData } from "./ExtractCallData.sol";
 import { GetActionDomainSkillId } from "./GetActionDomainSkillId.sol";
-import { CommonDataTypes } from "./CommonDataTypes.sol";
+import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { Bytes4Includes } from "./Bytes4Includes.sol";
 

@@ -20,7 +20,7 @@ pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
 import { DSAuth } from "./../../lib/dappsys/auth.sol";
-import { TokenLockingDataTypes } from "./../tokenLocking/TokenLockingDataTypes.sol";
+import { TokenLockingDataTypes } from "./../dataTypes/TokenLockingDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108

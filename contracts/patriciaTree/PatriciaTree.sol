@@ -5,8 +5,8 @@ pragma experimental "ABIEncoderV2";
 import { PatriciaTreeBase } from "./PatriciaTreeBase.sol";
 import { IPatriciaTreeBase } from "./../interfaces/IPatriciaTreeBase.sol";
 import { IPatriciaTree } from "./../interfaces/IPatriciaTree.sol";
-import { Data } from "./Data.sol";
-import { Bits } from "./Bits.sol";
+import { Data } from "./../dataTypes/PatriciaTreeData.sol";
+import { Bits } from "./../dataTypes/PatriciaTreeBits.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTree is IPatriciaTree, PatriciaTreeBase {

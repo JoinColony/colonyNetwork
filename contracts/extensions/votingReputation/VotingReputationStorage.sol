@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IColonyNetwork } from "./../../interfaces/IColonyNetwork.sol";
 import { IColony } from "./../../interfaces/IColony.sol";
-import { CommonDataTypes } from "./../../common/CommonDataTypes.sol";
+import { CommonDataTypes } from "./../../dataTypes/CommonDataTypes.sol";
 import { IBasicMetaTransaction } from "./../../interfaces/IBasicMetaTransaction.sol";
 import { BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
 import { ActionSummary, GetActionSummary } from "./../../common/GetActionSummary.sol";

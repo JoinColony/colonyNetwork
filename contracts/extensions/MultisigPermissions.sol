@@ -19,13 +19,13 @@ pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
 import { IColony } from "./../interfaces/IColony.sol";
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
-import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
+import { ColonyNetworkDataTypes } from "./../dataTypes/ColonyNetworkDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
-import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 import { Bytes4Includes } from "./../common/Bytes4Includes.sol";
 
 // ignore-file-swc-108

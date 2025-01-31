@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { IRecovery } from "./IRecovery.sol";
 import { IBasicMetaTransaction } from "./IBasicMetaTransaction.sol";
 import { IMulticall } from "./IMulticall.sol";
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 import { IDSAuth } from "./IDSAuth.sol";
 
 interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction, IMulticall {

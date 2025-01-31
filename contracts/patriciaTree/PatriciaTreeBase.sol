@@ -2,8 +2,8 @@
 pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
-import { Data } from "./Data.sol";
-import { Bits } from "./Bits.sol";
+import { Data } from "./../dataTypes/PatriciaTreeData.sol";
+import { Bits } from "./../dataTypes/PatriciaTreeBits.sol";
 import { PatriciaTreeProofs } from "./PatriciaTreeProofs.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie

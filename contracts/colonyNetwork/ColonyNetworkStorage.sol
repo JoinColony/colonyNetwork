@@ -23,7 +23,7 @@ import { IMetaColony } from "./../interfaces/IMetaColony.sol";
 import { CommonStorage } from "./../common/CommonStorage.sol";
 import { MultiChain } from "./../common/MultiChain.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
-import { ColonyNetworkDataTypes } from "./ColonyNetworkDataTypes.sol";
+import { ColonyNetworkDataTypes } from "./../dataTypes/ColonyNetworkDataTypes.sol";
 
 // ignore-file-swc-131
 // ignore-file-swc-108

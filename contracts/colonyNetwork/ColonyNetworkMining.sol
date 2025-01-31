@@ -28,7 +28,7 @@ import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { IMetaColony } from "./../interfaces/IMetaColony.sol";
 import { IColonyBridge } from "./../interfaces/IColonyBridge.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 
 contract ColonyNetworkMining is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?

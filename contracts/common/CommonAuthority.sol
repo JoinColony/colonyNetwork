@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.27;
 
-import { CommonDataTypes } from "./CommonDataTypes.sol";
+import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 import { DomainRoles } from "./DomainRoles.sol";
 
 contract CommonAuthority is DomainRoles {

@@ -25,7 +25,7 @@ import { MultiChain } from "./../common/MultiChain.sol";
 import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
 import { ColonyStorage } from "./ColonyStorage.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
-import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
+import { IColonyExtension } from "./../interfaces/IColonyExtension.sol";
 
 contract ColonyArbitraryTransaction is ColonyStorage {
   bytes4 constant APPROVE_SIG = bytes4(keccak256("approve(address,uint256)"));
@@ -100,7 +100,7 @@ contract ColonyArbitraryTransaction is ColonyStorage {
     // Prevent transactions to network-managed extensions installed in this colony
     require(isContract(_to), "colony-to-must-be-contract");
     // slither-disable-next-line unused-return
-    try ColonyExtension(_to).identifier() returns (bytes32 extensionId) {
+    try IColonyExtension(_to).identifier() returns (bytes32 extensionId) {
       require(
         IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) !=
           _to,

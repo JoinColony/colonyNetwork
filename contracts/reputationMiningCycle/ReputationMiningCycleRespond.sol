@@ -22,7 +22,7 @@ pragma experimental "ABIEncoderV2";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
-import { Bits } from "./../patriciaTree/Bits.sol";
+import { Bits } from "./../dataTypes/PatriciaTreeBits.sol";
 import { ReputationMiningCycleCommon } from "./ReputationMiningCycleCommon.sol";
 
 // TODO (post CCv1, possibly never): Can we handle all possible disputes regarding the very first hash that should be set?

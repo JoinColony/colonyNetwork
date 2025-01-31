@@ -24,7 +24,7 @@ import { DSAuth } from "./../../lib/dappsys/auth.sol";
 import { EtherRouter } from "./../common/EtherRouter.sol";
 import { Multicall } from "./../common/Multicall.sol";
 import { IColony } from "./../interfaces/IColony.sol";
-import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
+import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { MultiChain } from "./../common/MultiChain.sol";

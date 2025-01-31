@@ -19,7 +19,7 @@
 pragma solidity >=0.8.27; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import { TokenLockingDataTypes } from "./../tokenLocking/TokenLockingDataTypes.sol";
+import { TokenLockingDataTypes } from "./../dataTypes/TokenLockingDataTypes.sol";
 import { IBasicMetaTransaction } from "./IBasicMetaTransaction.sol";
 
 interface ITokenLocking is TokenLockingDataTypes, IBasicMetaTransaction {

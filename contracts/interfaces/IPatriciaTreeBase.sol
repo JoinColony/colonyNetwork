@@ -2,7 +2,7 @@
 pragma solidity >=0.8.27; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
-import { Data } from "./../patriciaTree/Data.sol";
+import { Data } from "./../dataTypes/PatriciaTreeData.sol";
 
 interface IPatriciaTreeBase {
   /// @notice Get the root hash

@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.27;
 
-import { ColonyDataTypes } from "./../../colony/ColonyDataTypes.sol";
+import { ColonyDataTypes } from "./../../dataTypes/ColonyDataTypes.sol";
 
 // prettier-ignore
 interface VotingReputationDataTypes {

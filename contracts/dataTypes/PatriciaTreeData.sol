@@ -2,7 +2,7 @@
 pragma solidity 0.8.27;
 pragma experimental "ABIEncoderV2";
 
-import { Bits } from "./Bits.sol";
+import { Bits } from "./PatriciaTreeBits.sol";
 
 /// More info at: https://github.com/chriseth/patricia-trie
 library Data {
