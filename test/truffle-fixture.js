@@ -27,7 +27,6 @@ const ColonyNetworkSkills = artifacts.require("ColonyNetworkSkills");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 
 const ENSRegistry = artifacts.require("ENSRegistry");
-const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
 
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
@@ -68,7 +67,6 @@ const assert = require("assert");
 const ethers = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 const truffleContract = require("@truffle/contract");
-const { setCode } = require("@nomicfoundation/hardhat-network-helpers");
 const createXABI = require("../lib/createx/artifacts/src/ICreateX.sol/ICreateX.json");
 const { resetAlreadyDeployedVersionTracking } = require("../scripts/deployOldUpgradeableVersion");
 
@@ -191,20 +189,6 @@ async function setupColonyNetwork() {
 
   const etherRouter = await EtherRouterCreate3.at(tx.logs.filter((log) => log.event === "ContractCreation")[0].args.newContract);
   EtherRouter.setAsDeployed(etherRouter);
-
-  // Deploy LiFiMock to LiFi address
-  try {
-    await setCode("0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE", LiFiFacetProxyMock.deployedBytecode);
-  } catch (error) {
-    if (error.message.includes("OnlyHardhatNetworkError")) {
-      await new Promise(function (resolve) {
-        web3.provider.send(
-          { method: "evm_setCode", params: ["0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE", LiFiFacetProxyMock.deployedBytecode] },
-          resolve,
-        );
-      });
-    }
-  }
 
   await setupUpgradableColonyNetwork(
     etherRouter,
