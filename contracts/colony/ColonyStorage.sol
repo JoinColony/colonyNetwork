@@ -25,7 +25,7 @@ import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DomainRoles } from "./../common/DomainRoles.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyNetworkDataTypes } from "./../dataTypes/ColonyNetworkDataTypes.sol";
-import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
+import { IColonyExtension } from "./../interfaces/IColonyExtension.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
 import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
@@ -265,7 +265,7 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     }
 
     // slither-disable-next-line unused-return
-    try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+    try IColonyExtension(addr).identifier() returns (bytes32 extensionId) {
       return
         IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(extensionId, address(this)) ==
         addr;
@@ -280,9 +280,9 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
     }
 
     // slither-disable-next-line unused-return
-    try ColonyExtension(addr).identifier() returns (bytes32 extensionId) {
+    try IColonyExtension(addr).identifier() returns (bytes32 extensionId) {
       // slither-disable-next-line unused-return
-      try ColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
+      try IColonyExtension(addr).getColony() returns (address claimedAssociatedColony) {
         return
           IColonyNetwork(colonyNetworkAddress).getExtensionInstallation(
             extensionId,

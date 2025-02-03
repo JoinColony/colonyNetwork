@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { ColonyDataTypes } from "../dataTypes/ColonyDataTypes.sol";
 import { IColonyNetwork } from "../interfaces/IColonyNetwork.sol";
-import { ColonyExtension } from "../extensions/ColonyExtension.sol";
+import { IColonyExtension } from "../interfaces/IColonyExtension.sol";
 import { ColonyNetworkStorage } from "./ColonyNetworkStorage.sol";
 import { MetaTxToken } from "./../metaTxToken/MetaTxToken.sol";
 import { TokenAuthority } from "./../common/TokenAuthority.sol";
@@ -68,7 +68,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     installations[_extensionId][msgSender()] = payable(address(extension));
 
     extension.setResolver(resolvers[_extensionId][_version]);
-    ColonyExtension(address(extension)).install(msgSender());
+    IColonyExtension(address(extension)).install(msgSender());
 
     emit ExtensionInstalled(_extensionId, msgSender(), _version);
   }
@@ -84,7 +84,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
     address payable extension = installations[_extensionId][msgSender()];
     require(
-      _newVersion == ColonyExtension(extension).version() + 1,
+      _newVersion == IColonyExtension(extension).version() + 1,
       "colony-network-extension-bad-increment"
     );
     require(
@@ -93,8 +93,8 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     );
 
     EtherRouter(extension).setResolver(resolvers[_extensionId][_newVersion]);
-    ColonyExtension(extension).finishUpgrade();
-    assert(ColonyExtension(extension).version() == _newVersion);
+    IColonyExtension(extension).finishUpgrade();
+    assert(IColonyExtension(extension).version() == _newVersion);
 
     emit ExtensionUpgraded(_extensionId, msgSender(), _newVersion);
   }
@@ -103,7 +103,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
     bytes32 _extensionId,
     bool _deprecated
   ) public stoppable calledByColony {
-    ColonyExtension(installations[_extensionId][msgSender()]).deprecate(_deprecated);
+    IColonyExtension(installations[_extensionId][msgSender()]).deprecate(_deprecated);
 
     emit ExtensionDeprecated(_extensionId, msgSender(), _deprecated);
   }
@@ -114,7 +114,7 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
       "colony-network-extension-not-installed"
     );
 
-    ColonyExtension extension = ColonyExtension(installations[_extensionId][msgSender()]);
+    IColonyExtension extension = IColonyExtension(installations[_extensionId][msgSender()]);
     installations[_extensionId][msgSender()] = payable(address(0x0));
     extension.uninstall();
 
@@ -143,14 +143,14 @@ contract ColonyNetworkExtensions is ColonyNetworkStorage {
 
   function getExtensionId(address _resolver) internal returns (bytes32) {
     address extension = Resolver(_resolver).lookup(IDENTIFIER_SIG);
-    return ColonyExtension(extension).identifier();
+    return IColonyExtension(extension).identifier();
   }
 
   bytes4 constant VERSION_SIG = bytes4(keccak256("version()"));
 
   function getResolverVersion(address _resolver) internal returns (uint256) {
     address extension = Resolver(_resolver).lookup(VERSION_SIG);
-    return ColonyExtension(extension).version();
+    return IColonyExtension(extension).version();
   }
 
   function deployTokenViaNetwork(

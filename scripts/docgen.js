@@ -98,10 +98,19 @@ const INTERFACES = [
     artifactFile: path.resolve(__dirname, "..", "artifacts", "contracts", "extensions", "TokenSupplier.sol", "TokenSupplier.json"),
   },
   {
-    contractFile: path.resolve(__dirname, "..", "contracts", "interfaces", "IVotingReputation.sol"),
+    contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "votingReputation", "IVotingReputation.sol"),
     templateFile: path.resolve(__dirname, "..", "docs", ".templates", "votingreputation.md"),
     outputFile: path.resolve(__dirname, "..", "docs", "interfaces", "extensions", "votingreputation.md"),
-    artifactFile: path.resolve(__dirname, "..", "artifacts", "contracts", "interfaces", "IVotingReputation.sol", "IVotingReputation.json"),
+    artifactFile: path.resolve(
+      __dirname,
+      "..",
+      "artifacts",
+      "contracts",
+      "extensions",
+      "votingReputation",
+      "IVotingReputation.sol",
+      "IVotingReputation.json",
+    ),
   },
   {
     contractFile: path.resolve(__dirname, "..", "contracts", "extensions", "Whitelist.sol"),
@@ -340,7 +349,7 @@ function astToSig(method) {
         return `${p.typeName.namePath} ${p.name}`;
       }
       if (p.typeName.type === "ArrayTypeName") {
-        return `${p.typeName.baseTypeName.name}[${p.typeName.length ? p.typeName.length.number : ""}]${
+        return `${p.typeName.baseTypeName.name || p.typeName.baseTypeName.namePath}[${p.typeName.length ? p.typeName.length.number : ""}]${
           p.storageLocation ? ` ${p.storageLocation}` : ""
         } ${p.name}`;
       }
