@@ -271,7 +271,7 @@ interface ColonyDataTypes is CommonDataTypes {
   /// @param slot Expenditure slot of the payout claimed
   /// @param token Token of the payout claim
   /// @param tokenPayout Amount of the payout claimed, after network fee was deducted
-  event PayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
+  event PayoutClaimed(address agent, uint256 id, uint256 slot, uint256 chainId, address token, uint256 tokenPayout);
 
   /// @notice Event logged when a colony requests a proxy colony deployment
   /// @param agent The address that is responsible for triggering this event

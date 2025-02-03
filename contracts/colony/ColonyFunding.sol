@@ -524,7 +524,7 @@ contract ColonyFunding is
       slot.recipient
     );
 
-    emit PayoutClaimed(msgSender(), _id, _slot, _token, payoutMinusFee);
+    emit PayoutClaimed(msgSender(), _id, _slot, _chainId, _token, payoutMinusFee);
   }
 
   // View

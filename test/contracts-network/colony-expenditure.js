@@ -14,6 +14,7 @@ const {
   getBlockTime,
   bn2bytes32,
   upgradeColonyOnceThenToLatest,
+  getChainId,
 } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
@@ -767,7 +768,10 @@ contract("Colony Expenditure", (accounts) => {
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       const tx = await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
-      await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditureId, SLOT0, token.address, WAD.divn(100).muln(99).subn(1)]);
+
+      const chainId = await getChainId();
+
+      await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditureId, SLOT0, chainId, token.address, WAD.divn(100).muln(99).subn(1)]);
       await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditure.fundingPotId, token.address, WAD.divn(100).muln(99).subn(1)]);
     });
 
