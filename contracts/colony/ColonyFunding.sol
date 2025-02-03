@@ -652,7 +652,14 @@ contract ColonyFunding is
       decrementNonRewardPotsTotal(_chainId, _token, _amount);
     }
 
-    emit ColonyFundsMovedBetweenFundingPots(msgSender(), _fromPot, _toPot, _amount, _token);
+    emit ColonyFundsMovedBetweenFundingPots(
+      msgSender(),
+      _fromPot,
+      _toPot,
+      _amount,
+      _chainId,
+      _token
+    );
   }
 
   function updatePayoutsWeCannotMakeAfterPotChange(
@@ -734,7 +741,7 @@ contract ColonyFunding is
       setExpenditureSlotPayout(_id, _slots[i], _chainId, _token, _amounts[i]);
       runningTotal = (runningTotal - currentPayout) + _amounts[i];
 
-      emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _token, _amounts[i]);
+      emit ExpenditurePayoutSet(msgSender(), _id, _slots[i], _chainId, _token, _amounts[i]);
     }
 
     // fundingPot.payouts[_token] = runningTotal;

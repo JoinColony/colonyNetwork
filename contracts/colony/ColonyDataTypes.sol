@@ -55,8 +55,9 @@ interface ColonyDataTypes is CommonDataTypes {
   /// @param fromPot The source funding pot
   /// @param toPot The targer funding pot
   /// @param amount The amount that was transferred
+  /// @param chainId The chain id of the token being transferred
   /// @param token The token address being transferred
-  event ColonyFundsMovedBetweenFundingPots(address agent, uint256 indexed fromPot, uint256 indexed toPot, uint256 amount, address token);
+  event ColonyFundsMovedBetweenFundingPots(address agent, uint256 indexed fromPot, uint256 indexed toPot, uint256 amount, uint256 chainId, address token);
 
   /// @notice Event logged when colony funds are moved to the top-level domain pot
   /// @param agent The address that is responsible for triggering this event
@@ -150,9 +151,10 @@ interface ColonyDataTypes is CommonDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param slot Expenditure slot of the payout being changed
+  /// @param chainId Chain id of the token being paid out
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
-  event ExpenditurePayoutSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, address indexed token, uint256 amount);
+  event ExpenditurePayoutSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, uint256 chainId, address indexed token, uint256 amount);
 
   /// @notice Event logged when an expenditure slot claim delay changes
   /// @param agent The address that is responsible for triggering this event
