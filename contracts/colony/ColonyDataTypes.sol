@@ -18,8 +18,10 @@
 
 pragma solidity 0.8.28;
 
+import { CommonDataTypes } from "./../common/CommonDataTypes.sol";
+
 // prettier-ignore
-interface ColonyDataTypes {
+interface ColonyDataTypes is CommonDataTypes {
   // Events
 
   /// @notice Event logged when Colony is initialised
@@ -53,8 +55,9 @@ interface ColonyDataTypes {
   /// @param fromPot The source funding pot
   /// @param toPot The targer funding pot
   /// @param amount The amount that was transferred
+  /// @param chainId The chain id of the token being transferred
   /// @param token The token address being transferred
-  event ColonyFundsMovedBetweenFundingPots(address agent, uint256 indexed fromPot, uint256 indexed toPot, uint256 amount, address token);
+  event ColonyFundsMovedBetweenFundingPots(address agent, uint256 indexed fromPot, uint256 indexed toPot, uint256 amount, uint256 chainId, address token);
 
   /// @notice Event logged when colony funds are moved to the top-level domain pot
   /// @param agent The address that is responsible for triggering this event
@@ -148,9 +151,10 @@ interface ColonyDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param expenditureId Id of the expenditure
   /// @param slot Expenditure slot of the payout being changed
+  /// @param chainId Chain id of the token being paid out
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
-  event ExpenditurePayoutSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, address indexed token, uint256 amount);
+  event ExpenditurePayoutSet(address agent, uint256 indexed expenditureId, uint256 indexed slot, uint256 chainId, address indexed token, uint256 amount);
 
   /// @notice Event logged when an expenditure slot claim delay changes
   /// @param agent The address that is responsible for triggering this event
@@ -269,7 +273,14 @@ interface ColonyDataTypes {
   /// @param slot Expenditure slot of the payout claimed
   /// @param token Token of the payout claim
   /// @param tokenPayout Amount of the payout claimed, after network fee was deducted
-  event PayoutClaimed(address agent, uint256 id, uint256 slot, address token, uint256 tokenPayout);
+  event PayoutClaimed(address agent, uint256 id, uint256 slot, uint256 chainId, address token, uint256 tokenPayout);
+
+  /// @notice Event logged when a colony requests a proxy colony deployment
+  /// @param agent The address that is responsible for triggering this event
+  /// @param destinationChainId The chain id of the destination chain
+  /// @param salt The salt used to generate the proxy address
+  /// @dev The address corresponding to the salt must be this colony's address
+  event ProxyColonyRequested(address agent, uint256 destinationChainId, bytes32 salt);
 
   // Structs
 
@@ -326,6 +337,12 @@ interface ColonyDataTypes {
     // Map any assigned payouts from this pot
     mapping (address => uint256) payouts;
     uint256 payoutsWeCannotMake;
+
+    // Chainid => tokenAddress => balance
+    mapping (uint256 => mapping (address => uint256)) chainBalances;
+
+    // Chainid => tokenAddress => payouts
+    mapping (uint256 => mapping (address => uint256)) chainPayouts;
   }
 
   struct Domain {
@@ -435,6 +452,8 @@ interface ColonyDataTypes {
   /// @param agent The address that is responsible for triggering this event
   /// @param paymentId Id of the payment
   event PaymentFinalized(address agent, uint256 indexed paymentId);
+
+  event ProxyColonyFundsClaimed(uint256 _chainId, address _token, uint256 _amount);
 
   // Deprecated Task and Payment structs
 

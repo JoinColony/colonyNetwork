@@ -16,11 +16,11 @@
 */
 
 import { IColony } from "./../colony/IColony.sol";
-import { ExtractCallData } from "./ExtractCallData.sol";
+import { ExtractCallData } from "./mixins/ExtractCallData.sol";
 import { GetActionDomainSkillId } from "./GetActionDomainSkillId.sol";
 import { ColonyDataTypes } from "./../colony/ColonyDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
-import { Bytes4Includes } from "./Bytes4Includes.sol";
+import { Bytes4Includes } from "./mixins/Bytes4Includes.sol";
 
 pragma solidity 0.8.28;
 pragma experimental ABIEncoderV2;

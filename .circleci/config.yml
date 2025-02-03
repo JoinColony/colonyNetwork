@@ -61,6 +61,10 @@ step_compile_mock_spy: &step_compile_mock_spy
         cd ./../.. && npx hardhat compile
         cp ./packages/wormhole-relayer/config.example.js ./packages/wormhole-relayer/config.js
         npx tsc
+step_generate_wormhole_types: &step_generate_wormhole_types
+    run:
+      name: "Generate wormhole API types for mock endpoint"
+      command: sudo apt install default-jre && cd ./helpers/wormholescanMock && pnpm i && npm run generate-types
 
 jobs:
   build-checks:
@@ -83,10 +87,10 @@ jobs:
       - run:
           name: "Checking contract storage layout hasn't had additions made"
           command: rm -rf .storage-layouts-normalized && npx hardhat storage-layout --update && npm run normalize:storageSlots && test -z "$(git status --porcelain)"
-      - <<: *step_compile_mock_spy
       - run:
           name: "Linting JavaScript"
           command: pnpm run eslint
+      - <<: *step_compile_mock_spy
       - run:
           name: "Linting Solidity"
           command: pnpm run solhint
@@ -320,6 +324,11 @@ jobs:
           environment:
             NODE_OPTIONS: --max-old-space-size=6144
       - run:
+          name: "Running chainid tests for Arbitrum One"
+          command: CHAIN_ID=42161 pnpm run test:contracts:chainid:coverage
+          environment:
+            NODE_OPTIONS: --max-old-space-size=6144
+      - run:
           name: "Running chainid tests with coverage for an unsupported network"
           command: CHAIN_ID=777 pnpm run test:contracts:chainid:coverage
           environment:
@@ -327,10 +336,10 @@ jobs:
       - persist_to_workspace:
           root: ./
           paths:
-            - coverage-chainid-1
-            - coverage-chainid-5
             - coverage-chainid-100
+            - coverage-chainid-42161
             - coverage-chainid-777
+            - coverage-chainid-1
   coverage-test-bridging:
     <<: *job_common
     resource_class: large
@@ -343,6 +352,7 @@ jobs:
       - <<: *step_setup_global_packages
       - <<: *step_install_lsof
       - <<: *step_compile_mock_spy
+      - <<: *step_generate_wormhole_types
       - run:
           name: "Installing the safe-contracts dependencies"
           command: cd ./lib/safe-contracts && pnpm i --ignore-scripts

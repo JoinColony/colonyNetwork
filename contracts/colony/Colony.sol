@@ -322,6 +322,40 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
 
     sig = bytes4(keccak256("editAllowedDomainReputationReceipt(uint256,uint256,bool)"));
     colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(
+      keccak256("setExpenditurePayout(uint256,uint256,uint256,uint256,uint256,address,uint256)")
+    );
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+
+    sig = bytes4(
+      keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)")
+    );
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
+
+    sig = bytes4(keccak256("makeProxyArbitraryTransaction(uint256,address,bytes)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(keccak256("multicallProxyNetwork(uint256,bytes[])"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
+
+    sig = bytes4(
+      keccak256("exchangeTokensViaLiFi(uint256,uint256,uint256,bytes,uint256,address,uint256)")
+    );
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
+
+    sig = bytes4(
+      keccak256(
+        "exchangeProxyHeldTokensViaLiFi(uint256,uint256,uint256,bytes,uint256,uint256,address,uint256)"
+      )
+    );
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Funding), address(this), sig, true);
+  }
+
+  function createProxyColony(uint256 _destinationChainId, bytes32 _salt) public stoppable {
+    IColonyNetwork(colonyNetworkAddress).createProxyColony(_destinationChainId, _salt);
+
+    emit ProxyColonyRequested(msgSender(), _destinationChainId, _salt);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

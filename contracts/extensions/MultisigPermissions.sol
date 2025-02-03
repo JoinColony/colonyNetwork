@@ -24,7 +24,7 @@ import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
 import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
-import { Bytes4Includes } from "./../common/Bytes4Includes.sol";
+import { Bytes4Includes } from "./../common/mixins/Bytes4Includes.sol";
 
 // ignore-file-swc-108
 
@@ -103,7 +103,7 @@ contract MultisigPermissions is ColonyExtensionMeta, ColonyDataTypes, GetActionS
   /// @notice Returns the version of the extension
   /// @return _version The extension's version number
   function version() public pure override returns (uint256 _version) {
-    return 2;
+    return 3;
   }
 
   /// @notice Configures the extension

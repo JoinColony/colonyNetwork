@@ -30,10 +30,9 @@ import { ICreateX } from "./../../lib/createx/src/ICreateX.sol";
 import { EtherRouterCreate3 } from "./../common/EtherRouterCreate3.sol";
 import { IColonyBridge } from "./../bridging/IColonyBridge.sol";
 import { DomainTokenReceiver } from "./../common/DomainTokenReceiver.sol";
+import { DomainReceiverManagement } from "./../common/DomainReceiverManagement.sol";
 
-contract ColonyNetworkDeployer is ColonyNetworkStorage {
-  address constant CREATEX_ADDRESS = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
-
+contract ColonyNetworkDeployer is ColonyNetworkStorage, DomainReceiverManagement {
   function createMetaColony(address _tokenAddress) public stoppable auth {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
 
@@ -132,6 +131,24 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     return (address(token), colonyAddress);
   }
 
+  function createProxyColony(
+    uint256 _destinationChainId,
+    bytes32 _salt
+  ) public stoppable calledByColony {
+    bytes32 guardedSalt = keccak256(abi.encode(bytes32(uint256(uint160(address(this)))), _salt));
+    require(
+      msgSender() == ICreateX(CREATEX_ADDRESS).computeCreate3Address(guardedSalt),
+      "colony-network-wrong-salt"
+    );
+
+    bytes memory payload = abi.encodeWithSignature("createProxyColonyFromBridge(bytes32)", _salt);
+    require(
+      IColonyBridge(colonyBridgeAddress).sendMessage(_destinationChainId, address(this), payload),
+      "colony-network-create-proxy-colony-failed"
+    );
+    emit ProxyColonyRequested(msgSender(), _destinationChainId, _salt);
+  }
+
   /**
    * @dev Generates pseudo-randomly a salt value using a diverse selection of block and
    * transaction properties.
@@ -182,75 +199,17 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     domainReceiverResolverAddress = _resolver;
   }
 
-  function getDomainTokenReceiverResolver() public view returns (address) {
+  function getDomainTokenReceiverResolver() public view override stoppable returns (address) {
     return domainReceiverResolverAddress;
   }
 
-  function idempotentDeployDomainTokenReceiver(
-    uint256 _domainId
-  ) public stoppable calledByColony returns (address domainTokenReceiverAddress) {
-    // Calculate the address the domain should be receiving funds at
-    domainTokenReceiverAddress = getDomainTokenReceiverAddress(msgSender(), _domainId);
-
-    if (!isContract(domainTokenReceiverAddress)) {
-      // Then deploy the contract
-      bytes32 salt = getDomainTokenReceiverDeploySalt(msgSender(), _domainId);
-      address deployedAddress = deployEtherRouterViaCreateX(salt);
-      require(
-        deployedAddress == domainTokenReceiverAddress,
-        "colony-network-domain-receiver-deploy-wrong-address"
-      );
-
-      // Set up the deployed contract
-      EtherRouter(payable(domainTokenReceiverAddress)).setResolver(domainReceiverResolverAddress);
-      DomainTokenReceiver(domainTokenReceiverAddress).setColony(msgSender());
-    } else {
-      // Contract is deployed, check it's got the right resolver
-      try EtherRouter(payable(domainTokenReceiverAddress)).resolver() returns (Resolver resolver) {
-        if (address(resolver) != domainReceiverResolverAddress) {
-          EtherRouter(payable(domainTokenReceiverAddress)).setResolver(
-            domainReceiverResolverAddress
-          );
-        }
-      } catch {
-        revert("colony-network-domain-receiver-not-etherrouter");
-      }
-    }
-
-    return domainTokenReceiverAddress;
+  function msgSenderIsColony() internal view override returns (bool) {
+    require(_isColony[msgSender()], "colony-caller-must-be-colony");
+    return msgSender() == msg.sender;
   }
 
-  function getDomainTokenReceiverAddress(
-    address _colony,
-    uint256 _domainId
-  ) public view returns (address) {
-    bytes32 salt = getDomainTokenReceiverDeploySalt(_colony, _domainId);
-
-    // To get the correct address, we have to mimic the _guard functionality of CreateX
-    bytes32 guardedSalt = keccak256(abi.encode(bytes32(uint256(uint160(address(this)))), salt));
-    return ICreateX(CREATEX_ADDRESS).computeCreate3Address(guardedSalt);
-  }
-
-  function getDomainTokenReceiverDeploySalt(
-    address _colony,
-    uint256 _domainId
-  ) internal view returns (bytes32) {
-    // Calculate the address the domain should be receiving funds at
-    // We only want Colony Networks to be able to deploy to the same address,
-    // so we use the permissioned deploy protection feature of CreateX, and set
-    // the first 160 bits of the salt to the address of this contract.
-
-    bytes32 salt = bytes32(uint256(uint160(address(this)))) << 96;
-
-    bytes32 additionalSalt = keccak256(abi.encode(_colony, _domainId));
-    // We use the first 88 bits of the additional salt, which is a function of the colony and domainId,
-    // to add entropy in the last 88 bits of the salt
-    salt = salt | (additionalSalt >> 168);
-    // We have set the first 160 bits, and the last 88 bits of the salt
-    // Note that this leaves byte 21 of the salt as zero (0x00), which disables cross-chain
-    // redeployment protection in createX.
-    // This is intentional, as we want to allow the same receiver to be deployed on different chains
-    return salt;
+  function isStopped() internal view override returns (bool) {
+    return recoveryMode;
   }
 
   function deployColony(address _tokenAddress, uint256 _version) internal returns (address) {
@@ -284,9 +243,6 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // Initialise the domain tree with defaults by just incrementing the skillCount
     skillCount += 1;
 
-    // If we're not mining chain, then bridge the skill
-    IColonyNetwork(address(this)).bridgeSkillIfNotMiningChain(skillCount);
-
     colony.initialiseColony(address(this), _tokenAddress);
 
     emit ColonyAdded(colonyCount, address(etherRouter), _tokenAddress);
@@ -309,27 +265,5 @@ contract ColonyNetworkDeployer is ColonyNetworkStorage {
     // Colony will not have owner
     DSAuth dsauth = DSAuth(_colonyAddress);
     dsauth.setOwner(address(0x0));
-  }
-
-  function deployEtherRouterViaCreateX(bytes32 _salt) internal returns (address) {
-    EtherRouter etherRouter = EtherRouter(
-      payable(
-        ICreateX(CREATEX_ADDRESS).deployCreate3AndInit(
-          _salt,
-          type(EtherRouterCreate3).creationCode,
-          abi.encodeWithSignature("setOwner(address)", (address(this))),
-          ICreateX.Values(0, 0)
-        )
-      )
-    );
-    return address(etherRouter);
-  }
-
-  function isContract(address addr) internal view returns (bool) {
-    uint256 size;
-    assembly {
-      size := extcodesize(addr)
-    }
-    return size > 0;
   }
 }

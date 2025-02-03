@@ -1,0 +1,31 @@
+{
+  "name": "wormholescan-mock",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate-types": "openapi-generator-cli generate --generator-key typescript-fetch",
+    "start": "node dist/index.js",
+    "dev": "nodemon src/index.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@openapitools/openapi-generator-cli": "^2.15.3",
+    "dotenv": "^8.0.0",
+    "ethers": "^5.7.2",
+    "ethers-types": "^3.17.3",
+    "express": "^4.21.1",
+    "openapi-generator": "^0.1.39",
+    "swagger-typescript-codegen": "^3.2.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "concurrently": "^9.1.0",
+    "nodemon": "^3.1.7",
+    "ts-node": "^9.1.1",
+    "typescript": "^5.7.2"
+  },
+  "description": ""
+}

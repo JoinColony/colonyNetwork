@@ -37,3 +37,4 @@ coverage-extensions/
 .pnpm-store
 .storage-layouts
 scripts/mockGuardianSpy.js
+helpers/wormholescanMock/src/encodeMockVAA.js

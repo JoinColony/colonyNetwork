@@ -244,6 +244,9 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
   let receipt;
   try {
     receipt = await promise;
+    if (receipt.status === 0) {
+      throw receipt;
+    }
   } catch (err) {
     const txid = err.transactionHash;
 
@@ -269,7 +272,12 @@ exports.checkErrorRevertEthers = async function checkErrorRevertEthers(promise, 
         },
         receipt.blockNumber,
       );
-      reason = web3.eth.abi.decodeParameter("string", callResult.slice(10));
+      console.log("callResult", callResult);
+      if (typeof errorMessage === "number") {
+        reason = parseInt(callResult.slice(10), 16);
+      } else {
+        reason = web3.eth.abi.decodeParameter("string", callResult.slice(10));
+      }
     } catch (err2) {
       reason = web3.eth.abi.decodeParameter("string", err2.error.error.data.slice(10));
     }

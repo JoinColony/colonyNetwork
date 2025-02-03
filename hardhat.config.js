@@ -81,6 +81,12 @@ task("test", "Run tests").setAction(async () => {
   }
 });
 
+task("ensure-createx-deployed", "Ensure CreateX is deployed").setAction(async () => {
+  const { idempotentDeployCreateX } = require("./helpers/test-helper"); // eslint-disable-line global-require
+
+  await idempotentDeployCreateX();
+});
+
 task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
   const ganacheAccounts = { addresses: {}, private_keys: {} };
   // eslint-disable-next-line no-restricted-syntax
@@ -102,6 +108,12 @@ task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(asyn
   await deployNetwork();
 });
 
+task("deploy-proxy-network", "Deploy Proxy Colony Network").setAction(async () => {
+  const deployProxyNetwork = require("./test/deploy-proxy-network-fixture"); // eslint-disable-line global-require
+
+  await deployProxyNetwork();
+});
+
 module.exports = {
   defaultNetwork: "hardhat",
   solidity: {
@@ -109,6 +121,7 @@ module.exports = {
       {
         version: "0.8.28",
         settings: {
+          viaIR: true,
           optimizer: {
             enabled: true,
             runs: 200,
@@ -199,6 +212,11 @@ module.exports = {
       ],
       chains: {
         [FORKED_XDAI_CHAINID]: {
+          hardforkHistory: {
+            cancun: 0,
+          },
+        },
+        265669101: {
           hardforkHistory: {
             cancun: 0,
           },

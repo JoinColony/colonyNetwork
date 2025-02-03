@@ -61,6 +61,17 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     bytes memory _action
   ) external returns (bool success);
 
+  /// @notice Execute arbitrary transactions on behalf of the Colony via a proxy colony on another chain
+  /// @dev If proxy colony not already deployed, will do nothing
+  /// @param chainId The chainId of the proxy colony
+  /// @param _destination Address to be targeted
+  /// @param _action Array of Bytes arrays encoding the function call
+  function makeProxyArbitraryTransaction(
+    uint256 chainId,
+    address _destination,
+    bytes memory _action
+  ) external;
+
   /// @notice Execute arbitrary transactions on behalf of the Colony in series
   /// @param _targets Array of addressed to be targeted
   /// @param _actions Array of Bytes arrays encoding the function calls and arguments
@@ -556,6 +567,21 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     uint256 _amount
   ) external;
 
+  /// @notice Set the token payout on an expenditure slot. Can only be called by expenditure owner.
+  /// @dev Can only be called while expenditure is in draft state.
+  /// @param _id Id of the expenditure
+  /// @param _slot Number of the slot
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function setExpenditurePayout(
+    uint256 _id,
+    uint256 _slot,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  ) external;
+
   /// @notice Set the token payouts in given expenditure slots. Can only be called by expenditure owner.
   /// @dev Can only be called while expenditure is in draft state.
   /// @param _id Id of the expenditure
@@ -570,6 +596,7 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   ) external;
 
   /// @notice Set the token payout in a given expenditure slot. Can only be called by an Arbitration user.
+  /// @notice This function is deprecated and will be removed in a future version
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
   /// @param _id Id of the expenditure
@@ -581,6 +608,24 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     uint256 _childSkillIndex,
     uint256 _id,
     uint256 _slot,
+    address _token,
+    uint256 _amount
+  ) external;
+
+  /// @notice Set the token payout in a given expenditure slot. Can only be called by an Arbitration user.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _id Id of the expenditure
+  /// @param _slot The slot to set the payout
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function setExpenditurePayout(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _id,
+    uint256 _slot,
+    uint256 _chainId,
     address _token,
     uint256 _amount
   ) external;
@@ -649,10 +694,23 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   ) external;
 
   /// @notice Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
+  /// @notice This function is deprecated and will be removed in a future version
   /// @param _id Expenditure identifier
   /// @param _slot Number of the slot
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimExpenditurePayout(uint256 _id, uint256 _slot, address _token) external;
+
+  /// @notice Claim the payout for an expenditure slot. Here the network receives a fee from each payout.
+  /// @param _id Expenditure identifier
+  /// @param _slot Number of the slot
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  function claimExpenditurePayout(
+    uint256 _id,
+    uint256 _slot,
+    uint256 _chainId,
+    address _token
+  ) external;
 
   /// @notice Get the number of expenditures in the colony.
   /// @return count The expenditure count
@@ -774,6 +832,18 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
 
   /// @notice Get the `_token` balance of pot with id `_potId`.
   /// @param _potId Id of the funding pot
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @return balance Funding pot supply balance
+  function getFundingPotBalance(
+    uint256 _potId,
+    uint256 _chainId,
+    address _token
+  ) external view returns (uint256 balance);
+
+  /// @notice Get the `_token` balance of pot with id `_potId`.
+  /// @notice Deprecated - use version with explicit chainId
+  /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return balance Funding pot supply balance
   function getFundingPotBalance(
@@ -813,6 +883,31 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     address _token
   ) external;
 
+  /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The child index in _permissionDomainId where I will be taking this action
+  /// @param _domainId The domain where I am taking this action, pointed to by _permissionDomainId and _childSkillIndex
+  /// @param _fromChildSkillIndex In the array of child skills for the skill associated with the domain pointed to by _permissionDomainId + _childSkillIndex,
+  ///         the index of the skill associated with the domain that contains _fromPot
+  /// @param _toChildSkillIndex The same, but for the _toPot which the funds are being moved to
+  /// @param _fromPot Funding pot id providing the funds
+  /// @param _toPot Funding pot id receiving the funds
+  /// @param _amount Amount of funds
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    uint256 _chainId,
+    address _token
+  ) external;
+
   /// @notice @deprecated
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
@@ -832,6 +927,13 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
     address _token
   ) external;
 
+  /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
+  /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
+  /// @param _chainId Chain id of the chain where the funds need to be claimed
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  function claimColonyFunds(uint256 _chainId, address _token) external;
+
+  /// @notice Deprecated
   /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
   /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken.
   /// @param _token Address of the token, `0x0` value indicates Ether
@@ -858,10 +960,59 @@ interface IColony is IDSAuth, ColonyDataTypes, IRecovery, IBasicMetaTransaction,
   /// @return uint256 amount Amount of the token that the domain can receive
   function getAllowedDomainReputationReceipt(uint256 _domainId) external view returns (uint256);
 
+  /// @notice Exchange funds between two tokens, potentially between chains
+  /// The tokens being swapped are held by a proxy contract
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The child index in `_permissionDomainId` where we can find `_domainId`
+  /// @param _domainId Id of the domain
+  /// @param _txdata Transaction data for the exchange
+  /// @param _value Value of the transaction
+  /// @param _chainId The chainId of the token
+  /// @param _token Address of the token. If the native token is being swapped, can be anything and _amount should be 0.
+  /// @param _amount Amount of tokens to exchange
+  function exchangeTokensViaLiFi(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    uint256 _domainId,
+    bytes memory _txdata,
+    uint256 _value,
+    uint256 _chainId,
+    address _token,
+    uint256 _amount
+  ) external;
+
+  /// @notice Used by the bridge to indicate that funds have been claimed on another chain.
+  /// @param _chainId Chain id of the chain where the funds were claimed
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _domainId Id of the domain where the funds were claimed
+  /// @param _amount Amount of funds claimed
+  function recordClaimedFundsFromBridge(
+    uint256 _chainId,
+    address _token,
+    uint256 _domainId,
+    uint256 _amount
+  ) external;
+
+  /// @notice Create a proxy colony on another chain
+  /// @param _destinationChainId Chain id of the destination chain
+  /// @param _salt The colony creation salt that was used on creation of the colony
+  function createProxyColony(uint256 _destinationChainId, bytes32 _salt) external;
+
+  /// @notice Deprecated. Use the version with explicit _chainId
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) external view returns (uint256 amount);
+
+  /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards.
+  /// @param _chainId Chain id to query the total for
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
+  /// @dev NB This only returns totals that the colony knows about - unclaimed funds will not be included
+  function getNonRewardPotsTotal(
+    uint256 _chainId,
+    address _token
+  ) external view returns (uint256 amount);
 
   /// @notice Allow the _approvee to obligate some amount of tokens as a stake.
   /// @param _approvee Address of the account we are willing to let obligate us.

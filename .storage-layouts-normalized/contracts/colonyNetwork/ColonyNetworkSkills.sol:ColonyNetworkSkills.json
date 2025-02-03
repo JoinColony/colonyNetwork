@@ -305,11 +305,11 @@
           "label": "uint256",
           "numberOfBytes": "32"
         },
-        "label": "mapping(uint256 => struct ColonyNetworkDataTypes.Skill)",
+        "label": "mapping(uint256 => struct CommonDataTypes.Skill)",
         "numberOfBytes": "32",
         "value": {
           "encoding": "inplace",
-          "label": "struct ColonyNetworkDataTypes.Skill",
+          "label": "struct CommonDataTypes.Skill",
           "members": [
             {
               "contract": "contracts/colonyNetwork/ColonyNetworkSkills.sol:ColonyNetworkSkills",

@@ -14,6 +14,7 @@ const {
   getBlockTime,
   bn2bytes32,
   upgradeColonyOnceThenToLatest,
+  getChainId,
 } = require("../../helpers/test-helper");
 const { fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
@@ -234,6 +235,10 @@ contract("Colony Expenditure", (accounts) => {
 
     it("should allow arbitrators to update the metadata", async () => {
       const setExpenditureMetadata = colony.methods["setExpenditureMetadata(uint256,uint256,uint256,string)"];
+
+      // Try with a bad proof
+      await checkErrorRevert(setExpenditureMetadata(1, 0, expenditureId, IPFS_HASH, { from: ARBITRATOR }), "ds-auth-invalid-domain-inheritance");
+
       const tx = await setExpenditureMetadata(1, UINT256_MAX, expenditureId, IPFS_HASH, { from: ARBITRATOR });
 
       await expectEvent(tx, "ExpenditureMetadataSet", [ARBITRATOR, expenditureId, IPFS_HASH]);
@@ -642,6 +647,15 @@ contract("Colony Expenditure", (accounts) => {
       await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-draft-or-locked");
     });
 
+    it("should not allow expenditures to be finalized if they are not fully funded", async () => {
+      await colony.setExpenditurePayout(expenditureId, SLOT0, token.address, WAD, { from: ADMIN });
+      await checkErrorRevert(colony.finalizeExpenditure(expenditureId, { from: ADMIN }), "colony-expenditure-not-funded");
+      await checkErrorRevert(
+        colony.finalizeExpenditureViaArbitration(1, UINT256_MAX, expenditureId, { from: ARBITRATOR }),
+        "colony-expenditure-not-funded",
+      );
+    });
+
     it("should allow owners to finalize expenditures from locked state", async () => {
       await colony.lockExpenditure(expenditureId, { from: ADMIN });
 
@@ -754,7 +768,10 @@ contract("Colony Expenditure", (accounts) => {
       );
       await colony.finalizeExpenditure(expenditureId, { from: ADMIN });
       const tx = await colony.claimExpenditurePayout(expenditureId, SLOT0, token.address);
-      await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditureId, SLOT0, token.address, WAD.divn(100).muln(99).subn(1)]);
+
+      const chainId = await getChainId();
+
+      await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditureId, SLOT0, chainId, token.address, WAD.divn(100).muln(99).subn(1)]);
       await expectEvent(tx, "PayoutClaimed", [accounts[0], expenditure.fundingPotId, token.address, WAD.divn(100).muln(99).subn(1)]);
     });
 

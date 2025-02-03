@@ -16,6 +16,7 @@ const {
   SLOT2,
   ROOT_ROLE,
   ADDRESS_ZERO,
+  LIFI_ADDRESS,
 } = require("../../helpers/constants");
 
 const {
@@ -25,7 +26,16 @@ const {
   setupFundedExpenditure,
   setupRandomToken,
 } = require("../../helpers/test-data-generator");
-const { getTokenArgs, checkErrorRevert, web3GetBalance, removeSubdomainLimit, expectEvent, rolesToBytes32 } = require("../../helpers/test-helper");
+const {
+  getTokenArgs,
+  checkErrorRevert,
+  web3GetBalance,
+  removeSubdomainLimit,
+  expectEvent,
+  rolesToBytes32,
+  getChainId,
+  encodeTxData,
+} = require("../../helpers/test-helper");
 const { setupDomainTokenReceiverResolver } = require("../../helpers/upgradable-contracts");
 
 const { expect } = chai;
@@ -38,6 +48,8 @@ const Token = artifacts.require("Token");
 const Resolver = artifacts.require("Resolver");
 const DomainTokenReceiver = artifacts.require("DomainTokenReceiver");
 const TokenAuthority = artifacts.require("contracts/common/TokenAuthority.sol:TokenAuthority");
+const ToggleableToken = artifacts.require("ToggleableToken");
+const LiFiFacetProxyMock = artifacts.require("LiFiFacetProxyMock");
 
 contract("Colony Funding", (accounts) => {
   const MANAGER = accounts[0];
@@ -48,6 +60,7 @@ contract("Colony Funding", (accounts) => {
   let otherToken;
   let colonyNetwork;
   let metaColony;
+  let chainId;
 
   before(async () => {
     const cnAddress = (await EtherRouter.deployed()).address;
@@ -56,6 +69,8 @@ contract("Colony Funding", (accounts) => {
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
+
+    chainId = await getChainId();
   });
 
   beforeEach(async () => {
@@ -861,6 +876,201 @@ contract("Colony Funding", (accounts) => {
       const resolverAfter = await receiverAsEtherRouter.resolver();
       expect(resolverAfter).to.not.equal(resolver);
       expect(resolverAfter).to.equal(newResolver.address);
+    });
+
+    it("should not be able to claim funds for a domain that does not exist", async () => {
+      await checkErrorRevert(colony.claimDomainFunds(ethers.constants.AddressZero, 2), "colony-funding-domain-does-not-exist");
+    });
+
+    it("only a colony can call idempotentDeployDomainTokenReceiver on Network", async () => {
+      await checkErrorRevert(colonyNetwork.idempotentDeployDomainTokenReceiver(2), "colony-caller-must-be-colony");
+    });
+
+    it("If transfer fails from receiver, then the funds are not claimed", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      const toggleableToken = await ToggleableToken.new(200);
+      await toggleableToken.mint(receiverAddress, 100);
+
+      await toggleableToken.toggleLock();
+
+      // Try to claim the funds
+      await checkErrorRevert(colony.claimDomainFunds(toggleableToken.address, 2), "colony-funding-transfer-failed");
+    });
+
+    it("If the receiver resolver is updated, then the resolver is updated at the next claim", async () => {
+      await colony.addDomain(1, UINT256_MAX, 1);
+      const receiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+      // Send 100 wei
+      await otherToken.mint(receiverAddress, 100);
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const receiverAsEtherRouter = await EtherRouter.at(receiverAddress);
+      const resolver = await receiverAsEtherRouter.resolver();
+
+      // Update the resolver
+      const newResolver = await Resolver.new();
+      const domainTokenReceiver = await DomainTokenReceiver.new();
+
+      await setupDomainTokenReceiverResolver(colonyNetwork, domainTokenReceiver, newResolver);
+
+      await otherToken.mint(receiverAddress, 50);
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      const resolverAfter = await receiverAsEtherRouter.resolver();
+      expect(resolverAfter).to.not.equal(resolver);
+      expect(resolverAfter).to.equal(newResolver.address);
+    });
+  });
+
+  describe("when exchanging tokens via LiFi", () => {
+    let domain1;
+    let domain2;
+    let domain2ReceiverAddress;
+    let lifi;
+    let lifiEthers;
+    beforeEach(async () => {
+      await token.mint(colony.address, 200);
+      await colony.claimColonyFunds(token.address);
+      await colony.addDomain(1, UINT256_MAX, 1);
+
+      domain1 = await colony.getDomain(1);
+      domain2 = await colony.getDomain(2);
+
+      // Move 50 tokens from the colony to domain 2
+      await colony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, 0, domain1.fundingPotId, domain2.fundingPotId, 50, chainId, token.address);
+
+      domain2ReceiverAddress = await colonyNetwork.getDomainTokenReceiverAddress(colony.address, 2);
+
+      lifi = await LiFiFacetProxyMock.at(LIFI_ADDRESS);
+      const ethersProvider = new ethers.providers.Web3Provider(web3.currentProvider);
+      lifiEthers = new ethers.Contract(LIFI_ADDRESS, LiFiFacetProxyMock.abi, ethersProvider);
+    });
+
+    it("can exchange tokens in a domain via LiFi", async () => {
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        50,
+      ).encodeABI();
+
+      const tx = await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50);
+      const swapEvent = tx.receipt.rawLogs
+        .filter((e) => e.address === LIFI_ADDRESS)
+        .map((e) => lifiEthers.interface.parseLog(e))
+        .filter((e) => e.name === "SwapTokens")[0];
+      expect(swapEvent).to.not.be.undefined;
+
+      // Okay, so we saw the SwapTokens event. Let's do vaguely what it said for the test,
+      // but in practise this would be the responsibility of whatever entity we've paid to do it
+      // through LiFi.
+      await otherToken.mint(swapEvent.args._toAddress, swapEvent.args._amount); // Implicit 1:1 exchange rate
+
+      // Now claim the tokens
+      await colony.claimDomainFunds(otherToken.address, 2);
+
+      // See if bookkeeping was tracked correctly
+      const domain = await colony.getDomain(2);
+      const balance = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+      expect(balance).to.eq.BN(50);
+    });
+
+    it("should not mess up approval bookkeeping when exchanging tokens via LiFi", async () => {
+      const action1 = await encodeTxData(token, "approve", [LIFI_ADDRESS, 80]);
+      await colony.makeArbitraryTransaction(token.address, action1);
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        40,
+      ).encodeABI();
+
+      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50);
+      await otherToken.mint(domain2ReceiverAddress, 50); // Better than 1:1 exchange rate
+
+      const approval = await colony.getTokenApproval(token.address, LIFI_ADDRESS);
+      expect(approval).to.be.eq.BN(80);
+      const allApprovals = await colony.getTotalTokenApproval(token.address);
+      expect(allApprovals).to.be.eq.BN(80);
+      const tokenApproval = await token.allowance(colony.address, LIFI_ADDRESS);
+      expect(tokenApproval).to.be.eq.BN(80);
+    });
+
+    it("'lying' calls of exchangeTokensViaLiFi trying to spend other tokens are caught", async () => {
+      await fundColonyWithTokens(colony, otherToken, 100);
+      await colony.claimColonyFunds(otherToken.address);
+
+      const action1 = await encodeTxData(otherToken, "approve", [LIFI_ADDRESS, 80]);
+      await colony.makeArbitraryTransaction(otherToken.address, action1);
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        otherToken.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        40,
+      ).encodeABI();
+      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50), "colony-unexpected-exchange");
+    });
+
+    it("'lying' calls of exchangeTokensViaLiFi trying to spend already-approved tokens are caught", async () => {
+      const action1 = await encodeTxData(token, "approve", [LIFI_ADDRESS, 80]);
+      await colony.makeArbitraryTransaction(token.address, action1);
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        60,
+      ).encodeABI();
+      await checkErrorRevert(
+        colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50),
+        "colony-more-than-intended-allowance-used",
+      );
+    });
+
+    it("If LiFi transaction was cheaper than expected, shouldn't leave extra allowance behind", async () => {
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        40,
+      ).encodeABI();
+
+      await colony.exchangeTokensViaLiFi(1, 0, 2, txdata, 0, chainId, token.address, 50);
+
+      const approval = await token.allowance(colony.address, LIFI_ADDRESS);
+      expect(approval).to.be.eq.BN(0);
+    });
+
+    it("shouldn't use tokens that are already approved if swapping in root", async () => {
+      const action1 = await encodeTxData(token, "approve", [ADDRESS_ZERO, 140]);
+      await colony.makeArbitraryTransaction(token.address, action1);
+
+      // 10 remain unapproved in the root domain
+      // Try to spend 50 with LiFi
+
+      const txdata = lifi.contract.methods["swapTokensMock(uint256,address,uint256,address,address,uint256)"](
+        chainId,
+        token.address,
+        chainId,
+        otherToken.address,
+        domain2ReceiverAddress,
+        50,
+      ).encodeABI();
+      await checkErrorRevert(colony.exchangeTokensViaLiFi(1, UINT256_MAX, 1, txdata, 0, chainId, token.address, 50), "colony-insufficient-funds");
     });
   });
 });

@@ -24,7 +24,6 @@ import { CommonStorage } from "./../common/CommonStorage.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
 import { DomainRoles } from "./../common/DomainRoles.sol";
 import { IColonyNetwork } from "./../colonyNetwork/IColonyNetwork.sol";
-import { ColonyNetworkDataTypes } from "./../colonyNetwork/ColonyNetworkDataTypes.sol";
 import { ColonyExtension } from "./../extensions/ColonyExtension.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
 import { ColonyAuthority } from "./ColonyAuthority.sol";
@@ -33,7 +32,7 @@ import { ColonyDataTypes } from "./ColonyDataTypes.sol";
 // ignore-file-swc-131
 // ignore-file-swc-108
 
-contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, CommonStorage {
+contract ColonyStorage is ColonyDataTypes, DSMath, CommonStorage {
   uint256 constant COLONY_NETWORK_SLOT = 6;
   uint256 constant ROOT_LOCAL_SKILL_SLOT = 36;
 
@@ -116,6 +115,12 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   // Mapping of domainId to allowed amount of reputation received tokens could generate if paid out
   mapping(uint256 => uint256) domainReputationApproval; // Storage slot 39
+
+  // Expenditure Id > Slot Id > Chain Id > Token Address > Amount
+  mapping(uint256 => mapping(uint256 => mapping(uint256 => mapping(address => uint256)))) expenditureSlotChainPayouts; // Storage slot 40
+
+  // Chain Id > Token Address > Amount
+  mapping(uint256 => mapping(address => uint256)) chainNonRewardPotsTotals; // Storage slot 41
 
   // Constants
 
@@ -251,7 +256,10 @@ contract ColonyStorage is ColonyDataTypes, ColonyNetworkDataTypes, DSMath, Commo
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return
-      (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
+      // TODO: Is there a reason we didn't have (src==address(this)?)
+      (src == owner) ||
+      (src == address(this)) ||
+      DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
   }
 
   function isContract(address addr) internal returns (bool) {
