@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ERC20Extended } from "./../common/ERC20Extended.sol";
-import { ColonyExtension } from "./ColonyExtension.sol";
+import { ColonyExtension } from "./../common/ColonyExtension.sol";
 import { IColony } from "./../interfaces/IColony.sol";
 import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 contract TokenSupplier is ColonyExtension, BasicMetaTransaction {

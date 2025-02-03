@@ -23,7 +23,7 @@ import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 import { ColonyRoles } from "./../colony/ColonyRoles.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { ColonyNetworkDataTypes } from "./../dataTypes/ColonyNetworkDataTypes.sol";
-import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
+import { ColonyExtensionMeta } from "./../common/ColonyExtensionMeta.sol";
 import { GetActionSummary, ActionSummary } from "./../common/GetActionSummary.sol";
 import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 import { Bytes4Includes } from "./../common/Bytes4Includes.sol";

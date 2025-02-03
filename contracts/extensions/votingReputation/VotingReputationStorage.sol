@@ -26,7 +26,7 @@ import { IBasicMetaTransaction } from "./../../interfaces/IBasicMetaTransaction.
 import { BasicMetaTransaction } from "./../../common/BasicMetaTransaction.sol";
 import { ActionSummary, GetActionSummary } from "./../../common/GetActionSummary.sol";
 import { ITokenLocking } from "./../../interfaces/ITokenLocking.sol";
-import { ColonyExtension } from "./../ColonyExtension.sol";
+import { ColonyExtension } from "./../../common/ColonyExtension.sol";
 import { VotingReputationDataTypes } from "./VotingReputationDataTypes.sol";
 
 contract VotingReputationStorage is

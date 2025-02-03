@@ -24,7 +24,7 @@ import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 import { ITokenLocking } from "./../interfaces/ITokenLocking.sol";
-import { ColonyExtension } from "./ColonyExtension.sol";
+import { ColonyExtension } from "./../common/ColonyExtension.sol";
 
 contract FundingQueue is ColonyExtension, BasicMetaTransaction {
   // Events

@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { ColonyExtension } from "./ColonyExtension.sol";
+import { ColonyExtension } from "./../common/ColonyExtension.sol";
 import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
 

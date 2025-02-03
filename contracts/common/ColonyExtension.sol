@@ -21,13 +21,13 @@ pragma experimental ABIEncoderV2;
 
 import { DSMath } from "./../../lib/dappsys/math.sol";
 import { DSAuth } from "./../../lib/dappsys/auth.sol";
-import { EtherRouter } from "./../common/EtherRouter.sol";
-import { Multicall } from "./../common/Multicall.sol";
+import { EtherRouter } from "./EtherRouter.sol";
+import { Multicall } from "./Multicall.sol";
 import { IColony } from "./../interfaces/IColony.sol";
 import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
 import { PatriciaTreeProofs } from "./../patriciaTree/PatriciaTreeProofs.sol";
-import { MultiChain } from "./../common/MultiChain.sol";
+import { MultiChain } from "./MultiChain.sol";
 import { IColonyExtension } from "./../interfaces/IColonyExtension.sol";
 
 // This is a 'dummy' import to ensure that functions implemented from DSAuth get commented

@@ -19,7 +19,7 @@
 pragma solidity 0.8.27;
 pragma experimental ABIEncoderV2;
 
-import { ColonyExtensionMeta } from "./../../extensions/ColonyExtensionMeta.sol";
+import { ColonyExtensionMeta } from "./../../common/ColonyExtensionMeta.sol";
 
 contract TestExtension1 is ColonyExtensionMeta {
   function identifier() public pure override returns (bytes32) {

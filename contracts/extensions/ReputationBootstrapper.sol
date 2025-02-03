@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IReputationMiningCycle } from "./../interfaces/IReputationMiningCycle.sol";
 import { IColonyNetwork } from "./../interfaces/IColonyNetwork.sol";
-import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
+import { ColonyExtensionMeta } from "./../common/ColonyExtensionMeta.sol";
 import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 
 // ignore-file-swc-108

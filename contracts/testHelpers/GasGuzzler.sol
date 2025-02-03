@@ -18,7 +18,7 @@
 
 pragma solidity 0.8.27;
 
-import { ColonyExtensionMeta } from "./../extensions/ColonyExtensionMeta.sol";
+import { ColonyExtensionMeta } from "./../common/ColonyExtensionMeta.sol";
 import { IColony } from "../interfaces/IColony.sol";
 
 contract GasGuzzler is ColonyExtensionMeta {

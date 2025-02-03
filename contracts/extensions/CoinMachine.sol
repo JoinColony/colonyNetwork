@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { ERC20 } from "./../../lib/dappsys/erc20.sol";
 import { IBasicMetaTransaction } from "./../interfaces/IBasicMetaTransaction.sol";
 import { BasicMetaTransaction } from "./../common/BasicMetaTransaction.sol";
-import { ColonyExtension } from "./ColonyExtension.sol";
+import { ColonyExtension } from "./../common/ColonyExtension.sol";
 import { Whitelist } from "./Whitelist.sol";
 import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
 

@@ -22,7 +22,7 @@ pragma experimental ABIEncoderV2;
 import { IColony } from "./../interfaces/IColony.sol";
 import { ColonyDataTypes } from "./../dataTypes/ColonyDataTypes.sol";
 import { CommonDataTypes } from "./../dataTypes/CommonDataTypes.sol";
-import { ColonyExtensionMeta } from "./ColonyExtensionMeta.sol";
+import { ColonyExtensionMeta } from "./../common/ColonyExtensionMeta.sol";
 
 // ignore-file-swc-108
 
