@@ -11,6 +11,7 @@ class MaliciousReputationMinerWrongUID extends ReputationMinerTestWrapper {
   }
 
   getValueAsBytes(reputation, _uid, index) {
+    console.log('getValueAsBytes', reputation, _uid, index);
     let uid;
     if (index && index.toString() === this.entryToFalsify) {
       uid = new BN(_uid.toString()).add(new BN(this.amountToFalsify));

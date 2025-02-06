@@ -4,7 +4,7 @@
 const path = require("path");
 const { fromAscii } = require("web3-utils");
 
-const ReputationMiner = require("#ReputationMiner.js");
+const ReputationMiner = require("./ReputationMiner").default;
 const { TruffleLoader } = require("../../package-utils");
 
 const EtherRouter = artifacts.require("EtherRouter");

@@ -45,7 +45,7 @@ const config: HardhatUserConfig = {
     bail: true,
   },
   fourByteUploader: {
-    runOnCompile: true,
+    runOnCompile: false,
   },
   contractSizer: {
     strict: true,
@@ -139,17 +139,17 @@ const writeGanacheAccounts = async (hre) => {
 
 task("compile", "Compile Colony contracts with pinned Token").setAction(async (taskArgs, hre, runSuper) => {
   await runSuper();
-
   const pinnedArtifacts = ["Token", "TokenAuthority", "MultiSigWallet"];
   const artifactSrc = path.resolve(__dirname, "lib/colonyToken/build/contracts");
   for (let i = 0; i < pinnedArtifacts.length; i += 1) {
     const artifact = pinnedArtifacts[i];
     const artifactDst = `${hre.config?.paths?.artifacts}/colonyToken/${artifact}.sol`;
-
     if (!fs.existsSync(artifactDst)) {
       fs.mkdirSync(artifactDst, { recursive: true });
     }
-    fs.copyFileSync(`${artifactSrc}/Pinned${artifact}.json`, `${artifactDst}/${artifact}.json`);
+    if (!fs.existsSync(`${artifactDst}/${artifact}.json`)) {
+      fs.copyFileSync(`${artifactSrc}/Pinned${artifact}.json`, `${artifactDst}/${artifact}.json`);
+    }
   }
 });
 

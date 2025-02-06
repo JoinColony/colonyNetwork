@@ -1,14 +1,44 @@
-const fs = require("fs").promises;
-const path = require("path");
-const BN = require("bn.js");
-const Database = require("better-sqlite3");
-const ethers = require("ethers");
-const { soliditySha3, isAddress } = require("web3-utils");
+import { promises as fs } from "fs";
+import path from "path";
+import BN from "bn.js";
+import BetterSqlite3, { Database } from "better-sqlite3";
+import * as ethers from "ethers";
+import { soliditySha3, isAddress } from "web3-utils";
+import type { Contract, Signer, providers, BigNumber } from "ethers";
 
-const { RetryProvider } = require("../../package-utils/build/index.js");
-// const { RetryProvider } = require("#package-utils");
-const PatriciaTree = require("./patricia");
-const PatriciaTreeNoHash = require("./patriciaNoHashKey");
+import { RetryProvider } from "../../package-utils/build/index.js";
+// import { RetryProvider } from "#package-utils";
+import PatriciaTree from "./patricia";
+import PatriciaTreeNoHash from "./patriciaNoHashKey";
+import PatriciaNoOp from "./patriciaNoOp";
+
+interface ReputationMinerOptions {
+  loader: any;
+  minerAddress?: string;
+  privateKey?: string;
+  provider?: RetryProvider;
+  realProviderPort?: number;
+  useJsTree?: boolean;
+  dbPath?: string;
+}
+
+type PatriciaTreeBase = PatriciaTree | PatriciaTreeNoHash | Contract;
+type ContractDef = { abi: any; bytecode?: string };
+type PreparedQuery = BetterSqlite3.Statement;
+type DatabaseQueries = {
+  saveHashAndLeaves: PreparedQuery;
+  saveColony: PreparedQuery;
+  saveUser: PreparedQuery;
+  saveSkill: PreparedQuery;
+  getReputationCount: PreparedQuery;
+  insertReputation: PreparedQuery;
+  getAllReputationsInHash: PreparedQuery;
+  getReputationValue: PreparedQuery;
+  getAddressesWithReputation: PreparedQuery;
+  getReputationsForAddress: BetterSqlite3.Statement<[string, string, string], { skill_id: string; value: string }>;
+  getReputationStateCount: PreparedQuery;
+  getReputationHashCount: PreparedQuery;
+};
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -21,12 +51,95 @@ const DAY_IN_SECONDS = 60 * 60 * 24;
 const BLOCK_PAGING_SIZE = 10000;
 
 class ReputationMiner {
+  // Database and configuration
+  private readonly loader: any;
+
+  private readonly dbPath: string;
+
+  private readonly justificationCachePath: string;
+
+  private readonly useJsTree: boolean;
+
+  private readonly realProvider: RetryProvider;
+
+  private readonly realWallet: Signer;
+
+  private db!: Database;
+
+  private queries: DatabaseQueries;
+
+  // Contract instances and definitions
+  private colonyNetwork!: Contract;
+
+  private tokenLocking!: Contract;
+
+  private clnyAddress!: string;
+
+  private repCycleContractDef!: ContractDef;
+
+  private colonyContractDef!: ContractDef;
+
+  private colonyNetworkContractDef!: ContractDef;
+
+  private tokenLockingContractDef!: ContractDef;
+
+  private patriciaTreeContractDef?: ContractDef;
+
+  private patriciaTreeNoHashContractDef?: ContractDef;
+
+  // State management
+  private reputationTree!: PatriciaTreeBase | PatriciaTree | Contract;
+
+  private previousReputationTree!: PatriciaTreeBase;
+
+  private nReputations: BigNumber = ethers.constants.Zero;
+
+  private reputations: Record<string, string> = {};
+
+  private feeData: providers.TransactionRequest = {};
+
+  private miningCycleDuration!: BigNumber;
+
+  private constant!: BigNumber;
+
+  private justificationTree!: PatriciaTreeBase;
+
+  private justificationHashes: Record<string, any> = {};
+
+  private reverseReputationHashLookup: Record<string, string> = {};
+
+  private nReputationsBeforeLatestLog!: BigNumber;
+
+  private previousReputations: Record<string, string> = {};
+
+  // Ganache instance
+  private readonly ganacheProvider?: providers.JsonRpcProvider;
+
+  private readonly ganacheWallet?: Signer;
+
+  // Mining address
+  private minerAddress!: string;
+
+  private decayNumerator: BigNumber = ethers.constants.Zero;
+
+  private decayDenominator: BigNumber = ethers.constants.Zero;
+
+  private adapter: any;
+
   /**
    * Constructor for ReputationMiner
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false, dbPath = "./reputationStates.sqlite" }) {
+  constructor({
+    loader,
+    minerAddress,
+    privateKey,
+    provider,
+    realProviderPort = 8545,
+    useJsTree = false,
+    dbPath = "./reputationStates.sqlite"
+  }: ReputationMinerOptions) {
     this.loader = loader;
     this.dbPath = dbPath;
     this.justificationCachePath = `${path.dirname(dbPath)}/justificationTreeCache.json`
@@ -58,14 +171,14 @@ class ReputationMiner {
     if (provider) {
       this.realProvider = provider;
     } else {
-      this.realProvider = new RetryProvider(`http://localhost:${realProviderPort}`);
+      this.realProvider = new RetryProvider(`http://localhost:${realProviderPort}`, {});
     }
 
     if (minerAddress) {
       this.realWallet = this.realProvider.getSigner(minerAddress);
     } else {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
-      console.log("Transactions will be signed from ", this.realWallet.address);
+      console.log("Transactions will be signed from ", ethers.utils.computeAddress(privateKey));
     }
   }
 
@@ -74,7 +187,7 @@ class ReputationMiner {
    * @param  {string}  colonyNetworkAddress The address of the current `ColonyNetwork` contract
    * @return {Promise}
    */
-  async initialise(colonyNetworkAddress) {
+  async initialise(colonyNetworkAddress: string): Promise<void> {
     this.colonyNetworkContractDef = await this.loader.load({ contractDir: "colonyNetwork", contractName: "IColonyNetwork" });
     this.repCycleContractDef = await this.loader.load({ contractDir: "reputationMiningCycle", contractName: "IReputationMiningCycle" });
     this.tokenLockingContractDef = await this.loader.load({ contractDir: "tokenLocking", contractName: "ITokenLocking" });
@@ -105,7 +218,7 @@ class ReputationMiner {
     this.feeData = {};
     const repCycle = await this.getActiveRepCycle();
     await this.updatePeriodLength(repCycle);
-    this.db = new Database(this.dbPath, { });
+    this.db = new BetterSqlite3(this.dbPath, { });
     // this.db = await sqlite.open({filename: this.dbPath, driver: sqlite3.Database});
     await ReputationMiner.createDB(this.db);
     this.prepareQueries()
@@ -136,90 +249,92 @@ class ReputationMiner {
     process.on('SIGTERM', () => process.exit(128 + 15));
   }
 
-  prepareQueries() {
-    this.queries = {}
-    this.queries.saveHashAndLeaves = this.db.prepare(`INSERT OR IGNORE INTO reputation_states (root_hash, n_leaves) VALUES (?, ?)`);
-    this.queries.saveColony = this.db.prepare(`INSERT OR IGNORE INTO colonies (address) VALUES (?)`);
-    this.queries.saveUser = this.db.prepare(`INSERT OR IGNORE INTO users (address) VALUES (?)`);
-    this.queries.saveSkill = this.db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`);
+  prepareQueries(): void {
+    this.queries = {
+      saveHashAndLeaves: this.db.prepare(`INSERT OR IGNORE INTO reputation_states (root_hash, n_leaves) VALUES (?, ?)`),
+      saveColony: this.db.prepare(`INSERT OR IGNORE INTO colonies (address) VALUES (?)`),
+      saveUser: this.db.prepare(`INSERT OR IGNORE INTO users (address) VALUES (?)`),
+      saveSkill: this.db.prepare(`INSERT OR IGNORE INTO skills (skill_id) VALUES (?)`),
+      getReputationCount: this.db.prepare(
+        `SELECT COUNT ( * ) AS "n"
+        FROM reputations
+        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+        INNER JOIN users ON users.rowid=reputations.user_rowid
+        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+        INNER JOIN skills ON skills.rowid=reputations.skill_rowid
+        WHERE reputation_states.root_hash=?
+        AND colonies.address=?
+        AND skills.skill_id=?
+        AND users.address=?`
+      ),
 
-    this.queries.getReputationCount = this.db.prepare(
-      `SELECT COUNT ( * ) AS "n"
-      FROM reputations
-      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-      INNER JOIN users ON users.rowid=reputations.user_rowid
-      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-      INNER JOIN skills ON skills.rowid=reputations.skill_rowid
-      WHERE reputation_states.root_hash=?
-      AND colonies.address=?
-      AND skills.skill_id=?
-      AND users.address=?`
-    );
+      insertReputation: this.db.prepare(
+        `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
+        SELECT
+        (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
+        (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
+        (SELECT skills.rowid FROM skills WHERE skills.skill_id=?),
+        (SELECT users.rowid FROM users WHERE users.address=?),
+        ?`
+      ),
 
-    this.queries.insertReputation = this.db.prepare(
-      `INSERT OR IGNORE INTO reputations (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
-      SELECT
-      (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash=?),
-      (SELECT colonies.rowid FROM colonies WHERE colonies.address=?),
-      (SELECT skills.rowid FROM skills WHERE skills.skill_id=?),
-      (SELECT users.rowid FROM users WHERE users.address=?),
-      ?`
-    );
+      getAllReputationsInHash:this.db.prepare(
+        // eslint-disable-next-line max-len
+        `SELECT skills.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+        FROM reputations
+        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+        INNER JOIN users ON users.rowid=reputations.user_rowid
+        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+        INNER JOIN skills ON skills.rowid=reputations.skill_rowid
+        WHERE reputation_states.root_hash=?
+        ORDER BY substr(reputations.value, 67) ASC`
+      ),
 
-    this.queries.getAllReputationsInHash = this.db.prepare(
-      // eslint-disable-next-line max-len
-      `SELECT skills.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
-       WHERE reputation_states.root_hash=?
-       ORDER BY substr(reputations.value, 67) ASC`
-    );
+      getReputationValue: this.db.prepare(
+        `SELECT reputations.value
+        FROM reputations
+        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+        INNER JOIN users ON users.rowid=reputations.user_rowid
+        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+        INNER JOIN skills ON skills.rowid=reputations.skill_rowid
+        WHERE reputation_states.root_hash=?
+        AND users.address=?
+        AND skills.skill_id=?
+        AND colonies.address=?`
+      ),
 
-    this.queries.getReputationValue = this.db.prepare(
-      `SELECT reputations.value
-      FROM reputations
-      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-      INNER JOIN users ON users.rowid=reputations.user_rowid
-      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-      INNER JOIN skills ON skills.rowid=reputations.skill_rowid
-      WHERE reputation_states.root_hash=?
-      AND users.address=?
-      AND skills.skill_id=?
-      AND colonies.address=?`
-    );
+      getAddressesWithReputation: this.db.prepare(
+        `SELECT DISTINCT users.address as user_address, reputations.value as value
+        FROM reputations
+        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+        INNER JOIN users ON users.rowid=reputations.user_rowid
+        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+        INNER JOIN skills ON skills.rowid=reputations.skill_rowid
+        WHERE reputation_states.root_hash=?
+        AND colonies.address=?
+        AND skills.skill_id=?
+        AND users.address!='0x0000000000000000000000000000000000000000'
+        ORDER BY reputations.value DESC`
+      ),
 
-    this.queries.getAddressesWithReputation = this.db.prepare(
-      `SELECT DISTINCT users.address as user_address, reputations.value as value
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
-       WHERE reputation_states.root_hash=?
-       AND colonies.address=?
-       AND skills.skill_id=?
-       AND users.address!='0x0000000000000000000000000000000000000000'
-       ORDER BY reputations.value DESC`
-    );
+      getReputationsForAddress: this.db.prepare(
+        `SELECT DISTINCT skills.skill_id as skill_id, reputations.value as value
+        FROM reputations
+        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+        INNER JOIN users ON users.rowid=reputations.user_rowid
+        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+        INNER JOIN skills ON skills.rowid=reputations.skill_rowid
+        WHERE reputation_states.root_hash=?
+        AND colonies.address=?
+        AND users.address=?
+        ORDER BY reputations.value DESC`
+      ),
 
-    this.queries.getReputationsForAddress = this.db.prepare(
-      `SELECT DISTINCT skills.skill_id as skill_id, reputations.value as value
-       FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
-       INNER JOIN users ON users.rowid=reputations.user_rowid
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
-       INNER JOIN skills ON skills.rowid=reputations.skill_rowid
-       WHERE reputation_states.root_hash=?
-       AND colonies.address=?
-       AND users.address=?
-       ORDER BY reputations.value DESC`
-    );
-
-    this.queries.getReputationStateCount = this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=? AND n_leaves=?`);
-    this.queries.getReputationHashCount = this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=?`);
+      getReputationStateCount: this.db.prepare(`SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=? AND n_leaves=?`),
+      getReputationHashCount: this.db.prepare(
+        `SELECT COUNT ( * ) AS "n" FROM reputation_states WHERE root_hash=?`
+      )
+    }
   }
 
   /**
@@ -227,7 +342,7 @@ class ReputationMiner {
    * builds a Justification Tree as it does so in case a dispute is called which would require it.
    * @return {Promise}
    */
-  async addLogContentsToReputationTree(blockNumber = "latest", buildJustificationTree = true) {
+  async addLogContentsToReputationTree(blockNumber : "latest" | number = "latest", buildJustificationTree = true) {
     let jtType;
     if (buildJustificationTree){
       if (this.useJsTree) {
@@ -312,7 +427,7 @@ class ReputationMiner {
    * @param  {string}  key The key we wish to find the adjacentKey for
    * @return {String}
    */
-  getAdjacentKey(key) {
+  getAdjacentKey(key: string): string {
     const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
     let keyPosition = sortedHashes.indexOf(soliditySha3(key));
     if (keyPosition === -1) {
@@ -352,13 +467,18 @@ class ReputationMiner {
    * @param  {bool}       checkForReplacement A boolean that controls whether we query getReplacementReputationUpdateLogEntry for the log entry.
    * @return {Promise}
    */
-  async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {
+  async addSingleReputationUpdate(
+    updateNumber: BigNumber,
+    repCycle: ethers.Contract,
+    blockNumber: number | "latest",
+    checkForReplacement: boolean
+  ): Promise<void> {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
     let originReputationProof;
-    let originAdjacentReputationProof = await this.getReputationProofObject("0x00");;
-    let childAdjacentReputationProof = await this.getReputationProofObject("0x00");;
+    let originAdjacentReputationProof = await this.getReputationProofObject("0x00");
+    let childAdjacentReputationProof = await this.getReputationProofObject("0x00");
     let childReputationProof = await this.getReputationProofObject("0x00");
     let adjacentReputationProof = await this.getReputationProofObject("0x00");
     let logEntry;
@@ -371,7 +491,7 @@ class ReputationMiner {
     );
 
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
-      const key = await Object.keys(this.reputations)[updateNumber];
+      const key = await Object.keys(this.reputations)[updateNumber.toNumber()];
       const reputation = ethers.BigNumber.from(`0x${this.reputations[key].slice(2, 66)}`);
 
       const numerator = ethers.BigNumber.from(this.decayNumerator);
@@ -513,7 +633,7 @@ class ReputationMiner {
     // console.log("updateNumber", updateNumber.toString());
     // console.log("key", key);
     // console.log("amount", amount.toString());
-    await this.insert(key, amount, updateNumber);
+    await this.insert(key, amount);
   }
 
   /**
@@ -533,7 +653,7 @@ class ReputationMiner {
       // Doesn't exist yet.
       branchMask = 0x00;
       siblings = [];
-      value = this.getValueAsBytes(0, 0);
+      value = this.getValueAsBytes(0, 0, 0);
       if (!key) {
         key = ReputationMiner.getHexString(0, 32);
       }
@@ -543,7 +663,7 @@ class ReputationMiner {
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, reputation, uid, nLeaves: this.nReputations.toString() };
   }
 
-  static getKey(_colonyAddress, _skillId, _userAddress) {
+  static getKey(_colonyAddress, _skillId, _userAddress): string {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
 
@@ -558,11 +678,11 @@ class ReputationMiner {
     let validAddress = isAddress(colonyAddress);
     // TODO should we return errors here?
     if (!validAddress) {
-      return false;
+      throw new Error("Invalid colony address");
     }
     validAddress = isAddress(userAddress);
     if (!validAddress) {
-      return false;
+      throw new Error("Invalid user address");
     }
     if (colonyAddress.substring(0, 2) === "0x") {
       colonyAddress = colonyAddress.slice(2);
@@ -586,7 +706,7 @@ class ReputationMiner {
   //  * @return {String} hexString
   //  * @dev Used to provide standard interface for BN and BigNumber
   //  */
-  static getHexString(input, length) {
+  static getHexString(input, length = 0) {
     return `0x${new BN(input.toString()).toString(16, length)}`;
   }
 
@@ -597,7 +717,10 @@ class ReputationMiner {
    * @param  {Number}  _i The update number we wish to determine which log entry in the reputationUpdateLog creates
    * @return {Promise}   A promise that resolves to the number of the corresponding log entry.
    */
-  async getLogEntryNumberForLogUpdateNumber(_i, blockNumber = "latest") {
+  async getLogEntryNumberForLogUpdateNumber(
+    _i: BigNumber | number,
+    blockNumber: number | "latest" = "latest"
+  ): Promise<BigNumber> {
     const updateNumber = _i;
     const repCycle = await this.getActiveRepCycle(blockNumber);
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockTag: blockNumber });
@@ -622,7 +745,10 @@ class ReputationMiner {
     return lower;
   }
 
-  async getKeyForUpdateNumber(_i, blockNumber = "latest") {
+  async getKeyForUpdateNumber(
+    _i: BigNumber | number,
+    blockNumber: number | "latest" = "latest"
+  ): Promise<string> {
     const updateNumber = ethers.BigNumber.from(_i);
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       // Then it's a decay
@@ -637,7 +763,7 @@ class ReputationMiner {
     return key;
   }
 
-  static breakKeyInToElements(key) {
+  static breakKeyInToElements(key: string): [string, string, string] {
     const colonyAddress = key.slice(2, 42);
     const skillId = key.slice(42, 106);
     const userAddress = key.slice(106);
@@ -650,7 +776,10 @@ class ReputationMiner {
    * @param  {LogEntry}  logEntry An array six long, containing the log entry in question [userAddress, amount, skillId, colony, nUpdates, nPreviousUpdates ]
    * @return {Promise}              Promise that resolves to key
    */
-  async getKeyForUpdateInLogEntry(updateNumber, logEntry) {
+  async getKeyForUpdateInLogEntry(
+    updateNumber: BigNumber,
+    logEntry: { user: string; amount: string; skillId: string; colony: string; nUpdates: string; nPreviousUpdates: string }
+  ): Promise<string> {
     let skillAddress;
     // We need to work out the skillId and user address to use.
     // If we are in the first half of 'updateNumber's, then we are dealing with global update, so
@@ -722,7 +851,7 @@ class ReputationMiner {
    * @param  {bigNumber or string} uid        The global UID assigned to this reputation
    * @return {string}            Appropriately formatted hex string
    */
-  getValueAsBytes(reputation, uid) { // eslint-disable-line class-methods-use-this
+  getValueAsBytes(reputation, uid, index) { // eslint-disable-line class-methods-use-this
     return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
   }
 
@@ -742,7 +871,7 @@ class ReputationMiner {
    * Get the active reputation mining cycle
    * @return {Promise}
    */
-  async getActiveRepCycle(blockNumber = "latest") {
+  async getActiveRepCycle(blockNumber: number | "latest" = "latest"): Promise<ethers.Contract> {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     if (addr === ethers.constants.AddressZero) {
       throw new Error(`No active mining cycle found for block number ${blockNumber}`);
@@ -756,7 +885,7 @@ class ReputationMiner {
    * @param startIndex What index to start searching at when looking for a valid submission
    * @return {Promise}
    */
-  async submitRootHash(entryIndex) {
+  async submitRootHash(entryIndex?: BigNumber): Promise<ethers.ContractTransaction> {
     const hash = await this.getRootHash();
     const nLeaves = await this.getRootHashNLeaves();
     const jrh = await this.justificationTree.getRootHash();
@@ -857,7 +986,7 @@ class ReputationMiner {
    * Get what the client believes should be the next reputation state root hash.
    * @return {Promise}      Resolves to the root hash
    */
-  async getRootHash() {
+  async getRootHash(): Promise<string> {
     return this.reputationTree.getRootHash();
   }
 
@@ -865,7 +994,7 @@ class ReputationMiner {
    * Get what the client believes should be the next reputation state nLeaves.
    * @return {Promise}      Resolves to the nLeaves as ethers BigNumber
    */
-  async getRootHashNLeaves() {
+  async getRootHashNLeaves(): Promise<BigNumber> {
     return this.nReputations;
   }
 
@@ -874,7 +1003,7 @@ class ReputationMiner {
    * @param  {string}  key The reputation key the proof is being asked for
    * @return {Promise}     Resolves to [branchMask, siblings]
    */
-  async getProof(key) {
+  async getProof(key: string): Promise<[string, string[]]> {
     const [branchMask, siblings] = await this.reputationTree.getProof(key);
     const retBranchMask = ReputationMiner.getHexString(branchMask);
     return [retBranchMask, siblings];
@@ -886,7 +1015,10 @@ class ReputationMiner {
    * @param  {[type]}  key      A key in that root hash we wish to know the value and proof for
    * @return {Promise}          A promise that resolves to [branchmask, siblings, value] for the supplied key in the supplied root hash
    */
-  async getHistoricalProofAndValue(rootHash, key) {
+  async getHistoricalProofAndValue(
+    rootHash: string,
+    key: string
+  ): Promise<[string, string[], string] | Error> {
     const currentRootHash = await this.reputationTree.getRootHash();
 
     if (currentRootHash === rootHash) {
@@ -922,7 +1054,7 @@ class ReputationMiner {
 
     // Not in the accepted or next tree, so let's look at the DB
 
-    const res = await this.queries.getReputationHashCount.get(rootHash);
+    const res = await this.queries.getReputationHashCount.get(rootHash) as any;
     if (res.n === 0){
       return new Error("No such reputation state");
     }
@@ -931,7 +1063,7 @@ class ReputationMiner {
     const [colonyAddress, , userAddress] = keyElements;
     // const skillId = parseInt(keyElements[1], 16);
     const skillId = ethers.BigNumber.from(keyElements[1]).toString();
-    const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
+    const reputationValue = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress) as any[];
 
     if (reputationValue.length === 0) {
       return new Error("No such reputation");
@@ -947,7 +1079,7 @@ class ReputationMiner {
     const allReputations = await this.getAllReputationsInHash(rootHash);
 
     for (let i = 0; i < allReputations.length; i += 1) {
-      const row = allReputations[i];
+      const row = allReputations[i] as any;
       const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
       await tree.insert(rowKey, row.value);
     }
@@ -979,7 +1111,7 @@ class ReputationMiner {
       return new Error("Requested reputation does not exist")
     }
 
-    let res = await this.queries.getReputationHashCount.get(rootHash);
+    let res = await this.queries.getReputationHashCount.get(rootHash) as any;
     if (res.n === 0){
       return new Error("No such reputation state");
     }
@@ -989,7 +1121,7 @@ class ReputationMiner {
     // const skillId = parseInt(keyElements[1], 16);
     const skillId = ethers.BigNumber.from(keyElements[1]).toString();
 
-    res = await this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress);
+    res = this.queries.getReputationValue.all(rootHash, userAddress, skillId, colonyAddress) as any[];
 
     if (res.length === 0) {
       return new Error("No such reputation");
@@ -1005,7 +1137,7 @@ class ReputationMiner {
    * Submit the Justification Root Hash (JRH) for the hash that (presumably) we submitted this round
    * @return {Promise}
    */
-  async confirmJustificationRootHash() {
+  async confirmJustificationRootHash(): Promise<ethers.ContractTransaction> {
     const [, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
     const repCycle = await this.getActiveRepCycle();
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
@@ -1049,7 +1181,7 @@ class ReputationMiner {
     let disputeRound = await repCycle.getDisputeRound(round);
     while (disputeRound.length > 0) {
       for (let index = ethers.constants.Zero; index.lt(disputeRound.length); index = index.add(1) ) {
-        const submission = await repCycle.getReputationHashSubmission(disputeRound[index].firstSubmitter);
+        const submission = await repCycle.getReputationHashSubmission(disputeRound[index.toNumber()].firstSubmitter);
         if (
           submission.proposedNewRootHash === submittedHash &&
           submission.nLeaves.toString() === submittedNLeaves.toString() &&
@@ -1072,7 +1204,7 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const disputeRound = await repCycle.getDisputeRound(round);
-    const disputedEntry = disputeRound[index];
+    const disputedEntry = disputeRound[index.toNumber()];
 
     const targetLeafKey = disputedEntry.lowerBound;
     const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
@@ -1135,7 +1267,7 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const disputeRound = await repCycle.getDisputeRound(round);
-    const disputedEntry = disputeRound[index];
+    const disputedEntry = disputeRound[index.toNumber()];
     const targetLeafKey = ethers.BigNumber.from(disputedEntry.lowerBound);
     const targetLeafKeyAsHex = ReputationMiner.getHexString(targetLeafKey, 64);
 
@@ -1162,11 +1294,11 @@ class ReputationMiner {
    * the log entry where the two submitted hashes differ.
    * @return {Promise} Resolves to tx hash of the response
    */
-  async respondToChallenge() {
+  async respondToChallenge(): Promise<ethers.ContractTransaction> {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const disputeRound = await repCycle.getDisputeRound(round);
-    const disputedEntry = disputeRound[index];
+    const disputedEntry = disputeRound[index.toNumber()];
 
     // console.log(disputedEntry);
     let firstDisagreeIdx = ethers.BigNumber.from(disputedEntry.lowerBound);
@@ -1265,7 +1397,7 @@ class ReputationMiner {
    * Confirm the new reputation hash after all dispute resolution (if any) has occurred.
    * @return {Promise} Resolves to tx hash of the response
    */
-  async confirmNewHash() {
+  async confirmNewHash(): Promise<ethers.ContractTransaction | false> {
     const repCycle = await this.getActiveRepCycle();
     const [round] = await this.getMySubmissionRoundAndIndex();
     if (round.eq(ethers.constants.NegativeOne)) {
@@ -1297,19 +1429,18 @@ class ReputationMiner {
       value = value.mul(numerator).div(denominator);
       count += 1;
     }
-    const calculatedPeriodLength = Math.floor(90 * DAY_IN_SECONDS / count);
+    const calculatedPeriodLength = ethers.BigNumber.from(Math.floor(90 * DAY_IN_SECONDS / count));
 
     this.miningCycleDuration = await repCycle.getMiningWindowDuration();
-    this.miningCycleDuration = this.miningCycleDuration.toNumber();
     this.constant = ethers.constants.MaxUint256.div(this.miningCycleDuration);
 
-    if (calculatedPeriodLength !== this.miningCycleDuration) {
-      this._adapter.log(
+    if (!calculatedPeriodLength.eq(this.miningCycleDuration)) {
+      this.adapter.log(
         `Warning: Inconsistent period length from contracts... have the rules changed?
         Will no longer have 50% decay of reputation in three months.
         Period length is ${this.miningCycleDuration} but decay constant implies ${calculatedPeriodLength}.`
         );
-    };
+    }
   }
 
   /**
@@ -1319,7 +1450,7 @@ class ReputationMiner {
    * @param  {Number or BigNumber}  index           The index of the log entry being considered
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
-  async insert(key, _reputationScore, index) {
+  async insert(key: string, _reputationScore: BigNumber | number, index?: BigNumber|number): Promise<boolean> {
     // If we already have this key, then we lookup the unique identifier we assigned this key.
     // Otherwise, give it the new one.
     let value;
@@ -1383,7 +1514,7 @@ class ReputationMiner {
     let syncFromIndex = -1;
 
     const latestBlockNumber = await this.realProvider.getBlockNumber();
-    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
+    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null) as any;
     filter.fromBlock = latestBlockNumber + 1; // +1 to accommodate the first loop iteration
     filter.toBlock = filter.fromBlock;
 
@@ -1488,7 +1619,7 @@ class ReputationMiner {
     const hash = event.data.slice(0, 66);
     const nLeaves = ethers.BigNumber.from(`0x${event.data.slice(66, 130)}`);
     // Do we have such a state?
-    const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString());
+    const res = await this.queries.getReputationStateCount.get(hash, nLeaves.toString()) as any;
     return res.n === 1;
   }
 
@@ -1540,7 +1671,7 @@ class ReputationMiner {
 
     this.reputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-    const res = await this.getAllReputationsInHash(reputationRootHash);
+    const res = await this.getAllReputationsInHash(reputationRootHash) as any[];
     this.nReputations = ethers.BigNumber.from(res.length);
 
     for (let i = 0; i < res.length; i += 1) {
@@ -1565,7 +1696,7 @@ class ReputationMiner {
 
     this.previousReputationTree = await this.getNewPatriciaTree(this.useJsTree ? "js" : "solidity", true);
 
-    const res = await this.getAllReputationsInHash(reputationRootHash);
+    const res = await this.getAllReputationsInHash(reputationRootHash) as any[];
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
@@ -1655,12 +1786,7 @@ class ReputationMiner {
     }
 
     if (type === "noop") {
-      return {
-        insert: () => {return { wait: () => {}}},
-        getRootHash: () => {},
-        getImpliedRoot: () => {},
-        getProof: () => {},
-      }
+      return new PatriciaNoOp();
     }
     console.log(`UNKNOWN TYPE for patricia tree instantiation: ${type}`)
     return new PatriciaTree();
@@ -1670,14 +1796,22 @@ class ReputationMiner {
     await fs.writeFile(this.justificationCachePath, JSON.stringify(this.justificationHashes));
   }
 
-  async getAddressesWithReputation(reputationRootHash, colonyAddress, skillId) {
-    const res = await this.queries.getAddressesWithReputation.all(reputationRootHash, colonyAddress.toLowerCase(), skillId);
+  async getAddressesWithReputation(
+    reputationRootHash: string,
+    colonyAddress: string,
+    skillId: BigNumber | string
+  ): Promise<{ addresses: string[]; reputations: string[] }> {
+    const res = await this.queries.getAddressesWithReputation.all(reputationRootHash, colonyAddress.toLowerCase(), skillId) as any[];
     const addresses = res.map(x => x.user_address)
     const reputations = res.map(x => new BN(x.value.slice(2, 66), 16).toString())
     return { addresses, reputations };
   }
 
-  async getReputationsForAddress(reputationRootHash, colonyAddress, userAddress) {
+  async getReputationsForAddress(
+    reputationRootHash: string,
+    colonyAddress: string,
+    userAddress: string
+  ): Promise<Array<{ skill_id: string; reputationAmount: string }>> {
     const res = await this.queries.getReputationsForAddress.all(reputationRootHash, colonyAddress.toLowerCase(), userAddress.toLowerCase());
     return res.map(function(x){ return {
       skill_id: x.skill_id,
@@ -1689,9 +1823,9 @@ class ReputationMiner {
     const latestConfirmedReputationHash = await this.colonyNetwork.getReputationRootHash();
     const currentNLeaves = await this.colonyNetwork.getReputationRootHashNNodes();
 
-    const db = new Database("./latestConfirmed.sqlite", { });
+    const db = new BetterSqlite3("./latestConfirmed.sqlite", { });
     await ReputationMiner.createDB(db);
-    const allReputations = await this.getAllReputationsInHash(latestConfirmedReputationHash);
+    const allReputations = await this.getAllReputationsInHash(latestConfirmedReputationHash) as any[];
 
     if (allReputations.length === 0) {
       return new Error("No such reputation state");
@@ -1867,10 +2001,10 @@ class ReputationMiner {
       // Open another connection to write in to reputations2 while iterating over reputations
       // This is generally prevented to avoid race conditions etc but is safe here - we are exclusively
       // reading from a table we are not writing to.
-      const db2 = new Database(db.name, { });
+      const db2 = new BetterSqlite3(db.name, { });
       const statementToIterate = db2.prepare('SELECT * FROM reputations');
       // eslint-disable-next-line no-restricted-syntax
-      for (const row of statementToIterate.iterate()) {
+      for (const row of statementToIterate.iterate() as any) {
         const skill = await db.prepare(`SELECT rowid FROM skills WHERE skill_id = ?`).get(row.skill_id.toString());
         await db.prepare(
           `INSERT INTO reputations2 (reputation_rowid, colony_rowid, skill_rowid, user_rowid, value)
@@ -1898,4 +2032,4 @@ class ReputationMiner {
   }
 }
 
-module.exports = ReputationMiner;
+export default ReputationMiner;

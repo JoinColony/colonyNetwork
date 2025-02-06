@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  git@github.com+ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0: git+https://github.com/ethereumjs/ethereumjs-abi.git+ee3994657fa7a427238e6ba92a84d0b529bbcde0
-
 patchedDependencies:
   '@nomiclabs/truffle-contract@4.5.10':
     hash: qqvoib2wewcbqieoql6xbyo4i4
@@ -59,9 +56,18 @@ importers:
       '@truffle/contract':
         specifier: ^4.6.31
         version: 4.6.31
+      '@types/better-sqlite3':
+        specifier: ^7.6.12
+        version: 7.6.12
+      '@types/body-parser':
+        specifier: ^1.19.5
+        version: 1.19.5
       '@types/chai':
         specifier: '4'
         version: 4.3.20
+      '@types/express':
+        specifier: github:types/express
+        version: github.com/types/express/7670cf1cbce96b3159e3ff04a253926b34111220(@types/node@20.16.10)
       '@types/mocha':
         specifier: ^8.2.0
         version: 8.2.3
@@ -1208,7 +1214,7 @@ packages:
       '@cosmjs/socket': 0.28.13
       '@cosmjs/stream': 0.28.13
       '@cosmjs/utils': 0.28.13
-      axios: 0.21.4(debug@4.3.5)
+      axios: 0.21.4
       readonly-date: 1.0.0
       xstream: 11.14.0
     transitivePeerDependencies:
@@ -1226,7 +1232,7 @@ packages:
       '@cosmjs/socket': 0.29.5
       '@cosmjs/stream': 0.29.5
       '@cosmjs/utils': 0.29.5
-      axios: 0.21.4(debug@4.3.5)
+      axios: 0.21.4
       readonly-date: 1.0.0
       xstream: 11.14.0
     transitivePeerDependencies:
@@ -1245,7 +1251,7 @@ packages:
       '@cosmjs/socket': 0.30.1
       '@cosmjs/stream': 0.30.1
       '@cosmjs/utils': 0.30.1
-      axios: 0.21.4(debug@4.3.5)
+      axios: 0.21.4
       readonly-date: 1.0.0
       xstream: 11.14.0
     transitivePeerDependencies:
@@ -2365,7 +2371,7 @@ packages:
     dependencies:
       '@injectivelabs/exceptions': 1.14.13(google-protobuf@3.21.4)
       '@injectivelabs/ts-types': 1.14.13
-      axios: 0.21.4(debug@4.3.5)
+      axios: 0.21.4
       bignumber.js: 9.1.2
       http-status-codes: 2.3.0
       link-module-alias: 1.2.0
@@ -3948,6 +3954,12 @@ packages:
       typechain: 3.0.0(typescript@4.9.5)
     dev: true
 
+  /@types/better-sqlite3@7.6.12:
+    resolution: {integrity: sha512-fnQmj8lELIj7BSrZQAdBMHEHX8OZLYIHXqAKT1O7tDfLxaINzf00PMjw22r3N/xXh0w/sGHlO6SVaCQ2mj78lg==}
+    dependencies:
+      '@types/node': 20.16.10
+    dev: true
+
   /@types/bignumber.js@5.0.0:
     resolution: {integrity: sha512-0DH7aPGCClywOFaxxjE6UwpN2kQYe9LwuDQMv+zYA97j5GkOMo8e66LYT+a8JYU7jfmUFRZLa9KycxHDsKXJCA==}
     deprecated: This is a stub types definition for bignumber.js (https://github.com/MikeMcl/bignumber.js/). bignumber.js provides its own type definitions, so you don't need @types/bignumber.js installed!
@@ -3976,6 +3988,13 @@ packages:
     resolution: {integrity: sha512-Xh8vSwUeMKeYYrj3cX4lGQgFSF/N03r+tv4AiLl1SucqV+uTQpxRcnM8AkXKHwYP9ZPXOYXRr2KPXpVlIvqh9w==}
     dependencies:
       '@types/node': 20.16.10
+
+  /@types/body-parser@1.19.5:
+    resolution: {integrity: sha512-fB3Zu92ucau0iQ0JMCFQE7b/dv8Ot07NI3KaZIkIUNXq82k4eBAqUaneXfleGY9JWskeS9y+u0nXMyspcuQrCg==}
+    dependencies:
+      '@types/connect': 3.4.38
+      '@types/node': 20.16.10
+    dev: true
 
   /@types/cacheable-request@6.0.3:
     resolution: {integrity: sha512-IQ3EbTzGxIigb1I3qPZc1rWJnH0BmSKv5QYTalEwweFvyBDLSAe24zP0le/hyi7ecGfZVlIVAg4BZqb8WBwKqw==}
@@ -5368,12 +5387,20 @@ packages:
     resolution: {integrity: sha512-3AungXC4I8kKsS9PuS4JH2nc+0bVY/mjgrephHTIi8fpEeGsTHBUJeosp0Wc1myYMElmD0B3Oc4XL/HVJ4PV2g==}
     dev: true
 
+  /axios@0.21.4:
+    resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
+    dependencies:
+      follow-redirects: 1.15.6(debug@4.3.7)
+    transitivePeerDependencies:
+      - debug
+
   /axios@0.21.4(debug@4.3.5):
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
       follow-redirects: 1.15.6(debug@4.3.5)
     transitivePeerDependencies:
       - debug
+    dev: true
 
   /axios@0.24.0:
     resolution: {integrity: sha512-Q6cWsys88HoPgAaFAVUb0WpPk0O8iTeisR9IMqy9G8AbO4NlpVknrnQS03zzF9PGAWgO3cgletO3VjV/P7VztA==}
@@ -10006,6 +10033,7 @@ packages:
         optional: true
     dependencies:
       debug: 4.3.5
+    dev: true
 
   /follow-redirects@1.15.6(debug@4.3.7):
     resolution: {integrity: sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==}
@@ -10017,7 +10045,6 @@ packages:
         optional: true
     dependencies:
       debug: 4.3.7(supports-color@8.1.1)
-    dev: true
 
   /follow-redirects@1.15.9:
     resolution: {integrity: sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==}
@@ -19424,6 +19451,17 @@ packages:
     resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
     dev: true
 
+  git@github.com+types/npm-serve-static/c1f96843c8b96a37f6c534cb1dadb48f5329e4e0(@types/node@20.16.10):
+    resolution: {commit: c1f96843c8b96a37f6c534cb1dadb48f5329e4e0, repo: git@github.com:types/npm-serve-static.git, type: git}
+    id: git@github.com+types/npm-serve-static/c1f96843c8b96a37f6c534cb1dadb48f5329e4e0
+    name: '@types/serve-static'
+    version: 1.11.1
+    peerDependencies:
+      '@types/node': '*'
+    dependencies:
+      '@types/node': 20.16.10
+    dev: true
+
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
     resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
     name: ethereumjs-abi
@@ -19432,4 +19470,25 @@ packages:
     dependencies:
       bn.js: 4.12.0
       ethereumjs-util: 6.2.1
+    dev: true
+
+  github.com/pillarjs/path-to-regexp/ec285ed3500aed455df59e3b8b07f473412918a4:
+    resolution: {tarball: https://codeload.github.com/pillarjs/path-to-regexp/tar.gz/ec285ed3500aed455df59e3b8b07f473412918a4}
+    name: path-to-regexp
+    version: 1.5.3
+    dependencies:
+      isarray: 0.0.1
+    dev: true
+
+  github.com/types/express/7670cf1cbce96b3159e3ff04a253926b34111220(@types/node@20.16.10):
+    resolution: {tarball: https://codeload.github.com/types/express/tar.gz/7670cf1cbce96b3159e3ff04a253926b34111220}
+    id: github.com/types/express/7670cf1cbce96b3159e3ff04a253926b34111220
+    name: '@types/express'
+    version: 4.14.0
+    peerDependencies:
+      '@types/node': '*'
+    dependencies:
+      '@types/node': 20.16.10
+      '@types/serve-static': git@github.com+types/npm-serve-static/c1f96843c8b96a37f6c534cb1dadb48f5329e4e0(@types/node@20.16.10)
+      path-to-regexp: github.com/pillarjs/path-to-regexp/ec285ed3500aed455df59e3b8b07f473412918a4
     dev: true

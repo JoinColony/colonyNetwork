@@ -9,6 +9,7 @@
     "types": ["node"],
     "paths": {
       "#package-utils": ["./packages/package-utils/"],
+      "#typechain/*": ["./typechain-types/*"],
     },
     "skipLibCheck": true,
     "target": "ES2020",

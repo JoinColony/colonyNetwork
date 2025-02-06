@@ -2,6 +2,7 @@ FROM node:20.11.0-buster
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN git config --global url."https://github.com/".insteadOf git@github.com:
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./pnpm-lock.yaml ./

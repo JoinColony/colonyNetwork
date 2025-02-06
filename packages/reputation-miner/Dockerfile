@@ -3,6 +3,7 @@ RUN apt-get update || : && apt-get install python -y
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
+RUN git config --global url."https://github.com/".insteadOf git@github.com:
 COPY ./packages ./packages
 COPY ./package.json ./
 COPY ./pnpm-lock.yaml ./
