@@ -1,106 +1,26 @@
-/* global hre, config, task, runSuper */
+import { HardhatUserConfig, task } from "hardhat/config";
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
-const express = require("express");
-const bodyParser = require("body-parser");
-const ethers = require("ethers");
+import express from "express";
+import bodyParser from "body-parser";
 
-const { FORKED_XDAI_CHAINID } = require("./helpers/constants");
+import { FORKED_XDAI_CHAINID } from "./helpers/constants";
 
-require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-truffle5");
-require("@solidstate/hardhat-4byte-uploader");
-require("hardhat-contract-sizer");
-require("hardhat-storage-layout-changes");
-require("solidity-coverage");
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-truffle5";
+import "@solidstate/hardhat-4byte-uploader";
+import "hardhat-contract-sizer";
+import "hardhat-storage-layout-changes";
+import "solidity-coverage";
 
 // Avoid this require if possible
-process.argv.filter((arg) => ["trace", "tracecall", "decode", "decodelog"].includes(arg)).length > 0 ? require("hardhat-tracer") : undefined;
+if (process.argv.filter((arg) => ["trace", "tracecall", "decode", "decodelog"].includes(arg)).length > 0) {
+  import("hardhat-tracer");
+}
 
-task("compile", "Compile Colony contracts with pinned Token").setAction(async () => {
-  await runSuper();
-
-  const pinnedArtifacts = ["Token", "TokenAuthority", "MultiSigWallet"];
-  const artifactSrc = path.resolve(__dirname, "lib/colonyToken/build/contracts");
-  for (let i = 0; i < pinnedArtifacts.length; i += 1) {
-    const artifact = pinnedArtifacts[i];
-    const artifactDst = `${config.paths.artifacts}/colonyToken/${artifact}.sol`;
-
-    if (!fs.existsSync(artifactDst)) {
-      fs.mkdirSync(artifactDst, { recursive: true });
-    }
-    fs.copyFileSync(`${artifactSrc}/Pinned${artifact}.json`, `${artifactDst}/${artifact}.json`);
-  }
-});
-
-task("test", "Run tests").setAction(async () => {
-  const app = express();
-  const port = 8545;
-
-  app.use(bodyParser.json());
-  app.post("/", async function (req, res) {
-    try {
-      const response = await hre.network.provider.request(req.body);
-      res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
-    } catch (error) {
-      const abiCoder = new ethers.utils.AbiCoder();
-      const decoded = abiCoder.decode(["string"], `0x${error.data.slice(10)}`);
-      res.send({
-        jsonrpc: "2.0",
-        error: { message: `Error: VM Exception while processing transaction: reverted with reason string '${decoded[0]}'` },
-        id: req.body.id,
-      });
-    }
-  });
-
-  if (hre.network.name === "hardhat") {
-    app.listen(port, function () {
-      console.log(`Exposing the provider on port ${port}!`);
-    });
-  }
-
-  const ganacheAccounts = { addresses: {}, private_keys: {} };
-  // eslint-disable-next-line no-restricted-syntax
-  for (const account of config.networks.hardhat.accounts) {
-    const { privateKey } = account;
-    const publicAddress = ethers.utils.computeAddress(privateKey);
-    ganacheAccounts.addresses[publicAddress] = publicAddress;
-    ganacheAccounts.private_keys[publicAddress] = privateKey;
-  }
-
-  fs.writeFileSync("ganache-accounts.json", JSON.stringify(ganacheAccounts, null, 2));
-
-  const nFails = await runSuper();
-  if (nFails > 0 && !process.env.CI && hre.network.name === "hardhat") {
-    console.error("A test failed, not exiting so on-chain state can be inspected");
-    await new Promise(() => {});
-  }
-});
-
-task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async () => {
-  const ganacheAccounts = { addresses: {}, private_keys: {} };
-  // eslint-disable-next-line no-restricted-syntax
-  for (const account of config.networks.hardhat.accounts) {
-    const { privateKey } = account;
-    const publicAddress = ethers.utils.computeAddress(privateKey);
-    ganacheAccounts.addresses[publicAddress] = publicAddress;
-    ganacheAccounts.private_keys[publicAddress] = privateKey;
-  }
-
-  fs.writeFileSync("ganache-accounts.json", JSON.stringify(ganacheAccounts, null, 2));
-
-  await runSuper();
-});
-
-task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(async () => {
-  const deployNetwork = require("./test/truffle-fixture"); // eslint-disable-line global-require
-
-  await deployNetwork();
-});
-
-module.exports = {
+const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   solidity: {
     compilers: [
@@ -123,6 +43,9 @@ module.exports = {
   mocha: {
     timeout: 100000000,
     bail: true,
+  },
+  fourByteUploader: {
+    runOnCompile: true,
   },
   contractSizer: {
     strict: true,
@@ -200,3 +123,80 @@ module.exports = {
     },
   },
 };
+
+const writeGanacheAccounts = async (hre) => {
+  const ganacheAccounts = { addresses: {}, private_keys: {} };
+  // eslint-disable-next-line no-restricted-syntax
+  for (const account of config?.networks?.hardhat?.accounts as Array<{ privateKey: string; balance: string }>) {
+    const { privateKey } = account;
+    const publicAddress = hre.ethers.utils.computeAddress(privateKey);
+    ganacheAccounts.addresses[publicAddress] = publicAddress;
+    ganacheAccounts.private_keys[publicAddress] = privateKey;
+  }
+
+  fs.writeFileSync("ganache-accounts.json", JSON.stringify(ganacheAccounts, null, 2));
+};
+
+task("compile", "Compile Colony contracts with pinned Token").setAction(async (taskArgs, hre, runSuper) => {
+  await runSuper();
+
+  const pinnedArtifacts = ["Token", "TokenAuthority", "MultiSigWallet"];
+  const artifactSrc = path.resolve(__dirname, "lib/colonyToken/build/contracts");
+  for (let i = 0; i < pinnedArtifacts.length; i += 1) {
+    const artifact = pinnedArtifacts[i];
+    const artifactDst = `${hre.config?.paths?.artifacts}/colonyToken/${artifact}.sol`;
+
+    if (!fs.existsSync(artifactDst)) {
+      fs.mkdirSync(artifactDst, { recursive: true });
+    }
+    fs.copyFileSync(`${artifactSrc}/Pinned${artifact}.json`, `${artifactDst}/${artifact}.json`);
+  }
+});
+
+task("test", "Run tests").setAction(async (taskArgs, hre, runSuper) => {
+  const app = express();
+  const port = 8545;
+
+  app.use(bodyParser.json());
+  app.post("/", async function (req, res) {
+    try {
+      const response = await hre.network.provider.request(req.body);
+      res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
+    } catch (error) {
+      const abiCoder = new hre.ethers.utils.AbiCoder();
+      const decoded = abiCoder.decode(["string"], `0x${error.data.slice(10)}`);
+      res.send({
+        jsonrpc: "2.0",
+        error: { message: `Error: VM Exception while processing transaction: reverted with reason string '${decoded[0]}'` },
+        id: req.body.id,
+      });
+    }
+  });
+
+  if (hre.network.name === "hardhat") {
+    app.listen(port, function () {
+      console.log(`Exposing the provider on port ${port}!`);
+    });
+  }
+
+  await writeGanacheAccounts(hre);
+
+  const nFails = await runSuper();
+  if (nFails > 0 && !process.env.CI && hre.network.name === "hardhat") {
+    console.error("A test failed, not exiting so on-chain state can be inspected");
+    await new Promise(() => {});
+  }
+});
+
+task("node", "Run a node, and output ganache-accounts.json for backwards-compatability").setAction(async (taskArgs, hre, runSuper) => {
+  await writeGanacheAccounts(hre);
+
+  await runSuper();
+});
+
+task("deploy", "Deploy Colony Network as per truffle-fixture.js").setAction(async () => {
+  const { default: deployNetwork } = await import("./test/truffle-fixture.js");
+  await deployNetwork();
+});
+
+export default config;

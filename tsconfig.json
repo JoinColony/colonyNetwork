@@ -11,7 +11,7 @@
       "#package-utils": ["./packages/package-utils/"],
     },
     "skipLibCheck": true,
-    "target": "ES6",
+    "target": "ES2020",
     "rootDir": ".",
     "allowSyntheticDefaultImports": true
   },

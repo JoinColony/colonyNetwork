@@ -22,7 +22,7 @@ importers:
     devDependencies:
       '@certusone/wormhole-sdk':
         specifier: ^0.10.18
-        version: 0.10.18(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2)
+        version: 0.10.18(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2)
       '@codechecks/client':
         specifier: ^0.1.12
         version: 0.1.12(typescript@5.6.2)
@@ -59,6 +59,12 @@ importers:
       '@truffle/contract':
         specifier: ^4.6.31
         version: 4.6.31
+      '@types/chai':
+        specifier: '4'
+        version: 4.3.20
+      '@types/mocha':
+        specifier: ^8.2.0
+        version: 8.2.3
       '@types/node':
         specifier: ^20.16.10
         version: 20.16.10
@@ -73,7 +79,10 @@ importers:
         version: 1.0.5
       '@wormhole-foundation/relayer-engine':
         specifier: ^0.3.2
-        version: 0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.10)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2)
+        version: 0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.10)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2)
+      ai:
+        specifier: '4'
+        version: 4.1.21(react@19.0.0)(zod@3.24.1)
       async-request:
         specifier: ^1.2.0
         version: 1.2.0
@@ -157,7 +166,7 @@ importers:
         version: 7.9.2
       hardhat:
         specifier: ^2.22.12
-        version: 2.22.12(typescript@5.6.2)
+        version: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
       hardhat-contract-sizer:
         specifier: ^2.10.0
         version: 2.10.0(hardhat@2.22.12)
@@ -212,6 +221,9 @@ importers:
       solidity-steamroller:
         specifier: ^1.1.0
         version: 1.1.0
+      ts-node:
+        specifier: ^9.1.1
+        version: 9.1.1(typescript@5.6.2)
       tsx:
         specifier: ^4.19.1
         version: 4.19.1
@@ -452,10 +464,10 @@ importers:
     dependencies:
       '@certusone/wormhole-sdk':
         specifier: ^0.10.15
-        version: 0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2)
+        version: 0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2)
       '@wormhole-foundation/relayer-engine':
         specifier: ^0.3.2
-        version: 0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.10)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2)
+        version: 0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.10)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2)
       ethers:
         specifier: '5'
         version: 5.7.2
@@ -465,7 +477,65 @@ importers:
 
 packages:
 
-  /@apollo/client@3.11.8(graphql@16.9.0):
+  /@ai-sdk/provider-utils@2.1.6(zod@3.24.1):
+    resolution: {integrity: sha512-Pfyaj0QZS22qyVn5Iz7IXcJ8nKIKlu2MeSAdKJzTwkAks7zdLaKVB+396Rqcp1bfQnxl7vaduQVMQiXUrgK8Gw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+    dependencies:
+      '@ai-sdk/provider': 1.0.7
+      eventsource-parser: 3.0.0
+      nanoid: 3.3.8
+      secure-json-parse: 2.7.0
+      zod: 3.24.1
+    dev: true
+
+  /@ai-sdk/provider@1.0.7:
+    resolution: {integrity: sha512-q1PJEZ0qD9rVR+8JFEd01/QM++csMT5UVwYXSN2u54BrVw/D8TZLTeg2FEfKK00DgAx0UtWd8XOhhwITP9BT5g==}
+    engines: {node: '>=18'}
+    dependencies:
+      json-schema: 0.4.0
+    dev: true
+
+  /@ai-sdk/react@1.1.10(react@19.0.0)(zod@3.24.1):
+    resolution: {integrity: sha512-RTkEVYKq7qO6Ct3XdVTgbaCTyjX+q1HLqb+t2YvZigimzMCQbHkpZCtt2H2Fgpt1UOTqnAAlXjEAgTW3X60Y9g==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18 || ^19 || ^19.0.0-rc
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      '@ai-sdk/provider-utils': 2.1.6(zod@3.24.1)
+      '@ai-sdk/ui-utils': 1.1.10(zod@3.24.1)
+      react: 19.0.0
+      swr: 2.3.2(react@19.0.0)
+      throttleit: 2.1.0
+      zod: 3.24.1
+    dev: true
+
+  /@ai-sdk/ui-utils@1.1.10(zod@3.24.1):
+    resolution: {integrity: sha512-x+A1Nfy8RTSatdCe+7nRpHAZVzPFB6H+r+2JKoapSvrwsu9mw2pAbmFgV8Zaj94TsmUdTlO0/j97e63f+yYuWg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
+    dependencies:
+      '@ai-sdk/provider': 1.0.7
+      '@ai-sdk/provider-utils': 2.1.6(zod@3.24.1)
+      zod: 3.24.1
+      zod-to-json-schema: 3.24.1(zod@3.24.1)
+    dev: true
+
+  /@apollo/client@3.11.8(graphql@16.9.0)(react@19.0.0):
     resolution: {integrity: sha512-CgG1wbtMjsV2pRGe/eYITmV5B8lXUCYljB2gB/6jWTFQcrvirUVvKg7qtFdjYkQSFbIffU1IDyxgeaN81eTjbA==}
     requiresBuild: true
     peerDependencies:
@@ -493,7 +563,8 @@ packages:
       hoist-non-react-statics: 3.3.2
       optimism: 0.18.0
       prop-types: 15.8.1
-      rehackt: 0.1.0
+      react: 19.0.0
+      rehackt: 0.1.0(react@19.0.0)
       response-iterator: 0.2.6
       symbol-observable: 4.0.0
       ts-invariant: 0.10.3
@@ -570,7 +641,7 @@ packages:
       '@bull-board/ui': 5.21.0
       redis-info: 3.1.0
 
-  /@bull-board/koa@5.21.0:
+  /@bull-board/koa@5.21.0(react@19.0.0):
     resolution: {integrity: sha512-hXZHZz+z93bf6aN295ZJ23eyT6ZwNNrke2Ec2SZO3xKnQ0AfAnDaLcqX/hLevD0XpIBX5OgjOnuOIChzk2n26w==}
     dependencies:
       '@bull-board/api': 5.21.0(@bull-board/ui@5.21.0)
@@ -580,7 +651,7 @@ packages:
       koa-mount: 4.0.0
       koa-router: 10.1.1
       koa-static: 5.0.0
-      koa-views: 7.0.2(ejs@3.1.10)
+      koa-views: 7.0.2(ejs@3.1.10)(react@19.0.0)
     transitivePeerDependencies:
       - '@types/koa'
       - arc-templates
@@ -657,7 +728,7 @@ packages:
       '@types/long': 4.0.2
       '@types/node': 18.19.54
 
-  /@certusone/wormhole-sdk@0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2):
+  /@certusone/wormhole-sdk@0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2):
     resolution: {integrity: sha512-fFubpGha+2gRuZItPZBJ5PYcKbyoI/DozN3XK2CrK3VXyfHYmaqYKgOK7fhlrrqxCUV3bDYy/Vc6GEUTAh+wDA==}
     dependencies:
       '@certusone/wormhole-sdk-proto-web': 0.0.7(google-protobuf@3.21.4)
@@ -680,7 +751,7 @@ packages:
       near-api-js: 1.1.0
     optionalDependencies:
       '@injectivelabs/networks': 1.10.12(google-protobuf@3.21.4)
-      '@injectivelabs/sdk-ts': 1.10.72
+      '@injectivelabs/sdk-ts': 1.10.72(react@19.0.0)
       '@injectivelabs/utils': 1.10.12(google-protobuf@3.21.4)
     transitivePeerDependencies:
       - '@types/react'
@@ -696,7 +767,7 @@ packages:
       - typescript
       - utf-8-validate
 
-  /@certusone/wormhole-sdk@0.10.18(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2):
+  /@certusone/wormhole-sdk@0.10.18(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2):
     resolution: {integrity: sha512-VuN4AGB018ELkzTT/jN+yWgE6TWqXsHilxxCVWqGctzow2hKSFd8ADUhxhHigies436rS0vPvrgXi6m0J1+Ecw==}
     dependencies:
       '@certusone/wormhole-sdk-proto-web': 0.0.7(google-protobuf@3.21.4)
@@ -719,7 +790,7 @@ packages:
       near-api-js: 1.1.0
     optionalDependencies:
       '@injectivelabs/networks': 1.10.12(google-protobuf@3.21.4)
-      '@injectivelabs/sdk-ts': 1.10.72
+      '@injectivelabs/sdk-ts': 1.10.72(react@19.0.0)
       '@injectivelabs/utils': 1.10.12(google-protobuf@3.21.4)
     transitivePeerDependencies:
       - '@types/react'
@@ -1137,7 +1208,7 @@ packages:
       '@cosmjs/socket': 0.28.13
       '@cosmjs/stream': 0.28.13
       '@cosmjs/utils': 0.28.13
-      axios: 0.21.4
+      axios: 0.21.4(debug@4.3.5)
       readonly-date: 1.0.0
       xstream: 11.14.0
     transitivePeerDependencies:
@@ -1155,7 +1226,7 @@ packages:
       '@cosmjs/socket': 0.29.5
       '@cosmjs/stream': 0.29.5
       '@cosmjs/utils': 0.29.5
-      axios: 0.21.4
+      axios: 0.21.4(debug@4.3.5)
       readonly-date: 1.0.0
       xstream: 11.14.0
     transitivePeerDependencies:
@@ -1174,7 +1245,7 @@ packages:
       '@cosmjs/socket': 0.30.1
       '@cosmjs/stream': 0.30.1
       '@cosmjs/utils': 0.30.1
-      axios: 0.21.4
+      axios: 0.21.4(debug@4.3.5)
       readonly-date: 1.0.0
       xstream: 11.14.0
     transitivePeerDependencies:
@@ -2195,11 +2266,11 @@ packages:
       - google-protobuf
     optional: true
 
-  /@injectivelabs/sdk-ts@1.10.72:
+  /@injectivelabs/sdk-ts@1.10.72(react@19.0.0):
     resolution: {integrity: sha512-A5mHNNBgO4fI1c/7CZ0bGfVXliy8laP+VaYZ++aWh1YyudoZw4CTCEmLetZRy7AUU3XcfbHa8sAImRi7db+v6Q==}
     requiresBuild: true
     dependencies:
-      '@apollo/client': 3.11.8(graphql@16.9.0)
+      '@apollo/client': 3.11.8(graphql@16.9.0)(react@19.0.0)
       '@cosmjs/amino': 0.30.1
       '@cosmjs/proto-signing': 0.30.1
       '@cosmjs/stargate': 0.30.1
@@ -2294,7 +2365,7 @@ packages:
     dependencies:
       '@injectivelabs/exceptions': 1.14.13(google-protobuf@3.21.4)
       '@injectivelabs/ts-types': 1.14.13
-      axios: 0.21.4
+      axios: 0.21.4(debug@4.3.5)
       bignumber.js: 9.1.2
       http-status-codes: 2.3.0
       link-module-alias: 1.2.0
@@ -2822,7 +2893,7 @@ packages:
     dependencies:
       debug: 4.3.7(supports-color@8.1.1)
       ethers: 5.7.2
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
       lodash.isequal: 4.5.0
     transitivePeerDependencies:
       - supports-color
@@ -2834,7 +2905,7 @@ packages:
       hardhat: ^2.9.5
     dependencies:
       ethereumjs-util: 7.1.5
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
     dev: true
 
   /@nomicfoundation/solidity-analyzer-darwin-arm64@0.1.2:
@@ -2906,7 +2977,7 @@ packages:
       hardhat: ^2.0.0
     dependencies:
       ethers: 5.7.2
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
     dev: true
 
   /@nomiclabs/hardhat-ethers@2.2.3(ethers@5.7.2)(hardhat@2.22.6):
@@ -2951,7 +3022,7 @@ packages:
       chai: 4.5.0
       ethereumjs-util: 7.1.5
       fs-extra: 7.0.1
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
       web3: 1.10.4
     transitivePeerDependencies:
       - bufferutil
@@ -2987,7 +3058,7 @@ packages:
       web3: ^1.0.0-beta.36
     dependencies:
       '@types/bignumber.js': 5.0.0
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
       web3: 1.10.4
     dev: true
 
@@ -3045,6 +3116,11 @@ packages:
 
   /@one-ini/wasm@0.1.1:
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
+
+  /@opentelemetry/api@1.9.0:
+    resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
+    engines: {node: '>=8.0.0'}
+    dev: true
 
   /@openzeppelin/contracts@3.4.2:
     resolution: {integrity: sha512-z0zMCjyhhp4y7XKAcDAi3Vgms4T2PstwBdahiO0+9NaGICQKjynK3wduSRplTgk4LXmoO1yfDGO5RbjKYxtuxA==}
@@ -3610,7 +3686,7 @@ packages:
       hardhat: ^2.0.0
     dependencies:
       axios: 1.7.7
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
     transitivePeerDependencies:
       - debug
     dev: true
@@ -3928,6 +4004,10 @@ packages:
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
     dependencies:
       '@types/node': 20.16.10
+
+  /@types/diff-match-patch@1.0.36:
+    resolution: {integrity: sha512-xFdR6tkm0MWvBfO8xXCSsinYxHcqkQUlcHeSpMC2ukzOb6lwQAfDmW+Qt0AvlGd8HpsS28qKsB+oPeJn9I39jg==}
+    dev: true
 
   /@types/form-data@0.0.33:
     resolution: {integrity: sha512-8BSvG1kGm83cyJITQMZSulnl6QV8jqAGreJsc5tPu1Jq0vTSOiY/k24Wx82JRpWwZSqrala6sd5rWi6aNXvqcw==}
@@ -4420,12 +4500,12 @@ packages:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
     dev: true
 
-  /@wormhole-foundation/relayer-engine@0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.10)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2):
+  /@wormhole-foundation/relayer-engine@0.3.2(@bull-board/ui@5.21.0)(@improbable-eng/grpc-web@0.15.0)(@types/node@20.16.10)(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2):
     resolution: {integrity: sha512-6CAGZdxDpPZph+Gx1Tob5wEarEzvD27G7khoGhB9sc8KiOhRz8zDiBspFfLetzfBEHMiTyvAOibETV5G0ULilA==}
     dependencies:
       '@bull-board/api': 5.21.0(@bull-board/ui@5.21.0)
-      '@bull-board/koa': 5.21.0
-      '@certusone/wormhole-sdk': 0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(typescript@5.6.2)
+      '@bull-board/koa': 5.21.0(react@19.0.0)
+      '@certusone/wormhole-sdk': 0.10.17(fastestsmallesttextencoderdecoder@1.0.22)(google-protobuf@3.21.4)(react@19.0.0)(typescript@5.6.2)
       '@certusone/wormhole-spydk': 0.0.1
       '@datastructures-js/queue': 4.2.3
       '@improbable-eng/grpc-web-node-http-transport': 0.15.0(@improbable-eng/grpc-web@0.15.0)
@@ -4788,6 +4868,28 @@ packages:
     dependencies:
       clean-stack: 2.2.0
       indent-string: 4.0.0
+
+  /ai@4.1.21(react@19.0.0)(zod@3.24.1):
+    resolution: {integrity: sha512-w1v3T/fisoD1qRFz7CS7nE7mggeaxEpkEvWvVUWRem9lERgwh670OPhMPUSrdzTtCjMkOTrNkaecKoYAwvqM/A==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18 || ^19 || ^19.0.0-rc
+      zod: ^3.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      zod:
+        optional: true
+    dependencies:
+      '@ai-sdk/provider': 1.0.7
+      '@ai-sdk/provider-utils': 2.1.6(zod@3.24.1)
+      '@ai-sdk/react': 1.1.10(react@19.0.0)(zod@3.24.1)
+      '@ai-sdk/ui-utils': 1.1.10(zod@3.24.1)
+      '@opentelemetry/api': 1.9.0
+      jsondiffpatch: 0.6.0
+      react: 19.0.0
+      zod: 3.24.1
+    dev: true
 
   /ajv@5.5.2:
     resolution: {integrity: sha512-Ajr4IcMXq/2QmMkEmSvxqfLN5zGmJ92gHXAeOXq1OekoH2rfDNsgdDoL2f7QaRCy7G/E6TpxBVdRuNraMztGHw==}
@@ -5266,20 +5368,12 @@ packages:
     resolution: {integrity: sha512-3AungXC4I8kKsS9PuS4JH2nc+0bVY/mjgrephHTIi8fpEeGsTHBUJeosp0Wc1myYMElmD0B3Oc4XL/HVJ4PV2g==}
     dev: true
 
-  /axios@0.21.4:
-    resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
-    dependencies:
-      follow-redirects: 1.15.6(debug@4.3.7)
-    transitivePeerDependencies:
-      - debug
-
   /axios@0.21.4(debug@4.3.5):
     resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
     dependencies:
       follow-redirects: 1.15.6(debug@4.3.5)
     transitivePeerDependencies:
       - debug
-    dev: true
 
   /axios@0.24.0:
     resolution: {integrity: sha512-Q6cWsys88HoPgAaFAVUb0WpPk0O8iTeisR9IMqy9G8AbO4NlpVknrnQS03zzF9PGAWgO3cgletO3VjV/P7VztA==}
@@ -6963,7 +7057,7 @@ packages:
     requiresBuild: true
     optional: true
 
-  /consolidate@0.16.0(ejs@3.1.10):
+  /consolidate@0.16.0(ejs@3.1.10)(react@19.0.0):
     resolution: {integrity: sha512-Nhl1wzCslqXYTJVDyJCu3ODohy9OfBMB5uD2BiBTzd7w+QY0lBzafkR8y8755yMYHAaMD4NuzbAw03/xzfw+eQ==}
     engines: {node: '>= 0.10.0'}
     deprecated: Please upgrade to consolidate v1.0.0+ as it has been modernized with several long-awaited fixes implemented. Maintenance is supported by Forward Email at https://forwardemail.net ; follow/watch https://github.com/ladjs/consolidate for updates and release changelog
@@ -7131,6 +7225,7 @@ packages:
     dependencies:
       bluebird: 3.7.2
       ejs: 3.1.10
+      react: 19.0.0
 
   /constant-case@2.0.0:
     resolution: {integrity: sha512-eS0N9WwmjTqrOmR3o83F5vW8Z+9R1HnVz3xmzT2PMFug9ly+Au/fxRWlEBSb6LcZwspSsEn9Xs1uw9YgzAg1EQ==}
@@ -7721,6 +7816,11 @@ packages:
     resolution: {integrity: sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==}
     engines: {node: '>= 0.8'}
 
+  /dequal@2.0.3:
+    resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
+    engines: {node: '>=6'}
+    dev: true
+
   /des.js@1.1.0:
     resolution: {integrity: sha512-r17GxjhUCjSRy8aiJpr8/UadFIzMzJGexI3Nmz4ADi9LYSFx4gTBp80+NaX/YsXWWLhpZ7v/v/ubEc/bCNfKwg==}
     dependencies:
@@ -7763,6 +7863,10 @@ packages:
       debug: 4.3.5
     transitivePeerDependencies:
       - supports-color
+    dev: true
+
+  /diff-match-patch@1.0.5:
+    resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
     dev: true
 
   /diff@3.3.1:
@@ -9405,6 +9509,11 @@ packages:
     requiresBuild: true
     dev: true
 
+  /eventsource-parser@3.0.0:
+    resolution: {integrity: sha512-T1C0XCUimhxVQzW4zFipdx0SficT651NnkR0ZSH3yQwh+mFMdLfgjABVi4YtMTtaL4s168593DaoaRLMqryavA==}
+    engines: {node: '>=18.0.0'}
+    dev: true
+
   /evp_bytestokey@1.0.3:
     resolution: {integrity: sha512-/f2Go4TognH/KvCISP7OUsHn85hT9nUkxxA9BEWxFn+Oj9o8ZNLm/40hdlgSLyuOimsrTKLUMEorQexp/aPQeA==}
     dependencies:
@@ -9897,7 +10006,6 @@ packages:
         optional: true
     dependencies:
       debug: 4.3.5
-    dev: true
 
   /follow-redirects@1.15.6(debug@4.3.7):
     resolution: {integrity: sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==}
@@ -9909,6 +10017,7 @@ packages:
         optional: true
     dependencies:
       debug: 4.3.7(supports-color@8.1.1)
+    dev: true
 
   /follow-redirects@1.15.9:
     resolution: {integrity: sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==}
@@ -10620,7 +10729,7 @@ packages:
     dependencies:
       chalk: 4.1.2
       cli-table3: 0.6.5
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
       strip-ansi: 6.0.1
     dev: true
 
@@ -10664,7 +10773,7 @@ packages:
     peerDependencies:
       hardhat: ^2.0.0
     dependencies:
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
     dev: true
 
   /hardhat-tracer@3.1.0(chai@4.5.0)(hardhat@2.22.12):
@@ -10677,7 +10786,7 @@ packages:
       chalk: 4.1.2
       debug: 4.3.7(supports-color@8.1.1)
       ethers: 5.7.2
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
       semver: 7.6.3
     transitivePeerDependencies:
       - bufferutil
@@ -10685,7 +10794,7 @@ packages:
       - utf-8-validate
     dev: true
 
-  /hardhat@2.22.12(typescript@5.6.2):
+  /hardhat@2.22.12(ts-node@9.1.1)(typescript@5.6.2):
     resolution: {integrity: sha512-yok65M+LsOeTBHQsjg//QreGCyrsaNmeLVzhTFqlOvZ4ZE5y69N0wRxH1b2BC9dGK8S8OPUJMNiL9X0RAvbm8w==}
     hasBin: true
     peerDependencies:
@@ -10737,6 +10846,7 @@ packages:
       solc: 0.8.26(debug@4.3.7)
       source-map-support: 0.5.21
       stacktrace-parser: 0.1.10
+      ts-node: 9.1.1(typescript@5.6.2)
       tsort: 0.0.1
       typescript: 5.6.2
       undici: 5.28.4
@@ -12037,6 +12147,16 @@ packages:
     hasBin: true
     dev: true
 
+  /jsondiffpatch@0.6.0:
+    resolution: {integrity: sha512-3QItJOXp2AP1uv7waBkao5nCvhEv+QmJAd38Ybq7wNI74Q+BBmnLn4EDKz6yI9xGAIQoUF87qHt+kc1IVxB4zQ==}
+    engines: {node: ^18.0.0 || >=20.0.0}
+    hasBin: true
+    dependencies:
+      '@types/diff-match-patch': 1.0.36
+      chalk: 5.3.0
+      diff-match-patch: 1.0.5
+    dev: true
+
   /jsonfile@2.4.0:
     resolution: {integrity: sha512-PKllAqbgLgxHaj8TElYymKCAgrASebJrWpTnEkOaTowt23VKXXN0sUeriJ+eh7y6ufb/CC5ap11pz71/cM0hUw==}
     optionalDependencies:
@@ -12207,7 +12327,7 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /koa-views@7.0.2(ejs@3.1.10):
+  /koa-views@7.0.2(ejs@3.1.10)(react@19.0.0):
     resolution: {integrity: sha512-dvx3mdVeSVuIPEaKAoGbxLcenudvhl821xxyuRbcoA+bOJ2dvN8wlGjkLu0ZFMlkCscXZV6lzxy28rafeazI/w==}
     deprecated: This package is deprecated, please use the new fork @ladjs/koa-views. Maintenance is supported by Forward Email at https://forwardemail.net ; follow/watch https://github.com/ladjs/koa-views for updates and release changelog
     peerDependencies:
@@ -12216,7 +12336,7 @@ packages:
       '@types/koa':
         optional: true
     dependencies:
-      consolidate: 0.16.0(ejs@3.1.10)
+      consolidate: 0.16.0(ejs@3.1.10)(react@19.0.0)
       debug: 4.3.7(supports-color@8.1.1)
       get-paths: 0.0.7
       koa-send: 5.0.1
@@ -13412,6 +13532,12 @@ packages:
 
   /nanoid@2.1.11:
     resolution: {integrity: sha512-s/snB+WGm6uwi0WjsZdaVcuf3KJXlfGl2LcxgwkEwJF0D/BWzVWAZW/XY4bFaiR7s0Jk3FPvlnepg1H1b1UwlA==}
+    dev: true
+
+  /nanoid@3.3.8:
+    resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
     dev: true
 
   /nanomatch@1.2.13:
@@ -14885,6 +15011,10 @@ packages:
     requiresBuild: true
     optional: true
 
+  /react@19.0.0:
+    resolution: {integrity: sha512-V8AVnmPIICiWpGfm6GLzCR/W5FXLchHop40W4nXBmdlEceh16rCN8O8LNWm5bh5XUX91fh7KpA+W0TgMKmgTpQ==}
+    engines: {node: '>=0.10.0'}
+
   /read-pkg-up@1.0.1:
     resolution: {integrity: sha512-WD9MTlNtI55IwYUS27iHh9tK3YoIVhxis8yKhLpTqWtml739uXc9NWTpxoHkfZf3+DkCCsXox94/VWZniuZm6A==}
     engines: {node: '>=0.10.0'}
@@ -15079,7 +15209,7 @@ packages:
       jsesc: 0.5.0
     dev: true
 
-  /rehackt@0.1.0:
+  /rehackt@0.1.0(react@19.0.0):
     resolution: {integrity: sha512-7kRDOuLHB87D/JESKxQoRwv4DzbIdwkAGQ7p6QKGdVlY1IZheUnVhlk/4UZlNUVxdAXpyxikE3URsG067ybVzw==}
     requiresBuild: true
     peerDependencies:
@@ -15090,6 +15220,8 @@ packages:
         optional: true
       react:
         optional: true
+    dependencies:
+      react: 19.0.0
     optional: true
 
   /remove-trailing-separator@1.1.0:
@@ -15487,6 +15619,10 @@ packages:
       node-addon-api: 5.1.0
       node-gyp-build: 4.8.2
     optional: true
+
+  /secure-json-parse@2.7.0:
+    resolution: {integrity: sha512-6aU+Rwsezw7VR8/nyvKTx8QpWH9FrcYiXXlqC4z5d5XQBDRqtbfsRjnwGyqbi3gddNtWHuEk9OANUotL26qKUw==}
+    dev: true
 
   /seedrandom@3.0.1:
     resolution: {integrity: sha512-1/02Y/rUeU1CJBAGLebiC5Lbo5FnB22gQbIFFYTLkwvp1xdABZJH1sn4ZT1MzXmPpzv+Rf/Lu2NcsLJiK4rcDg==}
@@ -16099,7 +16235,7 @@ packages:
       ghost-testrpc: 0.0.2
       global-modules: 2.0.0
       globby: 10.0.2
-      hardhat: 2.22.12(typescript@5.6.2)
+      hardhat: 2.22.12(ts-node@9.1.1)(typescript@5.6.2)
       jsonschema: 1.4.1
       lodash: 4.17.21
       mocha: 10.7.3
@@ -16596,6 +16732,16 @@ packages:
       - utf-8-validate
     dev: true
 
+  /swr@2.3.2(react@19.0.0):
+    resolution: {integrity: sha512-RosxFpiabojs75IwQ316DGoDRmOqtiAj0tg8wCcbEu4CiLZBs/a9QNtHV7TUfDXmmlgqij/NqzKq/eLelyv9xA==}
+    peerDependencies:
+      react: ^16.11.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    dependencies:
+      dequal: 2.0.3
+      react: 19.0.0
+      use-sync-external-store: 1.4.0(react@19.0.0)
+    dev: true
+
   /symbol-observable@2.0.3:
     resolution: {integrity: sha512-sQV7phh2WCYAn81oAkakC5qjq2Ml0g8ozqz03wOGnx9dDlG1de6yrF+0RAzSJD8fPUow3PTSMf2SAbOGxb93BA==}
     engines: {node: '>=0.10'}
@@ -16758,6 +16904,11 @@ packages:
     resolution: {integrity: sha512-RVZSIV5IG10Hk3enotrhvz0T9em6cyHBLkH/YAZuKqd8hRkKhSfCGIcP2KUY0EPxndzANBmNllzWPwak+bheSw==}
     dependencies:
       any-promise: 1.3.0
+
+  /throttleit@2.1.0:
+    resolution: {integrity: sha512-nt6AMGKW1p/70DF/hGBdJB57B8Tspmbp5gfJ8ilhLnt7kkr2ye7hzD6NVG8GGErk2HWF34igrL2CXmNIkzKqKw==}
+    engines: {node: '>=18'}
+    dev: true
 
   /through2@2.0.5:
     resolution: {integrity: sha512-/mrRod8xqpA+IHSLyGCQ2s8SPHiCDEeQJSep1jqLYeEUClOFG2Qsh+4FU6G9VeqpZnGW/Su8LQGc4YKni5rYSQ==}
@@ -17002,6 +17153,22 @@ packages:
       make-error: 1.3.6
       source-map-support: 0.5.21
       typescript: 4.9.5
+      yn: 3.1.1
+    dev: true
+
+  /ts-node@9.1.1(typescript@5.6.2):
+    resolution: {integrity: sha512-hPlt7ZACERQGf03M253ytLY3dHbGNGrAq9qIHWUY9XHYl1z7wYngSr3OQ5xmui8o2AaxsONxIzjafLUiWBo1Fg==}
+    engines: {node: '>=10.0.0'}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=2.7'
+    dependencies:
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      source-map-support: 0.5.21
+      typescript: 5.6.2
       yn: 3.1.1
     dev: true
 
@@ -17436,6 +17603,14 @@ packages:
       node-gyp-build: 4.8.2
     dev: true
     optional: true
+
+  /use-sync-external-store@1.4.0(react@19.0.0):
+    resolution: {integrity: sha512-9WXSPC5fMv61vaupRkCKCxsPxBocVnwakBEkMIHHpkTTg6icbJtg6jzgtLDm4bl3cSHAca52rYWih0k4K3PfHw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    dependencies:
+      react: 19.0.0
+    dev: true
 
   /use@3.1.1:
     resolution: {integrity: sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==}
@@ -19234,8 +19409,20 @@ packages:
     requiresBuild: true
     optional: true
 
+  /zod-to-json-schema@3.24.1(zod@3.24.1):
+    resolution: {integrity: sha512-3h08nf3Vw3Wl3PK+q3ow/lIil81IT2Oa7YpQyUUDsEWbXveMesdfK1xBd2RhCkynwZndAxixji/7SYJJowr62w==}
+    peerDependencies:
+      zod: ^3.24.1
+    dependencies:
+      zod: 3.24.1
+    dev: true
+
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+
+  /zod@3.24.1:
+    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+    dev: true
 
   github.com/ethereumjs/ethereumjs-abi/ee3994657fa7a427238e6ba92a84d0b529bbcde0:
     resolution: {tarball: https://codeload.github.com/ethereumjs/ethereumjs-abi/tar.gz/ee3994657fa7a427238e6ba92a84d0b529bbcde0}
