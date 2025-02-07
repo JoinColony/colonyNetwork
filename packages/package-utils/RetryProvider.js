@@ -8,7 +8,7 @@ class RetryProvider extends ethers.providers.StaticJsonRpcProvider {
   }
 
   static attemptCheck(err, attemptNumber) {
-    const allowedErrorCodes = ["CALL_EXCEPTION", "UNPREDICTABLE_GAS_LIMIT"];
+    const allowedErrorCodes = ["CALL_EXCEPTION", "UNPREDICTABLE_GAS_LIMIT", "NONCE_EXPIRED"];
     if (allowedErrorCodes.includes(err.code)) {
       console.log(`Got a ${err.code}, no retrying`);
       return false;
