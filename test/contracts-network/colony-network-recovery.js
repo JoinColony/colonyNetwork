@@ -28,7 +28,7 @@ const {
   setupRandomColony,
   getMetaTransactionParameters,
 } = require("../../helpers/test-data-generator");
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 const { DEFAULT_STAKE, MINING_CYCLE_DURATION, CURR_VERSION, ADDRESS_ZERO, HASHZERO } = require("../../helpers/constants");
 

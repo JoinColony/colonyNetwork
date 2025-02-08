@@ -33,7 +33,7 @@ const {
 const { giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } = require("../../helpers/test-data-generator");
 
 const { TruffleLoader } = require("../../packages/package-utils");
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const Token = artifacts.require("Token");

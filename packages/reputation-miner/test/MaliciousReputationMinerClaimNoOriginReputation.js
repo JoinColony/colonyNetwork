@@ -1,4 +1,4 @@
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerClaimNoOriginReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no origin reputation, whether there is one or not, if told to falsify a child update.
@@ -6,10 +6,13 @@ class MaliciousReputationMinerClaimNoOriginReputation extends ReputationMinerTes
   constructor(opts, entryToFalsify) {
     super(opts);
     this.entryToFalsify = entryToFalsify;
+    this.reputationMiner.getAmount = this.getAmount.bind(this);
+    this.reputationMiner.originalAddSingleReputationUpdate = this.reputationMiner.addSingleReputationUpdate;
+    this.reputationMiner.addSingleReputationUpdate = this.addSingleReputationUpdate.bind(this);
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {
-    await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
+    await this.reputationMiner.originalAddSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
     if (updateNumber.toNumber() === this.entryToFalsify){
 
       // Set the origin skill key

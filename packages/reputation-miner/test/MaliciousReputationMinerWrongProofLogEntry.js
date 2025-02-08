@@ -1,13 +1,14 @@
 const ethers = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrapper {
   // This client will supply the wrong log entry as part of its proof
   constructor(opts, amountToFalsify) {
     super(opts);
     this.amountToFalsify = amountToFalsify.toString();
+    this.reputationMiner.respondToChallenge = this.respondToChallenge.bind(this);
   }
 
   async respondToChallenge() {

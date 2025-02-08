@@ -1,4 +1,4 @@
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 const WRONG_ADDRESS = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
@@ -8,6 +8,7 @@ class MaliciousReputationMinerWrongChildReputation extends ReputationMinerTestWr
   constructor(opts, whatToFalsify) {
     super(opts);
     this.whatToFalsify = whatToFalsify;
+    this.reputationMiner.addSingleReputationUpdate = this.addSingleReputationUpdate.bind(this);
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {

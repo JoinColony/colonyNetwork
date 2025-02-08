@@ -1,6 +1,6 @@
 const BN = require("bn.js");
 
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerReuseUID extends ReputationMinerTestWrapper {
   // This client will reuse a UID for a reputation
@@ -8,6 +8,8 @@ class MaliciousReputationMinerReuseUID extends ReputationMinerTestWrapper {
     super(opts);
     this.entryToFalsify = entryToFalsify.toString();
     this.amountToFalsify = amountToFalsify.toString();
+    this.reputationMiner.getNewestReputationProofObject = this.getNewestReputationProofObject.bind(this);
+    this.reputationMiner.getValueAsBytes = this.getValueAsBytes.bind(this);
   }
 
   async getNewestReputationProofObject(logEntry) {

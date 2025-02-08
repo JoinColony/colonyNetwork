@@ -48,7 +48,7 @@ const {
   FORKED_XDAI_CHAINID,
 } = require("../../helpers/constants");
 
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const { expect } = chai;

@@ -1,4 +1,4 @@
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 const WRONG_ADDRESS = "0000000000000000000000000000000000000000";
 
@@ -8,6 +8,9 @@ class MaliciousReputationMinerGlobalOriginNotChildOrigin extends ReputationMiner
   constructor(opts, entryToFalsify) {
     super(opts);
     this.entryToFalsify = entryToFalsify;
+    this.reputationMiner.addSingleReputationUpdate = this.addSingleReputationUpdate.bind(this);
+    this.reputationMiner.getKeyForUpdateNumber = this.getKeyForUpdateNumber.bind(this);
+
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {

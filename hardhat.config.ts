@@ -14,11 +14,13 @@ import "@solidstate/hardhat-4byte-uploader";
 import "hardhat-contract-sizer";
 import "hardhat-storage-layout-changes";
 import "solidity-coverage";
-
-// Avoid this require if possible
-if (process.argv.filter((arg) => ["trace", "tracecall", "decode", "decodelog"].includes(arg)).length > 0) {
-  import("hardhat-tracer");
-}
+import "hardhat-tracer";
+// // Avoid this require if possible
+// console.log(process.argv)
+// if (process.argv.filter((arg) => ["trace", "tracecall", "decode", "decodelog"].includes(arg)).length > 0) {
+//   console.log('importing hardhat-tracer')
+//   import("hardhat-tracer");
+// }
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -163,13 +165,17 @@ task("test", "Run tests").setAction(async (taskArgs, hre, runSuper) => {
       const response = await hre.network.provider.request(req.body);
       res.send({ jsonrpc: "2.0", result: response, id: req.body.id });
     } catch (error) {
-      const abiCoder = new hre.ethers.utils.AbiCoder();
-      const decoded = abiCoder.decode(["string"], `0x${error.data.slice(10)}`);
-      res.send({
-        jsonrpc: "2.0",
-        error: { message: `Error: VM Exception while processing transaction: reverted with reason string '${decoded[0]}'` },
-        id: req.body.id,
-      });
+      try {
+        const abiCoder = new hre.ethers.utils.AbiCoder();
+        const decoded = abiCoder.decode(["string"], `0x${error.data.slice(10)}`);
+        res.send({
+          jsonrpc: "2.0",
+          error: { message: `Error: VM Exception while processing transaction: reverted with reason string '${decoded[0]}'` },
+          id: req.body.id,
+        });
+      } catch (e) {
+        res.send({ jsonrpc: "2.0", error: { message: error.message }, id: req.body.id });
+      }
     }
   });
 

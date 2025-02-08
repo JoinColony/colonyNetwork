@@ -1,6 +1,6 @@
 const BN = require("bn.js");
 
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerWrongUID extends ReputationMinerTestWrapper {
   // This client uses the wrong UID for a reputation (even an existing one)
@@ -8,10 +8,11 @@ class MaliciousReputationMinerWrongUID extends ReputationMinerTestWrapper {
     super(opts);
     this.entryToFalsify = entryToFalsify.toString();
     this.amountToFalsify = amountToFalsify.toString();
+    this.reputationMiner.getValueAsBytes = this.getValueAsBytes.bind(this);
   }
 
   getValueAsBytes(reputation, _uid, index) {
-    console.log('getValueAsBytes', reputation, _uid, index);
+    console.log('overwrittengetValueAsBytesa', reputation, _uid, index);
     let uid;
     if (index && index.toString() === this.entryToFalsify) {
       uid = new BN(_uid.toString()).add(new BN(this.amountToFalsify));

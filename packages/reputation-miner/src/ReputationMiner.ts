@@ -58,24 +58,24 @@ class ReputationMiner {
 
   private readonly justificationCachePath: string;
 
-  private readonly useJsTree: boolean;
+  readonly useJsTree: boolean;
 
-  private readonly realProvider: RetryProvider;
+  readonly realProvider: RetryProvider;
 
-  private readonly realWallet: Signer;
+  readonly realWallet: Signer;
 
   private db!: Database;
 
   private queries: DatabaseQueries;
 
   // Contract instances and definitions
-  private colonyNetwork!: Contract;
+  colonyNetwork!: Contract;
 
   private tokenLocking!: Contract;
 
   private clnyAddress!: string;
 
-  private repCycleContractDef!: ContractDef;
+  repCycleContractDef!: ContractDef;
 
   private colonyContractDef!: ContractDef;
 
@@ -88,29 +88,31 @@ class ReputationMiner {
   private patriciaTreeNoHashContractDef?: ContractDef;
 
   // State management
-  private reputationTree!: PatriciaTreeBase | PatriciaTree | Contract;
 
-  private previousReputationTree!: PatriciaTreeBase;
+  previousReputationTree!: PatriciaTreeBase;
 
-  private nReputations: BigNumber = ethers.constants.Zero;
+  nReputations: BigNumber = ethers.constants.Zero;
 
-  private reputations: Record<string, string> = {};
 
   private feeData: providers.TransactionRequest = {};
 
   private miningCycleDuration!: BigNumber;
 
-  private constant!: BigNumber;
+  constant!: BigNumber;
 
-  private justificationTree!: PatriciaTreeBase;
+  justificationTree!: PatriciaTreeBase; // Would like this private, but tests
 
-  private justificationHashes: Record<string, any> = {};
+  reputations: Record<string, string> = {}; // Same as above
 
-  private reverseReputationHashLookup: Record<string, string> = {};
+  reputationTree: PatriciaTreeBase | PatriciaTree | Contract; // Ditto
 
-  private nReputationsBeforeLatestLog!: BigNumber;
+  justificationHashes: Record<string, any> = {};
 
-  private previousReputations: Record<string, string> = {};
+  reverseReputationHashLookup: Record<string, string> = {};
+
+  nReputationsBeforeLatestLog!: BigNumber;
+
+  previousReputations: Record<string, string> = {};
 
   // Ganache instance
   private readonly ganacheProvider?: providers.JsonRpcProvider;
@@ -118,11 +120,11 @@ class ReputationMiner {
   private readonly ganacheWallet?: Signer;
 
   // Mining address
-  private minerAddress!: string;
+  minerAddress!: string;
 
-  private decayNumerator: BigNumber = ethers.constants.Zero;
+  decayNumerator: BigNumber = ethers.constants.Zero;
 
-  private decayDenominator: BigNumber = ethers.constants.Zero;
+  decayDenominator: BigNumber = ethers.constants.Zero;
 
   private adapter: any;
 
@@ -633,7 +635,7 @@ class ReputationMiner {
     // console.log("updateNumber", updateNumber.toString());
     // console.log("key", key);
     // console.log("amount", amount.toString());
-    await this.insert(key, amount);
+    await this.insert(key, amount, updateNumber);
   }
 
   /**
@@ -1151,10 +1153,12 @@ class ReputationMiner {
 
     let gasEstimate;
     try {
+      console.log(round, index, siblings1, siblings2);
       gasEstimate = await repCycle.estimateGas.confirmJustificationRootHash(round, index, siblings1, siblings2);
       // Add some extra gas just in case the details change and a little more is needed
       gasEstimate = gasEstimate.mul(11).div(10)
     } catch (err) {
+      console.log(err);
       gasEstimate = ethers.BigNumber.from(6000000);
     }
 
@@ -1450,7 +1454,7 @@ class ReputationMiner {
    * @param  {Number or BigNumber}  index           The index of the log entry being considered
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
-  async insert(key: string, _reputationScore: BigNumber | number, index?: BigNumber|number): Promise<boolean> {
+  async insert(key: string, _reputationScore: BigNumber | number, index: BigNumber|number): Promise<boolean> {
     // If we already have this key, then we lookup the unique identifier we assigned this key.
     // Otherwise, give it the new one.
     let value;

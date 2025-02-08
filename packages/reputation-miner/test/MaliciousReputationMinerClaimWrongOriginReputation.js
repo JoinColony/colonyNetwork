@@ -1,4 +1,4 @@
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 const WRONG_ADDRESS = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
@@ -12,6 +12,8 @@ class MaliciousReputationMinerWrongOriginReputation extends ReputationMinerTestW
     // we get the lookup index.
     this.amountToFalsify = amountToFalsify;
     this.whatToFalsify = whatToFalsify;
+    this.reputationMiner.addSingleReputationUpdate = this.addSingleReputationUpdate.bind(this);
+    this.reputationMiner.getKeyForUpdateNumber = this.getKeyForUpdateNumber.bind(this);
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {

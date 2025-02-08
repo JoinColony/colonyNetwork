@@ -24,7 +24,7 @@ const {
 
 const { fundColonyWithTokens, giveUserCLNYTokensAndStake, setupRandomColony, setupClaimedExpenditure } = require("../../helpers/test-data-generator");
 
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

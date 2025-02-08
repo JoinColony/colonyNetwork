@@ -1,7 +1,7 @@
 const { ethers } = require("ethers");
 const { soliditySha3 } = require("web3-utils");
 
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it adds some extra
@@ -10,6 +10,7 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
     super(opts);
     this.responseToFalsify = responseToFalsify;
     this.responseValue = responseValue;
+    this.reputationMiner.respondToChallenge = this.respondToChallenge.bind(this);
   }
 
   async respondToChallenge() {

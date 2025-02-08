@@ -29,7 +29,7 @@ const {
 
 const { INT128_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
 
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 const MaliciousReputationMinerWrongUID = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongUID");
 const MaliciousReputationMinerReuseUID = require("../../packages/reputation-miner/test/MaliciousReputationMinerReuseUID");
@@ -38,7 +38,7 @@ const MaliciousReputationMinerWrongJRH = require("../../packages/reputation-mine
 const MaliciousReputationMinerWrongJRHRightNLeaves = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRHRightNLeaves");
 const MaliciousReputationMinerWrongNLeaves = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves");
 const MaliciousReputationMinerWrongNLeaves2 = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongNLeaves2");
-const MaliciousReputationMinerAddNewReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation");
+const MaliciousReputationMinerAddNewReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation").default;
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

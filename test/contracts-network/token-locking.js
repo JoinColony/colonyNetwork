@@ -18,7 +18,7 @@ const {
 const { UINT256_MAX, DEFAULT_STAKE } = require("../../helpers/constants");
 const { setupEtherRouter } = require("../../helpers/upgradable-contracts");
 
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

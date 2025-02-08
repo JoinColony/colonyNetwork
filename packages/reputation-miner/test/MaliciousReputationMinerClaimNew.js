@@ -1,4 +1,4 @@
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it claims a reputation update
@@ -6,6 +6,9 @@ class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
   constructor(opts, entryToFalsify) {
     super(opts);
     this.entryToFalsify = entryToFalsify.toString();
+    this.originalAddSingleReputationUpdate = this.reputationMiner.addSingleReputationUpdate;
+    this.reputationMiner.addSingleReputationUpdate = this.addSingleReputationUpdate.bind(this);
+    this.getNewestReputationProofObject = this.getNewestReputationProofObject.bind(this);
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber) {
@@ -23,7 +26,7 @@ class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
       adjacentReputationProof = await this.getReputationProofObject(adjacentKey);
       // Note that this won't remove it from the PatriciaTree - which is what we want
     }
-    await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber);
+    await this.originalAddSingleReputationUpdate(updateNumber, repCycle, blockNumber);
     if (updateNumber.toString() === this.entryToFalsify) {
       this.justificationHashes[
         ReputationMinerTestWrapper.getHexString(updateNumber.sub(1), 64)

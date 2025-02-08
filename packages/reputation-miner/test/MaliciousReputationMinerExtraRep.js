@@ -1,4 +1,4 @@
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerExtraRep extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it adds some extra
@@ -7,6 +7,7 @@ class MaliciousReputationMinerExtraRep extends ReputationMinerTestWrapper {
     super(opts);
     this.entryToFalsify = entryToFalsify.toString();
     this.amountToFalsify = amountToFalsify.toString();
+    this.reputationMiner.getAmount = this.getAmount.bind(this);
   }
 
   getAmount(i, _score) {

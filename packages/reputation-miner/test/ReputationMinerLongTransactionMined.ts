@@ -1,11 +1,20 @@
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
+
 const ethers = require("ethers");
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+// const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 
 class ReputationMinerLongTransactionMined extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that submitRootHash
   // doesn't resolve until we tell it to, via resolveSubmission()
 
+  constructor(opts) {
+    super(opts);
+    // this.reputationMiner.originalSubmitRootHash = this.reputationMiner.submitRootHash;
+    this.reputationMiner.submitRootHash = this.submitRootHash.bind(this);
+  }
+
   async submitRootHash(entryIndex) {
+    console.log("submitRootHash overwritten ***********************************");
     const hash = await this.getRootHash();
     const nLeaves = await this.getRootHashNLeaves();
     const jrh = await this.justificationTree.getRootHash();
@@ -34,4 +43,4 @@ class ReputationMinerLongTransactionMined extends ReputationMinerTestWrapper {
   }
 }
 
-module.exports = ReputationMinerLongTransactionMined;
+export default ReputationMinerLongTransactionMined;

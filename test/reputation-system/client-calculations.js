@@ -15,7 +15,7 @@ const {
   removeSubdomainLimit,
   getChainId,
 } = require("../../helpers/test-helper");
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 
 const {
   setupColonyNetwork,

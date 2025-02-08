@@ -1,7 +1,7 @@
 const ethers = require("ethers");
 
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
 const PatriciaTreeNoHash = require("#patriciaNoHashKey.js");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerWrongJRHRightNLeaves extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
@@ -10,6 +10,8 @@ class MaliciousReputationMinerWrongJRHRightNLeaves extends ReputationMinerTestWr
     super(opts);
     this.entriesToFalsify = entriesToFalsify.map(x => x.toString());
     this.entriesToSkip = entriesToSkip.map(x=>x.toString());
+    this.reputationMiner.respondToChallenge = this.respondToChallenge.bind(this);
+    this.reputationMiner.submitRootHash = this.submitRootHash.bind(this);
   }
 
   // eslint-disable-next-line class-methods-use-this

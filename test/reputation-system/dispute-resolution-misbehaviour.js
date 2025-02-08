@@ -42,7 +42,7 @@ const {
   HASHZERO,
 } = require("../../helpers/constants");
 
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 const MaliciousReputationMinerWrongResponse = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongResponse");
 const MaliciousReputationMinerWrongProofLogEntry = require("../../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry");

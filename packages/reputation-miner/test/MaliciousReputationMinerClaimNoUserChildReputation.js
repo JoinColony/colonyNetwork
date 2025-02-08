@@ -1,6 +1,6 @@
 const ethers = require("ethers");
 
-const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("./ReputationMinerTestWrapper").default;
 
 class MaliciousReputationMinerClaimNoUserChildReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no user child reputation, whether there is one or not
@@ -8,6 +8,9 @@ class MaliciousReputationMinerClaimNoUserChildReputation extends ReputationMiner
   constructor(opts, entryToFalsify) {
     super(opts);
     this.entryToFalsify = entryToFalsify;
+    this.reputationMiner.originalAddSingleReputationUpdate = this.reputationMiner.addSingleReputationUpdate;
+    this.reputationMiner.addSingleReputationUpdate = this.addSingleReputationUpdate.bind(this);
+    this.reputationMiner.getAmount = this.getAmount.bind(this);
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {
@@ -43,7 +46,7 @@ class MaliciousReputationMinerClaimNoUserChildReputation extends ReputationMiner
       childAdjacentProof = await this.getReputationProofObject(childAdjacentKey);
 
     }
-    await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
+    await this.reputationMiner.originalAddSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
     if (updateNumber.toNumber() === this.entryToFalsify){
 
       // Because the amount is zero (due to our custom getAmount function below), the origin skill proof object and the user child proof object

@@ -35,7 +35,7 @@ const { setupBridging, deployBridge } = require("../../scripts/setup-bridging-co
 
 const { MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION, ROOT_ROLE, CURR_VERSION, CREATEX_ADDRESS } = require("../../helpers/constants");
 const { forwardTime, checkErrorRevertEthers, revert, snapshot, evmChainIdToWormholeChainId } = require("../../helpers/test-helper");
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const { TruffleLoader } = require("../../packages/package-utils");
 
 const UINT256_MAX_ETHERS = ethers.BigNumber.from(2).pow(256).sub(1);

@@ -31,7 +31,7 @@ const {
 
 const { DEFAULT_STAKE, INITIAL_FUNDING, UINT256_MAX, CHALLENGE_RESPONSE_WINDOW_DURATION, MINING_CYCLE_DURATION } = require("../../helpers/constants");
 
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 
 const { expect } = chai;

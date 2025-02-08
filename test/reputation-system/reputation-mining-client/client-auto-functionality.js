@@ -36,9 +36,9 @@ const {
   fundColonyWithTokens,
 } = require("../../../helpers/test-data-generator");
 const ReputationMinerClient = require("../../../packages/reputation-miner/src/ReputationMinerClient");
-const ReputationMinerTestWrapper = require("../../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const MaliciousReputationMinerExtraRep = require("../../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
-const ReputationMinerLongTransactionMined = require("../../../packages/reputation-miner/test/ReputationMinerLongTransactionMined");
+const ReputationMinerLongTransactionMined = require("../../../packages/reputation-miner/test/ReputationMinerLongTransactionMined").default;
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

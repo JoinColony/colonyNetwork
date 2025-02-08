@@ -27,7 +27,7 @@ const {
 
 const { UINT256_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION, CHALLENGE_RESPONSE_WINDOW_DURATION } = require("../../helpers/constants");
 
-const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper");
+const ReputationMinerTestWrapper = require("../../packages/reputation-miner/test/ReputationMinerTestWrapper").default;
 const MaliciousReputationMinerExtraRep = require("../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep");
 const MaliciousReputationMinerClaimNoOriginReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoOriginReputation"); // eslint-disable-line max-len
 const MaliciousReputationMinerClaimNoUserChildReputation = require("../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoUserChildReputation"); // eslint-disable-line max-len
