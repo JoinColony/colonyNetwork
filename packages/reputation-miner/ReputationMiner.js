@@ -9,7 +9,7 @@ const PatriciaTree = require("./patricia");
 const PatriciaTreeNoHash = require("./patriciaNoHashKey");
 const { RetryProvider } = require("../package-utils");
 
-// We don't need the account address right now for this secret key, but I'm leaving it in in case we
+// We don't need the account address right now for this secret key, but I'm leaving it in case we
 // do in the future.
 // const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
