@@ -61,7 +61,7 @@ contract ReputationMiningCycleBinarySearch is ReputationMiningCycleCommon {
     uint256 expectedLength = expectedProofLength(
       submission.jrhNLeaves,
       disputeRounds[_round][_idx].lowerBound
-    ) - (disputeRounds[_round][_idx].challengeStepCompleted - 1); // We expect shorter proofs the more chanllenge rounds we've done so far
+    ) - (disputeRounds[_round][_idx].challengeStepCompleted - 1); // We expect shorter proofs the more challenge rounds we've done so far
     require(
       expectedLength == _siblings.length,
       "colony-reputation-mining-invalid-binary-search-proof-length"
