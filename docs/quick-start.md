@@ -74,4 +74,4 @@ This will create a file called `.python-version` and instruct pyenv to use Pytho
 
 ### Q: I'm trying to deploy but it can't connect to the local ganache instance
 
-A: Use NodeJS version 14.x [nvm](https://github.com/nvm-sh/nvm) can help!
+A: Use a NodeJS version 14.x [nvm](https://github.com/nvm-sh/nvm) can help!
