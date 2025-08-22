@@ -1,5 +1,5 @@
 {
-  "name": "@colony.io/colony-network-contracts",
+  "name": "@colony/colony-network-contracts",
   "version": "1.0.0",
   "description": "Contracts for Colony Network",
   "engines": {
