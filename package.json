@@ -101,7 +101,7 @@
     "bignumber.js": "^9.1.2",
     "bluebird": "^3.7.2",
     "bn-chai": "^1.0.1",
-    "bn.js": "^5.2.1",
+    "bn.js": "^5.2.3",
     "body-parser": "^1.20.3",
     "chai": "^4.5.0",
     "dotenv": "^8.6.0",
