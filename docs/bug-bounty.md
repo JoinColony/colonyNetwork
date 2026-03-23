@@ -47,22 +47,6 @@ Participants in the program are free to submit bugs on two different branches in
 * the current testnet release (tagged on the `develop` branch) and deployed to Görli
 * against the `master` branch which will be tagged as the mainnet release for deployment
 
-### Bug Severity and Bounties
-
-In the same manner as the [Ethereum Bug Bounty Program](https://bounty.ethereum.org/), submissions will be evaluated by the Colony team according to the [OWASP risk rating methodology](https://www.owasp.org/index.php/OWASP\_Risk\_Rating\_Methodology), which grades based on both _Impact_ and _Likelihood_.
-
-It is at the _sole discretion of Colony_ to decide whether or not a bug report qualifies for a bounty, and to determine the severity of the issue
-
-Severity levels:
-
-* _Note_: Up to $500 USD (min. $100)
-* _Low_: Up to $2,000 USD (min. $500)
-* _Medium_: Up to $5,000 USD (min. $2,000)
-* _High_: Up to $10,000 USD (min. $5,000)
-* _Critical_: Up to $20,000 USD (min. $10,000)
-
-Issues reported may or may not constitute a security risk for the colonyNetwork contracts. A higher severity will be awarded to vulnerabilities submitted that could potentially result in either the loss of funds, or a situation in which the contracts arrive in an undesirable state that cannot be rectified through existing contract mechanisms, such as 'emergency mode' or through a network upgrade. However, all submitted bugs and vulnerabilities will be considered for prizes.
-
 ### Ineligible Bugs
 
 Any vulnerabilities or flaws in other software tools created by Colony (e.g. colonyJS, purser, tailor, etc.) are not eligible. Flaws in these software tools are welcome disclosures, but will not be awarded bounties for this bug bounty program.
