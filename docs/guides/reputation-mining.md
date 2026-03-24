@@ -13,7 +13,7 @@ To participate in the reputation mining process you need to have staked at least
 
 #### B. Awarding appropriate permissions on-chain
 
-1\. Check out our contract repository, following [these instructions](../docs/quick-start.md#cloning-the-repository-and-preparing-the-dependencies). You should then be able to run `yarn run truffle console --network xdai` which will connect you to the right network. You will need to be able to sign messages from the address in control of your CLNY (which will also be the address earning reputation for mining), which in most cases means pasting your private key into `truffle.js` before launching the console. For Ledger support, you can use `yarn run truffle console --network xdaiLedger`. For other hardware wallets, you will need to find an appropriate provider compatible with Truffle, and add it into `truffle.js` in your local version of the repository.\
+1\. Check out our contract repository, following [these instructions](../quick-start.md#cloning-the-repository-and-preparing-the-dependencies). You should then be able to run `yarn run truffle console --network xdai` which will connect you to the right network. You will need to be able to sign messages from the address in control of your CLNY (which will also be the address earning reputation for mining), which in most cases means pasting your private key into `truffle.js` before launching the console. For Ledger support, you can use `yarn run truffle console --network xdaiLedger`. For other hardware wallets, you will need to find an appropriate provider compatible with Truffle, and add it into `truffle.js` in your local version of the repository.\
 \
 An appropriate gas price for the current level of network use can be found at [https://blockscout.com/xdai/mainnet/](https://blockscout.com/xdai/mainnet/). The default value in `truffle.js` represents 2Gwei.\
 
@@ -37,7 +37,7 @@ _Note that all of the following commands, where they represent a transaction bei
 // Approve the tokens
 clnyToken.approve.estimateGas(tokenLocking.address, "2000000000000000000000");
 // Deposit the tokens
-tokenLocking.deposit.estimateGas(clnyToken.address, "2000000000000000000000", false); 
+tokenLocking.deposit.estimateGas(clnyToken.address, "2000000000000000000000", false);
 // Stake the tokens for mining
 colonyNetwork.stakeForMining.estimateGas("2000000000000000000000");
 // (Optional) Confirm that the tokens have been staked
