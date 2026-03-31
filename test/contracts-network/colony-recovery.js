@@ -213,6 +213,8 @@ contract("Colony Recovery", (accounts) => {
       await checkErrorRevert(metaColony.makeSingleArbitraryTransaction(ADDRESS_ZERO, HASHZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.updateApprovalAmount(ADDRESS_ZERO, ADDRESS_ZERO), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.finalizeRewardPayout(1), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.claimDomainFunds(ADDRESS_ZERO, 1), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.editAllowedDomainReputationReceipt(1, 1, true), "colony-in-recovery-mode");
     });
 
     it("recovery functions should be permissioned", async () => {

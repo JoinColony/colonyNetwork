@@ -34,7 +34,7 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   // prettier-ignore
-  function version() public pure returns (uint256 colonyVersion) { return 17; }
+  function version() public pure returns (uint256 colonyVersion) { return 18; }
 
   function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
@@ -317,11 +317,11 @@ contract Colony is BasicMetaTransaction, Multicall, ColonyStorage, PatriciaTreeP
   }
 
   function finishUpgrade() public always {
-    // Leaving as example for what is typically done here
-    // ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    // bytes4 sig;
-    // sig = bytes4(keccak256("cancelExpenditureViaArbitration(uint256,uint256,uint256)"));
-    // colonyAuthority.setRoleCapability(uint8(ColonyRole.Arbitration), address(this), sig, true);
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    bytes4 sig;
+
+    sig = bytes4(keccak256("editAllowedDomainReputationReceipt(uint256,uint256,bool)"));
+    colonyAuthority.setRoleCapability(uint8(ColonyRole.Root), address(this), sig, true);
   }
 
   function getMetatransactionNonce(address _user) public view override returns (uint256 nonce) {

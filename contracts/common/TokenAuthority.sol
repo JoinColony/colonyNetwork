@@ -35,6 +35,7 @@ contract TokenAuthority is DSAuthority {
     bytes4 mintSigOverload = bytes4(keccak256("mint(address,uint256)"));
 
     authorizations[_colony][transferSig] = true;
+    authorizations[_colony][transferFromSig] = true;
     authorizations[_colony][mintSig] = true;
     authorizations[_colony][mintSigOverload] = true;
 

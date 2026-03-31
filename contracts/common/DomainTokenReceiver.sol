@@ -1,0 +1,53 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+/*
+  This file is part of The Colony Network.
+
+  The Colony Network is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The Colony Network is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
+*/
+
+pragma solidity 0.8.28; // ignore-swc-103
+import { ERC20Extended } from "./ERC20Extended.sol";
+import { DSAuth } from "./../../lib/dappsys/auth.sol";
+
+contract DomainTokenReceiver is DSAuth {
+  address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
+
+  address colony;
+
+  modifier onlyColony() {
+    require(msg.sender == colony, "domain-token-receiver-unauthorized");
+    _;
+  }
+
+  function getColony() public view returns (address) {
+    return colony;
+  }
+
+  function setColony(address _colony) public {
+    require(colony == address(0), "domain-token-receiver-colony-already-set");
+    colony = _colony;
+  }
+
+  function transferChainNativeToColony() public onlyColony {
+    payable(colony).transfer(address(this).balance);
+  }
+
+  function approveTokenToColony(address tokenAddress) public onlyColony {
+    uint256 balanceToTransfer = ERC20Extended(tokenAddress).balanceOf(address(this));
+    require(
+      ERC20Extended(tokenAddress).approve(colony, balanceToTransfer),
+      "domain-token-receiver-approve-failed"
+    );
+  }
+}
