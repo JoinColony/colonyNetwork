@@ -394,7 +394,7 @@ class ReputationMiner {
 
       // When reputation amount update is negative, adjust its value for child reputation updates and parent updates
       // We update colonywide sums first (children, parents, skill)
-      // Then the user-specifc sums in the order children, parents, skill.
+      // Then the user-specific sums in the order children, parents, skill.
       if (amount.lt(0)) {
         const nUpdates = ethers.BigNumber.from(logEntry.nUpdates);
         const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId, {blockTag: blockNumber});

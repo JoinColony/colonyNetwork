@@ -389,7 +389,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleCommon {
   }
 
   function confirmChallengeCompleted(uint256[26] memory _u) internal {
-    // If everthing checked out, note that we've responded to the challenge.
+    // If everything checked out, note that we've responded to the challenge.
     disputeRounds[_u[U_ROUND]][_u[U_IDX]].challengeStepCompleted += 1;
     disputeRounds[_u[U_ROUND]][_u[U_IDX]].lastResponseTimestamp = block.timestamp;
     Submission storage submission = reputationHashSubmissions[
