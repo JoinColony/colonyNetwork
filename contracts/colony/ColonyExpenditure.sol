@@ -310,6 +310,22 @@ contract ColonyExpenditure is ColonyStorage {
           "colony-expenditure-bad-payout-modifier"
         );
       }
+
+      // Restrict dynamic array indexing into expenditure slot fields.
+      // For the 'skills' array (offset == 3) we allow:
+      //  - writing the array length (keys.length == 2)
+      //  - writing the first element skills[0] (keys.length == 3 && keys[2] == 0) but only if the skill id is a valid local skill.
+      // For all other fields we require keys.length == 2 (no indexing into nested arrays/mappings).
+      if (offset == 3) {
+        if (_keys.length == 3) {
+          require(uint256(_keys[2]) == 0, "colony-expenditure-bad-keys");
+          require(isValidLocalSkill(uint256(_value)), "colony-not-valid-local-skill");
+        } else {
+          require(_keys.length == 2, "colony-expenditure-bad-keys");
+        }
+      } else {
+        require(_keys.length == 2, "colony-expenditure-bad-keys");
+      }
     } else {
       require(false, "colony-expenditure-bad-slot");
     }
