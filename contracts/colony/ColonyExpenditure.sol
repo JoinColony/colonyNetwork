@@ -304,11 +304,20 @@ contract ColonyExpenditure is ColonyStorage {
 
       // Validate payout modifier
       if (offset == 2) {
+        require(_keys.length == 2, "colony-expenditure-bad-keys");
         require(
           int256(uint256(_value)) <= MAX_PAYOUT_MODIFIER &&
             int256(uint256(_value)) >= MIN_PAYOUT_MODIFIER,
           "colony-expenditure-bad-payout-modifier"
         );
+      } else if (offset == 3) {
+        if (_keys.length == 3) {
+          require(isValidLocalSkill(uint256(_value)), "colony-not-valid-local-skill");
+        } else {
+          require(_keys.length == 2, "colony-expenditure-bad-keys");
+        }
+      } else {
+        require(_keys.length == 2, "colony-expenditure-bad-keys");
       }
     } else {
       require(false, "colony-expenditure-bad-slot");
