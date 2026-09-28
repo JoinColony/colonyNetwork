@@ -53,8 +53,21 @@ contract ColonyRewards is
     require(thisPayoutAmount > 0, "colony-reward-payout-no-rewards");
     pendingRewardPayments[_token] = pendingRewardPayments[_token] + thisPayoutAmount;
 
-    uint256 totalTokens = ERC20Extended(token).totalSupply() -
-      ERC20Extended(token).balanceOf(address(this));
+    // The reward denominator must come from protocol controlled accounting. The colony's own
+    // balanceOf(address(this)) is externally mutable: anyone can transfer the colony token to
+    // this contract to deflate the snapshot (and inflate every claimant's share) before the
+    // payout starts. The tokens actually held in TokenLocking are the protocol controlled set
+    // of participating tokens - they can only be moved by their depositors - so they are used
+    // as the denominator. The balance derived value is only a fallback for the case where
+    // nothing is locked, in which case no claim can be made (calculateRewardForUser requires a
+    // non-zero TokenLocking balance, and tokens deposited after the payout starts can never be
+    // unlocked for it), so the fallback value cannot influence any claimant's share.
+    uint256 totalTokens = ERC20Extended(token).balanceOf(tokenLockingAddress); // ignore-swc-123
+    if (totalTokens == 0) {
+      totalTokens =
+        ERC20Extended(token).totalSupply() -
+        ERC20Extended(token).balanceOf(address(this));
+    }
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
 
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();

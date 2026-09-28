@@ -812,6 +812,46 @@ contract("Colony Reward Payouts", (accounts) => {
       expect(info.blockTimestamp).to.eq.BN(blockTimestamp);
     });
 
+    it("should not deflate the totalTokens snapshot when colony tokens are transferred to the colony", async () => {
+      const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
+      const payoutTokenArgs = getTokenArgs();
+      const payoutToken = await Token.new(...payoutTokenArgs);
+      await payoutToken.unlock();
+
+      await newColony.setRewardInverse(100);
+      await fundColonyWithTokens(newColony, payoutToken, initialFunding);
+
+      await newToken.setOwner(newColony.address);
+      // Mint more than will be locked, so the user has liquid colony tokens to donate.
+      await newColony.mintTokens(userTokens.muln(3).muln(100).divn(99));
+      await newColony.claimColonyFunds(newToken.address);
+      await newColony.bootstrapColony([userAddress1], [userTokens.muln(3)]);
+
+      // The user locks part of their colony tokens...
+      await newToken.approve(tokenLocking.address, userTokens.muln(2), { from: userAddress1 });
+      await tokenLocking.methods["deposit(address,uint256,bool)"](newToken.address, userTokens.muln(2), true, { from: userAddress1 });
+
+      // ...and transfers some of the rest directly to the colony (the reported attack vector).
+      await newToken.transfer(newColony.address, userTokens.divn(2), { from: userAddress1 });
+
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+
+      const result = await newColony.getDomain(1);
+      const rootDomainSkill = result.skillId;
+      const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill);
+      const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
+      const proof = [key, value, branchMask, siblings];
+
+      await newColony.moveFundsBetweenPots(1, UINT256_MAX, 1, UINT256_MAX, UINT256_MAX, 1, 0, 100, payoutToken.address);
+
+      const { logs } = await newColony.startNextRewardPayout(payoutToken.address, ...proof);
+      const info = await newColony.getRewardPayoutInfo(logs[0].args.rewardPayoutId);
+
+      // The denominator is the protocol-controlled locked amount, not the colony's mutable balance.
+      expect(info.totalTokens).to.eq.BN(userTokens.muln(2));
+    });
+
     const reputations = [
       {
         totalReputation: new BN(3),
